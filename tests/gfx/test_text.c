@@ -21,7 +21,7 @@ int lj_test_text(int argc, char **argv);
 int lj_test_text(int argc, char **argv)
 {
     const lj_font *f = &lj_font_sans13;
-    lj_font blk = { 13, 11, 2, blk_adv, blk_off, blk_bits };
+    lj_font blk = { 13, 11, 2, 0, blk_adv, blk_off, blk_bits };
     lj_surface s;
     int ws, ul, i;
     (void)argc; (void)argv;

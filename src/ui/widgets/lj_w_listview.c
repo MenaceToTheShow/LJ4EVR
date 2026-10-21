@@ -64,6 +64,11 @@ static void lv_paint(lj_widget *w, lj_surface *s)
     vis = visible_rows(v);
     area_w = w->w - 2 * LV_BORDER - (sb ? LJ_SB_W : 0);
     show_sel = v->index >= 0 && (w->focused || !v->hide_sel);
+    for (c = 0; c < v->ncols; c++) {                                 /* AutoSize = LVSCW_AUTOSIZE_USEHEADER: last column fills, others fit their header */
+        if (!lj_desc_bool(v->cols[c].autosize, 0)) continue;
+        if (c == v->ncols - 1) { int used = 0; for (i = 0; i < c; i++) used += v->col_w[i]; v->col_w[c] = area_w - used > 0 ? area_w - used : 0; }
+        else v->col_w[c] = lj_text_width(f, v->cols[c].caption ? v->cols[c].caption : "") + 12;
+    }
     for (i = 0; i < vis && v->sb.pos + i < v->n; i++) {
         int item = v->sb.pos + i, ry = ay + rows_top(v) + i * v->row_h, x = ax + LV_BORDER, ty = ry + (v->row_h - f->height) / 2;
         int sel = show_sel && item == v->index;
@@ -165,7 +170,7 @@ lj_widget *lj_w_listview_create(lj_widget *parent, const lj_ctl_desc *d)
         v->base.color = lj_desc_rgb(d->color, LJ_CLR_BTNHIGHLIGHT);
         v->items = d->items; v->n = d->items ? d->nitems : 0;
         v->cols = d->columns; v->ncols = d->columns ? (d->ncolumns < LJ_LV_COLS ? d->ncolumns : LJ_LV_COLS) : 0;
-        for (i = 0; i < v->ncols; i++) v->col_w[i] = d->columns[i].width;
+        for (i = 0; i < v->ncols; i++) v->col_w[i] = d->columns[i].width ? d->columns[i].width : 50;   /* TListColumn.Width default */
         v->show_headers = lj_desc_bool(d->show_column_headers, 1) != 0;
         v->row_select = lj_desc_bool(d->row_select, 0) != 0;
         v->grid_lines = lj_desc_bool(d->grid_lines, 0) != 0;

@@ -3559,7 +3559,7 @@ static const lj_ctl_desc tda2532form_3_pstatus[] = {
     { LJ_K_LABEL, "lBGCue", 343, 28, 36, 13, .caption = "lBGCue", .transparent = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_SHAPE, "sRecord", 106, 8, 12, 13, .brush_color = LJ_CLR(0xFF0000), .shape = "stCircle", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_LABEL, "Label8", 120, 8, 35, 13, .caption = "Record", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "sbFlashToggle", 700, 2, 65, 58, .hint = "Mouse Click Function", .allow_all_up = LJ_YES, .group_index = 1, .caption = "Latch", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIALBLACK16, .font_name = "Arial Black", .font_height = -13, .font_style = 0, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbFlashToggleMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbFlashToggle", 700, 2, 65, 58, .hint = "Mouse Click Function", .allow_all_up = LJ_YES, .group_index = 1, .caption = "Latch", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIALBLACK18, .font_name = "Arial Black", .font_height = -13, .font_style = 0, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbFlashToggleMouseUp" } } },
     { LJ_K_PANEL, "Panel3", 547, 1, 153, 60, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tda2532form_3_pstatus_panel3, .nchildren = LJ_COUNT_OF(tda2532form_3_pstatus_panel3) },
 };
 static const char *const tda2532form_3_panel4_panel1_tbc_items[] = {

@@ -39,12 +39,51 @@ static const char *tab_caption(const lj_widget *w, int i)
 
 static int tab_width(const lj_widget *w, int i) { return lj_text_width(lj_w_font_of(w), tab_caption(w, i)) + 2 * TAB_PADX; }
 
-int lj_w_tabs_at(const lj_widget *w, int x, int y)
+#define TAB_MAX 64            /* tabs per strip (the DFMs peak at 11) */
+typedef struct { int x, y, w; } tab_pos;   /* inactive tab rect in widget coords (y = row top, height row_h + 2) */
+
+static int row_h(const lj_widget *w) { return lj_w_font_of(w)->height + 6; }   /* 19 for MS Sans Serif 13; the strip is rows * row_h + 2 */
+
+/* Tab geometry. One row, or with MultiLine the comctl32 TCS_MULTILINE rule: tabs
+ * wrap greedily, every row is justified to the full width, and the active tab's row
+ * rotates to the bottom (against the page). Fills p[0..n-1], returns the row count. */
+static int tab_rows(const lj_widget *w, tab_pos *p, int n)
 {
     const lj_w_tabs *t = (const lj_w_tabs *)w;
-    int i, n = lj_w_tabs_count(w), tx = TAB_X0;
-    if (y < 0 || y >= t->tab_h) return -1;
-    for (i = 0; i < n; i++) { int tw = tab_width(w, i); if (x >= tx && x < tx + tw) return i; tx += tw; }
+    int ml = w->desc ? lj_desc_bool(w->desc->multiline, 0) : 0, avail = w->w - 2 * TAB_X0;
+    int i, r, rows = 1, x = 0, rh = row_h(w), first[TAB_MAX + 1], rowof[TAB_MAX];
+    if (n > TAB_MAX) n = TAB_MAX;
+    first[0] = 0;
+    for (i = 0; i < n; i++) {
+        int tw = tab_width(w, i);
+        if (ml && x > 0 && x + tw > avail) { first[rows++] = i; x = 0; }
+        p[i].x = x; p[i].w = tw; rowof[i] = rows - 1; x += tw;
+    }
+    first[rows] = n;
+    if (ml && rows > 1) {
+        int act;
+        for (r = 1; r < rows; r++) first[r] = first[r - 1] + n / rows + (r - 1 >= rows - n % rows);   /* comctl32 balances: equal counts, the extras on the last rows */
+        for (r = 0; r < rows; r++) for (i = first[r]; i < first[r + 1]; i++) rowof[i] = r;
+        act = t->active >= 0 && t->active < n ? rowof[t->active] : rows - 1;
+        for (r = 0; r < rows; r++) {
+            int cnt = first[r + 1] - first[r], used = 0, extra, k;
+            for (k = first[r]; k < first[r + 1]; k++) used += p[k].w;
+            extra = avail - used > 0 ? avail - used : 0; x = 0;
+            for (k = first[r]; k < first[r + 1]; k++) { p[k].x = x; p[k].w += extra / cnt + (k - first[r] < extra % cnt); x += p[k].w; }
+        }
+        for (i = 0; i < n; i++) rowof[i] = (rowof[i] - act - 1 + rows) % rows;   /* act -> rows - 1, cyclic order kept */
+    }
+    for (i = 0; i < n; i++) { p[i].x += TAB_X0; p[i].y = rowof[i] * rh; }
+    return rows;
+}
+
+int lj_w_tabs_at(const lj_widget *w, int x, int y)
+{
+    tab_pos p[TAB_MAX];
+    int i, n = lj_w_tabs_count(w), rh = row_h(w);
+    if (n > TAB_MAX) n = TAB_MAX;
+    tab_rows(w, p, n);
+    for (i = 0; i < n; i++) if (x >= p[i].x && x < p[i].x + p[i].w && y >= p[i].y && y < p[i].y + rh + 2) return i;
     return -1;
 }
 
@@ -52,9 +91,9 @@ void lj_w_tabs_layout(lj_widget *w)
 {
     lj_w_tabs *t = (lj_w_tabs *)w;
     lj_widget *c;
-    int i = 0;
-    if (w->kind == LJ_K_TABCONTROL) return;
-    if (t->active < 0 && lj_w_tabs_count(w) > 0) {               /* ActivePage = TabSheet2, resolved once the children exist */
+    tab_pos p[TAB_MAX];
+    int i = 0, n = lj_w_tabs_count(w);
+    if (t->active < 0 && w->kind != LJ_K_TABCONTROL && n > 0) {               /* ActivePage = TabSheet2, resolved once the children exist */
         const char *want = w->desc ? w->desc->active_page : NULL;
         t->active = 0;
         for (c = w->first; c; c = c->next) {
@@ -64,6 +103,8 @@ void lj_w_tabs_layout(lj_widget *w)
         }
         i = 0;
     }
+    t->tab_h = tab_rows(w, p, n > TAB_MAX ? TAB_MAX : n) * row_h(w) + 2;
+    if (w->kind == LJ_K_TABCONTROL) return;
     for (c = w->first; c; c = c->next) {
         if (c->kind != LJ_K_TABSHEET) continue;
         c->x = LJ_TAB_PAD; c->y = t->tab_h + LJ_TAB_PAD;
@@ -90,7 +131,10 @@ void lj_w_tabs_paint(lj_widget *w, lj_surface *s)
 {
     lj_w_tabs *t = (lj_w_tabs *)w;
     const lj_font *f = lj_w_font_of(w);
-    int ax, ay, i, n = lj_w_tabs_count(w), tx = TAB_X0, fy;
+    tab_pos p[TAB_MAX];
+    int ax, ay, i, n = lj_w_tabs_count(w), fy, rh = row_h(w);
+    if (n > TAB_MAX) n = TAB_MAX;
+    t->tab_h = tab_rows(w, p, n) * rh + 2;
     lj_widget_abs(w, &ax, &ay);
     fy = ay + t->tab_h;
     lj_fill(s, ax, ay, w->w, w->h, LJ_CLR_BTNFACE);
@@ -98,15 +142,19 @@ void lj_w_tabs_paint(lj_widget *w, lj_surface *s)
     lj_bevel1(s, ax, fy, w->w, w->h - t->tab_h, LJ_CLR_BTNHIGHLIGHT, LJ_CLR_3DDKSHADOW);
     lj_hline(s, ax + 1, ay + w->h - 2, w->w - 2, LJ_CLR_BTNSHADOW);
     lj_vline(s, ax + w->w - 2, fy + 1, w->h - t->tab_h - 2, LJ_CLR_BTNSHADOW);
-    for (i = 0; i < n; i++) {
-        int tw = tab_width(w, i), act = i == t->active, x = ax + tx, ty, tt;
-        if (act) { x -= 2; tw += 4; ty = ay; tt = t->tab_h + 1; }
-        else { ty = ay + 2; tt = t->tab_h - 2; }
+    for (i = 0; i < n; i++) {                                     /* upper rows first so the bottom row overlaps them */
+        int tw = p[i].w, act = i == t->active, x = ax + p[i].x, ty, tt;
+        if (act) continue;
+        ty = ay + p[i].y + 2; tt = rh;
         tab_shape(s, x, ty, tw, tt);
-        if (act) lj_hline(s, x + 1, fy, tw - 2, LJ_CLR_BTNFACE);   /* the frame's top line breaks under the active tab */
-        lj_w_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, i))) / 2, ty + (tt - f->height) / 2 + (act ? 0 : 1), tab_caption(w, i), LJ_CLR_3DDKSHADOW);
-        if (act && w->focused) lj_focus_rect(s, x + 3, ty + 3, tw - 6, tt - 5);
-        tx += tab_width(w, i);
+        lj_w_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, i))) / 2, ty + (tt - f->height) / 2 + 1, tab_caption(w, i), LJ_CLR_3DDKSHADOW);
+    }
+    if (t->active >= 0 && t->active < n) {
+        int tw = p[t->active].w + 4, x = ax + p[t->active].x - 2, ty = ay + p[t->active].y, tt = rh + 3;
+        tab_shape(s, x, ty, tw, tt);
+        lj_hline(s, x + 1, fy, tw - 2, LJ_CLR_BTNFACE);   /* the frame's top line breaks under the active tab */
+        lj_w_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, t->active))) / 2, ty + (tt - f->height) / 2, tab_caption(w, t->active), LJ_CLR_3DDKSHADOW);
+        if (w->focused) lj_focus_rect(s, x + 3, ty + 3, tw - 6, tt - 5);
     }
 }
 

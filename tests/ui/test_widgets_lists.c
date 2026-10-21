@@ -263,7 +263,7 @@ int lj_test_widgets_lists(int argc, char **argv)
     {
         int tw1 = lj_text_width(&lj_font_sans13, "One") + 12;
         CHECK(lj_w_tabs_at(w, 2 + tw1 + 3, 5) == 1 && lj_w_tabs_at(w, 5, 40) == -1);
-        CHECK(px(&s, 10 + 2 + tw1 + 3, 10 + 1) == LJ_CLR_BTNFACE && px(&s, 10 + 2 + tw1, 10 + 5) == LJ_CLR_BTNHIGHLIGHT);   /* inactive tab starts 2 px lower, white left edge */
+        CHECK(px(&s, 10 + 2 + tw1 + 3, 10 + 1) == LJ_CLR_BTNFACE && px(&s, 10 + 2 + tw1 + 1, 10 + 5) == LJ_CLR_3DDKSHADOW);   /* inactive tab starts 2 px lower; the active tab is painted last and its 2-px overhang covers the neighbour's white edge */
         click(w, 2 + tw1 + 3, 5);
     }
     CHECK(((lj_w_tabs *)w)->active == 1 && p1->visible && !p0->visible && ev_count[LJ_WEV_CHANGE] == 1 && ev_count[LJ_WEV_CHANGING] == 1);

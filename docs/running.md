@@ -51,7 +51,7 @@ Minimising the main window hides the controls, as LJ2's `TApplication` does.
 lj4evr_render <out dir>                        one BMP per generated form, <CLASS>.bmp upper-cased
                                                (TSEQUENCEFORM.bmp ...) plus MAINWINDOW.bmp (the stub main window)
 lj4evr_render --font-proof <face> <out.bmp>    every CP1252 glyph 32..255 of sans13 | sans13b | arial14 |
-                                               arial14b | arialblack16 in a 16-column grid
+                                               arial14b | arialblack18 in a 16-column grid
 ```
 
 Prints `lj4evr_render: N written, M failed -> <dir>` and exits 1 when any form

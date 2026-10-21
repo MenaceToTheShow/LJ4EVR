@@ -39,7 +39,7 @@ static const lj_font *face_of(lj_font_id id, unsigned style)
     case LJ_FONT_SANS13B:      return &lj_font_sans13b;
     case LJ_FONT_ARIAL14:      return bold ? &lj_font_arial14b : &lj_font_arial14;
     case LJ_FONT_ARIAL14B:     return &lj_font_arial14b;
-    case LJ_FONT_ARIALBLACK16: return &lj_font_arialblack16;
+    case LJ_FONT_ARIALBLACK18: return &lj_font_arialblack18;
     case LJ_FONT_SANS13:
     case LJ_FONT_OTHER:
     default:                   return bold ? &lj_font_sans13b : &lj_font_sans13;

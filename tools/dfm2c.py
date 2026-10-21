@@ -376,7 +376,7 @@ FORM_STR = {"Caption": "caption", "Menu": "menu", "PopupMenu": "popup_menu", "Ac
             "PrintScale": "print_scale"}
 FORM_COLOR = {"Color": "color", "Font.Color": "font_color"}
 FONT_ID = {("MS Sans Serif", -11, 0): "LJ_FONT_SANS13", ("MS Sans Serif", -11, 1): "LJ_FONT_SANS13B",
-           ("Arial", -11, 0): "LJ_FONT_ARIAL14", ("Arial", -11, 1): "LJ_FONT_ARIAL14B", ("Arial Black", -13, 0): "LJ_FONT_ARIALBLACK16"}
+           ("Arial", -11, 0): "LJ_FONT_ARIAL14", ("Arial", -11, 1): "LJ_FONT_ARIAL14B", ("Arial Black", -13, 0): "LJ_FONT_ARIALBLACK18"}
 MA_BOOL = {"AutoHotkeys", "AutoLineReduction"}          # maAutomatic / maManual -> LJ_YES / LJ_NO
 MENU_INT = {"ShortCut": "shortcut", "Tag": "tag", "GroupIndex": "group_index", "ImageIndex": "image_index"}
 MENU_BOOL = {"Checked": "checked", "RadioItem": "radio_item", "Enabled": "enabled", "Visible": "visible", "Default": "default_item",

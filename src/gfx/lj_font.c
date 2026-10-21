@@ -25,7 +25,7 @@ int lj_text_width(const lj_font *f, const char *s)
     int w = 0, g, ul;
     if (!f || !s) return 0;
     while ((g = lj_next_glyph(&s, 1, &ul)) >= 0) w += f->advance[g];
-    return w;
+    return w ? w + f->overhang : 0;   /* DrawText DT_CALCRECT adds tmOverhang once per non-empty string */
 }
 
 void lj_text(lj_surface *s, const lj_font *f, int x, int y, const char *str, uint32_t rgb, int accel_underline)

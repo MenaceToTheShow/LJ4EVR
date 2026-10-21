@@ -68,7 +68,7 @@ enum lj_ctl_row_kind {
 extern const char *const lj_ctl_class_names[LJ_K_COUNT];   /* "TLabel", "TPanel", ... Delphi spelling, enum order (lj_form.c) */
 
 /* ---- fonts (design 7.4, ME-18) ---- */
-typedef enum { LJ_FONT_INHERIT = 0, LJ_FONT_SANS13, LJ_FONT_SANS13B, LJ_FONT_ARIAL14, LJ_FONT_ARIAL14B, LJ_FONT_ARIALBLACK16,
+typedef enum { LJ_FONT_INHERIT = 0, LJ_FONT_SANS13, LJ_FONT_SANS13B, LJ_FONT_ARIAL14, LJ_FONT_ARIAL14B, LJ_FONT_ARIALBLACK18,
                LJ_FONT_OTHER /* a face/height the census did not give us a bitmap for; font_name/font_height say which */ } lj_font_id;
 #define LJ_FS_BOLD      1u      /* font_style bits: Font.Style = [fsBold, fsItalic, fsUnderline, fsStrikeOut] */
 #define LJ_FS_ITALIC    2u

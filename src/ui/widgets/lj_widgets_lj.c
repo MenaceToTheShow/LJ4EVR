@@ -49,10 +49,10 @@ void lj_w_spin_pair(lj_surface *s, const lj_widget *w, int x, int y, int bw, int
     lj_w_button(s, x, y + h1, bw, h2, LJ_CLR_BTNFACE, p2);
     if (!w->enabled) {                                               /* white shadow +1,+1 under the #808080 glyph (7.3) */
         lj_w_tri(s, cx + 1, y + h1 / 2, 3, 0, LJ_CLR_BTNHIGHLIGHT);
-        lj_w_tri(s, cx + 1, y + h1 + h2 / 2 + 1, 3, 1, LJ_CLR_BTNHIGHLIGHT);
+        lj_w_tri(s, cx + 1, y + h1 + h2 / 2 + 2, 3, 1, LJ_CLR_BTNHIGHLIGHT);
     }
     lj_w_tri(s, cx + p1, y + h1 / 2 - 1 + p1, 3, 0, ink);
-    lj_w_tri(s, cx + p2, y + h1 + h2 / 2 + p2, 3, 1, ink);
+    lj_w_tri(s, cx + p2, y + h1 + h2 / 2 + 1 + p2, 3, 1, ink);   /* +1: spike A updown() / lj_spinner, the W0 golden reference */
 }
 
 static void draw(lj_surface *s, const lj_widget *w, int x, int y, const char *str, uint32_t rgb, int accel)

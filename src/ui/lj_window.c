@@ -51,7 +51,7 @@ static const lj_font *font_of(lj_font_id id)
     case LJ_FONT_SANS13B:      return &lj_font_sans13b;
     case LJ_FONT_ARIAL14:      return &lj_font_arial14;
     case LJ_FONT_ARIAL14B:     return &lj_font_arial14b;
-    case LJ_FONT_ARIALBLACK16: return &lj_font_arialblack16;
+    case LJ_FONT_ARIALBLACK18: return &lj_font_arialblack18;
     case LJ_FONT_INHERIT:      return NULL;
     default:                   return &lj_font_sans13;     /* SANS13 and OTHER (no bitmap for that face: MS Sans Serif stands in) */
     }

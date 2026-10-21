@@ -1,7 +1,7 @@
 /* lj_render_main.c - lj4evr_render, the headless BMP renderer (design 2.9). SDL-free.
  *   lj4evr_render <dir>                      instantiates every generated form with no bindings, paints, writes <dir>/<CLASS>.bmp
  *                                            (class name upper-cased = the DFM file stem) plus MAINWINDOW.bmp, the code-built stub
- *   lj4evr_render --font-proof <face> <bmp>  draws every glyph of sans13|sans13b|arial14|arial14b|arialblack16 in a 16-column grid */
+ *   lj4evr_render --font-proof <face> <bmp>  draws every glyph of sans13|sans13b|arial14|arial14b|arialblack18 in a 16-column grid */
 #include <stdio.h>
 #include <string.h>
 #include "desktop/lj_main_window.h"
@@ -27,7 +27,7 @@ static int lj_render_font_proof(const char *face, const char *out)
 {
     static const struct { const char *name; const lj_font *f; } faces[] = {
         { "sans13", &lj_font_sans13 }, { "sans13b", &lj_font_sans13b }, { "arial14", &lj_font_arial14 },
-        { "arial14b", &lj_font_arial14b }, { "arialblack16", &lj_font_arialblack16 } };
+        { "arial14b", &lj_font_arial14b }, { "arialblack18", &lj_font_arialblack18 } };
     const lj_font *f = NULL;
     lj_surface s;
     char str[2] = { 0, 0 };

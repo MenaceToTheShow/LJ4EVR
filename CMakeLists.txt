@@ -151,7 +151,7 @@ endif()
 enable_testing()
 # Every lj4evr_tests subcommand is one CTest; a track appends its name here when it
 # adds a row to the table in tests/lj_tests.c.
-set(LJ_TEST_SUBCOMMANDS widget widgets_lists forms_tables draw_goldens bmp text encoding ini textrec lock clock_monotonic trig engine_stub dump-frames render font_corpus font_cells art_table widgets_lj widgets_basic window menu formsini hittest)
+set(LJ_TEST_SUBCOMMANDS widget widgets_lists forms_tables draw_goldens bmp text encoding ini textrec lock clock_monotonic trig engine_stub dump-frames render ui_golden font_corpus font_cells art_table widgets_lj widgets_basic window menu formsini hittest)
 foreach(sub ${LJ_TEST_SUBCOMMANDS})
   add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
 endforeach()

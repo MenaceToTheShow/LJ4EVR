@@ -138,8 +138,9 @@ int lj_test_widgets_basic(int argc, char **argv)
     memset(&root, 0, sizeof root);
     root.name = "Form"; root.w = 400; root.h = 300; root.visible = 1; root.enabled = 1; root.color = LJ_CLR_BTNFACE; root.font = f;
     CHECK(lj_surface_init(&surf, 400, 300) == 0);
+    lj_fill(&surf, 0, 0, 40, 13, LJ_CLR_BTNFACE);                 /* the surface starts black: black text on it is invisible to the probe */
     lj_text(&surf, f, 0, 0, "Mode", LJ_CLR_3DDKSHADOW, 0);
-    font_inked = ink(0, 0, 40, 13, 0) > 0;
+    font_inked = ink(0, 0, 40, 13, LJ_CLR_BTNFACE) > 0;
     if (!font_inked) printf("widgets_basic: sans13 has no inked glyphs yet; text-ink checks reported as NOINK, not counted\n");
 
     b = mk(&root, &d_button); bdef = mk(&root, &d_default); bok = mk(&root, &d_bitbtn); cb = mk(&root, &d_cb);

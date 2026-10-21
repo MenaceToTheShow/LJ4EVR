@@ -19,12 +19,13 @@
 
 typedef struct lj_font {
     int height, ascent, descent;            /* cell; baseline = y + ascent; 13 = 11 + 2 for sans13 (spike A, measured) */
+    int overhang;                           /* tmOverhang: +1 per string on GDI-synthesised bold (sans13b); lj_text_width adds it, lj_text draws nothing extra */
     const uint8_t  *advance;                /* [224] advance width in px per glyph, == ink cell width */
     const uint16_t *offset;                 /* [224] byte offset of the glyph bitmap in bits */
     const uint8_t  *bits;                   /* all glyph bitmaps, each (advance+7)/8 * height bytes */
 } lj_font;
 
-extern const lj_font lj_font_sans13, lj_font_sans13b, lj_font_arial14, lj_font_arial14b, lj_font_arialblack16;
+extern const lj_font lj_font_sans13, lj_font_sans13b, lj_font_arial14, lj_font_arial14b, lj_font_arialblack18;
 
 int  lj_text_width(const lj_font *f, const char *s);                                                  /* sum of advances; '&' accelerator prefixes count as in the VCL: "&x" is one glyph wide, "&&" one '&' */
 void lj_text(lj_surface *s, const lj_font *f, int x, int y, const char *str, uint32_t rgb, int accel_underline);   /* y = top of the cell; accel_underline: "&x" underlines x at ascent+1, "&&" draws '&' */

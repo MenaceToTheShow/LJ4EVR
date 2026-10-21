@@ -116,8 +116,7 @@ def generate(sheets):
         out.append("static const uint8_t lj_%s_adv[LJ_FONT_GLYPHS] = {\n%s\n};" % (name, fmt_array(adv, 32)))
         out.append("static const uint16_t lj_%s_off[LJ_FONT_GLYPHS] = {\n%s\n};" % (name, fmt_array(off, 16)))
         out.append("static const uint8_t lj_%s_bits[%d] = {\n%s\n};" % (name, len(bits), fmt_array(["0x%02x" % b for b in bits], 24)))
-        # ponytail: lj_font has no overhang field yet; add ".overhang = %d," here when it does (see docs/fonts.md)
-        out.append("const lj_font lj_font_%s = { .height = %d, .ascent = %d, .descent = %d, /* overhang %d */\n"
+        out.append("const lj_font lj_font_%s = { .height = %d, .ascent = %d, .descent = %d, .overhang = %d,\n"
                    "    .advance = lj_%s_adv, .offset = lj_%s_off, .bits = lj_%s_bits };\n"
                    % (name, m["height"], m["ascent"], m["descent"], m["overhang"], name, name, name))
     return "\n".join(out)

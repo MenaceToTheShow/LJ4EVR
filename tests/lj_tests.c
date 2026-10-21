@@ -7,6 +7,7 @@
 int lj_test_widget(int argc, char **argv);
 int lj_test_widgets_lists(int argc, char **argv);
 int lj_test_render(int argc, char **argv);
+int lj_test_ui_golden(int argc, char **argv);
 int lj_test_draw_goldens(int argc, char **argv);
 int lj_test_bmp(int argc, char **argv);
 int lj_test_text(int argc, char **argv);
@@ -41,6 +42,7 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "formsini", lj_test_formsini },
     { "hittest", lj_test_hittest },
     { "render", lj_test_render },
+    { "ui_golden", lj_test_ui_golden },        /* the five reviewed W0 goldens, byte-exact (tests/ui/golden) */
     { "draw_goldens", lj_test_draw_goldens },
     { "bmp", lj_test_bmp },
     { "text", lj_test_text },
