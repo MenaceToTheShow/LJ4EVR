@@ -183,7 +183,7 @@ int lj_test_widgets_lj(int argc, char **argv)
 
     /* O/S/F 48x24: red Off, left click forward, right click back (D10), states_allowed (ME-27) */
     {
-        static const lj_ctl_desc d = { LJ_K_UNKNOWN, "osf", 0, 0, 48, 24 };
+        static const lj_ctl_desc d = { LJ_K_UNKNOWN, "osf", 0, 0, 48, 24, .tag = 0 };
         w = mk(&root, lj_w_osf_create, &d);
         CHECK(lj_w_osf_state(w) == LJ_OSF_OFF);
         paint(w, &s);
@@ -405,7 +405,7 @@ int lj_test_widgets_lj(int argc, char **argv)
 
     /* cue grid row 160x16: No | Sequence at C0/C1 widths, navy when selected */
     {
-        static const lj_ctl_desc d = { LJ_K_UNKNOWN, "row", 0, 160, 160, 16 };
+        static const lj_ctl_desc d = { LJ_K_UNKNOWN, "row", 0, 160, 160, 16, .tag = 0 };
         static const char *const cells[2] = { "0002", "Color Chase 1" };
         static const int widths[2] = { 30, 160 };
         w = mk(&root, lj_w_cuerow_create, &d);

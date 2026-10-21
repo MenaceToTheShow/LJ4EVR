@@ -23,7 +23,7 @@ static int fails;
 int lj_test_encoding(int argc, char **argv);
 int lj_test_encoding(int argc, char **argv)
 {
-    char cp[256], u8[4 * 256], back[256], dir[64], path[96];
+    char cp[256], u8[4 * 256], back[256], dir[64], path[2 * 64 + 8];   /* "%s/%s.seq" of two dirs: gcc -Wformat-truncation sizes it */
     int b, n = 0;
     FILE *f;
     (void)argc; (void)argv;

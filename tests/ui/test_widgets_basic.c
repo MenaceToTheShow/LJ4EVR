@@ -106,13 +106,13 @@ static const lj_ctl_desc d_panel2   = { LJ_K_PANEL, "Panel2", 200, 120, 54, 25, 
 static const lj_ctl_desc d_panelR   = { LJ_K_PANEL, "PanelR", 260, 120, 54, 25, .bevel_width = 1, .caption = "P" };
 static const lj_ctl_desc d_panelS   = { LJ_K_PANEL, "PanelS", 320, 120, 54, 25, .bevel_width = 1, .border_style = "bsSingle", .parent_color = LJ_YES };
 static const lj_ctl_desc d_bevTop   = { LJ_K_BEVEL, "BevT", 260, 160, 100, 20, .shape = "bsTopLine" };
-static const lj_ctl_desc d_bevBox   = { LJ_K_BEVEL, "BevB", 260, 185, 100, 10 };
+static const lj_ctl_desc d_bevBox   = { LJ_K_BEVEL, "BevB", 260, 185, 100, 10, .tag = 0 };
 static const lj_ctl_desc d_circle   = { LJ_K_SHAPE, "Shape1", 300, 10, 30, 30, .shape = "stCircle", .brush_color = LJ_CLR(0xFF0000), .pen_width = 1 };
 static const lj_ctl_desc d_rect     = { LJ_K_SHAPE, "Shape2", 340, 10, 30, 30, .pen_width = 1 };
 static const lj_ctl_desc d_label    = { LJ_K_LABEL, "Label1", 10, 240, 26, 13, .caption = "Seq#", .transparent = LJ_YES, .enabled = LJ_NO };
 static const lj_ctl_desc d_labelY   = { LJ_K_LABEL, "LabelY", 50, 240, 60, 13, .caption = "Seq#", .color = LJ_CLR(0xFFFF00), .alignment = LJ_TA_RIGHT, .focus_control = "ES" };
 static const lj_ctl_desc d_static   = { LJ_K_STATICTEXT, "st", 120, 240, 60, 17, .caption = "Static" };
-static const lj_ctl_desc d_od2      = { LJ_K_ODPANEL2, "ODPanel21", 200, 230, 50, 30 };
+static const lj_ctl_desc d_od2      = { LJ_K_ODPANEL2, "ODPanel21", 200, 230, 50, 30, .tag = 0 };
 static const lj_ctl_desc d_od       = { LJ_K_ODPANEL, "ODPanel1", 260, 230, 60, 40, .caption = "ODPanel1" };
 static const lj_ctl_desc d_image    = { LJ_K_IMAGE, "Image1", 330, 230, 20, 20, .stretch = LJ_YES };
 static const lj_ctl_desc d_paintbox = { LJ_K_PAINTBOX, "pb", 360, 230, 20, 20, .hint = NULL };
