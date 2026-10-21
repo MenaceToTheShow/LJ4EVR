@@ -63,6 +63,7 @@ typedef struct lj_ctl_win {
     lj_ctl_elem e[LJ_CTL_ELEMS]; int n;
     uint8_t dflt[LJ_PROFILE_CH];     /* dflt_state of the last O/S/F row built per offset (0 = none yet -> LJ_SNAP) */
     unsigned specials_shown:1;
+    unsigned foreign:1;              /* integrator: a controls-b/c window (lj_ctl_movement_* / lj_ctl_c_*) registered here so get/close/refresh/toggle see it */
     int cw_full, cw_plain;           /* Intensity: client width with / without the specials block */
 } lj_ctl_win;
 

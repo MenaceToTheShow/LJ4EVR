@@ -7,3 +7,7 @@ __pycache__/
 build-*/
 spikes/**/*.bmp
 build-*.log
+# test scratch when lj4evr_tests runs from the repo root (CI runs it from the build dir)
+/User/
+/lj_test_*
+/test_model_tmp/

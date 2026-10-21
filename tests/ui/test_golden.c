@@ -12,7 +12,8 @@
 #define LJ_SOURCE_DIR "."
 #endif
 
-static const char *const lj_golden_forms[] = { "TSEQUENCEFORM", "TSAVESEQFORM", "TCURRENTCUE", "TSYSTEMPREFSFORM", "TLINKCONFIGFORM3", "TLJMANAGERPREFSFORM" };
+static const char *const lj_golden_forms[] = { "TSEQUENCEFORM", "TSAVESEQFORM", "TCURRENTCUE", "TSYSTEMPREFSFORM", "TLINKCONFIGFORM3", "TLJMANAGERPREFSFORM",
+    "TDMXOUTFORM", "TMASTERINTENSITYFORM", "TSAVECUEFORM", "TSTARTUPFORM" };   /* W1: the four DFM forms the W1 windows open (the code-built control windows: ui_golden_ctl) */
 
 static const lj_form_desc *find_form(const char *upper)
 {

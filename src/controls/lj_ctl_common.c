@@ -9,10 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "controls/lj_ctl_colors.h"
 #include "controls/lj_ctl_extended.h"
 #include "controls/lj_ctl_intensity.h"
 #include "controls/lj_ctl_lamp.h"
 #include "controls/lj_ctl_levels.h"
+#include "controls/lj_ctl_movement.h"
 #include "core/lj_lock.h"
 #include "core/lj_locale.h"
 #include "core/lj_log.h"
@@ -522,12 +524,36 @@ lj_window *lj_ctl_open_table(enum lj_ctl_kind kind, const lj_ctl_window *table, 
     return c->win;
 }
 
+/* controls-b/c windows build themselves (lj_ctl_movement_create, lj_ctl_c_create); the registry row keeps them reachable through the lj_ctl_* API. */
+static lj_window *lj_ctl_open_foreign(enum lj_ctl_kind kind, const lj_ctl_window *t, const lj_profile *p)
+{
+    lj_ctl_win *c = lj_ctl_rec(kind);
+    lj_window *w;
+    if (c->win) { if (c->table == t) { if (lj_ctl_host && lj_ctl_host->show) lj_ctl_host->show(lj_ctl_host->ud, c->win, 1); return c->win; } lj_ctl_close(kind); }
+    w = kind == LJ_CTL_MOVEMENT ? lj_ctl_movement_create(p) : lj_ctl_c_create(kind, p);
+    if (!w) return NULL;
+    memset(c, 0, sizeof *c);
+    c->kind = kind; c->win = w; c->table = t; c->profile = p; c->foreign = 1;
+    if (kind == LJ_CTL_MOVEMENT) lj_ctl_movement_select_from_desktop(w);
+    if (lj_ctl_host && lj_ctl_host->open && lj_ctl_host->open(lj_ctl_host->ud, w, 2u /* LJ_WF_STAY_ON_TOP */) != 0) lj_log("lj_ctl: %s: host open failed", lj_ctl_chrome[kind].name);
+    return w;
+}
+
+static void lj_ctl_refresh_foreign(lj_ctl_win *c)
+{
+    if (c->kind == LJ_CTL_MOVEMENT) { lj_ctl_movement_select_from_desktop(c->win); lj_ctl_movement_refresh(c->win); }
+    else lj_ctl_c_refresh(c->win);
+}
+
 lj_window *lj_ctl_open(enum lj_ctl_kind kind)
 {
     const lj_profile *p = lj_sel_master_profile();
     const lj_ctl_window *t = p ? lj_profile_window(p, kind) : NULL;
     if (!t) { lj_log("lj_ctl: no %s window for the master fixture", kind >= 0 && kind < LJ_CTL_COUNT ? lj_ctl_chrome[kind].name : "?"); return NULL; }
-    return lj_ctl_open_table(kind, t, p);
+    switch (kind) {
+    case LJ_CTL_MOVEMENT: case LJ_CTL_COLORS: case LJ_CTL_GOBOS: case LJ_CTL_BEAM: case LJ_CTL_EFFECTS: return lj_ctl_open_foreign(kind, t, p);
+    default: return lj_ctl_open_table(kind, t, p);
+    }
 }
 
 void lj_ctl_close(enum lj_ctl_kind kind)
@@ -538,9 +564,10 @@ void lj_ctl_close(enum lj_ctl_kind kind)
     if (!c || !c->win) return;
     w = c->win; c->win = NULL;                                       /* FormClose re-entry guard */
     if (lj_ctl_host && lj_ctl_host->close) lj_ctl_host->close(lj_ctl_host->ud, w);
-    lj_window_destroy(w);
+    if (c->foreign) { if (c->kind == LJ_CTL_MOVEMENT) lj_ctl_movement_destroy(w); else lj_ctl_c_destroy(w); }
+    else lj_window_destroy(w);
     for (i = 0; i < c->n; i++) free(c->e[i].d);
-    c->n = 0; c->table = NULL; c->profile = NULL;
+    c->n = 0; c->table = NULL; c->profile = NULL; c->foreign = 0;
 }
 
 void lj_ctl_close_all(void) { int k; for (k = 0; k < LJ_CTL_COUNT; k++) lj_ctl_close(k); }
@@ -567,8 +594,9 @@ void lj_ctl_refresh(void)
             if (!lj_ctls[k].win) continue;
             t = lj_profile_window(p, k);
             if (!t) lj_ctl_close(k);                                 /* PROPOSAL: the new master has no such control (F9 greys the button) */
-            else if (t != lj_ctls[k].table) lj_ctl_open_table(k, t, p);
+            else if (t != lj_ctls[k].table) { if (lj_ctls[k].foreign) lj_ctl_open_foreign(k, t, p); else lj_ctl_open_table(k, t, p); }
         }
     }
     lj_ctl_repaint_all();
+    for (k = 0; k < LJ_CTL_COUNT; k++) if (lj_ctls[k].win && lj_ctls[k].foreign) lj_ctl_refresh_foreign(&lj_ctls[k]);
 }

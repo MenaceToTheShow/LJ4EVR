@@ -21,7 +21,7 @@
 #include "core/lj_str.h"
 #include "miniz.h"
 
-static const char *const lj_lib_folders[] = { "Sequences", "Cues", "CueLists", "CueMacros", "BGCues", "UserFixtureDef", "MIDIIn", "Presets", "Palettes", NULL };
+static const char *const lj_lib_folders[] = { "Sequences", "Cues", "CueLists", "CueMacros", "BGCues", "UserFixtureDef", "MIDIIn", "Presets", "Palettes", "Hotkeys" /* lj_hotkeys_setup_path: <root>Hotkeys/SetupN.Hot (ours; docs/hotkeys.md) */, NULL };
 static const char *const lj_rec_folder[LJ_REC_KIND_COUNT] = { "Sequences", "Cues", "CueLists", "BGCues", "CueMacros" };
 static const char *const lj_rec_ext[LJ_REC_KIND_COUNT]    = { ".seq", ".cue", ".Cl2", ".bgc", ".CMA" };
 static const char *const lj_rec_key[LJ_REC_KIND_COUNT]    = { "Seq", "Cue", "Cl", "Bg", "Macro" };

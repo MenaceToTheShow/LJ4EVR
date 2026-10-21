@@ -156,7 +156,7 @@ int lj_test_uiscript(int argc, char **argv)
     CHECK(run_script("lj_test_uiscript_fail.lj4s") == -1 && lj_uiscript_line() == 2);
     CHECK(write_file("lj_test_uiscript_fail.lj4s", "assert_view gm=255\n") == 0);
     CHECK(run_script("lj_test_uiscript_fail.lj4s") == -1 && lj_uiscript_line() == 1);
-    CHECK(write_file("lj_test_uiscript_fail.lj4s", "open cue_form\n") == 0);   /* the windows stub / no such window */
+    CHECK(write_file("lj_test_uiscript_fail.lj4s", "open warnings\n") == 0);   /* a window id with no open row (lj_win_warning drives it); cue_form opens since windows-b landed */
     CHECK(run_script("lj_test_uiscript_fail.lj4s") == -1 && lj_uiscript_line() == 1);
     lj_uiscript_set_host(NULL);
     lj_window_destroy(seq_win); seq_win = NULL;

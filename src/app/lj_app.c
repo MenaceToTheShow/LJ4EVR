@@ -10,6 +10,7 @@
 #include "app/lj_startup.h"
 #include "app/lj_uiscript.h"
 #include "controls/lj_ctl.h"
+#include "controls/lj_ctl_common.h"   /* lj_ctl_set_host */
 #include "core/lj_clock.h"
 #include "core/lj_ini.h"
 #include "core/lj_lock.h"
@@ -516,6 +517,35 @@ static void lj_app_fn(enum lj_fn fn, int edge, uint32_t prog_num, void *ud)
     case LJ_FN_QUICK_SAVE_SEQUENCE: if (edge) lj_app_save_sequence(0); break;
     case LJ_FN_QUICK_SAVE_CUE:      if (edge) lj_app_save_cue(0); break;
     case LJ_FN_PROG_CUELIST:        if (edge) lj_log("cue list %u: cue lists are W3", (unsigned)prog_num); break;
+    /* integrator: the toolbar / hotkey rows no window file owns */
+    case LJ_FN_CTL_INTENSITY: case LJ_FN_CTL_MOVEMENT: case LJ_FN_CTL_COLOR: case LJ_FN_CTL_GOBO: case LJ_FN_CTL_BEAM: case LJ_FN_CTL_EFFECT: case LJ_FN_CTL_LAMP:
+        if (edge) lj_ctl_toggle(fn == LJ_FN_CTL_LAMP ? LJ_CTL_LAMP : (enum lj_ctl_kind)(LJ_CTL_INTENSITY + (fn - LJ_FN_CTL_INTENSITY)));
+        break;
+    case LJ_FN_CTL_LEVEL_SPECIAL: {                                   /* button 7: Levels, or Extended for a profile without a Levels grid (MAC 500/918, 15/01 s3) */
+        const lj_profile *p = lj_sel_master_profile();
+        if (edge && p) lj_ctl_toggle(lj_profile_window(p, LJ_CTL_LEVELS) ? LJ_CTL_LEVELS : LJ_CTL_EXTENDED);
+        break;
+    }
+    case LJ_FN_VIEW_DMX_OUTPUT:        if (edge) lj_win_toggle(LJ_WIN_DMX_MONITOR); break;
+    case LJ_FN_TOGGLE_LIST_OF_CUES:    if (edge) lj_win_toggle(LJ_WIN_LIST_CUE); break;
+    case LJ_FN_FREEZE_OUTPUT_TOGGLE:   if (edge) { memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_FREEZE; cmd.b = !lj_a.view.freeze; lj_ctx_post(&cmd); } break;
+    case LJ_FN_DMX_ONLINE_OFFLINE_TOGGLE: if (edge) { memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_OFFLINE; cmd.b = !lj_a.view.offline; lj_ctx_post(&cmd); } break;
+    default: break;
+    }
+}
+
+/* integrator: the desktop menu / toolbar leaves whose window lives in windows/ (lj_desktop.h enum lj_desktop_action); the rest log once */
+static void lj_app_action(enum lj_desktop_action a, int arg, void *ud)
+{
+    (void)ud;
+    switch (a) {
+    case LJ_ACT_CLOSE:           if (!lj_a.closing) { lj_a.closing = 1; lj_win_close_prompt(lj_app_on_close_result, NULL); } break;
+    case LJ_ACT_FIXTURE_CONFIG:  lj_win_open(LJ_WIN_FIXTURE_CONFIG); break;
+    case LJ_ACT_HARDWARE_SETUP:  lj_win_open(LJ_WIN_HARDWARE_SETUP); break;
+    case LJ_ACT_STARTUP_OPTIONS: lj_win_open(LJ_WIN_STARTUP_OPTIONS); break;
+    case LJ_ACT_SAVE_SEQUENCE:   lj_win_open(LJ_WIN_SAVE_SEQ); break;
+    case LJ_ACT_SAVE_CUE:        lj_win_open(LJ_WIN_SAVE_CUE); break;
+    case LJ_ACT_CTL_OPEN_ONLY:   lj_ctl_open_only((enum lj_ctl_kind)arg); break;
     default: break;
     }
 }
@@ -634,6 +664,7 @@ int lj_app_main(int argc, char **argv)
     c->show = show; c->lib = &lj_a.lib; c->sacn = &lj_a.sacn; c->hotkeys = &lj_a.hotkeys;
     lj_str_copy(c->userdir, sizeof c->userdir, lj_a.pref);
     c->current_scene = 0; c->blind = 0;
+    c->allow_freeze = c->allow_offline = c->allow_solo = c->show_nextprev = 1;   /* LJ2 ships them ON [01 s6.1], LORD_FIDELITY-11; System Preferences (W2) will read Main.Ini */
 
     /* 5. engine (bound after the show is loaded) */
     engine = lj_engine_create();
@@ -672,7 +703,13 @@ int lj_app_main(int argc, char **argv)
 
     /* 7. the lj_fn rows that need the disk, the W1 windows, Startup Options */
     lj_fn_bind(LJ_FN_PROG_CUE, lj_app_fn, NULL); lj_fn_bind(LJ_FN_PROG_BGCUE, lj_app_fn, NULL); lj_fn_bind(LJ_FN_PROG_SEQ_FLASH, lj_app_fn, NULL);
-    lj_fn_bind(LJ_FN_PROG_CUELIST, lj_app_fn, NULL); lj_fn_bind(LJ_FN_QUICK_SAVE_SEQUENCE, lj_app_fn, NULL); lj_fn_bind(LJ_FN_QUICK_SAVE_CUE, lj_app_fn, NULL);
+    lj_fn_bind(LJ_FN_PROG_CUELIST, lj_app_fn, NULL);                /* quick saves: the windows' handlers (lj_save_seq_quick, lj_cue_form_save) bound by lj_win_set_host */
+    for (i = LJ_FN_CTL_INTENSITY; i <= LJ_FN_CTL_LAMP; i++) lj_fn_bind((enum lj_fn)i, lj_app_fn, NULL);
+    lj_fn_bind(LJ_FN_VIEW_DMX_OUTPUT, lj_app_fn, NULL); lj_fn_bind(LJ_FN_TOGGLE_LIST_OF_CUES, lj_app_fn, NULL);
+    lj_fn_bind(LJ_FN_FREEZE_OUTPUT_TOGGLE, lj_app_fn, NULL); lj_fn_bind(LJ_FN_DMX_ONLINE_OFFLINE_TOGGLE, lj_app_fn, NULL);
+    lj_ctl_set_host(&lj_app_host);                                   /* control windows reach the screen the way windows/ does */
+    { static const enum lj_desktop_action acts[] = { LJ_ACT_CLOSE, LJ_ACT_FIXTURE_CONFIG, LJ_ACT_HARDWARE_SETUP, LJ_ACT_STARTUP_OPTIONS, LJ_ACT_SAVE_SEQUENCE, LJ_ACT_SAVE_CUE, LJ_ACT_CTL_OPEN_ONLY };
+      for (i = 0; i < LJ_COUNT_OF(acts); i++) lj_desktop_bind_action(acts[i], lj_app_action, NULL); }
     seq = lj_win_open(LJ_WIN_SEQ_FORM);
     cue = lj_win_open(LJ_WIN_CUE_FORM);
     if (!seq) seq = lj_a.seq_fb = lj_app_open_form(&lj_form_TSEQUENCEFORM);   /* ponytail: W0 fallback until windows/ lands */

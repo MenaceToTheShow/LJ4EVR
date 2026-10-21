@@ -9,6 +9,8 @@
 #include "windows/lj_save_dialogs.h"
 #include "windows/lj_seq_form.h"
 #include "windows/lj_dmx_monitor.h"       /* windows-c */
+#include "windows/lj_cue_form.h"          /* windows-b (integrator: rows filled at integration) */
+#include "windows/lj_master_intensity.h"
 #include "windows/lj_fixture_config.h"
 #include "windows/lj_hardware_setup.h"
 #include "windows/lj_prefs.h"
@@ -28,6 +30,11 @@ static const lj_win_ops lj_win_table[LJ_WIN_COUNT] = {
     [LJ_WIN_SEQ_FORM] = { lj_seq_form_open, lj_seq_form_close, lj_seq_form_get, lj_seq_form_refresh },
     [LJ_WIN_SAVE_SEQ] = { lj_save_seq_open, lj_save_seq_close, lj_save_seq_get, lj_save_seq_refresh },
     [LJ_WIN_LIST_SEQ] = { lj_seqlist_open, lj_seqlist_close, lj_seqlist_get, lj_seqlist_refresh },
+    /* windows-b */
+    [LJ_WIN_CUE_FORM]         = { lj_cue_form_open, lj_cue_form_close, lj_cue_form_get, lj_cue_form_refresh },
+    [LJ_WIN_SAVE_CUE]         = { lj_save_cue_open, lj_save_cue_close, lj_save_cue_get, NULL },
+    [LJ_WIN_LIST_CUE]         = { lj_list_cue_open, lj_list_cue_close, lj_list_cue_get, lj_list_cue_refresh },
+    [LJ_WIN_MASTER_INTENSITY] = { lj_master_intensity_open, lj_master_intensity_close, lj_master_intensity_get, lj_master_intensity_refresh },
     /* windows-c */
     [LJ_WIN_FIXTURE_CONFIG]  = { lj_fixture_config_open, lj_fixture_config_close, lj_fixture_config_window, lj_fixture_config_refresh },
     [LJ_WIN_HARDWARE_SETUP]  = { lj_hardware_setup_open, lj_hardware_setup_close, lj_hardware_setup_window, lj_hardware_setup_refresh },
@@ -60,7 +67,7 @@ lj_window *lj_win_find(const char *form)
 }
 const char *lj_win_class(enum lj_win id) { return ((int)id >= 0 && id < LJ_WIN_COUNT) ? lj_win_classes[id] : ""; }
 static const lj_win_host *lj_win_the_host;   /* windows-c: stored so the behaviour files can reach the screen */
-void lj_win_set_host(const lj_win_host *host) { lj_win_the_host = host; lj_seq_form_bind_fns(); }
+void lj_win_set_host(const lj_win_host *host) { lj_win_the_host = host; lj_seq_form_bind_fns(); lj_cue_form_bind_fns(); lj_master_intensity_bind_fns(); }
 
 static int lj_caption(char *dst, size_t cap, const char *prefix, uint32_t number, const char *name, const char *suffix)
 {

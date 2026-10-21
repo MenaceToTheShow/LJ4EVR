@@ -56,6 +56,7 @@ int lj_test_hotkeys(int argc, char **argv);
 int lj_test_controls_b(int argc, char **argv);
 int lj_test_windows_c(int argc, char **argv);
 int lj_test_windows_a(int argc, char **argv);
+int lj_test_ui_golden_ctl(int argc, char **argv);
 
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
@@ -109,6 +110,7 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_uiscript", lj_test_uiscript },         /* app: the --script driver headless, startup library + LastRun, ME-52 locale, ME-65 UTF-8 pref path */
     { "test_fixlib_profiles", lj_test_fixlib_profiles },   /* fixlib: 201 rows, hand > qxf, window tables, ME-25/27, lj_layout_derive */
     { "test_controls_c", lj_test_controls_c },     /* controls-c: Colors / Gobos / Beam / Effects windows (tests/ui/test_controls_c.c) */
+    { "ui_golden_ctl", lj_test_ui_golden_ctl },     /* integrator: the code-built control-window goldens, MAC 500 + dimmer (tests/ui/test_golden_ctl.c) */
 };
 
 int main(int argc, char **argv)

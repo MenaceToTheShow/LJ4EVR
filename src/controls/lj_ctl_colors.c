@@ -6,6 +6,7 @@
 #include "controls/lj_ctl_beam.h"
 #include "controls/lj_ctl_effects.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "core/lj_log.h"
@@ -230,6 +231,13 @@ static void entry_look(const lj_ctl_c *c, const lj_ctl_row *r, int i, const lj_s
 {
     const lj_pal_entry *e = &c->p->palette[pal_index(c, r->ch)].e[i];
     *tile = e->bitmap[0] ? lj_glyph_get(e->bitmap) : NULL;
+    if (!*tile && e->bitmap[0]) {                              /* integrator: the hand files name tiles "Cone", the art stems are gobo_cone (art/glyphs) */
+        char stem[40];
+        size_t k;
+        snprintf(stem, sizeof stem, "gobo_%s", e->bitmap);
+        for (k = 5; stem[k]; k++) if (stem[k] >= 'A' && stem[k] <= 'Z') stem[k] = (char)(stem[k] - 'A' + 'a');
+        *tile = lj_glyph_get(stem);
+    }
     *rgb = e->used ? e->rgb & 0xFFFFFFu : LJ_CLR_BTNHIGHLIGHT;
     if (!*tile && !e->bitmap[0] && e->used && e->rgb == 0 && c->kind != LJ_CTL_COLORS)
         *tile = lj_glyph_get(lj_ctl_c_gobo_stems[i % LJ_COUNT_OF(lj_ctl_c_gobo_stems)]);

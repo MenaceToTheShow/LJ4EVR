@@ -617,6 +617,10 @@ class Gen:
                 self.warn_unknown(cls, key)
         if "action" in s:
             self.resolve_action(cls, s, actions, obj.get("Action")[1])
+        name = self.glyphmap.get((form, obj.name))
+        if name and "glyph" not in s and cls in ("TBitBtn", "TSpeedButton"):   # ME-48: a listed button whose Glyph.Data the truncated dfm_text never carried
+            s["glyph"] = cstr(name.encode())
+            self.blobs.append((form, obj.name, cls, "Glyph.Data", "glyph:" + name + " (row listed, blob absent)"))
         s["font"] = font_id(font)               # own Font.* or the parent's, MS Sans Serif -11 at the root (design 7.4)
         if own_font:
             s["font_name"] = cstr(font["name"].encode("cp1252"))

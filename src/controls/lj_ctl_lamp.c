@@ -35,6 +35,11 @@ static int build_buttons(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row
     for (i = 0; i < n; i++) {
         lj_widget *b = lj_ctl_button_new(c, parent, row, &row->buttons[i], LJ_CE_BUTTON, row->buttons[i].caption, x + i * (bw + LJ_CTL_GAP), y, bw, LJ_CTL_ROW_H, 0);
         if (b) b->on_event = lamp_event;
+        if (b && row->kind == LJ_W_LAMP_BTNS && row->buttons[i].caption && strstr(row->buttons[i].caption, "Lamp O")) {   /* lampcontrol.gif: lit / dark bulb glyphs, the caption becomes the hint (integrator; our art, D2) */
+            lj_ctl_desc *d = (lj_ctl_desc *)b->desc;
+            d->glyph = strstr(row->buttons[i].caption, "Off") ? "lampoff" : "lamp"; d->hint = row->buttons[i].caption; d->caption = NULL; d->show_hint = LJ_YES;
+            lj_w_set_caption(b, "");
+        }
     }
     return LJ_CTL_ROW_H;
 }

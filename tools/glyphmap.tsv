@@ -85,5 +85,5 @@ MAINWINDOW	tb_fixture_20	freeze
 MAINWINDOW	tb_fixture_21	smoke
 MAINWINDOW	tb_fixture_22	blackout
 MAINWINDOW	tb_fixture_23	master
-TSEQUENCEFORM	sb11	add-to-cue
+TSEQUENCEFORM	sb11	addtocue
 TSEQUENCEFORM	seqBlind	blind

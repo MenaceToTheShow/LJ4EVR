@@ -93,11 +93,11 @@ static const lj_ctl_row lj_m5_effects_rows[] = {
     { LJ_W_ROTATION,   9, 1, "Speed", NULL, 20, 149, 0, 0, lj_m5_prism_rot, 3, NULL, LJ_STATES_ALL } };   /* macros 1-8 (221-255) are not exposed by this class */
 
 /* ---- Lamp Control: TLampControl_Mac500, variant DOO (IMG lampcontrol.gif 133x100) [15/01 s9, 15/00 s5] ---- */
-static const lj_ctl_button lj_m5_lamp[] = { { "Power On", 0, 228, 228, 237 }, { "Power Off", 0, 248, 248, 255 } };   /* lamp off: confirmation dialog, hold > 5 s */
+static const lj_ctl_button lj_m5_lamp[] = { { "Lamp On", 0, 228, 228, 237 }, { "Lamp Off", 0, 248, 248, 255 } };   /* exe palette strings 0xAB830/0xAB868; lj_ctl_lamp draws the bulbs, "Off" = confirm (lj_ctl_common.h) */   /* lamp off: confirmation dialog, hold > 5 s */
 static const lj_ctl_row lj_m5_lamp_rows[] = {
     { LJ_W_FADEBTN,   0, 1, NULL, NULL, 0, 0, 0, LJ_HAND_OFF, NULL, 0, NULL, LJ_STATES_OFF_SNAP },          /* ME-27: the Lamp window never reaches Fade */
-    { LJ_W_LAMP_BTNS, 0, 1, "Power On", "Power Off", 228, 255, 0, 0, lj_m5_lamp, 2, NULL, LJ_STATES_OFF_SNAP },
-    { LJ_W_NOTE,      0, 1, "NOTE ! Lamp Off must be held for at least 5 seconds", NULL, 0, 0, 0, 0, NULL, 0, NULL, LJ_STATES_OFF_SNAP } };
+    { LJ_W_LAMP_BTNS, 0, 1, "Lamp On", "Lamp Off", 228, 255, 0, 0, lj_m5_lamp, 2, NULL, LJ_STATES_OFF_SNAP },
+    { LJ_W_NOTE,      0, 1, "NOTE !\nLamp Off must be held for at least 5 seconds", NULL, 0, 0, 0, 0, NULL, 0, NULL, LJ_STATES_OFF_SNAP } };
 
 /* ---- Extended: TSpecialSettings_RS918S (IMG extended.gif 277x81 "Roboscan 918-S speed controls") [15/01 s10, 15/00 s4] ----
  * W_RADIOGROUP_FADER: items = the radio captions, buttons = the value each radio writes (the "Speed" radio takes the fader, lo..hi). */

@@ -77,7 +77,7 @@ endif()
 add_library(lj_miniz STATIC third_party/miniz/miniz.c)
 target_include_directories(lj_miniz SYSTEM PUBLIC third_party/miniz)
 if(MSVC)
-  target_compile_options(lj_miniz PRIVATE /w)
+  target_compile_options(lj_miniz PRIVATE /W0)   # ME-62: /w overrode /W4 with D9025 on every MSVC build
 else()
   target_compile_options(lj_miniz PRIVATE -w)
 endif()
@@ -95,8 +95,8 @@ function(lj_layer name)                            # lj_layer(<dir> <dep>...)
 endfunction()
 
 lj_layer(core)
-lj_layer(fixlib   lj_core lj_miniz)
-lj_layer(model    lj_fixlib lj_core)
+lj_layer(fixlib   lj_core)
+lj_layer(model    lj_fixlib lj_core lj_miniz)   # ME-62: miniz is the library backup (.lj4b, model/lj_library.c); the W1 importer stub does not use it
 lj_layer(engine   lj_model lj_fixlib lj_core)
 lj_layer(io       lj_model lj_fixlib lj_core)
 lj_layer(gfx      lj_core)
@@ -173,6 +173,7 @@ list(APPEND LJ_TEST_SUBCOMMANDS test_controls_b)
 list(APPEND LJ_TEST_SUBCOMMANDS test_windows_a)
 list(APPEND LJ_TEST_SUBCOMMANDS test_windows_c)   # windows-c
 list(APPEND LJ_TEST_SUBCOMMANDS test_controls_c)   # controls-c
+list(APPEND LJ_TEST_SUBCOMMANDS ui_golden_ctl)     # integrator: control-window goldens
 foreach(sub ${LJ_TEST_SUBCOMMANDS})
   add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
 endforeach()
@@ -192,6 +193,8 @@ if(Python3_FOUND)
                    --src "${CMAKE_SOURCE_DIR}/src" --cc "${CMAKE_C_COMPILER}" --gen "${LJ_GEN_DIR}")
   add_test(NAME gen_vectors_check                   # committed lj_trig_gen.c + tests/vectors.h match tools/ref (design 9.2)
            COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/gen_vectors.py" --check)
+  add_test(NAME dfm2c_selftest COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/dfm2c.py" --selftest)   # ME-49: no reference tree needed
+  add_test(NAME qxf2c_selftest COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/qxf2c.py" --selftest)   # ME-26: one in-repo QXF
 endif()
 
 # --- install + CPack (design 9.5, ME-19 per-user NSIS) ---------------------------
@@ -237,6 +240,7 @@ endif()
 foreach(sub test_sacn_packets test_sacn_rate test_sacn_loopback test_sacn_cfg)
   add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
 endforeach()
+set_tests_properties(test_sacn_rate test_sacn_loopback PROPERTIES RESOURCE_LOCK sacn_port)   # integrator: both send to 127.0.0.1:5568; ctest -j must not interleave them
 
 # app track: the SDL-free app files tests/ui/test_uiscript.c drives headless (docs/w1-contracts.md, append-only section)
 target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_uiscript.c" "${CMAKE_SOURCE_DIR}/src/app/lj_startup.c")
