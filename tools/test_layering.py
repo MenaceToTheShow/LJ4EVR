@@ -46,6 +46,7 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "io/lj_net.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
     "io/lj_sacn.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
     "io/lj_midi_winmm.c": {"windows.h", "mmsystem.h"},
+    "model/lj_library.c": {"sys/stat.h"},   # POSIX mkdir for lj_library_create (Windows uses <direct.h>/<io.h>)
     "io/lj_midi_coremidi.c": {"CoreMIDI/CoreMIDI.h"},
 }
 NAME_EXEMPT = {"app/main.c"}

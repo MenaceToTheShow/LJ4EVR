@@ -33,6 +33,7 @@ static void lj_check_window(lj_window *win, const char *what, int cw, int ch, co
     lj_window_client_rect(win, &cr);
     CHECK(s->w >= cw && s->h >= ch);
     CHECK(cr.w == cw && cr.h == ch);
+    if (cr.w != cw || cr.h != ch) printf("  %s: client %dx%d, DFM %dx%d\n", what, cr.w, cr.h, cw, ch);
     CHECK(lj_bmp_write(s, tmp) == 0);
     want = 54 + (long)s->h * ((s->w * 3 + 3) & ~3);
     CHECK(lj_file_size(tmp) == want);
@@ -55,7 +56,7 @@ int lj_test_render(int argc, char **argv)
         lj_window_destroy(win);
     }
     win = lj_main_window_create(NULL);
-    lj_check_window(win, "main window", 799, 606, tmp);
+    lj_check_window(win, "main window", 791, 560, tmp);   /* TLJMAINFORM: 799x606 outer, 791x560 client (W1 desktop, 07 s4.1) */
     CHECK(win && lj_window_menu(win) != NULL);
     lj_main_window_destroy(win);
     printf("render: %d form(s) + main window, %d failure(s)\n", n, fails);

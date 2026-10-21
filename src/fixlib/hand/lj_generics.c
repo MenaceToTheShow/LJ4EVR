@@ -32,9 +32,11 @@
                     static const lj_ctl_window lj_gn_swwin_##n[1] = { { LJ_CTL_LEVELS, "Levels", lj_ctl_menu_std, lj_hand_switch_rows, n, NULL, 0 } }
 LJ_LVWIN(1); LJ_LVWIN(2); LJ_LVWIN(4); LJ_LVWIN(6); LJ_LVWIN(8); LJ_LVWIN(12); LJ_LVWIN(16); LJ_LVWIN(24); LJ_LVWIN(30); LJ_LVWIN(32);
 
-/* Generic / DMX Dimmer / " n Channel" (ids 19 70 56 71 21 72 23 20 73 22; tag DMXn; GDMXnNotes.Rtf): n faders, GM-scaled. */
+/* Generic / DMX Dimmer / " n Channel" (ids 19 70 56 71 21 72 23 20 73 22; tag DMXn; GDMXnNotes.Rtf): n faders, GM-scaled.
+ * Generic level channels follow the Grand Master by default (15/10 s6, CHM genericdmxprofiles.htm): ext_gm per channel, the
+ * engine's S3 "Extended GM" path (per-channel Enable/Disable Grand Master Control is the W3 Channel Configuration dialog). */
 #define LJ_DIMMER(id_, n, tag_, mode_) { .id = id_, .tag = tag_, .manufacturer = "Generic", .name = "DMX Dimmer", .mode = mode_, \
-    .footprint = n, .channel_class = { LJ_R##n(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, \
+    .footprint = n, .channel_class = { LJ_R##n(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { LJ_R##n(1) }, \
     .windows = lj_gn_lvwin_##n, .nwindows = 1, .notes = "Generic DMX dimmer or switch control, " #n " control channel(s); 8-bit virtual faders, right-click a fader for All (8+ channels)." }
 /* Generic / DMX Switch Pack / " n Channel" (ids 92-101; tag SW-n; Switch.Rtf): on/off control only, added in 2.5. */
 #define LJ_SWITCH(id_, n, tag_, mode_) { .id = id_, .tag = tag_, .manufacturer = "Generic", .name = "DMX Switch Pack", .mode = mode_, \
@@ -73,7 +75,7 @@ static const lj_ctl_row lj_gn_rgb_rows[30] = { LJ_RGBROWS(1, 0), LJ_RGBROWS(2, 3
 #define LJ_RGBWIN(n) static const lj_ctl_window lj_gn_rgbwin_##n[1] = { { LJ_CTL_RGBPACK, "Colors", lj_ctl_menu_std, lj_gn_rgb_rows, n, NULL, 0 } }
 LJ_RGBWIN(12); LJ_RGBWIN(18); LJ_RGBWIN(24); LJ_RGBWIN(30);
 #define LJ_RGBPACK(id_, n, tag_, mode_) { .id = id_, .tag = tag_, .manufacturer = "Generic", .name = "RGB Pack", .mode = mode_, \
-    .footprint = n, .channel_class = { LJ_R##n(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, \
+    .footprint = n, .channel_class = { LJ_R##n(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { LJ_R##n(1) }, \
     .cmy = { { 1, 0, "Red", 0, 255 }, { 1, 1, "Green", 0, 255 }, { 1, 2, "Blue", 0, 255 } }, .rgb_on = 1, \
     .windows = lj_gn_rgbwin_##n, .nwindows = 1, .notes = "Pack of RGB-only fixtures, " #n " contiguous channels mapped Red, Green, Blue, Red, ...; one square per unit in the Colors window." }
 static const lj_profile lj_gn_rgb4a = LJ_RGBPACK(78,  12, "RGBx4",  "x  4 (A)");
@@ -87,7 +89,7 @@ static const lj_profile lj_gn_rgb10 = LJ_RGBPACK(75,  30, "RGBx10", "x 10");
 static const lj_ctl_row lj_gn_smoke_rows[] = { { LJ_W_LEVEL_FADER, 0, 1, "Smoke Level", NULL, 0, 255, 0, LJ_HAND_FADE, NULL, 0, NULL, LJ_STATES_ALL } };
 static const lj_ctl_window lj_gn_smoke_win[] = { { LJ_CTL_LEVELS, "Levels", lj_ctl_menu_std, lj_gn_smoke_rows, 1, NULL, 0 } };
 static const lj_profile lj_gn_smoke = { .id = 18, .tag = "SMOKE", .manufacturer = "Generic", .name = "DMX Smoke Machine", .mode = "",
-    .footprint = 1, .channel_class = { LJ_CH_SMOKE }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .level_caption = { "Smoke" },
+    .footprint = 1, .channel_class = { LJ_CH_SMOKE }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { 1 }, .level_caption = { "Smoke" },
     .windows = lj_gn_smoke_win, .nwindows = 1,
     .notes = "Links the smoke machine to the Smoke Control window. The machine must be controllable through one DMX channel: zero output at 0, full output at 255." };
 
@@ -97,7 +99,7 @@ static const lj_ctl_row lj_gn_hazer_rows[] = { { LJ_W_LEVEL_FADER, 0, 1, "Hazer 
                                                { LJ_W_LEVEL_FADER, 1, 1, "Hazer Fan",   NULL, 0, 255, 0, LJ_HAND_FADE, NULL, 0, NULL, LJ_STATES_ALL } };
 static const lj_ctl_window lj_gn_hazer_win[] = { { LJ_CTL_LEVELS, "Levels", lj_ctl_menu_std, lj_gn_hazer_rows, 2, NULL, 0 } };
 static const lj_profile lj_gn_hazer = { .id = 45, .tag = "HAZER", .manufacturer = "Generic", .name = "DMX Hazer", .mode = "",
-    .footprint = 2, .channel_class = { LJ_CH_HAZE, LJ_CH_HAZE_FAN }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .level_caption = { "Haze", "Fan" },
+    .footprint = 2, .channel_class = { LJ_CH_HAZE, LJ_CH_HAZE_FAN }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { 1, 1 }, .level_caption = { "Haze", "Fan" },
     .windows = lj_gn_hazer_win, .nwindows = 1,
     .notes = "Two-channel DMX hazer: channel 1 haze output level, channel 2 fan control (optional). Links the hazer to the Smoke Control window." };
 
@@ -116,13 +118,13 @@ static const lj_profile lj_gn_external = { .id = 90, .tag = "EXTERNAL", .manufac
  * Define Fixture Profile replaces it. Generic Fixture 2 "by default only has generic level control enabled (8 bit virtual fader
  * control of all 32 channels)" [CHM L9983-10049]; Generic Scanner 1 is 8-bit, max 8 channels; Color Scroller 1 has one intensity channel. */
 static const lj_profile lj_gn_gcs1  = { .id = 42, .tag = "GCS 1", .manufacturer = "User Definable", .name = "Color Scroller 1", .mode = "",
-    .footprint = 1, .channel_class = { LJ_CH_LEVEL }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .windows = lj_gn_lvwin_1, .nwindows = 1,
+    .footprint = 1, .channel_class = { LJ_CH_LEVEL }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { 1 }, .windows = lj_gn_lvwin_1, .nwindows = 1,
     .notes = "Color Scroller 1 placeholder: one intensity channel at the fixture address plus a separate scroller address set in Define Fixture Profile (.SC1, not imported)." };
 static const lj_profile lj_gn_gsc1  = { .id = 43, .tag = "GSC 1", .manufacturer = "User Definable", .name = "Generic Scanner 1", .mode = "",
-    .footprint = 8, .channel_class = { LJ_R8(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .windows = lj_gn_lvwin_8, .nwindows = 1,
+    .footprint = 8, .channel_class = { LJ_R8(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { LJ_R8(1) }, .windows = lj_gn_lvwin_8, .nwindows = 1,
     .notes = "Generic Scanner 1 placeholder: 8-bit, max 8 channels, backwards compatibility only (.SS1, not imported)." };
 static const lj_profile lj_gn_user2 = { .id = 46, .tag = "USER2", .manufacturer = "User Definable", .name = "Generic Fixture 2", .mode = "",
-    .footprint = 32, .channel_class = { LJ_R32(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .windows = lj_gn_lvwin_32, .nwindows = 1,
+    .footprint = 32, .channel_class = { LJ_R32(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { LJ_R32(1) }, .windows = lj_gn_lvwin_32, .nwindows = 1,
     .notes = "Generic Fixture 2 placeholder: level control of all 32 channels until a .GS2 profile is defined or loaded (Define Fixture Profile)." };
 
 const lj_profile *const lj_hand_generics[LJ_GENERICS_COUNT] = {
