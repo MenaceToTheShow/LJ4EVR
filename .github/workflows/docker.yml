@@ -37,9 +37,9 @@ jobs:
       - name: Push
         run: |
           docker push "$IMAGE:${GITHUB_SHA::7}"
-          docker push "$IMAGE:latest"
+          docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE:${GITHUB_SHA::7}"   # server-side retag: :latest is exactly the sha tag
       - name: Report digest (copy this into ci.yml to pin)
         run: |
-          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:latest")
-          echo "$digest"
-          echo "Pushed \`$IMAGE:${GITHUB_SHA::7}\` and \`:latest\`; pin ci.yml to \`$digest\`" >> "$GITHUB_STEP_SUMMARY"
+          digest=$(docker buildx imagetools inspect "$IMAGE:${GITHUB_SHA::7}" --format '{{.Manifest.Digest}}')
+          echo "$IMAGE@$digest"
+          echo "Pushed \`$IMAGE:${GITHUB_SHA::7}\` (= \`:latest\`); pin ci.yml to \`$IMAGE@$digest\`" >> "$GITHUB_STEP_SUMMARY"

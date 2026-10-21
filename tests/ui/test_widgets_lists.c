@@ -46,7 +46,7 @@ static void free_children(lj_widget *root) { lj_widget *c, *n; for (c = root->fi
 
 static const char *const five[] = { "Alpha", "Bravo", "Charlie", "Delta", "Echo" };
 static const char *const rows[] = { "1\tAlpha\t10", "2\tBravo\t20", "3\tCharlie\t30", "4\tDelta\t40" };
-static const lj_column_desc cols[] = { { "No", 40, LJ_TA_UNSET }, { "Name", 80, LJ_TA_UNSET }, { "Val", 50, LJ_TA_RIGHT } };
+static const lj_column_desc cols[] = { { "No", 40, LJ_TA_UNSET, .image_index = -1 }, { "Name", 80, LJ_TA_UNSET, .image_index = -1 }, { "Val", 50, LJ_TA_RIGHT, .image_index = -1 } };
 static const char *const tree[] = { "A", "\tA1", "\tA2", "\t\tA2x", "B" };
 static const char *const tabs3[] = { "One", "Two", "Three" };
 static const char *lines20[20];
@@ -311,7 +311,7 @@ int lj_test_widgets_lists(int argc, char **argv)
 
     /* ---- TStatusBar ---- */
     {
-        static const lj_column_desc panels[] = { { "Running..", 100, LJ_TA_UNSET }, { "Master 100%", 80, LJ_TA_UNSET } };
+        static const lj_column_desc panels[] = { { "Running..", 100, LJ_TA_UNSET, .image_index = -1 }, { "Master 100%", 80, LJ_TA_UNSET, .image_index = -1 } };
         memset(&d, 0, sizeof d); d.kind = LJ_K_STATUSBAR; d.name = "sb"; d.left = 0; d.top = 281; d.width = 400; d.height = 19; d.columns = panels; d.ncolumns = 2;
         w = lj_w_statusbar_create(&root, &d);
         CHECK(w->align == LJ_AL_BOTTOM);

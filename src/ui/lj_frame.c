@@ -18,7 +18,7 @@ static const lj_menu_item_desc lj_frame_sysitems[] = {
     { "SysSize",     "&Size",     .tag = LJ_SYS_SIZE },
     { "SysMinimize", "Mi&nimize", .tag = LJ_SYS_MINIMIZE },
     { "SysMaximize", "Ma&ximize", .tag = LJ_SYS_MAXIMIZE },
-    { "SysSep",      "-" },
+    { "SysSep",      "-",        .tag = 0 },
     { "SysClose",    "&Close",    .tag = LJ_SYS_CLOSE, .shortcut = 0x8000 | 0x73 /* Alt+F4 */ },
 };
 const lj_menu_desc lj_frame_sysmenu = { "SysMenu", 0, lj_frame_sysitems, LJ_COUNT_OF(lj_frame_sysitems) };

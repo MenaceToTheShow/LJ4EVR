@@ -115,7 +115,7 @@ static const lj_ctl_desc d_static   = { LJ_K_STATICTEXT, "st", 120, 240, 60, 17,
 static const lj_ctl_desc d_od2      = { LJ_K_ODPANEL2, "ODPanel21", 200, 230, 50, 30 };
 static const lj_ctl_desc d_od       = { LJ_K_ODPANEL, "ODPanel1", 260, 230, 60, 40, .caption = "ODPanel1" };
 static const lj_ctl_desc d_image    = { LJ_K_IMAGE, "Image1", 330, 230, 20, 20, .stretch = LJ_YES };
-static const lj_ctl_desc d_paintbox = { LJ_K_PAINTBOX, "pb", 360, 230, 20, 20 };
+static const lj_ctl_desc d_paintbox = { LJ_K_PAINTBOX, "pb", 360, 230, 20, 20, .hint = NULL };
 static const lj_ctl_desc d_group    = { LJ_K_GROUPBOX, "GroupBox1", 210, 50, 80, 60, .caption = "Grp" };
 /* splitter rig, its own root */
 static const lj_ctl_desc d_left     = { LJ_K_PANEL, "PL", 0, 0, 100, 100, .align = LJ_AL_LEFT, .bevel_width = 1 };
