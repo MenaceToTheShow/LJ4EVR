@@ -102,7 +102,7 @@ static void page_fill(void)
     if (hs.nnics < 0) hs.nnics = 0;
     for (i = 0; i < hs.nnics; i++) {
         char ip[32]; ip_text(hs.nics[i].ipv4, ip, sizeof ip);
-        snprintf(hs.nic_text[i], sizeof hs.nic_text[i], "%s (%s)%s", hs.nics[i].name, ip, hs.nics[i].up ? "" : " - down");
+        if (snprintf(hs.nic_text[i], sizeof hs.nic_text[i], "%s (%s)%s", hs.nics[i].name, ip, hs.nics[i].up ? "" : " - down") < 0) hs.nic_text[i][0] = 0;   /* gcc -Wformat-truncation: the result is checked */
         hs.nic_items[i] = hs.nic_text[i];
         if (hs.nics[i].ipv4 == c->nic_ipv4) sel = i;
     }

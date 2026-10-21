@@ -73,9 +73,9 @@ int lj_test_model_library(int argc, char **argv)
     CHECK(lj_library_delete("test_model_tmp", "Gone") == 0);
     n = lj_library_list("test_model_tmp", names, 8);
     CHECK(n >= 2);                                          /* Default and Lib (other rows leave their own libraries in the tree) */
-    for (i = 0; i < n && strcmp(names[i], "Default") != 0; i++) ;
+    for (i = 0; i < n && strcmp(names[i], "Default") != 0; i++) { }
     CHECK(i < n);
-    for (i = 0; i < n && strcmp(names[i], "Lib") != 0; i++) ;
+    for (i = 0; i < n && strcmp(names[i], "Lib") != 0; i++) { }
     CHECK(i < n);
 
     /* [NEXT]: 1 2 3, delete 3, next is 4; missing key recovers as max existing + 1 */

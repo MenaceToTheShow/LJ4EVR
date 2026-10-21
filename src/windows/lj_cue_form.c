@@ -53,7 +53,7 @@ static struct {
     int popup_slot;
 } s;
 
-static const lj_engine_status lj_zero_view = { { 0 } };
+static const lj_engine_status lj_zero_view = { 0 };
 
 static lj_ctx *C(void) { return lj_ctx_get(); }
 static lj_cue *cue_rec(void) { lj_ctx *c = C(); return c->show ? c->show->current_cue : NULL; }
@@ -406,7 +406,7 @@ int lj_cue_form_add_sequence(uint32_t seq_no)
     lj_cue *cue = cue_rec();
     int i;
     if (!cue || seq_no == 0) return -1;
-    for (i = 0; i < LJ_CUE_SLOTS && cue->slot[i].seq; i++) ;   /* ponytail: lj_cue_find_free once the model body lands; the scan is three lines */
+    for (i = 0; i < LJ_CUE_SLOTS && cue->slot[i].seq; i++) { }   /* ponytail: lj_cue_find_free once the model body lands; the scan is three lines */
     if (i == LJ_CUE_SLOTS) { lj_log("lj_cue_form: Add Sequence to Current Cue: no free slot"); return -1; }
     lj_lock();
     memset(&cue->slot[i], 0, sizeof cue->slot[i]);
@@ -524,7 +524,7 @@ static void sb_up(lj_widget *w, void *ud)
     else if (!strcmp(n, "sbNewCue")) lj_cue_form_new_cue();
     else if (!strcmp(n, "sbSaveCue")) { if (lj_save_cue_get()) lj_save_cue_close(); else lj_save_cue_open(); }
     else if (!strcmp(n, "sbGetCue")) { if (lj_list_cue_get()) lj_list_cue_close(); else lj_list_cue_open(); }
-    else if (!strcmp(n, "sbLoop")) { int i; for (i = 0; i < LJ_CUE_SLOTS && !((s.sel >> i) & 1); i++) ; slot_popup(i < LJ_CUE_SLOTS ? i : 0, w->x, 150); }
+    else if (!strcmp(n, "sbLoop")) { int i; for (i = 0; i < LJ_CUE_SLOTS && !((s.sel >> i) & 1); i++) { } slot_popup(i < LJ_CUE_SLOTS ? i : 0, w->x, 150); }
     else if (!strcmp(n, "sbCueTime")) lj_log("lj_cue_form: Cue Time Control window is W2 (lj_cue_form_set_cue_time carries the fader)");
     else lj_log("lj_cue_form: %s is W2", n);                      /* BGCue / generic macro group [03 s5.4] */
 }

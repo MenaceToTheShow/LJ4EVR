@@ -201,7 +201,7 @@ static void on_draw_cell(lj_widget *w, void *ud)
     lj_surface *s = g->draw_surf;
     const lj_font *f = lj_w_font_of(w);
     int c = g->draw_col, r = g->draw_row, x = g->draw_rect.x, y = g->draw_rect.y, code;
-    char t[8];
+    char t[16];   /* gcc -Wformat-truncation: room for any int */
     uint32_t bg, fg;
     (void)ud;
     if (!s) return;

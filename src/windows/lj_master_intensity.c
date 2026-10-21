@@ -41,7 +41,7 @@ static struct {
     char fadetime_text[LJ_MI_FADETIMES][12]; const char *fadetime_items[LJ_MI_FADETIMES];
 } s;
 
-static const lj_engine_status lj_zero_view = { { 0 } };
+static const lj_engine_status lj_zero_view = { 0 };
 static lj_ctx *C(void) { return lj_ctx_get(); }
 static const lj_engine_status *view(void) { return s.view ? s.view : &lj_zero_view; }
 static int main_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->main_ini ? lj_ini_geti(c->main_ini, "GLOBALINTENSITY", key, dflt) : dflt; }
@@ -175,7 +175,7 @@ static lj_widget *mk_button(lj_widget *parent, int x, int y, int w, int h, const
     b->on_event = w2_event; b->ud = ud;
     return b;
 }
-static const lj_ctl_desc lj_mi_label_desc = { LJ_K_LABEL, "lj_mi_label", 0, 0, 0, 0 };   /* lj_w_label's paint reads desc->alignment / layout: a code-built label needs a row */
+static const lj_ctl_desc lj_mi_label_desc = { LJ_K_LABEL, "lj_mi_label", 0, 0, 0, 0, .tag = 0 };   /* lj_w_label's paint reads desc->alignment / layout: a code-built label needs a row */
 static lj_widget *mk_label(lj_widget *parent, int x, int y, int w, int h, const char *caption)
 {
     lj_widget *l = lj_w_label_create(parent, NULL);

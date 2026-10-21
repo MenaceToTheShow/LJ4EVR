@@ -436,8 +436,8 @@ static const lj_menu_desc mv_menus[] = { { "MainMenu1", 1, mv_menu_items, LJ_COU
 
 /* ---- widget descs: client px measured from movement2.gif / joystickmovement.gif (surface minus the 3/19/19 frame), rig item ---- */
 static const lj_ctl_desc d_panel   = { LJ_K_PANEL, "MvPanel", LJ_MV_PANEL_X, LJ_MV_PANEL_Y, LJ_MV_PANEL_W, LJ_MV_PANEL_W, .bevel_outer = LJ_BV_RAISED };
-static const lj_ctl_desc d_grid    = { LJ_K_UNKNOWN, "MvGrid", LJ_MV_GRID_X - LJ_MV_PANEL_X - 1, LJ_MV_GRID_Y - LJ_MV_PANEL_Y - 1, LJ_MV_GRID_W + 2, LJ_MV_GRID_W + 2 };
-static const lj_ctl_desc d_readout = { LJ_K_UNKNOWN, "MvReadout", 2, 211, 115, 23 };
+static const lj_ctl_desc d_grid    = { LJ_K_UNKNOWN, "MvGrid", LJ_MV_GRID_X - LJ_MV_PANEL_X - 1, LJ_MV_GRID_Y - LJ_MV_PANEL_Y - 1, LJ_MV_GRID_W + 2, LJ_MV_GRID_W + 2, .tag = 0 };
+static const lj_ctl_desc d_readout = { LJ_K_UNKNOWN, "MvReadout", 2, 211, 115, 23, .tag = 0 };
 static const lj_ctl_desc d_clrmac  = { LJ_K_BUTTON, "MvClrMacro", 153, 211, 56, 24, .caption = "Clr Macro", .color = LJ_CLR(0xFFFF00) };   /* clearmacroicon.gif 56x24 */
 static const lj_ctl_desc d_group   = { LJ_K_GROUPBOX, "MvPresetGroup", 216, 2, 106, 42, .caption = "Position Preset" };               /* movementpreset.gif 106x42 */
 static const lj_ctl_desc d_apply   = { LJ_K_BUTTON, "MvApply", 2, 16, 50, 24, .caption = "Apply" };

@@ -293,7 +293,7 @@ int lj_library_list_records(const lj_library *lib, enum lj_rec_kind kind, uint32
     if (lj_dir_open(&d, dir) != 0) return -1;
     while (lj_dir_next(&d, name, sizeof name, &is_dir) == 1) {
         if (is_dir || strlen(name) != 8 + strlen(lj_rec_ext[kind]) || !lj_ieq(name + 8, lj_rec_ext[kind])) continue;
-        for (i = 0; i < 8 && name[i] >= '0' && name[i] <= '9'; i++) ;
+        for (i = 0; i < 8 && name[i] >= '0' && name[i] <= '9'; i++) { }
         if (i < 8 || n >= max) continue;
         numbers[n++] = (uint32_t)strtoul(name, NULL, 10);
     }

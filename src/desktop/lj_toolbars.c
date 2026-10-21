@@ -300,7 +300,7 @@ static void field(lj_widget *e, const char *text, int active)
 void lj_desktop_seqcue_fields(uint32_t seq_no, const char *seq_name, int scene, int scenes, uint32_t cue_no, const char *cue_name)
 {
     const lj_ctx *ctx = lj_ctx_get();
-    char counter[16];
+    char counter[24];   /* gcc -Wformat-truncation: "%d:%d" of any two ints */
     field(lj_tb_seqname, seq_name, ctx->seq_saved || seq_no != 0);
     field(lj_tb_cuename, cue_name, ctx->cue_saved || cue_no != 0);
     if (lj_tb_clname && ctx->show && ctx->show->current_cl) field(lj_tb_clname, ctx->show->current_cl->name, 0);

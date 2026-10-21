@@ -346,7 +346,8 @@ static void addr_from_edit(void)
     long v;
     if (fc.loading || !sh || fc.sel < 0 || !t) return;
     v = strtol(t, NULL, 10);
-    if (v < 0) v = 0; if (v > LJ_LINK_CH) v = LJ_LINK_CH;
+    if (v < 0) v = 0;
+    if (v > LJ_LINK_CH) v = LJ_LINK_CH;
     if (v != sh->fixture[fc.sel].address) lj_fixture_config_set_address(fc.sel, sh->fixture[fc.sel].link ? sh->fixture[fc.sel].link : 1, (int)v);
     else lj_w_dipswitch_set_value(find("DipSwitch1"), (int)v);
 }
@@ -359,7 +360,8 @@ static void on_ud(lj_widget *w, void *ud)
     (void)ud;
     if (fc.loading || !sh || fc.sel < 0) return;
     v = sh->fixture[fc.sel].address + lj_w_udbutton_delta(w);
-    if (v < 0) v = 0; if (v > LJ_LINK_CH) v = LJ_LINK_CH;
+    if (v < 0) v = 0;
+    if (v > LJ_LINK_CH) v = LJ_LINK_CH;
     lj_fixture_config_set_address(fc.sel, sh->fixture[fc.sel].link ? sh->fixture[fc.sel].link : 1, v);
 }
 static void on_auto(lj_widget *w, void *ud) { (void)w; (void)ud; if (fc.sel >= 0 && lj_fixture_config_calculate(fc.sel) != 0) lj_win_message("Fixture Configuration", "No free DMX addresses"); }
