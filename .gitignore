@@ -11,3 +11,4 @@ build-*.log
 /User/
 /lj_test_*
 /test_model_tmp/
+/controls_a_*.bmp

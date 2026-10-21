@@ -1,7 +1,7 @@
 /* test_replay.c - `lj4evr_tests replay [file...]`: runs every scenario named on the
  * command line through lj_replay_run and fails if any expect failed. With no
  * files it prints "replay: 0 scenario(s)" and passes, so the CTest row
- * replay_all (every tests/engine/replay/*.lj4r, globbed by CMake) is green
+ * replay_all (every .lj4r under tests/engine/replay, globbed by CMake) is green
  * before the first scenario lands. */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC (as gfx/lj_bmp.c) */
 #include <stdio.h>

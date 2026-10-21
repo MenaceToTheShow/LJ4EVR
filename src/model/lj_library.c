@@ -88,7 +88,7 @@ static int lj_dir_next(lj_dir *d, char *name, size_t cap, int *is_dir)   /* 1 en
         {
             char full[LJ_PATH_CAP];
             DIR *sub;
-            snprintf(full, sizeof full, "%s%c%s", d->path, LJ_SEP, e->d_name);
+            if (snprintf(full, sizeof full, "%s%c%s", d->path, LJ_SEP, e->d_name) >= (int)sizeof full) continue;   /* gcc -Wformat-truncation */
             sub = opendir(full);                  /* d_type is not portable across file systems */
             *is_dir = sub != NULL;
             if (sub) closedir(sub);

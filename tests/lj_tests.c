@@ -86,7 +86,7 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "widgets_basic", lj_test_widgets_basic },
     /* ---- W1 rows: append below, never reorder (contract: docs/w1-contracts.md) ---- */
     { "test_model_table", lj_test_model_table },   /* model: lj_table + lj_words (W1 contracts) */
-    { "replay", lj_test_replay },                  /* replay <file.lj4r>...: the CTest row replay_all passes every tests/engine/replay/*.lj4r */
+    { "replay", lj_test_replay },                  /* replay <file.lj4r>...: the CTest row replay_all passes every .lj4r under tests/engine/replay */
     { "test_desktop", lj_test_desktop },           /* desktop: tests/ui/test_desktop.c (W1 desktop track) */
     { "test_windows_b", lj_test_windows_b },     /* windows-b: Cue control, Save Cue, List of Cues, Master Intensity */
     { "test_engine_fade", lj_test_engine_fade },             /* engine: lj_fade_value table, snap rules, 16-bit pair through the engine (3.3, ME-22) */

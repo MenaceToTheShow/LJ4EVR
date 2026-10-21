@@ -5,7 +5,7 @@
  *
  * Bodies: lj_profile.c (lj_fixlib_*, lj_profile_window), lj_gs2.c (W3; W1
  * stubs return -1), lj_layout.c (lj_layout_derive), lj_exe_profiles.c (the 201
- * rows of reference/installer/exe_profile_table.txt, verbatim), hand/*.c (tier 1),
+ * rows of reference/installer/exe_profile_table.txt, verbatim), hand/ (tier 1),
  * lj_profiles_gen.c (tools/qxf2c.py). */
 #ifndef LJ_FIXLIB_PROFILE_H
 #define LJ_FIXLIB_PROFILE_H
