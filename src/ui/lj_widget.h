@@ -92,6 +92,7 @@ lj_widget *lj_widget_find(lj_widget *root, const char *name);            /* dept
 void       lj_widget_abs(const lj_widget *w, int *x, int *y);            /* origin relative to the root */
 void       lj_widget_invalidate(lj_widget *w);                           /* marks w (and so its covered children) for repaint */
 int        lj_widget_collect_dirty(lj_widget *root, lj_rect *out, int cap);   /* absolute rects of dirty widgets, flags cleared; returns the count, which may exceed cap (then repaint everything) */
+void       lj_widget_layout_hooks(lj_widget *parent);                    /* vt->layout only, recursively: the creation pass, DFM rects stand (ME-41) */
 void       lj_widget_layout(lj_widget *parent);                          /* Align pass over the children as the VCL resolves it (alTop, alBottom, alLeft, alRight, alClient, creation order), then vt->layout, recursively */
 void       lj_widget_resize(lj_widget *w, int new_w, int new_h);         /* applies Anchors to the children for the delta, then lj_widget_layout(w) */
 lj_widget *lj_widget_hit(lj_widget *root, int x, int y);                 /* deepest visible widget under root-relative x,y; the last child declared wins; NULL outside root */

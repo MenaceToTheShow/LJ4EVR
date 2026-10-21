@@ -16,6 +16,9 @@ set_property(CACHE LJ_SANITIZE PROPERTY STRINGS "off" "address,undefined" "threa
 # /fp:strict and -ffp-contract=off are a backstop: no SDL-free directory may use
 # float at all (tools/test_layering.py), platform/ may.
 if(MSVC)
+  # Static CRT for every target incl. the fetched SDL3: the installed lj4evr.exe must start on a
+  # machine without the VC++ redistributable (ME-42; ci.yml asserts dumpbin shows no vcruntime).
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
   set(LJ_WARN /W4 /permissive- /utf-8 /fp:strict)
   if(LJ_WARNINGS_AS_ERRORS)
     list(APPEND LJ_WARN /WX)

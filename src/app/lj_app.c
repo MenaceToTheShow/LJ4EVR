@@ -29,6 +29,51 @@ typedef struct {
 } lj_app;
 
 static void lj_app_on_main_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_platform_quit(); }
+static void lj_app_menu_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
+
+/* ME-38: every TLJMainForm OnClick name (37, dfm2c) bound so the ME-16 assert holds in Debug;
+ * W1 (ME-29) replaces rows of this table with behaviour in place. */
+#define LJ_NOOP(name) { name, lj_app_menu_noop, NULL }
+static const lj_binding lj_app_main_bindings[] = {
+    { "FormClose", lj_app_on_main_close, NULL },
+    LJ_NOOP("AutoStrikeLamps1Click"),
+    LJ_NOOP("Config21Click"),
+    LJ_NOOP("DefaultCurrentScene1Click"),
+    LJ_NOOP("DeleteFilesClick"),
+    LJ_NOOP("Fingers1Click"),
+    LJ_NOOP("GlobalPatch1Click"),
+    LJ_NOOP("Hardware2Click"),
+    LJ_NOOP("HelpClick"),
+    LJ_NOOP("M_AudioClick"),
+    LJ_NOOP("M_AudioOptionsClick"),
+    LJ_NOOP("M_CaptureClick"),
+    LJ_NOOP("M_Downloadclick"),
+    LJ_NOOP("M_EditHotkeysClick"),
+    LJ_NOOP("M_FingersClick"),
+    LJ_NOOP("M_FollowSpotClick"),
+    LJ_NOOP("M_GenericClick"),
+    LJ_NOOP("M_HotkeysClick"),
+    LJ_NOOP("M_HotkeysEnabledClick"),
+    LJ_NOOP("M_ManagerClick"),
+    LJ_NOOP("M_OffLineClick"),
+    LJ_NOOP("M_OfflineDisableClick"),
+    LJ_NOOP("M_OfflineLaunchClick"),
+    LJ_NOOP("M_OfflinePrefs"),
+    LJ_NOOP("M_RestartLightJockeyClick"),
+    LJ_NOOP("M_RestoreProgramDataClick"),
+    LJ_NOOP("M_SandNetStatusClick"),
+    LJ_NOOP("M_SystemClick"),
+    LJ_NOOP("M_UserLibrariesClick"),
+    LJ_NOOP("MenuViewClick"),
+    LJ_NOOP("NextPreviousFixtureSelection1Click"),
+    LJ_NOOP("SearchHelp1Click"),
+    LJ_NOOP("SelectHelpFile"),
+    LJ_NOOP("SelectHelpfile1Click"),
+    LJ_NOOP("StartUp1Click"),
+    LJ_NOOP("SystemPrefsClick"),
+    LJ_NOOP("Toolbars1Click"),
+    LJ_NOOP("ViewControlClick"),
+    { NULL, NULL, NULL } };
 
 static void lj_app_idle(void *ud)
 {
@@ -137,7 +182,6 @@ int lj_app_main(int argc, char **argv)
     lj_ini *main_ini;
     char path[600];
     int i, rc = 0;
-    const lj_binding main_bindings[] = { { "FormClose", lj_app_on_main_close, NULL }, { NULL, NULL, NULL } };
 
     memset(&a, 0, sizeof a);
     a.cfg.tick_ms = 100; a.cfg.zoom = 1; a.tick_hz = 40;
@@ -169,7 +213,7 @@ int lj_app_main(int argc, char **argv)
     if (!a.forms_ini) a.forms_ini = lj_ini_new();
     a.engine = lj_engine_create();
 
-    a.main = lj_main_window_create(main_bindings);
+    a.main = lj_main_window_create(lj_app_main_bindings);
     if (!a.main || lj_platform_open_window(a.main, LJ_WF_MAIN) != 0) { lj_log("app: no main window"); rc = 1; goto out; }
     a.seq = lj_app_open_form(&a, "TSequenceForm");
     a.cue = lj_app_open_form(&a, "TCurrentCue");

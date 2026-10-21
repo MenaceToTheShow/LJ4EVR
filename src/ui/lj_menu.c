@@ -152,7 +152,7 @@ int lj_menu_bar_item_rect(const lj_menu *m, int i, lj_rect *r)
         const lj_menu_item_desc *it = &m->bar->items[k];
         int w;
         if (!item_visible(m, it)) { if (k == i) return -1; continue; }
-        w = lj_text_width(menu_font(), it->caption ? it->caption : "") + 14;
+        w = lj_text_width(menu_font(), it->caption ? it->caption : "") + 12;   /* 6-px padding each side (ME-39, 1:1 captures) */
         if (k == i) { r->x = x; r->y = m->bar_y; r->w = w; r->h = LJ_MENU_BAR_H; return 0; }
         x += w;
     }
@@ -563,7 +563,7 @@ void lj_menu_bar_paint(lj_menu *m, lj_surface *s)
         int hi = i == m->bar_sel && (m->bar_active || m->bar_open), en = item_enabled(m, it);
         if (lj_menu_bar_item_rect(m, i, &r) != 0) continue;
         if (hi) lj_fill(s, r.x, r.y, r.w, r.h, LJ_CLR_HIGHLIGHT);
-        if (!en && !hi) lj_text(s, menu_font(), r.x + 8, r.y + 4, it->caption ? it->caption : "", LJ_CLR_BTNHIGHLIGHT, 1);
-        lj_text(s, menu_font(), r.x + 7, r.y + 3, it->caption ? it->caption : "", hi ? LJ_CLR_BTNHIGHLIGHT : en ? LJ_CLR_3DDKSHADOW : LJ_CLR_BTNSHADOW, 1);
+        if (!en && !hi) lj_text(s, menu_font(), r.x + 7, r.y + 3, it->caption ? it->caption : "", LJ_CLR_BTNHIGHLIGHT, 1);
+        lj_text(s, menu_font(), r.x + 6, r.y + 2, it->caption ? it->caption : "", hi ? LJ_CLR_BTNHIGHLIGHT : en ? LJ_CLR_3DDKSHADOW : LJ_CLR_BTNSHADOW, 1);
     }
 }

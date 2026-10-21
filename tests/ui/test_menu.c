@@ -1,5 +1,5 @@
 /* test_menu.c - the runnable check for src/ui/lj_menu.c on TSEQUENCEFORM's main
- * menu and the system menu: bar geometry (19 px, 7-px padding), drop-down
+ * menu and the system menu: bar geometry (19 px, 6-px padding, text at +6,+2), drop-down
  * surfaces (17-px items, 3-px border), mouse and keyboard navigation, Alt and
  * Alt+letter, firing through the binding, checked/enabled state, shortcut text. */
 #include <stdio.h>
@@ -63,15 +63,27 @@ int lj_test_menu(int argc, char **argv)
     m = lj_window_menus(win);
     bar_y = 3 + 19;
 
-    /* bar geometry: items at x = frame_w, width = text + 2 * 7, 19 px tall */
+    /* bar geometry: items at x = frame_w, width = text + 2 * 6, 19 px tall */
     CHECK(m->bar && m->bar->n == 4 && m->bar_x == 3 && m->bar_y == bar_y && m->bar_w == 466);
     CHECK(lj_menu_bar_item_rect(m, 0, &r0) == 0 && r0.x == 3 && r0.y == bar_y && r0.h == 19);
-    CHECK(r0.w == lj_text_width(&lj_font_sans13, "Disable Fade") + 14);
+    CHECK(r0.w == lj_text_width(&lj_font_sans13, "Disable Fade") + 12);
     CHECK(lj_menu_bar_item_rect(m, 1, &r1) == 0 && r1.x == r0.x + r0.w);
     CHECK(lj_menu_bar_item_rect(m, 3, &r3) == 0);
     CHECK(lj_menu_bar_item_at(m, r1.x + 2, bar_y + 5) == 1 && lj_menu_bar_item_at(m, r1.x + 2, bar_y + 19) == -1);
     CHECK(lj_menu_bar_item_rect(m, 4, &r0) == -1);
     CHECK(lj_menu_accel("&Preferences") == 'p' && lj_menu_accel("Mi&nimize") == 'n' && lj_menu_accel("A && B") == 0 && lj_menu_accel("Snapshot") == 0);
+    /* painted bar vs the 1:1 LJ2 captures (ME-39: saveselectiondialog.gif, text rows 26..34, underline row 36, first ink
+     * column bar_x + 6): the 'P' stem of "&Preferences" inks rows 26..34 at x = r1.x + 6, its accelerator underline is
+     * row 36 (= bar_y + 2 + ascent 11 + 1), rows 35 and 37 are face, column r1.x + 5 is never inked */
+    {
+        const lj_surface *s;
+        int px = r1.x + 6;
+        lj_window_paint(win);
+        s = lj_window_surface(win);
+        CHECK(s->px[26 * s->w + px] == 0x000000u && s->px[34 * s->w + px] == 0x000000u && s->px[25 * s->w + px] == 0xC0C0C0u);
+        CHECK(s->px[36 * s->w + px] == 0x000000u && s->px[35 * s->w + px] == 0xC0C0C0u && s->px[37 * s->w + px] == 0xC0C0C0u);
+        CHECK(s->px[36 * s->w + px - 1] == 0xC0C0C0u && s->px[30 * s->w + px - 1] == 0xC0C0C0u);
+    }
 
     /* mouse: click Preferences -> one level with its single child, 6 + 17 px tall */
     mouse(win, LJ_EV_MOUSE_DOWN, r1.x + 3, bar_y + 4);

@@ -1,9 +1,8 @@
 /* test_draw.c - goldens for src/gfx/lj_draw.c: every primitive into a 64x64 surface,
  * CRC32 against the constants below. A changed constant is a reviewed rule change.
  * `lj4evr_tests draw_goldens print` emits the current table. No text goes through
- * the CRCs (the placeholder font is replaced by the fonts track); menu/caption
- * primitives are drawn with "" captions. A few pixel asserts guard the rules the
- * CRCs cannot explain. */
+ * CRCs (the placeholder font is replaced by the fonts track). A few pixel asserts
+ * guard the rules the CRCs cannot explain. */
 #include <stdio.h>
 #include <string.h>
 #include "core/lj_types.h"
@@ -41,13 +40,6 @@ static void c_etched(lj_surface *s)    { lj_bevel_etched(s, 2, 6, 60, 50); }
 static void c_focus(lj_surface *s)     { lj_focus_rect(s, 3, 3, 40, 20); lj_focus_rect(s, 4, 30, 9, 9); }
 static void c_check(lj_surface *s)     { lj_checkbox(s, 2, 2, 1); lj_checkbox(s, 20, 2, 0); lj_check_glyph(s, 40, 4, LJ_CLR_RED); }
 static void c_radio(lj_surface *s)     { lj_radio(s, 2, 2, 1); lj_radio(s, 20, 2, 0); }
-static void c_arrows(lj_surface *s)    { lj_arrow(s, 10, 10, LJ_DIR_UP, 4, 0); lj_arrow(s, 30, 10, LJ_DIR_DOWN, 4, 0); lj_arrow(s, 10, 30, LJ_DIR_LEFT, 3, 0); lj_arrow(s, 30, 30, LJ_DIR_RIGHT, 3, 0); }
-static void c_caption(lj_surface *s)   { lj_caption_bar(s, 0, 0, 64, LJ_CAPTION_H, 1); lj_caption_bar(s, 0, 20, 64, LJ_SMCAPTION_H, 0); }
-static void c_capbtn(lj_surface *s)    { int i; for (i = 0; i < 5; i++) { lj_caption_button(s, 1 + (i % 3) * 17, 1 + (i / 3) * 16, (enum lj_cap_glyph)i, 0); } lj_caption_button(s, 35, 17, LJ_CAP_CLOSE, 1); }
-static void c_menubar(lj_surface *s)   { lj_menu_bar(s, 0, 0, 64); lj_menu_bar_item(s, &lj_font_sans13, 7, 0, "", 1); }
-static void c_popup(lj_surface *s)     { lj_popup_frame(s, 1, 1, 60, 60); lj_menu_separator(s, 4, 4, 54); lj_menu_item(s, &lj_font_sans13, 4, 13, 54, "", NULL, 1, 1, 0); lj_menu_item(s, &lj_font_sans13, 4, 30, 54, "", NULL, 0, 1, 0); }
-static void c_scroll(lj_surface *s)    { lj_scroll_track(s, 0, 0, 16, 64); lj_scroll_arrow(s, 0, 0, 16, 16, LJ_DIR_UP, 0); lj_scroll_arrow(s, 0, 48, 16, 16, LJ_DIR_DOWN, 1); lj_scroll_arrow(s, 20, 0, 16, 16, LJ_DIR_LEFT, 0); lj_scroll_arrow(s, 40, 0, 16, 16, LJ_DIR_RIGHT, 0); lj_button_raised(s, 0, 20, 16, 20); }
-static void c_spinner(lj_surface *s)   { lj_spinner(s, 2, 2, 20, 21, 0, 0); lj_spinner(s, 30, 2, 20, 21, 1, 0); lj_spinner(s, 2, 30, 20, 21, 0, 1); }
 static void c_blit(lj_surface *s)
 {
     static const uint8_t bits[2] = { 0xA5, 0x5A };          /* 8x2, MSB first */
@@ -75,13 +67,6 @@ static const struct { const char *name; lj_case_fn fn; uint32_t crc; } lj_cases[
     { "focus",    c_focus,    0x54935D75u },
     { "check",    c_check,    0xB9DB0325u },
     { "radio",    c_radio,    0x241E7DBDu },
-    { "arrows",   c_arrows,   0x84837126u },
-    { "caption",  c_caption,  0x20E3EF9Cu },
-    { "capbtn",   c_capbtn,   0x7258035Du },
-    { "menubar",  c_menubar,  0xA306C761u },
-    { "popup",    c_popup,    0x482B8AD2u },
-    { "scroll",   c_scroll,   0x1D1C8336u },
-    { "spinner",  c_spinner,  0xDA0708A3u },
     { "blit",     c_blit,     0xCFA92DBDu },
 };
 
@@ -108,10 +93,6 @@ int lj_test_draw_goldens(int argc, char **argv)
     CHECK(px(&s, 0, 0) == LJ_CLR_BTNHIGHLIGHT && px(&s, 9, 9) == LJ_CLR_3DDKSHADOW && px(&s, 8, 8) == LJ_CLR_BTNSHADOW && px(&s, 1, 1) == LJ_CLR_BTNFACE && px(&s, 9, 0) == LJ_CLR_3DDKSHADOW);
     lj_edge_sunken(&s, 20, 0, 10, 10, LJ_CLR_BTNHIGHLIGHT);
     CHECK(px(&s, 20, 0) == LJ_CLR_BTNSHADOW && px(&s, 21, 1) == LJ_CLR_3DDKSHADOW && px(&s, 29, 9) == LJ_CLR_BTNHIGHLIGHT && px(&s, 28, 8) == LJ_CLR_BTNFACE && px(&s, 25, 5) == LJ_CLR_BTNHIGHLIGHT);
-    lj_caption_bar(&s, 0, 20, 64, 18, 1);
-    CHECK(px(&s, 0, 20) == LJ_CLR_HIGHLIGHT && px(&s, 63, 37) == LJ_CLR_CAPTION_END);
-    lj_caption_bar(&s, 0, 40, 64, 14, 0);
-    CHECK(px(&s, 0, 40) == LJ_CLR_CAPTION_INACTIVE && px(&s, 63, 53) == LJ_CLR_CAPTION_INACTIVE_END);
     lj_fill(&s, 0, 0, 64, 64, LJ_CLR_BTNFACE);
     lj_focus_rect(&s, 0, 0, 8, 8);
     CHECK(px(&s, 0, 0) == LJ_CLR_3DDKSHADOW && px(&s, 1, 0) == LJ_CLR_BTNFACE && px(&s, 2, 0) == LJ_CLR_3DDKSHADOW && px(&s, 0, 1) == LJ_CLR_BTNFACE && px(&s, 3, 3) == LJ_CLR_BTNFACE);

@@ -110,6 +110,17 @@ static void align_pass(lj_widget *parent, lj_align which, lj_rect *r)
     }
 }
 
+/* At creation the DFM rects are the VCL's own design-time align result, so only the
+ * per-class hooks run (tab pages are code-placed); the align pass runs on a client-size
+ * change through lj_widget_resize (ME-41; the per-class insets are W1, ME-43). */
+void lj_widget_layout_hooks(lj_widget *parent)
+{
+    lj_widget *c;
+    if (!parent) return;
+    if (parent->vt && parent->vt->layout) parent->vt->layout(parent);
+    for (c = parent->first; c; c = c->next) lj_widget_layout_hooks(c);
+}
+
 void lj_widget_layout(lj_widget *parent)
 {
     static const lj_align order[5] = { LJ_AL_TOP, LJ_AL_BOTTOM, LJ_AL_LEFT, LJ_AL_RIGHT, LJ_AL_CLIENT };

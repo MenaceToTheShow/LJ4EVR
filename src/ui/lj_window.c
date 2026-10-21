@@ -283,7 +283,7 @@ lj_window *lj_window_create(const lj_form_desc *desc, const lj_binding *bindings
     assert(!u.complained && "ME-16: every DFM handler bound and every binding used");
 
     layout_surface(win, desc->client_width, desc->client_height);
-    lj_widget_layout(&win->root);
+    lj_widget_layout_hooks(&win->root);
     bound_dispatch(&win->root, LJ_WEV_CREATE, win->root.ud);
     return win;
 }
@@ -375,6 +375,7 @@ int lj_window_resize(lj_window *win, int client_w, int client_h)
     if (d->max_height > 0 && client_h + extra_h > d->max_height) client_h = d->max_height - extra_h;
     if (client_w < 0) client_w = 0;
     if (client_h < 0) client_h = 0;
+    if (client_w == win->root.w && client_h == win->root.h) return 0;   /* the align pass runs only on a client-size change (ME-41) */
     layout_surface(win, client_w, client_h);
     lj_widget_resize(&win->root, client_w, client_h);
     return 0;

@@ -44,6 +44,13 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
     },
     {
+      "name": "debug-win",
+      "displayName": "Windows Debug (asserts on; Ninja + cl inside a vcvars64 shell)",
+      "inherits": "dev-ninja-msvc",
+      "binaryDir": "${sourceDir}/build-debug-win",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
       "name": "release-win",
       "displayName": "Windows release (NSIS installer; Ninja + cl inside a vcvars64 shell)",
       "inherits": "dev-ninja-msvc",
@@ -63,6 +70,7 @@
     { "name": "dev-mac",        "configurePreset": "dev-mac" },
     { "name": "ci-linux-asan",  "configurePreset": "ci-linux-asan" },
     { "name": "ci-linux-clang", "configurePreset": "ci-linux-clang" },
+    { "name": "debug-win",      "configurePreset": "debug-win" },
     { "name": "release-win",    "configurePreset": "release-win" },
     { "name": "release-mac",    "configurePreset": "release-mac" }
   ],

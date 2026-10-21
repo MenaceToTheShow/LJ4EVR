@@ -47,9 +47,10 @@ void *lj_w_cap_new(lj_widget *parent, const lj_ctl_desc *d, const lj_widget_vt *
 {
     lj_w_cap *c = lj_w_alloc(size, parent, d, vt, tabstop);
     if (d) {
-        /* ParentColor: the DFM writes it only when it differs from the class default
-         * (TLabel YES, every other class NO, measured over the 208 forms); a given Color wins. */
-        int dflt = d->kind == LJ_K_LABEL;
+        /* ParentColor: the DFM writes it only when it differs from the class default. TControl.Create
+         * sets it True and only the classes that assign Color in their constructor clear it; the 208-form
+         * census agrees (TGroupBox only ever writes False, TCheckBox never, TPanel writes True 128x) (ME-40). */
+        int dflt = d->kind == LJ_K_LABEL || d->kind == LJ_K_CHECKBOX || d->kind == LJ_K_RADIOBUTTON || d->kind == LJ_K_GROUPBOX || d->kind == LJ_K_RADIOGROUP;
         if (!(d->color & LJ_COLOR_SET) && parent && lj_desc_bool(d->parent_color, dflt)) c->w.color = parent->color;
         if (d->caption) lj_str_copy(c->caption, sizeof c->caption, d->caption);
     } else if (parent) {
