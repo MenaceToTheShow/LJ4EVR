@@ -108,3 +108,50 @@ KING_DAVE-20), gate `lj4evr_tests ui_golden` (`tests/ui/test_golden.c`, byte-exa
       docs/screenshots/w0/taskbar-native.png  : one button (UIA: new: 1, "lj4evr.exe - 1 running window")
       SW_MINIMIZE under Native=1: Sequence visible=False Cue visible=False
     Main.Ini removed again afterwards (it did not exist before).
+
+## 6. CI
+
+    git commit "W0: integrated build, tests green locally" -> 65ebf4d, push
+    gh run list --workflow ci.yml   -> 39657660090 failure (all five jobs)
+
+Round by round (each: `gh run view <id> --log-failed`, fix, commit, push, `gh run watch --exit-status`):
+
+| Run | Result | Cause | Fix (commit) |
+|---|---|---|---|
+| 39655094340 (pre-integration push) | all red | container `:latest` not yet pushed; `windows-latest` has no "Visual Studio 17 2022" instance; clang: `size_t` undeclared, `/*` inside a block comment; link errors | - |
+| 39657660090 | all red | Linux: container user uid 1000 gets EACCES on the runner's `_runner_file_commands` (runner user on atlas-ci2 is not 1000); Windows VS generator; macOS clang errors | 7b00546: `<stddef.h>` in `gfx/lj_draw.c`, `core/lj_log.h`, `ui/widgets/lj_w_dragbar.h`; `lj_font.h` comment; Dockerfile runs as root; `release-win` preset = Ninja + cl, workflows call `vcvars64.bat` found by `vswhere` in a `cmd` step |
+| 39658388291 | Windows green; Linux EACCES (still pulled the old `:latest`: `docker push :latest` re-pushed the previous image); macOS `-Wmissing-field-initializers` | 2f11615: `ci.yml` pinned to `ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406` (tag 7b00546, docker.yml run 39658388295); `docker.yml` retags `:latest` server-side with `buildx imagetools create` and reports the sha tag's digest; designators in `lj_frame.c`, two tests |
+| 39659233316 | generate-check + Windows green; gcc/clang: four positional `lj_ctl_desc` rows in tests, gcc `-Wformat-truncation` in `test_encoding.c` | c314217: `.tag = 0` on the four rows, `path[2 * 64 + 8]` |
+| 39659718859 | Linux x2 (ctest 27/27 under ASan+UBSan and clang) + Windows green; macOS: `--selftest` "SDL_GetWindowSurface: Window framebuffer support not available" | fcdddec: `SDL_RENDER ON` on APPLE (Cocoa has no native window framebuffer; the surface is renderer-backed, Metal with software fallback). Windows keeps the design 9.1 trim (GDI framebuffer is native) |
+| **39660165446** | **all six jobs green** | | |
+
+Green run: https://github.com/UnbannableGT/LJ4EVR/actions/runs/39660165446 (main @ fcdddec)
+
+    generate-check  test_layering (gcc) 0 findings; fontpack/artpack/gen_vectors --check current
+    linux-gcc-asan  100% tests passed, 0 tests failed out of 27   (Debug, -fsanitize=address,undefined)
+    linux-clang     100% tests passed, 0 tests failed out of 27
+    windows-msvc    100% tests passed out of 27; selftest TSEQUENCEFORM: screen 472x207 vs render 472x207, 0 mismatching pixel(s): OK; NSIS installer artifact
+    macos-clang     100% tests passed out of 27; selftest TSEQUENCEFORM: screen 472x207 vs render 472x207, 0 mismatching pixel(s): OK; DragNDrop artifact
+    determinism     frames-linux.bin = frames-macos.bin = frames-windows.bin, 1641600 bytes,
+                    sha256 64236b688ba924a576a68a7d8678b0a1ce7eb0a9128fd721ba5b351e272f8d76 on all three
+
+Note for the next Dockerfile change: merge, let docker.yml push, copy the digest from its step summary (now the sha tag's
+digest, `:latest` is retagged from it), bump the four `image:` lines in ci.yml.
+
+## 7. W0 acceptance (design section 10, W0)
+
+| # | Item | Status |
+|---|---|---|
+| 1 | `tests/fonts/test_corpus` 0 mismatches over every AutoSize label of the 208 DFMs, on Windows, macOS, Linux, from the in-repo font | **done**: `font_corpus: 826 rows, 34 skipped (face not packed), 0 mismatches` in all four ctest jobs (the 34 skipped rows use faces outside the design's five: Courier, Arial -12/-13/-15/-16, MS Sans Serif -13/-16/-19; harvested, no sheet yet) |
+| 2 | `lj4evr_render` writes 208 BMPs; TSEQUENCEFORM, TSAVESEQFORM, TCURRENTCUE, TSYSTEMPREFSFORM, TLINKCONFIGFORM3 reviewed and committed as goldens; TSEQUENCEFORM matches spike A's `surface.bmp` pixel for pixel except glyph shapes | **done**: 208 forms + MAINWINDOW written (209), 0 failed; goldens in `tests/ui/golden/` + `REVIEWED.tsv`, gate `ui_golden` green on every OS; spike A diff 2508 px = 2.96%, every one a glyph-ink swap (black/face/white), 0 geometry pixels |
+| 3 | `lj4evr` opens TSEQUENCEFORM in a self-drawn classic frame on Windows (PrintWindow screenshot) and on `macos-14` (`--selftest`); `Native=1` shows the OS frame; one taskbar button with main + TSEQUENCEFORM + TCURRENTCUE; minimising the main window hides both; same under `Native=1` | **done on Windows** (seqform-classic.png, taskbar.png / taskbar-button.png, UIA: 1 new button, SW_MINIMIZE hides Sequence + Cue; seqform-native.png + taskbar-native.png + minimise under Native=1 identical); **macOS `--selftest` OK on macos-14** (0 mismatching pixels). Not checked: the macOS frame / Spaces behaviour on a real Mac (needs Joey's Mac; the design's R1 escape hatch is `Native=1`) |
+| 4 | `release.yml` on `v0.0.1` produces a `.dmg` and an NSIS `.exe` whose About text reads `0.0.1` | **waits for the tag**: `VERSION` = 0.0.1; both installers already build as ci.yml artifacts (`installer-windows`, `installer-macos`) with the same presets; the About box text is W1 (no About form is wired in W0) |
+| 5 | `determinism` green on an engine stub frame dump; `test_layering` green | **done**: three identical 1641600-byte dumps (sha256 64236b68...), `test_layering` 0 findings with gcc (CI) and cl (local, 154 files, 66 headers alone) |
+
+Measured numbers: corpus 826 rows / 0 mismatches; 208 forms rendered (+ main window); 3632 control rows, 1081 menu items, 73
+forms.ini-persisted forms; spike A diff 2508 glyph-class px, 0 geometry px; taskbar 1 button (main + Sequence + Cue, classic and
+native); frame dump 400 ticks, 1641600 bytes, identical on three OSes; 27 CTest rows green on four toolchains.
+
+Left for W1 (recorded, not blocking): button glyphs through `lj_glyph_get()` (art is packed, nothing draws it), glyphmap lookup in
+dfm2c for the TSEQUENCEFORM/TCURRENTCUE toolbars, `lj_window_last_event` for right-click O/S/F, the 34 corpus rows outside the five
+faces, `tools/ref/16-gs2_ref.py` 0x266C reserved 17 for `lj_gs2_parse`, the macOS Spaces/Mission Control check on a real Mac.
