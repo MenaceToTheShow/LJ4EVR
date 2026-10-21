@@ -105,6 +105,8 @@ def gen_vectors(sacn, mac, gs2, pos):
     out.append("/* sync packet, sync address 7962, seq 367 */\n" + c_bytes("lj_vec_sacn_sync_b2", sync))
     out.append("/* discovery, universes {3,1,2} -> sorted 1,2,3 */\n" + c_bytes("lj_vec_sacn_disc", disc))
     out.append("/* data packet: name LJ4EVR, universe 7962, seq 0, slots 1..8 = 1..8, rest 0 */\n" + c_bytes("lj_vec_sacn_data_lj", chase))
+    term = sacn.data_packet(cid, "LJ4EVR", 7962, bytes(range(1, 9)) + bytes(504), 3, options=sacn.OPT_TERMINATED)
+    out.append("/* the same with Options bit 6 Stream_Terminated (6.2.6), seq 3 */\n" + c_bytes("lj_vec_sacn_data_term", term))
     out.append("static const struct { uint16_t universe; const char *addr; } lj_vec_sacn_mcast[] = {\n")
     for u in (1, 2, 255, 256, 7962, 63999, sacn.DISCOVERY_UNIVERSE):
         out.append('    { %d, "%s" },\n' % (u, sacn.multicast_addr(u)))

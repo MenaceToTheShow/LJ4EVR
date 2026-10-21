@@ -60,6 +60,14 @@ jobs:
           ctest --preset release-win || exit /b 1
           cd build-release-win && cpack -G NSIS || exit /b 1
       - run: test -f "build-release-win/LJ4EVR-${{ needs.check.outputs.version }}-win64-setup.exe"
+      - name: VERSIONINFO resource on the installer (ME-45)
+        shell: pwsh
+        run: |
+          $exe = Get-Item "build-release-win/LJ4EVR-${{ needs.check.outputs.version }}-win64-setup.exe"
+          $vi = $exe.VersionInfo
+          "ProductName=$($vi.ProductName) ProductVersion=$($vi.ProductVersion) FileVersion=$($vi.FileVersion)"
+          if ($vi.ProductVersion -ne "${{ needs.check.outputs.version }}") { throw "ProductVersion '$($vi.ProductVersion)' != VERSION" }
+          if ($vi.ProductName -ne "LJ4EVR") { throw "ProductName '$($vi.ProductName)' != LJ4EVR" }
       - uses: actions/upload-artifact@v4
         with:
           name: installer-windows

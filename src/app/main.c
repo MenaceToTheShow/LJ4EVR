@@ -5,6 +5,7 @@
 
 int main(int argc, char **argv)
 {
-    setlocale(LC_ALL, "C");   /* strings are CP1252 bytes (design 2.1); no locale-dependent ctype anywhere */
+    setlocale(LC_ALL, "C");       /* strings are CP1252 bytes (design 2.1); no locale-dependent ctype anywhere */
+    setlocale(LC_NUMERIC, "");    /* ME-52 / D6: only lj_locale_decimal() reads it, for displayed percentages; INI and records use %d / strtol */
     return lj_app_main(argc, argv);
 }

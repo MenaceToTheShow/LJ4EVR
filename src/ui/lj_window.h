@@ -95,5 +95,6 @@ struct lj_menu *lj_window_menus(lj_window *win);                                
 struct lj_dnd;
 struct lj_dnd *lj_window_dnd(lj_window *win);                                         /* drag-and-drop state, ui/lj_dnd.h */
 lj_window *lj_window_at_screen(lj_window *src, int sx, int sy, int *x, int *y);      /* host->window_at, or src itself (sx,sy taken as its surface coords) when headless */
+const lj_mouse_ev *lj_window_last_event(const lj_window *win);                       /* the last mouse event lj_window_event() dispatched (surface coords): a click handler reads the button (W0-last-event, O/S/F right-click) */
 
 #endif /* LJ_UI_WINDOW_H */

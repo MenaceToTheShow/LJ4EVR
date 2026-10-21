@@ -54,6 +54,7 @@ int lj_widgets_register_basic(lj_widget_ctor *table, int count);   /* fills the 
 void       *lj_w_cap_new(lj_widget *parent, const lj_ctl_desc *d, const lj_widget_vt *vt, size_t size, int tabstop);   /* lj_w_alloc + caption copied + ParentColor resolved */
 uint32_t    lj_w_fg(const lj_widget *w);                                     /* Font.Color or clWindowText */
 void        lj_w_caption_text(lj_surface *s, const lj_widget *w, int x, int y, const char *str);   /* caption in the fg colour with the accelerator underline; disabled = #808080 over white +1,+1 */
+void        lj_w_glyph_caption(lj_surface *s, const lj_widget *w, int x, int y, int bw, int bh, const char *str);   /* TButtonGlyph blGlyphLeft, Spacing 4, centred: desc->glyph through lj_glyph_paint (disabled emboss, LORD_FIDELITY-15) then the caption; no glyph = caption centred (W0-glyphs) */
 void        lj_w_focus(lj_widget *w);                                        /* lj_widget_set_focus + OnExit/OnEnter */
 int         lj_w_plain_mouse(lj_widget *w, const lj_mouse_ev *m);            /* OnMouseDown/Up/Move/Wheel/DblClick, OnClick on up; 1 when a handler is bound */
 int         lj_w_button_mouse(lj_w_cap *b, const lj_mouse_ev *m, int takes_focus);   /* left press/release with capture semantics; lj_w_click on release inside */

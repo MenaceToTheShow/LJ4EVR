@@ -1,0 +1,18 @@
+LJ4 replay 1
+# snap_050ms: fade time 0.05 s is a snap (11 F4 CONFIRMED, LJ_SNAP_MS 50): a Fade-state channel with ft=50 behaves
+# as Snap, and the snapped value is in the scene's first tick (rig M5), including at an auto scene boundary.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+patch 2 profile=19 link=1 addr=2
+seq 1 name="snap"
+scene st=1000 ft=50 ch 1:1=255:S 1:2=255:F
+scene st=1000 ft=50 ch 1:1=0:S 1:2=0:F
+cue 1 slot=1 seq=1
+at 0 load_cue 1
+expect 0 1:1=255 1:2=255 layer=1
+expect 1 1:1=255 1:2=255
+expect 39 1:1=255 1:2=255
+expect 40 1:1=0 1:2=0   # scene 2 due at 1000 ms = tick 40, snapped on its first tick
+expect_status 40 slot1 running scene=2:2
+expect 79 1:1=0 1:2=0
+expect 80 1:1=255 1:2=255   # loop back to scene 1

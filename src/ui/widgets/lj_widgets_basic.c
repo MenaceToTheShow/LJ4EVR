@@ -6,6 +6,7 @@
 #include <string.h>
 #include "core/lj_str.h"
 #include "gfx/lj_draw.h"
+#include "gfx/lj_glyphs.h"
 
 int lj_widgets_register_basic(lj_widget_ctor *table, int count)
 {
@@ -69,6 +70,18 @@ void lj_w_caption_text(lj_surface *s, const lj_widget *w, int x, int y, const ch
     if (!str || !*str) return;
     if (w->enabled) lj_text(s, lj_w_font_of(w), x, y, str, lj_w_fg(w), 1);
     else lj_text_disabled(s, lj_w_font_of(w), x, y, str, 1);
+}
+
+void lj_w_glyph_caption(lj_surface *s, const lj_widget *w, int x, int y, int bw, int bh, const char *str)
+{
+    const lj_font *f = lj_w_font_of(w);
+    const lj_surface *g = w->desc && w->desc->glyph ? lj_glyph_get(w->desc->glyph) : NULL;
+    int tw = str && *str ? lj_text_width(f, str) : 0, spacing = w->desc && w->desc->spacing ? w->desc->spacing : 4, total, x0;
+    if (!g) { lj_w_caption_text(s, w, x + (bw - tw) / 2, y + (bh - f->height) / 2, str); return; }
+    total = g->w + (tw ? spacing + tw : 0);
+    x0 = x + (bw - total) / 2;
+    lj_glyph_paint(s, x0, y + (bh - g->h) / 2, w->desc->glyph, w->enabled);
+    if (tw) lj_w_caption_text(s, w, x0 + g->w + spacing, y + (bh - f->height) / 2, str);
 }
 
 void lj_w_focus(lj_widget *w)

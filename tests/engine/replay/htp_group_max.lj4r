@@ -1,0 +1,21 @@
+LJ4 replay 1
+# htp_group_max (design 3.5 S5, 11 P8): v = max(v, g_k) for every HTP group the channel is in; the group level is
+# exempt from the masters by default (Enable HTP group master intensity control off), the channel's own value is not.
+tick_us=25000
+patch 1 profile=70 link=1 addr=1   # Generic / DMX Dimmer / 2 Channel
+profile 1 class1=intensity class2=intensity use_gm=1   # intensity-class: the GM scales the channel's own value (11 G3)
+htp 1 1:1
+seq 1 name="htp" scene st=60000 ft=50 ch 1:1=100:S 1:2=100:S
+cue 1 slot=1 seq=1
+at 0 load_cue 1
+expect 0 1:1=100 1:2=100
+at 1 htp 1 200
+expect 1 1:1=200 1:2=100
+expect_merged 1 1:1=100   # the max is post-merge
+at 2 htp 1 50
+expect 2 1:1=100 1:2=100
+at 3 master gm 127
+at 3 htp 1 80
+expect 3 1:1=80 1:2=50   # max(50 scaled, 80 unscaled)
+at 4 htp 1 0
+expect 4 1:1=50 1:2=50

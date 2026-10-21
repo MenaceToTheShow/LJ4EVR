@@ -158,9 +158,33 @@ enable_testing()
 # Every lj4evr_tests subcommand is one CTest; a track appends its name here when it
 # adds a row to the table in tests/lj_tests.c.
 set(LJ_TEST_SUBCOMMANDS widget widgets_lists forms_tables draw_goldens bmp text encoding ini textrec lock clock_monotonic trig engine_stub dump-frames render ui_golden font_corpus font_cells art_table widgets_lj widgets_basic window menu formsini hittest)
+# W1 rows: each track appends its names here (append-only, docs/w1-contracts.md):
+list(APPEND LJ_TEST_SUBCOMMANDS test_model_table)
+list(APPEND LJ_TEST_SUBCOMMANDS test_desktop)   # desktop: toolbar geometry, ME-29 menu table, selection rules, F9 enables, glyph ink, MAINWINDOW golden
+list(APPEND LJ_TEST_SUBCOMMANDS test_fixlib_profiles)
+list(APPEND LJ_TEST_SUBCOMMANDS test_windows_b)
+list(APPEND LJ_TEST_SUBCOMMANDS test_engine_fade test_engine_ownership test_engine_perf test_engine_post)
+list(APPEND LJ_TEST_SUBCOMMANDS test_uiscript)   # app track
+list(APPEND LJ_TEST_SUBCOMMANDS test_controls_a)
+list(APPEND LJ_TEST_SUBCOMMANDS test_model_records test_model_library test_model_scene)
+list(APPEND LJ_TEST_SUBCOMMANDS test_replay_grammar)   # replay
+list(APPEND LJ_TEST_SUBCOMMANDS test_hotkeys)
+list(APPEND LJ_TEST_SUBCOMMANDS test_controls_b)
+list(APPEND LJ_TEST_SUBCOMMANDS test_windows_a)
+list(APPEND LJ_TEST_SUBCOMMANDS test_windows_c)   # windows-c
+list(APPEND LJ_TEST_SUBCOMMANDS test_controls_c)   # controls-c
 foreach(sub ${LJ_TEST_SUBCOMMANDS})
   add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
 endforeach()
+# replay_all: every tests/engine/replay/*.lj4r through the replay harness (design 3.7); zero files = pass.
+file(GLOB LJ_REPLAY_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/engine/replay/*.lj4r")
+add_test(NAME replay_all COMMAND lj4evr_tests replay ${LJ_REPLAY_FILES})
+# replay_dump: the frame dump the determinism job compares (replay-frames.bin in the build dir), every scenario with a per-scenario header.
+add_test(NAME replay_dump COMMAND lj4evr_tests --dump-frames "${CMAKE_BINARY_DIR}/replay-frames.bin" ${LJ_REPLAY_FILES})
+# Developer-only tests (the 48 shipped + 200 sampled .GS2 files, the exe DFMs) read Martin's data from this folder
+# and skip when it is empty; it is never set in CI (design 5.3, reference/ is gitignored).
+set(LJ4EVR_REFERENCE_DIR "" CACHE PATH "Developer-only: path to the Martin reference folder (D:/lj4evr/reference); empty = those tests skip")
+target_compile_definitions(lj4evr_tests PRIVATE LJ4EVR_REFERENCE_DIR="${LJ4EVR_REFERENCE_DIR}")
 find_package(Python3 COMPONENTS Interpreter)
 if(Python3_FOUND)
   add_test(NAME test_layering
@@ -205,3 +229,14 @@ else()
   set(CPACK_PACKAGE_FILE_NAME "LJ4EVR-${LJ_VERSION}-linux")
 endif()
 include(CPack)
+
+# --- W1 sacn track (append-only): winsock + iphlpapi for io/lj_sacn.c, io/lj_net.c; the four tests/sacn rows ---
+if(WIN32)
+  target_link_libraries(lj_io PUBLIC ws2_32 iphlpapi)
+endif()
+foreach(sub test_sacn_packets test_sacn_rate test_sacn_loopback test_sacn_cfg)
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+
+# app track: the SDL-free app files tests/ui/test_uiscript.c drives headless (docs/w1-contracts.md, append-only section)
+target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_uiscript.c" "${CMAKE_SOURCE_DIR}/src/app/lj_startup.c")

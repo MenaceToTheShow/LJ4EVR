@@ -12,7 +12,6 @@ typedef struct { lj_w_cap c; int group; unsigned flat:1, allow_all_up:1; } lj_w_
 static void paint(lj_widget *w, lj_surface *s)
 {
     lj_w_sb *b = (lj_w_sb *)w;
-    const lj_font *f = lj_w_font_of(w);
     int x, y, pressed = b->c.pressed && b->c.hover, latched = b->c.down && b->group, off = pressed || latched;
     lj_widget_abs(w, &x, &y);
     if (b->flat) {
@@ -26,7 +25,7 @@ static void paint(lj_widget *w, lj_surface *s)
     } else {
         lj_button_raised(s, x, y, w->w, w->h);
     }
-    lj_w_caption_text(s, w, x + (w->w - lj_text_width(f, b->c.caption)) / 2 + off, y + (w->h - f->height) / 2 + off, b->c.caption);
+    lj_w_glyph_caption(s, w, x + off, y + off, w->w, w->h, b->c.caption);
 }
 
 static int mouse(lj_widget *w, const lj_mouse_ev *m)

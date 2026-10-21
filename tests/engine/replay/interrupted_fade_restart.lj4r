@@ -1,0 +1,20 @@
+LJ4 replay 1
+# interrupted_fade_restart (rig M6, 11 F3/F6): a manual trig at tick 51 cuts a 0 -> 255 fade; the next scene's fade
+# to 0 starts from where the cut fade got to: from[] = last tick's merged[] (design 3.2).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+seq 1 name="cut"
+scene st=10000 ft=2550 ch 1:1=255:F
+scene st=10000 ft=2550 ch 1:1=0:F
+cue 1
+slot 1 seq=1 trig=manual
+at 0 load_cue 1
+expect 50 1:1=125
+at 51 trig slot1
+expect_status 51 slot1 running scene=2:2
+expect 51 1:1=125
+expect 52 1:1=124
+expect 76 1:1=94
+expect 102 1:1=62
+expect 153 1:1=0
+expect 160 1:1=0

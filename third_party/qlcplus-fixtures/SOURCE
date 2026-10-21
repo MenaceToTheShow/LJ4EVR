@@ -1,0 +1,8 @@
+QLC+ fixture definitions, Martin only, copied verbatim (fetched 2026-10-21).
+Repository: https://github.com/mcallegari/qlcplus
+Commit:     b7a65b8240899c325e53ceb22546c24aee398467 (master, 2026-10-21T20:04:20Z)
+Path:       resources/fixtures/Martin/*.qxf (73 files)
+Licence:    Apache License 2.0 (LICENSE = the repository's COPYING at that commit; NOTICE beside it)
+Use:        read offline by tools/qxf2c.py into src/fixlib/lj_profiles_gen.c (modified: converted); never read at runtime.
+Refresh:    for n in $(ls *.qxf); do curl -sfL -o $n https://raw.githubusercontent.com/mcallegari/qlcplus/<commit>/resources/fixtures/Martin/$n; done
+            then update the commit line above and rerun python -I tools/qxf2c.py.

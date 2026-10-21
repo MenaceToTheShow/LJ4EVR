@@ -34,7 +34,7 @@ void lj_platform_shutdown(void);                                         /* SDL_
 int  lj_platform_load_bmp(const char *path, lj_surface *out);            /* SDL_LoadBMP -> 0x00RRGGBB lj_surface (owned by the caller); path CP1252; 0 / -1 + log */
 int  lj_platform_clipboard_get(char *dst, size_t cap);                   /* CP1252 text, unmappable -> '?'; 0 / -1 when empty or unavailable */
 int  lj_platform_clipboard_set(const char *text);                        /* CP1252 in; 0 / -1 */
-int  lj_platform_pref_path(char *dst, size_t cap);                       /* SDL_GetPrefPath("LJ4EVR", "LJ4EVR") as CP1252, trailing separator; 0 / -1 */
+int  lj_platform_pref_path(char *dst, size_t cap);                       /* SDL_GetPrefPath("LJ4EVR", "LJ4EVR") as UTF-8 bytes (not converted: ME-65, a path only fopen sees), trailing separator; 0 / -1 */
 void lj_platform_sleep_us(uint64_t us);                                  /* SDL_DelayPrecise; the engine thread's sleep_until (design 3.1) */
 
 /* Engine thread (design 3.1): started once after lj_engine_bind; stopped before lj_engine_destroy. */

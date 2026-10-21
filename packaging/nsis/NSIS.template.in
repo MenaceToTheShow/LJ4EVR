@@ -40,6 +40,15 @@
   ;Per-user install, no elevation (LJ4EVR ME-19: edited copy of CMake 4.1 NSIS.template.in)
   RequestExecutionLevel user
 
+  ;VERSIONINFO resource on the installer (LJ4EVR ME-45, design 9.4: VERSION is the single source); release.yml asserts it
+  VIProductVersion "@CPACK_PACKAGE_VERSION@.0"
+  VIAddVersionKey "ProductName" "LJ4EVR"
+  VIAddVersionKey "ProductVersion" "@CPACK_PACKAGE_VERSION@"
+  VIAddVersionKey "FileVersion" "@CPACK_PACKAGE_VERSION@"
+  VIAddVersionKey "FileDescription" "LJ4EVR @CPACK_PACKAGE_VERSION@ per-user installer"
+  VIAddVersionKey "CompanyName" "@CPACK_PACKAGE_VENDOR@"
+  VIAddVersionKey "LegalCopyright" "MIT, 2026 LJ4EVR contributors"
+
 @CPACK_NSIS_DEFINES@
 @CPACK_NSIS_MANIFEST_DPI_AWARE_CODE@
 @CPACK_NSIS_BRANDING_TEXT_CODE@

@@ -1,0 +1,57 @@
+LJ4 replay 1
+# pair16_pan_true16 (ME-22, 11 F24, rig M11): MAC 500 Mode 2/4 pan 11/12 and tilt 13/14 are one 16-bit value through
+# the fade; the exact value is asserted every tick, the LSB is non-zero on every intermediate tick
+# (1500 k mod 256 != 0 for k < 64) and the pair is monotonic. Pan 0 -> 60000, tilt 0 -> 32768, 1000 ms = 40 ticks.
+tick_us=25000
+patch 1 profile=12 link=1 addr=1   # Martin / MAC 500 / Mode 2/4, pt16 pan_ofs 10 tilt_ofs 12
+default 1:11=0 1:12=0 1:13=0 1:14=0
+seq 1 name="pan" scene st=5000 ft=1000 ch 1:11=234:F 1:12=96:F 1:13=128:F 1:14=0:F
+cue 1 slot=1 seq=1
+at 0 load_cue 1
+expect_pair 0 1:11=0 1:13=0
+expect_pair 1 1:11=1500 1:13=819
+expect_pair 2 1:11=3000 1:13=1638
+expect_pair 3 1:11=4500 1:13=2458
+expect_pair 4 1:11=6000 1:13=3277
+expect_pair 5 1:11=7500 1:13=4096
+expect_pair 6 1:11=9000 1:13=4915
+expect_pair 7 1:11=10500 1:13=5734
+expect_pair 8 1:11=12000 1:13=6554
+expect_pair 9 1:11=13500 1:13=7373
+expect_pair 10 1:11=15000 1:13=8192
+expect_pair 11 1:11=16500 1:13=9011
+expect_pair 12 1:11=18000 1:13=9830
+expect_pair 13 1:11=19500 1:13=10650
+expect_pair 14 1:11=21000 1:13=11469
+expect_pair 15 1:11=22500 1:13=12288
+expect_pair 16 1:11=24000 1:13=13107
+expect_pair 17 1:11=25500 1:13=13926
+expect_pair 18 1:11=27000 1:13=14746
+expect_pair 19 1:11=28500 1:13=15565
+expect_pair 20 1:11=30000 1:13=16384
+expect_pair 21 1:11=31500 1:13=17203
+expect_pair 22 1:11=33000 1:13=18022
+expect_pair 23 1:11=34500 1:13=18842
+expect_pair 24 1:11=36000 1:13=19661
+expect_pair 25 1:11=37500 1:13=20480
+expect_pair 26 1:11=39000 1:13=21299
+expect_pair 27 1:11=40500 1:13=22118
+expect_pair 28 1:11=42000 1:13=22938
+expect_pair 29 1:11=43500 1:13=23757
+expect_pair 30 1:11=45000 1:13=24576
+expect_pair 31 1:11=46500 1:13=25395
+expect_pair 32 1:11=48000 1:13=26214
+expect_pair 33 1:11=49500 1:13=27034
+expect_pair 34 1:11=51000 1:13=27853
+expect_pair 35 1:11=52500 1:13=28672
+expect_pair 36 1:11=54000 1:13=29491
+expect_pair 37 1:11=55500 1:13=30310
+expect_pair 38 1:11=57000 1:13=31130
+expect_pair 39 1:11=58500 1:13=31949
+expect_pair 40 1:11=60000 1:13=32768
+expect 40 1:11=234 1:12=96 1:13=128 1:14=0 layer=1
+expect_pair 41 1:11=60000 1:13=32768
+expect_pair 42 1:11=60000 1:13=32768
+expect_pair 43 1:11=60000 1:13=32768
+expect_pair 44 1:11=60000 1:13=32768
+expect_pair 45 1:11=60000 1:13=32768

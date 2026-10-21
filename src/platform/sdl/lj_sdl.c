@@ -20,6 +20,7 @@
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "engine/lj_engine.h"
+#include "io/lj_sacn.h"
 
 #define LJ_SDL_MAX_WINDOWS 256                 /* 208 forms + code-built windows */
 #define LJ_SDL_MAX_DIRTY   32
@@ -530,7 +531,7 @@ int lj_platform_pref_path(char *dst, size_t cap)
     int rc;
     if (!dst || cap == 0) { SDL_free(p); return -1; }
     if (!p) { dst[0] = 0; lj_log("SDL_GetPrefPath: %s", SDL_GetError()); return -1; }
-    rc = lj_utf8_to_cp1252(dst, cap, p);
+    rc = lj_str_copy(dst, cap, p);        /* ME-65: UTF-8 bytes as SDL gave them; the app only concatenates and hands them to fopen (UTF-8 under the manifest), so a non-CP1252 user name still resolves */
     SDL_free(p);
     return rc;
 }
@@ -542,16 +543,33 @@ void lj_platform_sleep_us(uint64_t us) { SDL_DelayPrecise(us * 1000u); }
 static int SDLCALL lj_sdl_engine_main(void *ud)
 {
     uint64_t next = lj_clock_us(), now;
+    lj_sacn_cfg sacn;                                                       /* this thread's own copy of the map (ME-23: sender state belongs to the engine thread) */
+    const void *newcfg;
+    const lj_frame *frame;
+    lj_sacn_stats st;
+    int offline, link, have_sacn = 0;
     (void)ud;
+    memset(&sacn, 0, sizeof sacn);
     while (!SDL_GetAtomicInt(&lj_sdl.stop)) {
         now = lj_clock_us();
         if (next > now) lj_platform_sleep_us(next - now);                  /* sleep_until(next) */
         now = lj_clock_us();
-        lj_lock(); lj_engine_tick(lj_sdl.engine, now); lj_unlock();
-        /* W1: lj_sacn_set(map[link], frame->out[link]) per link, then lj_sacn_pump(now) (io/lj_sacn.h) */
+        lj_lock(); lj_engine_tick(lj_sdl.engine, now); newcfg = lj_engine_take_sacn_cfg(lj_sdl.engine); offline = lj_engine_is_offline(lj_sdl.engine); lj_unlock();
+        if (newcfg) {                                                       /* LJ_CMD_SACN_CFG: close-old then open-new, outside the lock (ME-23) */
+            memcpy(&sacn, newcfg, sizeof sacn);
+            have_sacn = lj_sacn_open(&sacn) == 0;
+        }
+        if (have_sacn) {                                                    /* design 3.1: set per link unless offline (S9), then one pump */
+            frame = lj_engine_frame(lj_sdl.engine);
+            if (!offline) for (link = 0; link < LJ_LINKS; link++) lj_sacn_set(sacn.universe_of_link[link], frame->out[link]);
+            lj_sacn_pump(now);
+            lj_sacn_stats_get(&st);
+            lj_lock(); lj_engine_set_sacn_stats(lj_sdl.engine, st.pps, st.last_err); lj_unlock();
+        }
         next += lj_sdl.tick_us;                                             /* absolute timeline, never now + tick */
         if (now > next + lj_sdl.tick_us) { lj_log_overrun(now - next); next = now + lj_sdl.tick_us; }
     }
+    lj_sacn_close();                                                        /* 3 x Stream_Terminated per universe on the owning thread; the app's lj_sacn_close after the join is then a no-op */
     return 0;
 }
 

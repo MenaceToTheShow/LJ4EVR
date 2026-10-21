@@ -29,16 +29,14 @@ static int shows_default_frame(const lj_widget *w)
 void lj_w_button_paint(lj_widget *w, lj_surface *s)
 {
     lj_w_cap *b = (lj_w_cap *)w;
-    const lj_font *f = lj_w_font_of(w);
-    int x, y, ww = w->w, hh = w->h, down = b->pressed && b->hover, tw;
+    int x, y, ww = w->w, hh = w->h, down = b->pressed && b->hover;
     lj_widget_abs(w, &x, &y);
     if (shows_default_frame(w)) {
         lj_bevel1(s, x, y, ww, hh, LJ_CLR_3DDKSHADOW, LJ_CLR_3DDKSHADOW);
         x++; y++; ww -= 2; hh -= 2;
     }
     if (down) lj_button_pressed(s, x, y, ww, hh); else lj_button_raised(s, x, y, ww, hh);
-    tw = lj_text_width(f, b->caption);
-    lj_w_caption_text(s, w, x + (ww - tw) / 2 + down, y + (hh - f->height) / 2 + down, b->caption);
+    lj_w_glyph_caption(s, w, x + down, y + down, ww, hh, b->caption);
     if (w->focused) lj_focus_rect(s, x + 3, y + 3, ww - 6, hh - 6);
 }
 

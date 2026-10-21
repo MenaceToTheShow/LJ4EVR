@@ -1,0 +1,38 @@
+LJ4 replay 1
+# freeze_pauses_clock (11 F20 PROPOSAL, rig M10, ME-13): frozen ticks hold the previous tick's values while trigs
+# keep running, so scene 2 of slot 1 trigs at tick 80 inside the freeze (ticks 40..119). At unfreeze a fade that was
+# in progress resumes with its remaining time (slot 2: 1 s into 10 s at the freeze, 9 s left from tick 120), and the
+# scene that trigged while frozen starts its fade at the unfreeze tick from the frozen merged[] value.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+patch 2 profile=19 link=1 addr=2
+seq 1 name="two"
+scene st=2000 ft=2550 ch 1:1=255:F
+scene st=10000 ft=2550 ch 1:1=0:F
+seq 2 name="long" scene st=20000 ft=10000 ch 1:2=255:F
+cue 1
+slot 1 seq=1
+slot 2 seq=2
+at 0 load_cue 1
+expect 39 1:1=98 1:2=25
+at 40 freeze 1
+expect 40 1:1=98 1:2=25
+expect_view 40 freeze=1
+expect 41 1:1=98 1:2=25
+expect 79 1:1=98 1:2=25
+expect 80 1:1=98 1:2=25
+expect_status 80 slot1 running scene=2:2   # the trig ran inside the freeze
+expect 100 1:1=98 1:2=25
+expect 119 1:1=98 1:2=25
+at 120 freeze 0
+expect_view 120 freeze=0
+expect 120 1:1=98
+expect 120 1:2=26   # t0 shifted by the 80 frozen ticks
+expect 121 1:1=97
+expect 160 1:2=51   # t0 shifted by the 80 frozen ticks
+expect 171 1:1=49
+expect 222 1:1=0
+expect 230 1:1=0
+expect 480 1:2=255   # t0 shifted by the 80 frozen ticks
+expect 520 1:2=255   # t0 shifted by the 80 frozen ticks
+expect 530 1:2=255   # t0 shifted by the 80 frozen ticks

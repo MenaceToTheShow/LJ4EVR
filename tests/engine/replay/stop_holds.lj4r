@@ -1,0 +1,19 @@
+LJ4 replay 1
+# stop_holds (11 F14, LJ_STOP_HOLDS_FADE 1, rig M8): Stop at tick 51 holds the fade where it is (the value of the
+# tick before the stop, or the stop tick: both allowed by the range), ignores time, and Go resumes from the live
+# output (PROPOSAL rig M8) and completes the fade.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+seq 1 name="hold"
+scene st=10000 ft=2550 ch 1:1=255:F
+scene st=10000 ft=2550 ch 1:1=0:F
+cue 1 slot=1 seq=1
+at 0 load_cue 1
+expect 50 1:1=125
+at 51 stop slot1
+expect_range 51 1:1=125..128
+expect_status 60 slot1 stopped
+expect_range 200 1:1=125..128
+at 201 go slot1
+expect_status 201 slot1 running
+expect 310 1:1=255

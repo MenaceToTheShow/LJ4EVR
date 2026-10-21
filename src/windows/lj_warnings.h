@@ -1,0 +1,24 @@
+/* lj_warnings.h - the red warning boxes, the close prompt and the two message/confirm
+ * dialogs (design 2.9, [03 s9], [13 s2.2], 12 Q9, F14, LORD_FIDELITY-12).
+ * Forms: TSTATUSWARNINGFORM (LStatus rewritten per state: BLACKOUT ACTIVE /
+ * FADE-OUT ACTIVE / FADE-IN ACTIVE), TFREEZEWARNFORM ("Frozen !"),
+ * TOFFLINEWARNINGFORM ("DMX Output is Offline"), TCLOSEORSAVEFORM ("Close
+ * Lightjockey ?", red with the orange panel), TCONFIRMFORM ("Please Confirm..").
+ * Bodies of lj_win_warning / lj_win_close_prompt / lj_win_message live here. */
+#ifndef LJ_WINDOWS_WARNINGS_H
+#define LJ_WINDOWS_WARNINGS_H
+
+#include "windows/lj_windows.h"
+
+lj_window  *lj_warnings_window(enum lj_warning w);                 /* the open box for that state, NULL when hidden */
+lj_window  *lj_win_warnings_any(void);                             /* the first open red box (lj_win_get(LJ_WIN_WARNINGS)), NULL when none */
+const char *lj_warnings_status_text(enum lj_warning w);            /* the LStatus / Label1 text table, verbatim exe strings */
+void        lj_warnings_center(const lj_window *box, int *x, int *y);   /* centre on the main window (lj_desktop_window + host->pos); -1 fallback = the design Left/Top */
+void        lj_warnings_close_all(void);
+
+/* TCONFIRMFORM with OK/Cancel ("Remove Selected Fixtures ?" and friends); result on the UI thread, 1 = OK */
+lj_window  *lj_win_confirm(const char *caption, const char *line1, const char *line2, void (*on_result)(int yes, void *ud), void *ud);
+lj_window  *lj_win_message_window(void);                          /* the open lj_win_message / lj_win_confirm box, NULL when none */
+lj_window  *lj_win_close_prompt_window(void);                      /* the open TCLOSEORSAVEFORM, NULL when none */
+
+#endif /* LJ_WINDOWS_WARNINGS_H */

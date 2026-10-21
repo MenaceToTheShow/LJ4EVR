@@ -39,11 +39,11 @@ SDL_ALLOWED = {"platform", "app"}
 SDL_FREE = {"core", "model", "engine", "fixlib", "io", "gfx", "ui", "desktop", "controls", "windows"}
 
 OS_HEADERS = {"windows.h", "unistd.h", "pthread.h", "winsock2.h", "ws2tcpip.h", "iphlpapi.h", "mmsystem.h",
-              "ifaddrs.h", "netinet/in.h", "arpa/inet.h", "sys/socket.h", "CoreMIDI/CoreMIDI.h"}
+              "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "sys/socket.h", "CoreMIDI/CoreMIDI.h"}
 OS_ALLOW = {   # relative to src/, forward slashes
     "core/lj_clock.c": {"windows.h", "time.h"},
     "core/lj_lock.c": {"windows.h", "pthread.h"},
-    "io/lj_net.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
+    "io/lj_net.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
     "io/lj_sacn.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
     "io/lj_midi_winmm.c": {"windows.h", "mmsystem.h"},
     "io/lj_midi_coremidi.c": {"CoreMIDI/CoreMIDI.h"},

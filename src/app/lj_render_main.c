@@ -15,10 +15,12 @@
 static int lj_render_window(lj_window *win, const char *dir, const char *stem)
 {
     char path[1024];
-    size_t i;
+    size_t i, end;
+    int n;
     if (!win) { printf("  %s: lj_window_create failed\n", stem); return -1; }
-    snprintf(path, sizeof path, "%s/%s.bmp", dir, stem);
-    for (i = strlen(dir) + 1; path[i] != '.'; i++) if (path[i] >= 'a' && path[i] <= 'z') path[i] = (char)(path[i] - 'a' + 'A');   /* the stem only */
+    n = snprintf(path, sizeof path, "%s/%s.bmp", dir, stem);
+    if (n < 0 || (size_t)n >= sizeof path) { printf("  %s: output path too long (%d bytes, cap %u)\n", stem, n, (unsigned)sizeof path); return -1; }   /* ME-61: argv is a trust boundary */
+    for (i = strlen(dir) + 1, end = (size_t)n; i < end && path[i] != '.'; i++) if (path[i] >= 'a' && path[i] <= 'z') path[i] = (char)(path[i] - 'a' + 'A');   /* the stem only, bounded by what snprintf wrote */
     lj_window_paint(win);
     return lj_bmp_write(lj_window_surface(win), path);
 }

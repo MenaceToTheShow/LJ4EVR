@@ -41,6 +41,7 @@ struct lj_window {
     lj_rect dirty[LJ_DIRTY_CAP]; int ndirty; unsigned dirty_all:1, frame_dirty:1, painted:1;
     lj_widget *capture, *down_w, *hover; int down_button, hover_ticks, mx, my; int frame_btn;
     lj_surface hint_surf; void *hint_handle; unsigned alt_pending:1, eat_char:1;
+    lj_mouse_ev last_ev;                   /* lj_window_last_event */
 };
 
 /* ---- fonts ---- */
@@ -315,6 +316,7 @@ void lj_window_set_host(lj_window *win, const lj_window_host *host) { if (win) {
 const lj_menu_item_desc *lj_window_menu_item(const lj_window *win) { return win ? win->menu.firing : NULL; }
 struct lj_dnd *lj_window_dnd(lj_window *win) { return win ? &win->dnd : NULL; }
 struct lj_menu *lj_window_menus(lj_window *win) { return win ? &win->menu : NULL; }
+const lj_mouse_ev *lj_window_last_event(const lj_window *win) { return win ? &win->last_ev : NULL; }
 
 lj_window *lj_window_of(lj_widget *w)
 {
@@ -466,7 +468,7 @@ static void mouse(lj_window *win, const lj_mouse_ev *m)
     lj_widget *target;
     lj_mouse_ev rel = *m;
     int ax, ay, plain = 0, sx = 0, sy = 0;
-    win->mx = m->x; win->my = m->y;
+    win->mx = m->x; win->my = m->y; win->last_ev = *m;
     if (m->type != LJ_EV_MOUSE_MOVE) hint_hide(win);
     if (m->type == LJ_EV_MOUSE_LEAVE) { win->hover = NULL; hint_hide(win); return; }
 

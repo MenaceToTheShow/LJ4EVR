@@ -1,0 +1,25 @@
+LJ4 replay 1
+# blackout_after_masters (design 3.5 S4 after S3, rig M17; 11 P15): blackout writes the profile's literal blackout
+# values (MAC 500: shutter ch 1 = 0) after the masters, so the master-scaled intensity (ch 2) is untouched and the
+# blackout value is never scaled; Ignore Blackout (ibo=1) skips the fixture; GM 0 does not close the shutter of a
+# fixture with an intensity channel (bo_at_gm0 0, 11 G7). The generic dimmer follows the GM (CHM genericdmxprofiles:
+# 'all generic DMX channels are affected by the Grand Master') and is left by Blackout (design 10 W1 acceptance 7).
+tick_us=25000
+patch 1 profile=12 link=1 addr=1
+patch 2 profile=12 link=1 addr=17 ibo=1
+patch 3 profile=19 link=1 addr=33
+seq 1 name="open" scene st=60000 ft=50 ch 1:1=30:S 1:2=255:S 1:17=30:S 1:18=255:S 1:33=255:S
+cue 1 slot=1 seq=1
+at 0 load_cue 1
+expect 0 1:1=30 1:2=255 1:17=30 1:18=255 1:33=255
+at 1 master gm 127
+expect 1 1:1=30 1:2=127 1:17=30 1:18=127 1:33=127
+at 2 blackout 1
+expect 2 1:1=0 1:2=127 1:17=30 1:18=127 1:33=127
+expect_merged 2 1:1=30 1:2=255   # the overlay is post-merge: merged[] still carries the programmed values
+expect_view 2 gm=127 blackout=1
+at 3 blackout 0
+expect 3 1:1=30 1:2=127
+at 4 master gm 0
+expect 4 1:1=30 1:2=0 1:18=0 1:33=0
+expect_view 4 gm=0 blackout=0

@@ -1,0 +1,51 @@
+# qxf_map.tsv - QLC+ fixture file + mode -> LJ4EVR profile id (design 6.1 item 1, ME-8, ME-26). Hand-maintained.
+# Columns: file (third_party/qlcplus-fixtures/)  mode (the <Mode Name>)  id (exe row 0-200, or an extra >= 1000, append-only).
+# An exe id with a hand file (tier 1) keeps the hand profile; the conversion exists only so tools/qxf2c.py --selftest can show
+# "hand wins" (id 12). Modes with more than 32 channels cannot be mapped (LJ_PROFILE_CH). Matching = exe triple vs QLC+ mode by
+# channel count and the Martin mode name; rows LJ2 names but QLC+ lacks (812 Mode 2, Roboscan 1220, MAC 550/575/1200, MAC 2000
+# mk I, Mania, CX-10) stay greyed; extras are QLC+ fixtures LJ2 never had, hidden unless [FIXTURES] ShowExtraProfiles=1.
+Martin-Roboscan-812.qxf	Mode 1	1
+Martin-Roboscan-218.qxf	Mode 3	2
+Martin-Roboscan-518.qxf	Mode 3	3
+Martin-MAC600E.qxf	Mode 4	11
+Martin-MAC500.qxf	DMX4	12
+Martin-RoboColor-III.qxf	Mode 1	14
+Martin-Destroyer.qxf	Normal	16
+Martin-Punisher.qxf	Normal	17
+Martin-Roboscan-Pro-918.qxf	DMX4	24
+Martin-Acrobat.qxf	6-Channel	29
+Martin-MAC300.qxf	Mode 4	39
+Martin-MX-1.qxf	Mode 1	44
+Martin-MAC250plus.qxf	Mode 4	47
+Martin-MiniMAC-Wash.qxf	Mode 4	53
+Martin-MiniMAC-Profile.qxf	Mode 4	54
+Martin-MX-4.qxf	Mode 1	55
+Martin-Roboscan-218.qxf	Mode 2	57
+Martin-Roboscan-518.qxf	Mode 2	58
+Martin-RoboColor-III.qxf	Mode 2	60
+Martin-Acrobat.qxf	7-Channel	62
+Martin-MAC600-NT.qxf	Mode 4	67
+Martin-MiniMAC-Maestro.qxf	Mode 4	69
+Martin-Atomic-3000.qxf	Mode 3	80
+Martin-MAC-2000-Wash.qxf	16-bit with Color Wheel 2	88
+Martin-MX-10.qxf	Mode 1	91
+Martin-MAC250-Krypton.qxf	16 Bt (16 Bit Mode)	105
+Martin-MAC250-Entour.qxf	16 Bt (16 Bit Mode)	112
+Martin-Atomic-3000.qxf	Mode 3 with Colour	114
+Martin-MAC-700-Profile.qxf	16-bit Basic	116
+Martin-JEM-ZR24-7.qxf	Default	128
+Martin-Magnum-Hazer.qxf	Default	129
+Martin-MAC-250-Wash.qxf	16 Bt (16 Bit Mode)	133
+Martin-MAC-700-Wash.qxf	16-bit Basic	140
+Martin-smartMAC.qxf	16-bit	156
+Martin-MAC-401-Dual-RGB.qxf	RGB 1	170
+Martin-MAC-401-Dual-RGB.qxf	RGBX All	171
+Martin-MAC-401-Dual-RGB.qxf	RGB All	173
+Martin-MAC-301-Wash.qxf	Standard 8bit	174
+Martin-MAC-101.qxf	Basic	186
+Martin-MAC-101.qxf	RAW, RGB	187
+Martin-Mac-350-Entour.qxf	16 Bit	196
+Martin-MAC-Aura.qxf	Standard	200
+Martin-MAC-Viper-Performance.qxf	Basic	1000
+Martin-MAC-Quantum-Profile.qxf	Basic	1001
+Martin-Rush-MH3.qxf	1	1002

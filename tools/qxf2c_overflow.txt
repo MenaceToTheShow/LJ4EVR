@@ -1,0 +1,39 @@
+# qxf2c.py: wheels with more than 20 palette candidates, first 20 kept (ME-26). Regenerated with lj_profiles_gen.c.
+Martin-Roboscan-812.qxf	Mode 1	1	Color	25
+Martin-Roboscan-812.qxf	Mode 1	1	Gobo	25
+Martin-Roboscan-218.qxf	Mode 3	2	Colour	35
+Martin-Roboscan-218.qxf	Mode 3	2	Gobo	35
+Martin-Roboscan-518.qxf	Mode 3	3	Color	35
+Martin-MAC500.qxf	DMX4	12	Color1	27
+Martin-MAC500.qxf	DMX4	12	Color2	29
+Martin-RoboColor-III.qxf	Mode 1	14	Color Head 1	25
+Martin-RoboColor-III.qxf	Mode 1	14	Color Head 2	25
+Martin-Roboscan-Pro-918.qxf	DMX4	24	Color 1	22
+Martin-Roboscan-Pro-918.qxf	DMX4	24	Color 2	31
+Martin-MAC300.qxf	Mode 4	39	Colour	21
+Martin-MAC250plus.qxf	Mode 4	47	Color	26
+Martin-MiniMAC-Wash.qxf	Mode 4	53	Color	26
+Martin-MiniMAC-Profile.qxf	Mode 4	54	Color	26
+Martin-MX-4.qxf	Mode 1	55	Color wheel	36
+Martin-Roboscan-218.qxf	Mode 2	57	Colour	35
+Martin-Roboscan-218.qxf	Mode 2	57	Gobo	35
+Martin-Roboscan-518.qxf	Mode 2	58	Color	35
+Martin-RoboColor-III.qxf	Mode 2	60	Color Head 1	25
+Martin-RoboColor-III.qxf	Mode 2	60	Color Head 2	25
+Martin-MX-10.qxf	Mode 1	91	Color	26
+Martin-MAC250-Krypton.qxf	16 Bt (16 Bit Mode)	105	Color	39
+Martin-MAC250-Entour.qxf	16 Bt (16 Bit Mode)	112	Color	41
+Martin-MAC-700-Profile.qxf	16-bit Basic	116	Color Wheel	27
+Martin-MAC-700-Wash.qxf	16-bit Basic	140	Color Wheel	27
+Martin-smartMAC.qxf	16-bit	156	Color Wheel	34
+Martin-MAC-401-Dual-RGB.qxf	RGB 1	170	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	RGBX All	171	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	RGB All	173	Colour Wheel Effect	39
+Martin-MAC-101.qxf	Basic	186	Color Wheel Effect	37
+Martin-MAC-101.qxf	RAW, RGB	187	Color Wheel Effect	37
+Martin-Mac-350-Entour.qxf	16 Bit	196	Color	30
+Martin-Mac-350-Entour.qxf	16 Bit	196	Gobo	26
+Martin-MAC-Aura.qxf	Standard	200	Beam color wheel effect	37
+Martin-MAC-Viper-Performance.qxf	Basic	1000	Color Wheel	25
+Martin-MAC-Quantum-Profile.qxf	Basic	1001	Color wheel	24
+Martin-Rush-MH3.qxf	1	1002	Color	31

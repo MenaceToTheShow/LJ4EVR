@@ -7,32 +7,60 @@ MSVC-specific SDL workarounds are in `docs/msvc-sdl-build.md`.
 
 ## lj4evr (the app)
 
-`build-msvc/Release/lj4evr.exe`. Opens the stub main window (799x606 clBtnFace,
-sizeable, the generated `TLJMainForm` menu bar), then `TSEQUENCEFORM` and
-`TCURRENTCUE` from the generated tables as owned windows (one taskbar button,
-design 2.8), starts the engine thread at `[ENGINE] TickHz` (default 40) and runs
-the UI loop. On close it writes window positions to `forms.ini`.
+`build-msvc/Release/lj4evr.exe`. W1 startup ([01 s6.2], `src/app/lj_app.h`):
+pref path -> `Startup.ini` / `U:<folder>` -> the user library (`Default`
+recreated when missing) -> `Main.Ini` + `forms.ini` from the library,
+`Hardware.Ini` from the pref path (sACN config, CID generated once) -> the main
+window with the caption `Please Wait..` and the startup status window while
+`Config.dat`, `DefaultOut.dat`, groups, statics and presets load -> engine bound,
+`LJ_CMD_CURRENT_SEQ` + `LJ_CMD_SACN_CFG` posted -> caption
+`Martin LightJockey (User lib: Default)` -> Sequence and Cue windows at their
+`forms.ini` positions -> `Main.Ini [STARTUP]` actions -> engine thread at
+`[ENGINE] TickHz` (clamped 10..200) -> the UI loop (`SDL_WaitEventTimeout(10)`;
+every pass services the engine's pending loads and the script driver, every
+100 ms repaints the engine-mirroring windows). Closing the main window asks
+`Close Lightjockey ?`; yes stops and joins the engine thread, closes the sACN
+sender, closes every window with its position saved, frees the show and writes
+`forms.ini`, `Main.Ini` (`[OTHER] LastRun=LJ4EVR x.y.z`) and `Hardware.Ini`.
 
-Files live in `SDL_GetPrefPath("LJ4EVR", "LJ4EVR")`:
-`%APPDATA%\LJ4EVR\LJ4EVR\` on Windows, `~/Library/Application Support/LJ4EVR/LJ4EVR/`
-on macOS. `Main.Ini` is read, not written, in W0:
+Files: `SDL_GetPrefPath("LJ4EVR", "LJ4EVR")` is the installation folder
+(`%APPDATA%\LJ4EVR\LJ4EVR\` on Windows, `~/Library/Application Support/LJ4EVR/LJ4EVR/`
+on macOS; kept as UTF-8 bytes, ME-65) holding `Startup.ini`, `Hardware.Ini` and
+`User\<library>\` with `Main.Ini`, `forms.ini`, `Config.dat`, `Sequences\`, `Cues\` ...
 
 ```ini
+; Main.Ini (per library)
 [CHROME]
 Zoom=1        ; 2 = every window doubled, fat pixels (SDL_BlitSurfaceScaled NEAREST)
-Native=0      ; 1 = SDL's bordered windows instead of the self-drawn classic frame
+Native=0      ; 1 = SDL's bordered windows instead of the self-drawn classic frame (the documented macOS default until ME-21 is ticked)
 [ENGINE]
-TickHz=40
+TickHz=40     ; clamped to 10..200 (ME-24)
+[STARTUP]
+Seq=0         ; sequence loaded at startup; SeqRun=1 starts it
+Cue=0         ; cue loaded at startup
+PCUE=0        ; background cue (PROPOSAL: LJ2's key meaning is UNVERIFIED)
+Cl=0          ; cue list (W3), ClRun
+AutoLampOn=0  ; minutes (W2)
+Minimized=0   ; Run Minimized
+ShowNotes=0   ; W2
+[OTHER]
+LastRun=LJ4EVR 0.1.0
+; Startup.ini (installation)
+[USERDIRECTORY]
+Start=Default\
 ```
 
 | Switch | Effect |
 |---|---|
 | `--ms <n>` | quit after n milliseconds (what `tools/shot.ps1` uses) |
 | `--save <file.bmp>` | write the main window surface (frame + menu bar + client) as a 24-bit BMP |
-| `--selftest [ref.bmp]` | paint `TSEQUENCEFORM` on screen, read the OS window surface back and compare it with the image `lj4evr_render` paints for the same form (or with `ref.bmp`); prints one line ending `OK` or `FAIL`, exit 0/1 |
+| `--selftest [ref.bmp]` | prints the startup line (`Please Wait..` caption and the status window seen, LORD_FIDELITY-20), then paints `TSEQUENCEFORM` on screen, reads the OS window surface back and compares it with the image `lj4evr_render` paints for the same form (or with `ref.bmp`); lines end `OK` or `FAIL`, exit 0/1 |
+| `--script <file>` | run a UI script (`docs/ui-script.md`) one line per loop pass; exit 0 on `quit` / EOF, 1 on the first failing line (`SCRIPT FAIL line n: ...` on stderr, nothing saved to `forms.ini`); `tests/ui/scripts/w1_acceptance.lj4s` is the W1 walkthrough |
+| `U:<folder>` | start in that user library instead of `Startup.ini`'s ([01 s6.2]) |
 | `--explode` | design 7.6: a container declared after the controls it covers (Panel1 on `TSEQUENCEFORM`) is moved below them and the client grows, so the covered rows are visible |
 | `--native` | same as `[CHROME] Native=1` |
 | `--zoom <1\|2>` | same as `[CHROME] Zoom` |
+| `--version` | prints `LJ4EVR x.y.z` and exits |
 
 `lj4evr` is a WIN32-subsystem program, so its stdout only shows up when
 redirected: `lj4evr.exe --selftest > selftest.txt` or
@@ -44,6 +72,8 @@ through `SDL_SetWindowHitTest` driven by `lj_window_hit()`; the caption buttons
 and the system-menu icon are ordinary clicks handled by the ui layer, which asks
 the platform to minimise/maximise/restore through the `lj_window_host` callbacks.
 Minimising the main window hides the controls, as LJ2's `TApplication` does.
+`tools/taskbar-count.ps1` counts the LJ4EVR taskbar buttons through UI Automation
+(ME-7 / ME-59 evidence: one).
 
 ## lj4evr_render (headless, no SDL)
 
@@ -63,7 +93,12 @@ failed. The W0 goldens are written to `tests/ui/render/`.
 `lj4evr_tests render [tmp.bmp]` is this track's check: every generated form and
 the stub main window instantiate with no bindings, paint to a surface at least
 their client size, and `lj_bmp_write` produces exactly
-`54 + h * ((w * 3 + 3) & ~3)` bytes.
+`54 + h * ((w * 3 + 3) & ~3)` bytes. `lj4evr_tests test_uiscript` (W1, app
+track) parses every script verb, rejects a bad line with its number, drives a
+headless `TSEQUENCEFORM` (click a check box, type into an edit, `shot` to PNG),
+recreates a missing `Default` library, writes `LastRun`, reads `','` under a
+comma locale (ME-52) and round-trips `forms.ini` under a non-CP1252 folder name
+(ME-65).
 
 ## tools/shot.ps1 (Windows screenshots)
 
