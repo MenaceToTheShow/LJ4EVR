@@ -101,5 +101,35 @@ stay unscaled; generic levels scale through ext_gm).
   controls can take without including app/).
 - The acceptance `--script` (`tests/ui/scripts/w1_acceptance.lj4s`) names widgets the integrator was to align; not run this
   session.
-- `.git/hooks/pre-commit` (ME-49): see the CI section.
+- `.git/hooks/pre-commit` (ME-49): installed on this PC (`cp tools/hooks/pre-commit .git/hooks/pre-commit`, 821 bytes, -rwxr-xr-x); every integration commit above ran `dfm2c --check: OK` through it.
 - gcc/clang warnings: no gcc/clang on this PC; CI is the first pass over the W1 tree.
+
+## 8. CI
+
+    git commit "W1: integrated build, tests green locally" -> d21a0a7, push
+    gh run list --workflow ci.yml   -> 39693095982 (superseded by the next push; the pre-integration run 39690714057 had failed on
+                                       gcc/clang -Wcomment plus the three local failures of section 2)
+
+Round by round (each: `gh run view <id> --log-failed`, fix, commit, push, `gh run watch --exit-status`); Windows was green
+from round 1, Linux/macOS are the first gcc/clang pass over the fourteen tracks' files:
+
+| Run | Result | Cause | Fix (commit) |
+|---|---|---|---|
+| 39693221088 | windows green; gcc/clang red | `/*` inside block comments (`fixlib/lj_profile.h`, generated `lj_profiles_gen.c` header via `qxf2c.py`, `tests/lj_tests.c`, `tests/engine/test_replay.c`); gcc `-Wformat-truncation` in `model/lj_library.c` | 364812f |
+| 39693896575 | gcc/clang: `io/lj_net.c` IFF_* and gethostname undeclared under `-std=c11` (glibc feature set); clang `-Wsign-compare` int vs `enum lj_ctl_kind` in `lj_ctl_open_only` | ab8295a: `#define _DEFAULT_SOURCE 1`, `(int)kind` |
+| 39694542526 | gcc/clang on windows/, controls/, desktop/: `-Wmissing-field-initializers` (`lj_engine_status x = { { 0 } }` -> `{ 0 }`, three positional `lj_ctl_desc` rows gain `.tag = 0`), clang `-Wempty-body` (five `for (...) ;` -> `{ }`), gcc `-Wmisleading-indentation` (`lj_fixture_config.c` two `if; if` lines split), gcc `-Wformat-truncation` (`lj_hardware_setup.c` result checked, `lj_dmx_monitor.c` t[16], `lj_toolbars.c` counter[24]) | c735264 |
+| 39695091515 | linux-clang green; gcc/clang on tests/: `test_controls_a.c` positional `lj_ctl_row`, `test_desktop.c` unused `root`, `test_loopback.c` nanosleep needs `_POSIX_C_SOURCE`; macOS `app/lj_app.c` host struct missing the windows-c `move`/`pos` fields | 1ea106d |
+| 39695091515 (same) | ASan: `test_windows_c` heap-use-after-free in `lj_window.c` `bound_dispatch` (the warning box's Cancel handler destroys its own window, the dispatcher then read the freed binding record); LSan: `test_fixlib_profiles` 6840 bytes from `lj_layout_derive` on a stack profile | 8e26039: `bound_dispatch` copies the handler and returns after calling it (one handler per event name); the test's synthetic profile is `static` (the derived tables are process-lifetime by design); `lj_app_host` gains `move`/`pos` wrappers over `lj_platform_move_window` / `lj_platform_window_pos` |
+| **39695729252** | **all six jobs green** | | |
+
+Green run: https://github.com/UnbannableGT/LJ4EVR/actions/runs/39695729252 (main @ 8e26039)
+
+    generate-check  test_layering (gcc) 285 file(s), 135 header(s) alone, 0 findings; qxf2c/fontpack/artpack/gen_vectors --check current
+    linux-gcc-asan  100% tests passed, 0 tests failed out of 55   (Debug, -fsanitize=address,undefined)
+    linux-clang     100% tests passed, 0 tests failed out of 55
+    windows-msvc    100% tests passed out of 55; selftest TSEQUENCEFORM 360x150, 0 mismatching pixel(s): OK (Release and Debug, no "no binding for handler"); NSIS installer artifact
+    macos-clang     100% tests passed out of 55; selftest TSEQUENCEFORM 360x150, 0 mismatching pixel(s): OK; DragNDrop artifact; test_sacn_loopback passed on all three OSes (unicast 127.0.0.1, no entitlement or allowlist edit needed)
+    determinism     frames-linux.bin = frames-macos.bin = frames-windows.bin, 1641600 bytes,
+                    sha256 5e61478e89c1ccfd4936ce7110a366e4f497c5ac0684493bc29ef189342c6ee7 on all three (= this PC; ME-60's new reference sha)
+
+The container image digest did not change (no Dockerfile edit, ME-20).
