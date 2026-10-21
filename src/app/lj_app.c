@@ -192,6 +192,7 @@ int lj_app_main(int argc, char **argv)
         else if (strcmp(argv[i], "--ms") == 0 && i + 1 < argc) a.run_ms = atoi(argv[++i]);
         else if (strcmp(argv[i], "--native") == 0) a.cfg.native_frame = 1;
         else if (strcmp(argv[i], "--zoom") == 0 && i + 1 < argc) a.cfg.zoom = atoi(argv[++i]);
+        else if (strcmp(argv[i], "--version") == 0) { printf("LJ4EVR %s\n", LJ_VERSION_STR); return 0; }
         else { fprintf(stderr, "lj4evr %s: unknown argument %s\n", LJ_VERSION_STR, argv[i]); return 2; }
     }
 
