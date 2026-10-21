@@ -155,7 +155,7 @@ digest, `:latest` is retagged from it), bump the four `image:` lines in ci.yml.
 | 1 | `tests/fonts/test_corpus` 0 mismatches over every AutoSize label of the 208 DFMs, on Windows, macOS, Linux, from the in-repo font | **done for 792 of 826 rows (the five faces)**: `font_corpus: 826 rows, 34 skipped (face not packed), 0 mismatches` in all four ctest jobs; the 34 skipped rows use nine faces outside the design's five (Courier -11, Arial -11b/-12/-13/-15bi/-16, MS Sans Serif -13b/-16/-19; advances harvested, no sheet) and cannot fail: W1 fonts item, `font_corpus` skip ceiling 34 (ME-51) |
 | 2 | `lj4evr_render` writes 208 BMPs; TSEQUENCEFORM, TSAVESEQFORM, TCURRENTCUE, TSYSTEMPREFSFORM, TLINKCONFIGFORM3 reviewed and committed as goldens; TSEQUENCEFORM matches spike A's `surface.bmp` pixel for pixel except glyph shapes | **done (re-done in fix pass r1)**: 208 forms + MAINWINDOW written (209), 0 failed; six goldens in `tests/ui/golden/` + `REVIEWED.tsv` with the probed numbers, gate `ui_golden` green on every OS; spike A diff 2662 px = 3.14%, every one a glyph-ink swap (black/face/white), 0 geometry pixels, 794 in the menu band where spike A carries the pre-ME-39 offset |
 | 3 | `lj4evr` opens TSEQUENCEFORM in a self-drawn classic frame on Windows (PrintWindow screenshot) and on `macos-14` (`--selftest`); `Native=1` shows the OS frame; one taskbar button with main + TSEQUENCEFORM + TCURRENTCUE; minimising the main window hides both; same under `Native=1` | **done on Windows** (seqform-classic.png, taskbar.png / taskbar-button.png, UIA: 1 new button, SW_MINIMIZE hides Sequence + Cue; seqform-native.png + taskbar-native.png + minimise under Native=1 identical); **macOS `--selftest` OK on macos-14** (0 mismatching pixels). Not checked: the macOS frame / Spaces behaviour on a real Mac (needs Joey's Mac; the design's R1 escape hatch is `Native=1`) |
-| 4 | `release.yml` on `v0.0.1` produces a `.dmg` and an NSIS `.exe` whose About text reads `0.0.1` | **installers produced on the tag; About text W1** (ME-45): `VERSION` = 0.0.1; both installers build as ci.yml artifacts (`installer-windows`, `installer-macos`) with the same presets and `release.yml` attaches them to the `v0.0.1` release (run id in the fix-pass section below); no About form is wired in W0, so "About text reads 0.0.1" is checked in W1 with `--version` |
+| 4 | `release.yml` on `v0.0.1` produces a `.dmg` and an NSIS `.exe` whose About text reads `0.0.1` | **installers produced on the tag; `--version` reads 0.0.1; About text W1** (ME-45): `VERSION` = 0.0.1; `release.yml` run 39680465777 attached both installers to the `v0.0.1` release (section 8); the installed `lj4evr.exe --version` prints `LJ4EVR 0.0.1`; no About form is wired in W0 |
 | 5 | `determinism` green on an engine stub frame dump; `test_layering` green | **done**: three identical 1641600-byte dumps (sha256 64236b68...), `test_layering` 0 findings with gcc (CI) and cl (local, 154 files, 66 headers alone) |
 
 Measured numbers: corpus 826 rows / 0 mismatches; 208 forms rendered (+ main window); 3632 control rows, 1081 menu items, 73
@@ -165,3 +165,43 @@ native); frame dump 400 ticks, 1641600 bytes, identical on three OSes; 27 CTest 
 Left for W1 (recorded, not blocking): button glyphs through `lj_glyph_get()` (art is packed, nothing draws it), glyphmap lookup in
 dfm2c for the TSEQUENCEFORM/TCURRENTCUE toolbars, `lj_window_last_event` for right-click O/S/F, the 34 corpus rows outside the five
 faces, `tools/ref/16-gs2_ref.py` 0x266C reserved 17 for `lj_gs2_parse`, the macOS Spaces/Mission Control check on a real Mac.
+
+## 8. Release v0.0.1 (2026-10-21)
+
+Ruling: AUTHORIZE WITH GATES after the fix pass (`W0_CODE_MASTER_ELDER_VERDICT.md` section 4, landed in b0b6243 + 2a85165).
+
+    de7da16  release: --version flag, CHANGELOG 0.0.1 sacrifice list and known gaps   (ME-45's one line, ME-63's changelog)
+    ci.yml   39679920513 green, six jobs (de7da16)
+    git tag -a v0.0.1 -m "LJ4EVR 0.0.1 - W0 foundation"; git push origin v0.0.1   -> tag on de7da16
+    release.yml 39680465777 green first run: check, windows, macos, release
+
+Release: https://github.com/UnbannableGT/LJ4EVR/releases/tag/v0.0.1 (prerelease, 0.x)
+
+| Asset | Bytes | sha256 |
+|---|---|---|
+| `LJ4EVR-0.0.1-win64-setup.exe` | 995152 | d044ff1d804d65cdce0bfb6808b70b76fb2502fe9bbb1579016880332478952a |
+| `LJ4EVR-0.0.1-macos.dmg` | 2093898 | f19f5c0842453ed6b37783d71f26cd025101f72e9fb079bd2181d2138f7151c9 |
+| `SHA256SUMS` | 184 | |
+
+`gh release download v0.0.1`, `sha256sum -c SHA256SUMS`: both OK.
+
+Windows installer, this PC (Windows 11, unelevated shell, no UAC prompt; the account is an Administrators-group member, so a
+true standard-user install is still ME-45's W1 line):
+
+    LJ4EVR-0.0.1-win64-setup.exe /S                      -> rc 0
+    %LOCALAPPDATA%\Programs\LJ4EVR\                      lj4evr.exe 5552128, Uninstall.exe 111231, THIRD_PARTY_NOTICES.txt 2055
+    HKCU\...\Uninstall\LJ4EVR                            DisplayName "LJ4EVR 0.0.1", DisplayVersion 0.0.1
+    Start Menu\Programs\LJ4EVR 0.0.1\LJ4EVR.lnk          (per-user; no desktop link)
+    dumpbin /dependents lj4evr.exe                       KERNEL32 USER32 GDI32 WINMM IMM32 ole32 VERSION ADVAPI32 SETUPAPI SHELL32; no vcruntime, no api-ms-win-crt (ME-42)
+    lj4evr.exe --version                                 LJ4EVR 0.0.1                                                   rc 0
+    lj4evr.exe --selftest                                selftest TSEQUENCEFORM: screen 472x207 vs render 472x207, 0 mismatching pixel(s): OK   rc 0
+    lj4evr.exe --save installed-main2.bmp --ms 1         saved, BM 807x652, 1580502 bytes                               rc 0
+    Uninstall.exe /S _?=<instdir>                        -> rc 0; HKCU uninstall key gone, Start Menu folder gone, lj4evr.exe + notices gone
+                                                         (Uninstall.exe itself stays under `_?=`, NSIS documented; removed by hand)
+
+Nits seen, not blocking: the empty `HKCU\Software\LJ4EVR contributors` vendor key survives uninstall (CPack template deletes
+only its child); `%APPDATA%\LJ4EVR\LJ4EVR\forms.ini` is user data and is left alone, as intended.
+
+macOS: no Mac on this PC. `LJ4EVR-0.0.1-macos.dmg` checked by size and signature only: 2093898 bytes, first block zlib
+(`78 da`, UDZO) and a `koly` UDIF trailer (version 4) in the last 512 bytes. **ME-21 Mac acceptance is open for Joey**: run the
+.dmg on his Mac (right-click LJ4EVR.app > Open, or `xattr -d com.apple.quarantine`), screenshot the Sequence window and one menu.
