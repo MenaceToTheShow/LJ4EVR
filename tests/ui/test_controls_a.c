@@ -49,7 +49,7 @@ static const lj_ctl_button lamp_btns[] = { {"Lamp On", 0, 232, 228, 237}, {"Lamp
 static const lj_ctl_row lamp_rows[] = {
     { LJ_W_FADEBTN,   0, 1, .dflt_state = LJ_SNAP, .states_allowed = LJ_STATES_OFF_SNAP },
     { LJ_W_LAMP_BTNS, 0, 1, .buttons = lamp_btns, .nbuttons = 2 },
-    { LJ_W_NOTE,      0, 1, "NOTE !\nLamp Off must be held for at least 5 seconds" } };   /* exe 0x1313EC, the "NOTE !" line above it (lampcontrol.gif) */
+    { LJ_W_NOTE,      0, 1, "NOTE !\nLamp Off must be held for at least 5 seconds", .lo = 0 } };   /* exe 0x1313EC, the "NOTE !" line above it (lampcontrol.gif) */
 
 static const lj_ctl_row levels_rows[] = {
     { LJ_W_LEVEL_FADER, 0, 1, "Yellow", .lo = 0, .hi = 255 },

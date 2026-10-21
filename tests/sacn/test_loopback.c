@@ -7,6 +7,7 @@
  *   - remap (ME-23): 3 x Stream_Terminated for the dropped universe arrive before the
  *     first packet of the new one; the kept universe keeps its sequence;
  *   - close: 3 x Stream_Terminated per universe. Runs in CI on all three OSes. */
+#define _POSIX_C_SOURCE 200809L   /* nanosleep under -std=c11 */
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>

@@ -94,7 +94,7 @@ int lj_test_desktop(int argc, char **argv)
     lj_show *show = lj_show_new();
     lj_profile mh, dim;
     lj_window *win;
-    lj_widget *root, *w;
+    lj_widget *w;
     lj_menu *m;
     const lj_main_top_rule *top; const lj_main_inert_leaf *inert;
     const lj_menu_desc *bar;
@@ -129,7 +129,6 @@ int lj_test_desktop(int argc, char **argv)
     CHECK(win != NULL);
     if (!win) { lj_show_free(show); return 1; }
     CHECK(logged == 0);   /* no "no binding for handler" / "matches no DFM handler" line (ME-16) */
-    root = lj_window_root(win);
     lj_window_client_rect(win, &cr);
     CHECK(cr.w == 791 && cr.h == 560);                                     /* TLJMAINFORM 799x606 outer, client derived */
     w = lj_window_find(win, "tb_row_seqcue");  CHECK(w && w->y == 0 && w->h == LJ_TB_ROW_H && w->w == cr.w);
