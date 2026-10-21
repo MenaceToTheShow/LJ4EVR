@@ -45,7 +45,7 @@ int lj_test_fixlib_profiles(int argc, char **argv)
 {
     const lj_profile *p, *q;
     const lj_exe_row *row;
-    lj_profile synth;
+    static lj_profile synth;   /* static: lj_layout_derive stores process-lifetime tables in it (LSan sees them as reachable) */
     int i, nhand = 0, nqxf = 0;
     (void)argc; (void)argv;
 

@@ -107,7 +107,7 @@ static void bound_dispatch(lj_widget *w, int ev, void *ud)
     lj_wbind *b = (lj_wbind *)ud;
     int i;
     if (!b) return;
-    for (i = 0; i < b->n; i++) if (b->e[i].ev == ev) b->e[i].fn(w, b->e[i].ud);
+    for (i = 0; i < b->n; i++) if (b->e[i].ev == ev) { void (*fn)(lj_widget *, void *) = b->e[i].fn; void *ud2 = b->e[i].ud; fn(w, ud2); return; }   /* one handler per event name; the handler may destroy its window (warning boxes), so nothing of b is read after the call */
 }
 
 typedef struct { const char *missing[64]; int n; int complained; } lj_unbound;

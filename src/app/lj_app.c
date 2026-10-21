@@ -124,7 +124,9 @@ static void lj_app_host_close(void *ud, lj_window *w)
 
 static void lj_app_host_show(void *ud, lj_window *w, int show) { (void)ud; lj_platform_show_window(w, show); }
 
-static const lj_win_host lj_app_host = { NULL, lj_app_host_open, lj_app_host_close, lj_app_host_show };
+static void lj_app_host_move(void *ud, lj_window *w, int x, int y) { (void)ud; lj_platform_move_window(w, x, y); }
+static int  lj_app_host_pos(void *ud, const lj_window *w, int *x, int *y) { (void)ud; return lj_platform_window_pos(w, x, y); }
+static const lj_win_host lj_app_host = { NULL, lj_app_host_open, lj_app_host_close, lj_app_host_show, lj_app_host_move, lj_app_host_pos };   /* move/pos: the warning boxes centre on the main window (LORD_FIDELITY-12) */
 
 /* W0 fallback for a generated form while lj_win_open has no body (ponytail: deleted with the windows track). */
 static lj_window *lj_app_open_form(const lj_form_desc *d)
