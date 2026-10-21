@@ -1,0 +1,84 @@
+# CI
+
+Three workflows under `.github/workflows/`, design 9.3 and 9.5.
+
+| Workflow | Trigger | Runs on |
+|---|---|---|
+| `ci.yml` | push to `main`, tags `v*`, `pull_request` | self-hosted (Linux, in the container) + `windows-latest` + `macos-14` |
+| `release.yml` | tags `v*` | hosted only (`docs/releasing.md`) |
+| `docker.yml` | push to `main` touching `docker/**` or itself, manual | self-hosted; pushes the CI image to GHCR |
+
+## `ci.yml` jobs
+
+| Job | Runner | Does | Artifact |
+|---|---|---|---|
+| `generate-check` | `[self-hosted, lj4evr]`, container | `tools/test_layering.py`; every `tools/{qxf2c,fontpack,artpack,gen_vectors}.py --check` that exists (they land with their waves, design 9.2) | - |
+| `linux-gcc-asan` | same | preset `ci-linux-asan` (gcc, ASan+UBSan, `LJ_SDL=OFF`), `ctest`, `lj4evr_tests dump-frames` | `frames-linux` |
+| `linux-clang` | same | preset `ci-linux-clang`, `ctest` | - |
+| `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, `cpack -G NSIS` | `frames-windows`, `installer-windows` |
+| `macos-clang` | `macos-14` | preset `release-mac`, `ctest`, `--selftest`, `dump-frames`, `cpack -G DragNDrop` | `frames-macos`, `installer-macos` |
+| `determinism` | container, needs the three above | `cmp` the three `frames-*.bin`; one byte differs = red | - |
+
+Hosted jobs cache the SDL3 source checkout (`actions/cache`, key
+`sdl3-src-<GIT_TAG from CMakeLists.txt>`) and hand it to CMake through
+`FETCHCONTENT_SOURCE_DIR_SDL3`, so a configure never clones SDL on a cache hit.
+Changing the SDL tag in `CMakeLists.txt` changes the key automatically.
+
+`concurrency: ci-<ref>` with cancel-in-progress: a new push to the same branch
+cancels the previous run. `release.yml` does not cancel (a half-made release is
+worse than a slow one).
+
+## Runner security model (project.md, LORD_C-13)
+
+Four self-hosted runners (`lj4evr-ci2-1..4`) on **atlas-ci2**, Ubuntu 24.04,
+labels `[self-hosted, lj4evr]`, Docker 29 for the runner user, **no cmake on the
+host**: every Linux job runs inside `ghcr.io/unbannablegt/lj4evr-ci`.
+
+Rules the workflows enforce, in this order of defence:
+
+1. Every self-hosted job carries `if: github.event_name != 'pull_request'`. A
+   pull request, from a fork or a branch, never schedules work on atlas-ci2;
+   only `push` to `main` and `v*` tags do. Installers and the two hosted
+   `--selftest` runs still cover PRs.
+2. Repo Actions setting: "Require approval for all outside collaborators"
+   before the public flip, so a fork PR does not even run the hosted jobs
+   until a maintainer looks at it.
+3. Workflow permissions default to read. `ci.yml` asks for `contents: read,
+   packages: read` (pull the image); `docker.yml` for `packages: write`;
+   only the `release` job in `release.yml` gets `contents: write`.
+4. The container runs as uid 1000 (`ci`), not root, matching the runner user
+   so the mounted workspace is writable without `chown`.
+
+## The CI image
+
+`docker/Dockerfile`: `debian:trixie` (ME-20; trixie's gcc, clang, cmake,
+ninja-build and python3 >= 3.12, the exact versions are printed by the
+workflow's smoke-test step), `git`, `ca-certificates`, user `ci`. `docker.yml` builds
+it on a self-hosted runner, smoke-tests the tool versions, and pushes
+`ghcr.io/unbannablegt/lj4evr-ci:<short-sha>` and `:latest`, logging in with
+`GITHUB_TOKEN` (`github.actor`). The package is private because the repo is;
+`ci.yml` pulls it with the same token through `container.credentials`.
+
+**First run / package link**: GHCR packages pushed with `GITHUB_TOKEN` from a
+workflow are linked to the repo automatically. If the pull in `ci.yml` is
+denied, open the package on github.com > Package settings > "Manage Actions
+access" and add `UnbannableGT/LJ4EVR` with read.
+
+**Pin by digest after the first push** (ME-20). `docker.yml` prints the digest
+in its step summary, e.g. `ghcr.io/unbannablegt/lj4evr-ci@sha256:abcd...`. In
+`ci.yml` replace every `image: ghcr.io/unbannablegt/lj4evr-ci:latest` with that
+string (four jobs; `container:` cannot read `env`, hence the repetition). After
+a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
+`ci.yml`. `:latest` is for bootstrap only.
+
+## Running the lint locally
+
+    pip install pyyaml                       # into .venv
+    python -c "import yaml,glob; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]"
+    actionlint -no-color                    # rhysd/actionlint; .github/actionlint.yaml declares the lj4evr label
+
+## What is not here yet
+
+`lj4evr --selftest` and `lj4evr_tests dump-frames` are called by name; they
+land with the app and engine tracks (W0 acceptance 3 and 5). Until then the
+hosted jobs fail at that step, which is the intended signal, not a workflow bug.

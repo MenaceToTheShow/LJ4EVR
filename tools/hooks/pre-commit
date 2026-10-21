@@ -1,0 +1,13 @@
+#!/bin/sh
+# tools/hooks/pre-commit - developer hook (design 7.6, 9.2): when the Martin reference tree is present,
+# regenerate the DFM tables and refuse a commit whose committed copies drifted. CI never has the
+# reference tree and only compiles. Install once per clone:
+#   cp tools/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+root=$(git rev-parse --show-toplevel) || exit 1
+[ -d "$root/reference/installer/exe_resources/dfm_text" ] || exit 0
+py=python3
+[ -x "$root/.venv/Scripts/python.exe" ] && py="$root/.venv/Scripts/python.exe"
+[ -x "$root/.venv/bin/python" ] && py="$root/.venv/bin/python"
+"$py" -I "$root/tools/dfm2c.py" --repo "$root" --check && exit 0
+echo "pre-commit: tools/dfm2c.py --check failed. Run: $py -I tools/dfm2c.py, review the diff, stage it, commit again." >&2
+exit 1

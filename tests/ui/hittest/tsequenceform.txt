@@ -1,0 +1,30 @@
+# TSEQUENCEFORM z-order hit-test (design 7.6): "x y widget", client coordinates.
+# Geometry is the DFM's: Panel1 (0,0 354x106) is declared after ESeqNo/ESeqName/ESeqType
+# and covers them; Bevel3 (1,2 350x33) sits inside Panel1 under the sb buttons.
+10 20 sb3
+20 5 Bevel3
+220 20 Panel2
+295 20 Bevel3
+353 20 Panel1
+354 20 ESeqType
+356 20 ESeqType
+359 20 ESeqType
+360 20 SequenceForm
+220 36 Panel1
+250 10 sb7
+8 10 sb3
+100 10 Elapsed
+50 45 Label5
+110 45 ES
+140 45 UdScene
+110 70 EF
+100 90 cbSync
+300 90 sb11
+330 90 seqBlind
+250 45 cbGlobalScene
+250 65 cbGlobalFade
+200 10 Panel2
+170 45 lBPM
+400 150 SequenceForm
+0 0 Panel1
+465 162 SequenceForm

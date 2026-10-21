@@ -1,0 +1,168 @@
+name: CI
+
+# Design 9.3. Linux jobs run in the CI container on the self-hosted runners and
+# only for push/tag events (never pull_request: a fork PR must not reach
+# atlas-ci2, project.md security note). Windows and macOS build on GitHub-hosted
+# runners for every event. determinism compares the three frame dumps byte for byte.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The container image is repeated per job because `container:` cannot read `env`.
+# Pin by digest after the first docker.yml push (docs/ci.md):
+#   image: ghcr.io/unbannablegt/lj4evr-ci@sha256:<digest>
+
+jobs:
+  generate-check:
+    if: github.event_name != 'pull_request'
+    runs-on: [self-hosted, lj4evr]
+    container:
+      image: ghcr.io/unbannablegt/lj4evr-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Layering and conventions
+        run: python3 -I tools/test_layering.py --src src --cc gcc
+      - name: Generated files are current
+        # Each --check tool lands with its wave (design 9.2); run the ones that exist.
+        run: |
+          for t in qxf2c fontpack artpack gen_vectors; do
+            if [ -f "tools/$t.py" ]; then echo "== $t"; python3 -I "tools/$t.py" --check; fi
+          done
+
+  linux-gcc-asan:
+    if: github.event_name != 'pull_request'
+    runs-on: [self-hosted, lj4evr]
+    container:
+      image: ghcr.io/unbannablegt/lj4evr-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake --preset ci-linux-asan
+      - run: cmake --build --preset ci-linux-asan
+      - run: ctest --preset ci-linux-asan
+      - run: build-linux-asan/lj4evr_tests dump-frames frames-linux.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames-linux
+          path: frames-linux.bin
+          if-no-files-found: error
+
+  linux-clang:
+    if: github.event_name != 'pull_request'
+    runs-on: [self-hosted, lj4evr]
+    container:
+      image: ghcr.io/unbannablegt/lj4evr-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake --preset ci-linux-clang
+      - run: cmake --build --preset ci-linux-clang
+      - run: ctest --preset ci-linux-clang
+
+  windows-msvc:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: SDL3 tag from CMakeLists.txt
+        id: sdl
+        run: echo "tag=$(grep -oE 'GIT_TAG +\S+' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: sdl-cache
+        with:
+          path: ${{ runner.temp }}/sdl3-src
+          key: sdl3-src-${{ steps.sdl.outputs.tag }}
+      - if: steps.sdl-cache.outputs.cache-hit != 'true'
+        run: git clone --depth 1 --branch "${{ steps.sdl.outputs.tag }}" https://github.com/libsdl-org/SDL.git "$RUNNER_TEMP/sdl3-src"
+      - name: NSIS
+        shell: pwsh
+        run: if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { choco install nsis -y --no-progress }
+      - run: cmake --preset release-win -DFETCHCONTENT_SOURCE_DIR_SDL3="$RUNNER_TEMP/sdl3-src"
+      - run: cmake --build --preset release-win
+      - run: ctest --preset release-win
+      - run: build-release-win/Release/lj4evr.exe --selftest
+      - run: build-release-win/Release/lj4evr_tests.exe dump-frames frames-windows.bin
+      - run: cd build-release-win && cpack -G NSIS -C Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames-windows
+          path: frames-windows.bin
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-windows
+          path: build-release-win/LJ4EVR-*-win64-setup.exe
+          if-no-files-found: error
+
+  macos-clang:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install ninja
+      - name: SDL3 tag from CMakeLists.txt
+        id: sdl
+        run: echo "tag=$(grep -oE 'GIT_TAG +\S+' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: sdl-cache
+        with:
+          path: ${{ runner.temp }}/sdl3-src
+          key: sdl3-src-${{ steps.sdl.outputs.tag }}
+      - if: steps.sdl-cache.outputs.cache-hit != 'true'
+        run: git clone --depth 1 --branch "${{ steps.sdl.outputs.tag }}" https://github.com/libsdl-org/SDL.git "$RUNNER_TEMP/sdl3-src"
+      - run: cmake --preset release-mac -DFETCHCONTENT_SOURCE_DIR_SDL3="$RUNNER_TEMP/sdl3-src"
+      - run: cmake --build --preset release-mac
+      - run: ctest --preset release-mac
+      - run: build-release-mac/lj4evr.app/Contents/MacOS/lj4evr --selftest
+      - run: build-release-mac/lj4evr_tests dump-frames frames-macos.bin
+      - run: cd build-release-mac && cpack -G DragNDrop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames-macos
+          path: frames-macos.bin
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-macos
+          path: build-release-mac/LJ4EVR-*-macos.dmg
+          if-no-files-found: error
+
+  determinism:
+    if: github.event_name != 'pull_request'
+    needs: [linux-gcc-asan, windows-msvc, macos-clang]
+    runs-on: [self-hosted, lj4evr]
+    container:
+      image: ghcr.io/unbannablegt/lj4evr-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: frames-*
+          merge-multiple: true
+      - name: Three OSes, one byte stream
+        run: |
+          ls -l frames-*.bin
+          cmp frames-linux.bin frames-windows.bin
+          cmp frames-linux.bin frames-macos.bin
+          sha256sum frames-*.bin

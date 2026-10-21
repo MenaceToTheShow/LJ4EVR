@@ -1,0 +1,827 @@
+form	object	face	height	style	caption	width
+TAboutForm2	Label1	Arial	-12	1	(C)	16
+TAboutForm2	Label2	MS Sans Serif	-11	0	----------------------------------------	120
+TAboutForm2	Label3	MS Sans Serif	-11	0	Visit the LightJockey Forum at	141
+TAboutForm2	Label4	MS Sans Serif	-11	5	http://www.martin.com/forum/	174
+TAddFixForm2	Label1	MS Sans Serif	-11	1	Number of fixtures to add	144
+TAddFixForm2	Label2	MS Sans Serif	-11	1	Start from Fixture number	143
+TAddFixForm2	lFixtureName	MS Sans Serif	-11	1	lFixtureName	74
+TAddGroupForm	Label1	MS Sans Serif	-11	0	GroupName	57
+TApplyDefaultDMXForm	Label1	MS Sans Serif	-11	0	Fixture#	38
+TApplyDefaultDMXForm	lFixture	MS Sans Serif	-11	0	lFixture	33
+TApplyMultiForm	lMasterNo	MS Sans Serif	-11	0	Master	32
+TApplyMultiForm	lMasterId	MS Sans Serif	-11	0	Master Id	44
+TAutoDelayForm	Label1	MS Sans Serif	-11	0	Segments	47
+TAutoDelayForm	Label2	MS Sans Serif	-11	0	Circular Fixture Count	100
+TAutoDelayForm	Label4	MS Sans Serif	-11	0	Max Delay	50
+TAutoDelayForm	Label3	MS Sans Serif	-11	0	Fixtures Selected	81
+TAutoDelayForm	LFixMax	MS Sans Serif	-11	0	100 	21
+TBackupForm	Label1	MS Sans Serif	-11	0	Reading	40
+TBackupForm	Label2	MS Sans Serif	-11	0	Writing	33
+TBackupForm	Label3	MS Sans Serif	-11	0	Label3	32
+TBackupForm	Label4	MS Sans Serif	-11	0	Label4	32
+TBezNameForm	Label1	MS Sans Serif	-11	0	Shape Name	62
+TBGCueSequenceModeForm	Label1	MS Sans Serif	-11	0	Seq	19
+TBinary2510Form	Label1	MS Sans Serif	-11	0	Binary File	48
+TBinary2510Form	lFile	MS Sans Serif	-11	0	lFile	18
+TBitMapPickerForm2	lBitmaps	MS Sans Serif	-11	0	lBitmaps	39
+TCaptureForm	lDLLVersion	MS Sans Serif	-11	1	Version:	47
+TCaptureForm	lConnectionStatus	MS Sans Serif	-11	1	Connection Status:	109
+TCaptureForm	lTraffic	MS Sans Serif	-11	1	lTraffic	41
+TCaptureForm	lDLLSpec	MS Sans Serif	-11	1	Capture interface:	103
+TChannelDefForm	Label1	MS Sans Serif	-11	0	Fixture	31
+TChannelDefForm	Label2	MS Sans Serif	-11	0	Name	28
+TChannelDefForm	Label3	MS Sans Serif	-11	0	DMXAddress	62
+TChannelDefForm	lFixType	MS Sans Serif	-11	1	lFixType	48
+TChannelDefForm	lUsername	MS Sans Serif	-11	0	lUsername	50
+TChannelDefForm	lDmxAdr	MS Sans Serif	-11	0	lDmxAdr	39
+TChannelDefForm	Label4	MS Sans Serif	-11	0	Channel Caption	78
+TCleanUpForm	lAction	MS Sans Serif	-11	0	Clearing Fixture #	82
+TclEditPanels	Label6	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label1	MS Sans Serif	-11	1	&Track#	42
+TclEditPanels	Label32	MS Sans Serif	-11	1	Play Track	62
+TclEditPanels	Label60	MS Sans Serif	-11	1	CD	18
+TclEditPanels	Label2	MS Sans Serif	-11	1	Play Time	56
+TclEditPanels	Label21	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label22	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label23	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label24	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label46	MS Sans Serif	-11	1	CD	18
+TclEditPanels	Label3	MS Sans Serif	-11	1	Wait	27
+TclEditPanels	Label15	MS Sans Serif	-11	1	&Hour	28
+TclEditPanels	Label16	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label17	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label18	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label19	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label45	MS Sans Serif	-11	1	MIDI Time	59
+TclEditPanels	Label4	MS Sans Serif	-11	1	PC-Clock	53
+TclEditPanels	Label11	MS Sans Serif	-11	1	&Hour	28
+TclEditPanels	Label12	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label13	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label14	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label59	MS Sans Serif	-11	1	Wait	27
+TclEditPanels	Label5	MS Sans Serif	-11	1	Elapsed	46
+TclEditPanels	Label7	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label8	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label9	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label10	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label43	MS Sans Serif	-11	1	Wait	27
+TclEditPanels	Label25	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label20	MS Sans Serif	-11	1	Wait Time	58
+TclEditPanels	Label26	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label27	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label28	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label29	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label44	MS Sans Serif	-11	1	CD	18
+TclEditPanels	Label30	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label31	MS Sans Serif	-11	1	&Line#	33
+TclEditPanels	Label33	MS Sans Serif	-11	1	Goto Line	56
+TclEditPanels	Label34	MS Sans Serif	-11	1	DA File	42
+TclEditPanels	Label39	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label35	MS Sans Serif	-11	1	FileName	53
+TclEditPanels	Label50	MS Sans Serif	-11	1	Play	25
+TclEditPanels	Label36	MS Sans Serif	-11	1	Wait	27
+TclEditPanels	Label37	MS Sans Serif	-11	1	&Hour	28
+TclEditPanels	Label38	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label40	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label41	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label42	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label58	MS Sans Serif	-11	1	DA	18
+TclEditPanels	Label47	MS Sans Serif	-11	1	DA File	42
+TclEditPanels	Label48	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label49	MS Sans Serif	-11	1	FileName	53
+TclEditPanels	Label51	MS Sans Serif	-11	1	Cue	23
+TclEditPanels	Label52	MS Sans Serif	-11	1	Seek DA	51
+TclEditPanels	Label53	MS Sans Serif	-11	1	&Hour	28
+TclEditPanels	Label54	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label55	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label56	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label57	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label62	MS Sans Serif	-11	1	&Parameter	58
+TclEditPanels	Label63	MS Sans Serif	-11	1	FileName	53
+TclEditPanels	Label64	MS Sans Serif	-11	1	Execute	47
+TclEditPanels	Label61	MS Sans Serif	-11	1	MP File	43
+TclEditPanels	Label65	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label66	MS Sans Serif	-11	1	FileName	53
+TclEditPanels	Label67	MS Sans Serif	-11	1	Load	29
+TclEditPanels	Label68	MS Sans Serif	-11	1	Wait	27
+TclEditPanels	Label69	MS Sans Serif	-11	1	&Hour	28
+TclEditPanels	Label70	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label71	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label72	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label73	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label74	MS Sans Serif	-11	1	MP	19
+TclEditPanels	Label75	MS Sans Serif	-11	1	Seek MP	52
+TclEditPanels	Label76	MS Sans Serif	-11	1	&Hour	28
+TclEditPanels	Label77	MS Sans Serif	-11	1	&Min	21
+TclEditPanels	Label78	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label79	MS Sans Serif	-11	1	&Frame	35
+TclEditPanels	Label80	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label81	MS Sans Serif	-11	1	&DA Timecode Factor (0.5 - 2.0)	177
+TclEditPanels	Label86	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label83	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label85	MS Sans Serif	-11	1	Co&mmand	55
+TclEditPanels	Label88	MS Sans Serif	-11	1	&Sec	23
+TclEditPanels	Label89	MS Sans Serif	-11	1	&Comment	52
+TclEditPanels	Label90	MS Sans Serif	-11	1	Flash	31
+TclEditPanels	Label84	MS Sans Serif	-11	1	0.1 S&ec	45
+TclEditPanels	Label91	MS Sans Serif	-11	1	Duration	49
+TCloneForm	lSource	MS Sans Serif	-11	0	Copy From 	53
+TCloseOrSaveForm	LSeq	MS Sans Serif	-11	0	Current Sequence was modified and not saved..	227
+TCloseOrSaveForm	LCue	MS Sans Serif	-11	0	Current Cue was modified and not saved..	197
+TCloseOrSaveForm	LCl	MS Sans Serif	-11	0	Current Cuelist was modified and not saved..	209
+TCloseOrSaveForm	Label4	MS Sans Serif	-13	1	Close LightJockey Now ?	174
+TColorScheme2532Form	Label1	MS Sans Serif	-11	0	Functions	46
+TColorScheme2532Form	Label2	MS Sans Serif	-11	0	Sequences	54
+TColorScheme2532Form	Label3	MS Sans Serif	-11	0	Cues	24
+TColorScheme2532Form	Label4	MS Sans Serif	-11	0	Cuelists	36
+TColorScheme2532Form	Label5	MS Sans Serif	-11	0	BG Cues	42
+TColorScheme2532Form	Label6	MS Sans Serif	-11	0	Text	21
+TColorScheme2532Form	Label7	MS Sans Serif	-11	0	Backgr.	37
+TColorScrolDefForm	Label1	MS Sans Serif	-11	0	Selection ID	58
+TColorScrolDefForm	Label2	MS Sans Serif	-11	0	Scroller DMX address	102
+TConfigPrintPreviewForm	Label1	MS Sans Serif	-11	0	No	14
+TConfigPrintPreviewForm	Label2	MS Sans Serif	-11	0	Fixture Type	58
+TConfigPrintPreviewForm	Label3	MS Sans Serif	-11	0	DMX Addr	49
+TConfigPrintPreviewForm	Label4	MS Sans Serif	-11	0	Special	35
+TConfigPrintPreviewForm	Label5	MS Sans Serif	-11	0	User Name	53
+TConfigPrintPreviewForm	Label6	MS Sans Serif	-13	1	LightJockey Fixture Configuration	229
+TConfigPrintPreviewForm	Label7	MS Sans Serif	-11	0	Label7	32
+TConfigPrintPreviewForm	Label8	MS Sans Serif	-11	0	Label8	32
+TConfirmForm	Label1	Arial	-11	0	Label1	32
+TConfirmForm	Label2	Arial	-11	0	Label2	32
+TCopyingFilesForm	Label1	MS Sans Serif	-11	0	Copying	38
+TCreate2510Form	LPG	MS Sans Serif	-11	0	Building..	43
+TCuelist2Form	lCurrentTime	MS Sans Serif	-11	1	--:--:--:--	45
+TCuelist2Form	lTotalLines	MS Sans Serif	-11	0	lTotalLines	51
+TCuelist2Form	lTotalElapsed	MS Sans Serif	-11	0	Elapsed 0000:00:00	95
+TCueMacroControlForm	lMacro	MS Sans Serif	-11	0	lMacro	32
+TCueMacroControlForm	lTime	MS Sans Serif	-11	0	lTime	25
+TCueMacroControlForm	lMinMax	MS Sans Serif	-11	0	lMin/Max	44
+TCueMacroControlForm	Label1	MS Sans Serif	-11	0	Direction	42
+TCueMacroControlForm	Label3	MS Sans Serif	-11	0	Macro Parameter Update	119
+TCueMacroControlForm	Label14	MS Sans Serif	-11	0	Macro Base Value	87
+TCueMacroControlForm	Label2	MS Sans Serif	-11	0	Restart macro on Cue load	126
+TCueMacroControlForm	Label7	MS Sans Serif	-11	0	To	13
+TCueMacroControlForm	Label9	MS Sans Serif	-11	0	Auto Delay Values	87
+TCueMacroControlForm	Label13	MS Sans Serif	-11	0	Delay (selected offsets)	110
+TCueMacroControlForm	Label6	MS Sans Serif	-11	0	From	23
+TCueMacroControlForm	Label11	MS Sans Serif	-11	0	Circular Groups Count	103
+TCueMacroControlForm	Label12	MS Sans Serif	-11	0	Segment Groups Count	110
+TCueMacroControlForm	Label4	MS Sans Serif	-11	0	Fixture Count	62
+TCueMacroControlForm	lFixCount	MS Sans Serif	-11	1	000	22
+TCueMacroControlForm	Label5	MS Sans Serif	-11	0	Channel Count	70
+TCueMacroControlForm	lChanCount	MS Sans Serif	-11	1	0000	29
+TCueMacroControlForm	Label8	MS Sans Serif	-11	0	Fixture Type	58
+TCueMacroForm	Label3	MS Sans Serif	-11	0	Fade Time	50
+TCueMacroForm	Label1	MS Sans Serif	-11	0	Pan/Tilt Macro	71
+TCueMacroForm	LLink	MS Sans Serif	-11	0	Ampl.	26
+TCueMacroForm	Label2	MS Sans Serif	-11	0	Speed	31
+TD2510Form	Label2	MS Sans Serif	-11	0	Loops	29
+TD2510Form	lFixtures	MS Sans Serif	-11	0	0 Fixtures Selected	90
+TD2510Form	lSequences	MS Sans Serif	-11	0	0 Sequences	63
+TD2510Form	Label1	MS Sans Serif	-11	0	Sub-List	38
+TD2510Form	Label3	MS Sans Serif	-11	0	Default Trig Source	92
+TD2510Form	lCap	MS Sans Serif	-11	0	0 Scenes of 000	78
+TD2518Form	lMaxDMX	MS Sans Serif	-11	1	Max DMX Address: 72	126
+TD2518Form	lUsingDMX	MS Sans Serif	-11	1	Using Addresses 1-72	124
+TD2518Form	lUsingScenes	MS Sans Serif	-11	1	Using Scene 1-6	95
+TDa2532Form_3	Label1	MS Sans Serif	-11	0	On-Line	37
+TDa2532Form_3	Label2	MS Sans Serif	-11	0	B/O	20
+TDa2532Form_3	Label3	MS Sans Serif	-11	0	Page	25
+TDa2532Form_3	Label4	MS Sans Serif	-11	0	Cue	19
+TDa2532Form_3	Label5	MS Sans Serif	-11	0	Sequence	49
+TDa2532Form_3	Label6	MS Sans Serif	-11	0	BG Cue	37
+TDa2532Form_3	Label7	MS Sans Serif	-11	0	Cuelist	31
+TDa2532Form_3	Label9	MS Sans Serif	-11	0	Command	47
+TDa2532Form_3	lFunction	MS Sans Serif	-11	0	lFunction	43
+TDa2532Form_3	lPage	MS Sans Serif	-11	0	lPage	27
+TDa2532Form_3	lCue	MS Sans Serif	-11	0	lCue	21
+TDa2532Form_3	lSeq	MS Sans Serif	-11	0	lSeq	21
+TDa2532Form_3	lCuelist	MS Sans Serif	-11	0	lCuelist	33
+TDa2532Form_3	lBGCue	MS Sans Serif	-11	0	lBGCue	36
+TDa2532Form_3	Label8	MS Sans Serif	-11	0	Record	35
+TDa2532TabHeight	Label1	MS Sans Serif	-11	0	Tab Height (Pixels)	89
+TDa2532TabHeight	Label2	MS Sans Serif	-11	0	Tab Width (Pixels)	86
+TDA2532_TabColorsForm	Label1	MS Sans Serif	-11	0	Active Tab	52
+TDA2532_TabColorsForm	Label2	MS Sans Serif	-11	0	Inactive Tabs	65
+TDA2532_TabColorsForm	Label6	MS Sans Serif	-11	0	Text	21
+TDA2532_TabColorsForm	Label7	MS Sans Serif	-11	0	Backgr.	37
+TDATCScaleForm	Label1	MS Sans Serif	-11	0	Full Track Timecode (ms)	119
+TDATCScaleForm	Label2	MS Sans Serif	-11	0	Sample Timecode (ms)	107
+TDATCScaleForm	Label3	MS Sans Serif	-11	0	Timecode Factor	80
+TDebugForm	Label51	MS Sans Serif	-11	0	Label51	38
+TDebugForm	Label52	MS Sans Serif	-11	0	Label52	38
+TDebugForm	Label53	MS Sans Serif	-11	0	Label53	38
+TDebugForm	Label54	MS Sans Serif	-11	0	Label54	38
+TDebugForm	Label55	MS Sans Serif	-11	0	DMX engine, % , 1 sec avr.	129
+TDebugForm	lpfCounter1	Courier	-11	1	pfCounter1	91
+TDebugForm	lpfCounter2	Courier	-11	1	pfCounter2	91
+TDebugForm	Label57	MS Sans Serif	-11	0	Cue evaluation, %, 1 sec avr.	138
+TDebugForm	Label56	MS Sans Serif	-11	0	Process time total, ms	102
+TDebugForm	lpfCounter3	Courier	-11	1	pfCounter3	91
+TDebugForm	Label58	MS Sans Serif	-11	0	Process load, % 5 sec avr.	125
+TDebugForm	lpfCounter4	Courier	-11	1	pfCounter4	91
+TDebugForm	lpfCounter5	Courier	-11	1	pfCounter5	91
+TDebugForm	Label60	MS Sans Serif	-11	0	Macro evaluation, %, 1 sec avr.	149
+TDebugForm	Label65	MS Sans Serif	-11	0	Label65	38
+TDebugForm	Label66	MS Sans Serif	-11	0	Label66	38
+TDebugForm	Label67	MS Sans Serif	-11	0	Label67	38
+TDebugForm	Label68	MS Sans Serif	-11	0	Label68	38
+TDebugForm	Label69	MS Sans Serif	-11	0	Label69	38
+TDebugForm	Label70	MS Sans Serif	-11	0	Label70	38
+TDebugForm	Label71	MS Sans Serif	-11	0	Label71	38
+TDebugForm	Label1	MS Sans Serif	-11	0	Label1	32
+TDebugForm	Label2	MS Sans Serif	-11	0	Label2	32
+TDebugForm	Label3	MS Sans Serif	-11	0	Label3	32
+TDebugForm	Label4	MS Sans Serif	-11	0	Label4	32
+TDebugForm	Label5	MS Sans Serif	-11	0	Label5	32
+TDebugForm	Label6	MS Sans Serif	-11	0	Label6	32
+TDebugForm	Label7	MS Sans Serif	-11	0	Label7	32
+TDebugForm	Label8	MS Sans Serif	-11	0	Label8	32
+TDebugForm	Label9	MS Sans Serif	-11	0	Label9	32
+TDebugForm	Label10	MS Sans Serif	-11	0	Label10	38
+TDebugForm	Label11	MS Sans Serif	-11	0	B1	13
+TDebugForm	Label12	MS Sans Serif	-11	0	1_1	18
+TDebugForm	Label13	MS Sans Serif	-11	0	1_2	18
+TDebugForm	Label14	MS Sans Serif	-11	0	B1Count	41
+TDebugForm	Label15	MS Sans Serif	-11	0	B2Count	41
+TDebugForm	Label16	MS Sans Serif	-11	0	B2	13
+TDebugForm	Label17	MS Sans Serif	-11	0	2_1	18
+TDebugForm	Label18	MS Sans Serif	-11	0	2_2	18
+TDebugForm	Label19	MS Sans Serif	-11	0	B1Count	41
+TDebugForm	Label20	MS Sans Serif	-11	0	B2Count	41
+TDebugForm	Label21	MS Sans Serif	-11	0	Label1	32
+TDebugForm	Label22	MS Sans Serif	-11	0	Label2	32
+TDebugForm	Label23	MS Sans Serif	-11	0	Label3	32
+TDebugForm	Label24	MS Sans Serif	-11	0	Label4	32
+TDebugForm	Label25	MS Sans Serif	-11	0	Label5	32
+TDebugForm	Label26	MS Sans Serif	-11	0	Label6	32
+TDebugForm	Label27	MS Sans Serif	-11	0	Label7	32
+TDebugForm	Label28	MS Sans Serif	-11	0	Label8	32
+TDebugForm	Label29	MS Sans Serif	-11	0	Label9	32
+TDebugForm	Label30	MS Sans Serif	-11	0	Label10	38
+TDebugForm	Label31	MS Sans Serif	-11	0	B3	13
+TDebugForm	Label32	MS Sans Serif	-11	0	3_1	18
+TDebugForm	Label33	MS Sans Serif	-11	0	3_2	18
+TDebugForm	Label34	MS Sans Serif	-11	0	B1Count	41
+TDebugForm	Label35	MS Sans Serif	-11	0	B2Count	41
+TDebugForm	Label36	MS Sans Serif	-11	0	B4	13
+TDebugForm	Label37	MS Sans Serif	-11	0	4_1	18
+TDebugForm	Label38	MS Sans Serif	-11	0	4_2	18
+TDebugForm	Label39	MS Sans Serif	-11	0	B1Count	41
+TDebugForm	Label40	MS Sans Serif	-11	0	B2Count	41
+TDebugForm	Label41	MS Sans Serif	-11	0	M0	15
+TDebugForm	Label42	MS Sans Serif	-11	0	-1	9
+TDebugForm	Label44	MS Sans Serif	-11	0	-1	9
+TDebugForm	Label43	MS Sans Serif	-11	0	M1	15
+TDebugForm	Label45	MS Sans Serif	-11	0	-1	9
+TDebugForm	Label46	MS Sans Serif	-11	0	-1	9
+TDebugForm	Label47	MS Sans Serif	-11	0	Thread Count	65
+TDebugForm	Label48	MS Sans Serif	-11	0	Thread Count 2	74
+TDebugForm	Label49	MS Sans Serif	-11	0	HW Zero Count	75
+TDebugForm	Label50	MS Sans Serif	-11	0	HW Non Zero Count	98
+TDebugForm	ladpThread	MS Sans Serif	-11	0	ladpThread	54
+TDebugForm	ladpThread2	MS Sans Serif	-11	0	ladpThread2	60
+TDebugForm	ladpZero	MS Sans Serif	-11	0	ladpZero	42
+TDebugForm	ladpNonZero	MS Sans Serif	-11	0	ladpNonZero	62
+TDebugForm	lThreadExecute	MS Sans Serif	-11	0	lhreadExecuteCount	96
+TDebugForm	lUSB1Idle	MS Sans Serif	-11	0	lUSB1Idle	47
+TDebugForm	lUSB2Idle	MS Sans Serif	-11	0	lUSB2Idle	47
+TDebugForm	lUSB3Idle	MS Sans Serif	-11	0	lUSB3Idle	47
+TDebugForm	lUSB4Idle	MS Sans Serif	-11	0	lUSB4Idle	47
+TDebugForm	lUSB1Busy	MS Sans Serif	-11	0	lUSB1Busy	53
+TDebugForm	lUSB2Busy	MS Sans Serif	-11	0	lUSB2Busy	53
+TDebugForm	lUSB3Busy	MS Sans Serif	-11	0	lUSB3Busy	53
+TDebugForm	lUSB4Busy	MS Sans Serif	-11	0	lUSB4Busy	53
+TDebugForm	lUSB5Idle	MS Sans Serif	-11	0	lUSB5Idle	47
+TDebugForm	lUSB5Busy	MS Sans Serif	-11	0	lUSB5Busy	53
+TDebugForm	lUSB1Error	MS Sans Serif	-11	0	lUSB1Error	52
+TDebugForm	lUSB2Error	MS Sans Serif	-11	0	lUSB2Error	52
+TDebugForm	lUSB3Error	MS Sans Serif	-11	0	lUSB3Error	52
+TDebugForm	lUSB4Error	MS Sans Serif	-11	0	lUSB4Error	52
+TDebugForm	lUSB5Error	MS Sans Serif	-11	0	lUSB5Error	52
+TDebugForm	lUSB1Time	MS Sans Serif	-11	0	lUSB1Time	53
+TDebugForm	lUSB2Time	MS Sans Serif	-11	0	lUSB2Time	53
+TDebugForm	lUSB3Time	MS Sans Serif	-11	0	lUSB3Time	53
+TDebugForm	lUSB4Time	MS Sans Serif	-11	0	lUSB4Time	53
+TDebugForm	lUSB5Time	MS Sans Serif	-11	0	lUSB5Time	53
+TDebugForm	lUSBTotalTime	MS Sans Serif	-11	0	lUSBTotalTime	71
+TDebugForm	Label59	MS Sans Serif	-11	0	1:	9
+TDebugForm	Label61	MS Sans Serif	-11	0	2:	9
+TDebugForm	Label62	MS Sans Serif	-11	0	3:	9
+TDebugForm	Label63	MS Sans Serif	-11	0	4:	9
+TDebugForm	Label64	MS Sans Serif	-11	0	5:	9
+TDeleteSceneForm	Label1	MS Sans Serif	-13	1	Delete scene	93
+TDeleteSceneForm	Label2	MS Sans Serif	-13	1	to scene	60
+TDmxInForm	Label4	MS Sans Serif	-11	1	Channels used:	88
+TDmxInForm	lUsed	MS Sans Serif	-11	1	0	8
+TDmxInForm	lChIn	MS Sans Serif	-11	1	DMX Channels In	99
+TDmxInForm	lFreq	MS Sans Serif	-11	1	Update Freq	71
+TDmxInForm	Label2	MS Sans Serif	-11	1	Cue #	35
+TDmxInForm	Label3	MS Sans Serif	-11	1	Cue	23
+TDMXInValueTranslationForm	lActive	MS Sans Serif	-11	0	lActive	32
+TDownload2510Form	Label1	MS Sans Serif	-11	0	Download	48
+TDownload2510Form	Label2	MS Sans Serif	-11	0	Verify	26
+TExportFixtureForm	lExportFile	MS Sans Serif	-11	0	lExportFile	48
+TExternalAppSetupForm	Label1	MS Sans Serif	-11	0	External application definition file	153
+TExternalAppSetupForm	Label2	MS Sans Serif	-11	0	DMX Output channel 1	109
+TExternalAppSetupForm	Label3	MS Sans Serif	-11	0	DMX Input channel 1	101
+TExternalAppSetupForm	Label4	MS Sans Serif	-11	0	DMX Input channel 2	101
+TExternalAppSetupForm	Label5	MS Sans Serif	-11	0	DMX Input channel 3	101
+TExternalAppSetupForm	Label6	MS Sans Serif	-11	0	DMX Input channel 4	101
+TExternalAppSetupForm	Label7	MS Sans Serif	-11	0	DMX Output channel 2	109
+TExternalAppSetupForm	Label8	MS Sans Serif	-11	0	DMX Output channel 3	109
+TExternalAppSetupForm	Label9	MS Sans Serif	-11	0	DMX Output channel 4	109
+TFileExistsForm	lNewBitmap	MS Sans Serif	-11	0	New Bitmap	57
+TFileExistsForm	lOldBitmap	MS Sans Serif	-11	0	Existing Bitmap	71
+TFindChannelForm	Label1	MS Sans Serif	-11	0	'Off' DMX value	74
+TFindChannelForm	Label2	MS Sans Serif	-11	0	'On' DMX value	74
+TFingersSetupDialog	Label3	MS Sans Serif	-11	1	Fader flicker threshold value (2-4)	193
+TFingersSetupDialog	Label1	MS Sans Serif	-11	1	Skin File	50
+TFingersSetupDialog	Label2	MS Sans Serif	-11	1	Hot zone color (click)	123
+TFingersSkinSelectForm	Label1	MS Sans Serif	-11	1	Skin Name	62
+TFingersSkinSelectForm	Label2	MS Sans Serif	-11	1	Author	38
+TFingersSkinSelectForm	Label3	MS Sans Serif	-11	0	- No preview -	66
+TFingersSlotFunctionListForm	Label2	MS Sans Serif	-11	1	No data	46
+TFingersSlotFunctionListForm	Label4	MS Sans Serif	-11	1	CueSlot	45
+TFingersSlotFunctionListForm	Label1	MS Sans Serif	-11	1	Sequence Action	98
+TFingersSlotFunctionListForm	Label3	MS Sans Serif	-11	1	Load Cue	55
+TFixtureImportForm	lFileName	MS Sans Serif	-11	1	lFileName	56
+TFixtureInfoForm	LFixtureType	Arial	-11	1	LFixtureType	72
+TFixtureInfoForm	LDmxAdr	Arial	-11	1	LDmxAdr	51
+TFixtureInfoForm	LLink	Arial	-11	1	LLink	31
+TFixtureInfoForm	Label1	Arial	-11	1	Fixture:	41
+TFixtureInfoForm	Label2	Arial	-11	1	DMX Adr:	50
+TFixtureInfoForm	Label3	Arial	-11	1	Link #:	36
+TFixtureInfoForm	Label4	Arial	-11	1	Intensity Group:	88
+TFixtureInfoForm	lIntG	Arial	-11	1	lIntG	25
+TFixtureSetupForm	Label1	MS Sans Serif	-11	1	Fixture#	47
+TFixtureSetupForm	lFixtureNo	MS Sans Serif	-11	1	000	22
+TFixtureSetupForm	lFixtureType	MS Sans Serif	-11	1	lFixtureType	70
+TFixtureSetupForm	Label108	MS Sans Serif	-11	0	Manufacturer	63
+TFixtureSetupForm	Label109	MS Sans Serif	-11	0	Fixture Model	63
+TFixtureSetupForm	Label111	MS Sans Serif	-11	0	Fixture Mode	61
+TForm2518_2	Label1	MS Sans Serif	-11	0	2518 Online	57
+TFreezeWarnForm	Label1	MS Sans Serif	-16	1	Frozen !	67
+TFunctionsForm	Label1	MS Sans Serif	-11	0	Key Combo	54
+TGetPageInfoForm	Label1	MS Sans Serif	-11	0	Cue Page Name	78
+TGetStaticsPageNameForm	Label1	MS Sans Serif	-11	0	Static Page Name	86
+TGetUserLibNameForm	Label1	MS Sans Serif	-11	0	Library Name	62
+TGlobalPatchForm	Label1	MS Sans Serif	-11	0	DMX &Out	44
+TGlobalPatchForm	Label10	MS Sans Serif	-11	0	Dmx &In	33
+TGlobalPatchForm	Label4	MS Sans Serif	-11	0	M&in	17
+TGlobalPatchForm	Label5	MS Sans Serif	-11	0	M&ax	20
+TGlobalPatchForm	lPatchedOut	MS Sans Serif	-11	0	Source Out:8888	81
+TGlobalPatchForm	lPatchedIn	MS Sans Serif	-11	0	Source In:8888	73
+TGlobalPatchForm	lInverted	MS Sans Serif	-11	0	Inverted:8888	66
+TGlobalPatchForm	lMin	MS Sans Serif	-11	0	Min Count:8888	75
+TGlobalPatchForm	lMax	MS Sans Serif	-11	0	Max Count:8888	78
+TGlobalPatchForm	lHTPGroups	MS Sans Serif	-11	0	HTP Gropus:8888	86
+TGridForm	Label1	MS Sans Serif	-11	0	Grid V-Size	52
+TGridForm	Label2	MS Sans Serif	-11	0	Grid H-Size	53
+THardwareSetupForm2	Label1	MS Sans Serif	-11	1	Configured Hardware	120
+THardwareSetupForm2	Label2	MS Sans Serif	-11	0	Type	24
+THardwareSetupForm2	Label3	MS Sans Serif	-11	0	Address	38
+THardwareSetupForm2	Label5	MS Sans Serif	-11	0	Status	30
+THardwareSetupForm2	lType	MS Sans Serif	-11	1	lType	32
+THardwareSetupForm2	lAddress	MS Sans Serif	-11	1	lAddress	49
+THardwareSetupForm2	lStatus	MS Sans Serif	-11	1	lStatus	40
+THardwareSetupForm2	Label8	MS Sans Serif	-11	0	DMX  Channels	74
+THardwareSetupForm2	lChannels	MS Sans Serif	-11	1	lChannels	56
+THardwareSetupForm2	lInterface3	MS Sans Serif	-11	1	USB Interface 3	92
+THardwareSetupForm2	lPort3A	MS Sans Serif	-11	0	Port A	29
+THardwareSetupForm2	lPort3B	MS Sans Serif	-11	0	Port B	29
+THardwareSetupForm2	lProtectionDeviceStatus	MS Sans Serif	-11	1	lProtectctiondevicestatus	145
+THardwareSetupForm2	lLicenseStatus	MS Sans Serif	-11	1	lLicenseStatus	84
+THardwareSetupForm2	Label10	MS Sans Serif	-11	0	Label10	38
+THardwareSetupForm2	lInterface2	MS Sans Serif	-11	1	USB Interface 2	92
+THardwareSetupForm2	lPort2A	MS Sans Serif	-11	0	Port A	29
+THardwareSetupForm2	lPort2B	MS Sans Serif	-11	0	Port B	29
+THardwareSetupForm2	lInterface1	MS Sans Serif	-11	1	USB Interface 1	92
+THardwareSetupForm2	lPort1A	MS Sans Serif	-11	0	Port A	29
+THardwareSetupForm2	lPort1B	MS Sans Serif	-11	0	Port B	29
+THardwareSetupForm2	Label4	MS Sans Serif	-11	0	Path to Winamp.exe	96
+THardwareSetupForm2	Label6	MS Sans Serif	-11	0	Current Device	71
+THardwareSetupForm2	Label7	MS Sans Serif	-11	0	Device Status	67
+THardwareSetupForm2	lMTCStatus	MS Sans Serif	-11	1	lStatus	40
+THardwareSetupForm2	Label9	MS Sans Serif	-11	0	MIDI Device List	79
+TImageSetupForm	Label3	MS Sans Serif	-11	0	No Image	46
+TInitForm1	lLoading1	Arial	-16	1	Loading	63
+TInitForm1	lLoading2	Arial	-16	1	Loading	63
+TInitForm1	lVersion1	Arial	-15	3	Version 2.0 -Build 1	136
+TInitForm1	lVersion2	Arial	-15	3	Version 2.0 -Build 1	136
+TInitForm1	Label2	MS Sans Serif	-11	1	Sequences 	68
+TInitForm1	Label3	MS Sans Serif	-11	1	Cues	29
+TInitForm1	LBezier	MS Sans Serif	-11	1	Macros	42
+TInitForm1	Label4	MS Sans Serif	-11	1	Presets	43
+TInitForm1	LSeq	MS Sans Serif	-11	0	....	12
+TInitForm1	LCues	MS Sans Serif	-11	0	....	12
+TInitForm1	LMacro	MS Sans Serif	-11	0	....	12
+TInitForm1	LPreset	MS Sans Serif	-11	0	....	12
+TInsertScenesForm	Label3	MS Sans Serif	-11	1	to	12
+TInsertScenesForm	Label1	MS Sans Serif	-11	1	Number of scenes	103
+TInsertScenesForm	Label4	MS Sans Serif	-11	1	from	25
+TInsertScenesForm	Label5	MS Sans Serif	-11	1	to	12
+TInsertScenesForm	Label6	MS Sans Serif	-11	1	from	25
+TIntensityGroupForm	Label1	MS Sans Serif	-11	0	Group Name	60
+TIntensityGroupForm	Label2	MS Sans Serif	-11	0	Group Name	60
+TIntensityGroupForm	Label3	MS Sans Serif	-11	0	Group Name	60
+TIntensityGroupForm	Label4	MS Sans Serif	-11	0	Group Name	60
+TIntensityGroupForm	Label5	MS Sans Serif	-11	0	Group Name	60
+TIntensityGroupForm	Label6	MS Sans Serif	-11	0	Group Name	60
+TIntensityGroupForm	Label7	MS Sans Serif	-11	0	Group Name	60
+TIntensityGroupForm	Label8	MS Sans Serif	-11	0	Group Name	60
+TLaserWarningForm	Label1	MS Sans Serif	-19	1	Laser(s) emitting!	161
+TLaserWarningForm	Label2	MS Sans Serif	-11	0	(click to disable)	76
+TLibraryBackupForm	Label1	MS Sans Serif	-11	0	Library Name	62
+TLibraryBackupForm	lLibName	MS Sans Serif	-11	1	lLibName	53
+TLibraryBackupForm	Label2	MS Sans Serif	-11	0	Library Path	56
+TLibraryBackupForm	lLibPath	MS Sans Serif	-11	1	lLibPath	47
+TLibraryBackupForm	Label3	MS Sans Serif	-11	0	Backup Time	63
+TLibraryBackupForm	lBackupTime	MS Sans Serif	-11	1	lBackupTime	74
+TLibraryBackupForm	Label4	MS Sans Serif	-11	0	Notes	28
+TLibraryBackupForm	lAction	MS Sans Serif	-11	0	lAction	32
+TLibraryRestoreForm	Label1	MS Sans Serif	-11	1	Backup File Location	121
+TLibraryRestoreForm	Label2	MS Sans Serif	-11	1	Backup Files	74
+TLibraryRestoreForm	Label4	MS Sans Serif	-11	0	Original Library Name	100
+TLibraryRestoreForm	lLibName	MS Sans Serif	-11	0	lLibName	44
+TLibraryRestoreForm	Label5	MS Sans Serif	-11	0	Original Library Path	94
+TLibraryRestoreForm	lLibPath	MS Sans Serif	-11	0	lLibPath	38
+TLibraryRestoreForm	Label6	MS Sans Serif	-11	0	Backup Time	63
+TLibraryRestoreForm	lBackupTime	MS Sans Serif	-11	0	lBackupTime	62
+TLibraryRestoreForm	Label7	MS Sans Serif	-11	0	Restore Backup files to 	113
+TLibraryRestoreForm	lRestore	MS Sans Serif	-11	0	lRestore	39
+TLibraryRestoreForm	Label8	MS Sans Serif	-11	0	Backup File info:	79
+TLibraryRestoreForm	Label9	MS Sans Serif	-11	0	Target Library Path	90
+TLibraryRestoreForm	lPath	MS Sans Serif	-11	0	lPath	24
+TLibraryRestoreForm	Label3	MS Sans Serif	-11	1	Backup File Notes	105
+TLightCorderDialog	lMaxTime	Arial	-11	1	Maximum recording time : MM:SS	185
+TLightCorderDialog	Label2	Arial	-11	1	Recording Time	87
+TLightCorderDialog	Label1	Arial	-11	1	Compression	76
+TLinkConfigForm3	Label5	MS Sans Serif	-11	0	Fixture User Name	87
+TLinkConfigForm3	Label2	MS Sans Serif	-11	0	DMX Link	47
+TLinkConfigForm3	Label3	MS Sans Serif	-11	0	DMX Address	65
+TLinkConfigForm3	lDip	MS Sans Serif	-11	0	DIPSwitch	50
+TLinkConfigForm3	LFixtures	MS Sans Serif	-11	0	99  Fixtures configured	107
+TLinkConfigForm3	lAddresses	MS Sans Serif	-11	0	2048 Dmx Addresses Used	128
+TLJManagerPrefsForm	ldefaultPath	MS Sans Serif	-11	0	()	6
+TLogTimeCodeForm	lLogs	Arial	-11	1	000 Logs Total	79
+TLogTimeCodeForm	lElapsed	Arial	-13	1	00:00:00	50
+TLoopToolsForm	Label1	MS Sans Serif	-11	0	First Scene	53
+TLoopToolsForm	Label2	MS Sans Serif	-11	0	Last Scene	54
+TLoopToolsForm	Label3	MS Sans Serif	-11	0	Loops	29
+TLoopToolsForm	Label4	MS Sans Serif	-11	0	Scenes pr Trig	69
+TLoopToolsForm	Label5	MS Sans Serif	-11	0	(Audio/Manual Trig Only)	118
+TLoopToolsForm	Label6	MS Sans Serif	-11	0	Audio-Trigs/Trig	76
+TLoopToolsForm	Label7	MS Sans Serif	-11	0	(Audio Trig Only)	78
+TMasterIntensityForm	Label1	MS Sans Serif	-11	0	Master	32
+TMasterIntensityForm	Label2	Arial	-11	0	1	6
+TMasterIntensityForm	Label3	Arial	-11	0	2	6
+TMasterIntensityForm	Label4	Arial	-11	0	3	6
+TMasterIntensityForm	Label5	Arial	-11	0	4	6
+TMasterIntensityForm	Label6	Arial	-11	0	5	6
+TMasterIntensityForm	Label7	Arial	-11	0	6	6
+TMasterIntensityForm	Label8	Arial	-11	0	7	6
+TMasterIntensityForm	Label9	Arial	-11	0	8	6
+TMasterIntensityForm	Label11	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label12	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label13	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label14	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label15	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label16	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label17	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label18	MS Sans Serif	-11	0	Mode	27
+TMasterIntensityForm	Label10	MS Sans Serif	-11	0	----	12
+TMasterIntensityForm	Label19	MS Sans Serif	-11	0	Fadetime	43
+TMCICDForm2	lStatus	Arial	-13	1	lStatus	43
+TMCICDForm2	lDiscTime	Arial	-13	1	lDiscTime	62
+TMCICDForm2	lTracks	Arial	-13	1	lTracks	45
+TMCICDForm2	lTrackTime	Arial	-13	1	lTrackTime	71
+TMegaGridColorSchemeForm	Label1	MS Sans Serif	-11	0	Background	58
+TMegaGridColorSchemeForm	Label2	MS Sans Serif	-11	0	Selected Background	103
+TMegaGridColorSchemeForm	Label3	MS Sans Serif	-11	0	DMX Channel	66
+TMegaGridColorSchemeForm	Label4	MS Sans Serif	-11	0	Sequence Off	66
+TMegaGridColorSchemeForm	Label5	MS Sans Serif	-11	0	Sequence Snap	77
+TMegaGridColorSchemeForm	Label6	MS Sans Serif	-11	0	Sequence Fade	76
+TMegaGridSizeForm	Label1	MS Sans Serif	-11	1	H-Size	38
+TMegaGridSizeForm	Label2	MS Sans Serif	-11	1	V-Size	37
+TMegaGroupCreateForm	Label1	MS Sans Serif	-11	0	Group Name	60
+TMegaGroupCreateForm	Label2	MS Sans Serif	-11	0	Group#	36
+TName2532PagesForm	Label1	MS Sans Serif	-11	0	Page Name	56
+TNewPasswordForm	Label1	MS Sans Serif	-11	0	New Password	71
+TNewPasswordForm	Label2	MS Sans Serif	-11	0	Confirm Password	84
+TOfflineWarningForm	Label1	MS Sans Serif	-19	1	DMX Output is Offline	202
+TPresetForm	lentries	MS Sans Serif	-11	0	0 Entries	41
+TPrint2532Form	Label1	MS Sans Serif	-11	0	Select Printer	63
+TPrintWaitForm	Label1	MS Sans Serif	-11	1	Printing - Please wait..	129
+TProfileImportModifiedFilesForm	Label1	MS Sans Serif	-11	1	Import	36
+TProfileImportModifiedFilesForm	Label2	MS Sans Serif	-11	1	Existing	45
+TQuickRGBDefForm	Label1	Arial	-11	1	R	7
+TQuickRGBDefForm	Label2	Arial	-11	1	G	8
+TQuickRGBDefForm	Label3	Arial	-11	1	B	7
+TRebuildSetupForm	Label1	MS Sans Serif	-11	1	Rebuilding Fixture Palettes	153
+TRenameFileForm	Label1	MS Sans Serif	-11	0	New File Name	72
+TRestoreLibProgressForm	Label1	MS Sans Serif	-11	0	Deleting current files from directory	162
+TRestoreLibProgressForm	Label2	MS Sans Serif	-11	0	Copying Backup Files into directory	165
+TRestoreProgressForm	lAction	MS Sans Serif	-11	0	lAction	32
+TRGBPackDefForm	lFixType	MS Sans Serif	-11	1	lFixType	48
+TRGBPackDefForm	lDMXadr	MS Sans Serif	-11	1	lDMXadr	49
+TRGBPackDefForm	lUsername	MS Sans Serif	-11	1	lUsername	60
+TRGBPaletteForm	Label1	MS Sans Serif	-11	1	Add to Palette	82
+TRGBPaletteForm	Label2	MS Sans Serif	-11	1	Type	29
+TRGBPaletteForm	Label3	MS Sans Serif	-11	1	Name	33
+TSandNetStatusForm	lDMXOut	MS Sans Serif	-11	0	lDMXOut	43
+TSandNetStatusForm	lDMXIn	MS Sans Serif	-11	0	lDMXIn	35
+TSandNetStatusForm	lAction	MS Sans Serif	-11	0	lAction	32
+TSaveAsCueForm	Label3	MS Sans Serif	-11	0	Cue #	29
+TSaveAsCueForm	Label1	MS Sans Serif	-11	0	Cue Name	50
+TSaveAsCuelistForm	Label3	MS Sans Serif	-11	1	CueList#	51
+TSaveAsCuelistForm	Label1	MS Sans Serif	-11	1	CueList Name	79
+TSaveAsMacroDialog	Label1	MS Sans Serif	-11	0	Macro Name	61
+TSaveAsMacroDialog	Label3	MS Sans Serif	-11	0	Macro#	37
+TSaveBGForm	Label3	MS Sans Serif	-11	0	#	7
+TSaveBGForm	Label1	MS Sans Serif	-11	0	Name	28
+TSaveCueForm	Label1	MS Sans Serif	-11	0	Cue Name	50
+TSaveCueForm	Label2	MS Sans Serif	-11	0	Cue Type	46
+TSaveCueForm	Label3	MS Sans Serif	-11	0	Cue #	29
+TSaveCueForm	Label4	MS Sans Serif	-11	0	Add to Cuepage	77
+TSaveCuelist2Form	Label1	MS Sans Serif	-11	1	List#	29
+TSaveCuelist2Form	Label2	MS Sans Serif	-11	1	Cuelist Name	75
+TSaveMacroDialog	Label3	MS Sans Serif	-11	0	Macro#	37
+TSaveMacroDialog	Label1	MS Sans Serif	-11	0	Macro Name	61
+TSaveSelectionForm	Label3	MS Sans Serif	-11	0	#	7
+TSaveSelectionForm	Label1	MS Sans Serif	-11	0	Name	28
+TSaveSelectionForm	Label2	MS Sans Serif	-11	0	No	14
+TSaveSelectionForm	Label4	MS Sans Serif	-11	0	Selection Name	75
+TSaveSeqForm	Label2	MS Sans Serif	-11	0	Sequence Type	76
+TSaveSeqForm	Label1	MS Sans Serif	-11	0	Sequence Name	80
+TSaveSeqForm	Label3	MS Sans Serif	-11	0	Seq #	29
+TSaveSeqForm	Label4	MS Sans Serif	-11	0	Add to Cue in Slot	85
+TSaveStaticForm	Label1	MS Sans Serif	-11	0	Static#	34
+TSaveStaticForm	Label2	MS Sans Serif	-11	0	Static Name	58
+TScanner1DefsForm	Label3	MS Sans Serif	-11	0	Shutter Offset	65
+TScanner1DefsForm	Label4	MS Sans Serif	-11	0	Shutter Close	63
+TScanner1DefsForm	Label5	MS Sans Serif	-11	0	Shutter Open	63
+TScanner1DefsForm	Label6	MS Sans Serif	-11	0	Strobe Offset	62
+TScanner1DefsForm	Label7	MS Sans Serif	-11	0	Strobe Slow	57
+TScanner1DefsForm	Label8	MS Sans Serif	-11	0	Strobe Fast	54
+TScanner1DefsForm	Label9	MS Sans Serif	-11	0	Intensity Offset	70
+TScanner1DefsForm	Label10	MS Sans Serif	-11	0	Intensity Min	59
+TScanner1DefsForm	Label11	MS Sans Serif	-11	0	Intensity Max	62
+TScanner1DefsForm	Label12	MS Sans Serif	-11	0	Blackout Values	77
+TScanner1DefsForm	Label16	MS Sans Serif	-11	0	Strobe Off	48
+TScanner1DefsForm	Label1	MS Sans Serif	-11	0	Pan Channel Offset (8 Bit Only)	146
+TScanner1DefsForm	Label2	MS Sans Serif	-11	0	Tilt Channel Offset (8 bit only)	138
+TScanner1DefsForm	Label13	MS Sans Serif	-11	0	Color Channel Offset	97
+TScanner1DefsForm	Label14	MS Sans Serif	-11	0	Gobo Channel Offset	99
+TScanner1DefsForm	Label15	MS Sans Serif	-11	0	Selection ID	58
+TScanner1DefsForm	Label17	MS Sans Serif	-11	0	Level Caption	65
+TScanner2DefsForm	Label54	MS Sans Serif	-11	0	Fixture ID	45
+TScanner2DefsForm	Label82	MS Sans Serif	-11	0	Fixture Icon Bitmap	90
+TScanner2DefsForm	lBitmapName	MS Sans Serif	-11	0	ZXXXXXXXXXXXXX	98
+TScanner2DefsForm	Label57	MS Sans Serif	-11	0	Fixture Name	62
+TScanner2DefsForm	Label55	MS Sans Serif	-11	0	Profile Notes (Max 4096 Chars)	146
+TScanner2DefsForm	Label56	MS Sans Serif	-11	0	Author	31
+TScanner2DefsForm	Label92	MS Sans Serif	-11	0	Fixture Icon Caption	94
+TScanner2DefsForm	Label101	MS Sans Serif	-11	0	DIPSwitch Offset	81
+TScanner2DefsForm	lManufac	MS Sans Serif	-11	0	Manufacturer	63
+TScanner2DefsForm	lFixturemode	MS Sans Serif	-11	0	Fixture Mode	61
+TScanner2DefsForm	Label12	MS Sans Serif	-11	0	Blackout Values	77
+TScanner2DefsForm	Label3	MS Sans Serif	-11	0	DMX Offset	55
+TScanner2DefsForm	Label4	MS Sans Serif	-11	0	Closed	32
+TScanner2DefsForm	Label5	MS Sans Serif	-11	0	Open	26
+TScanner2DefsForm	Label6	MS Sans Serif	-11	0	Slow	23
+TScanner2DefsForm	Label7	MS Sans Serif	-11	0	Fast	20
+TScanner2DefsForm	Label8	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label9	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label10	MS Sans Serif	-11	0	Off	14
+TScanner2DefsForm	Label90	MS Sans Serif	-11	0	Dmx Values	56
+TScanner2DefsForm	Label103	MS Sans Serif	-11	0	Auto LampOn Time	91
+TScanner2DefsForm	Label104	MS Sans Serif	-11	0	ms	13
+TScanner2DefsForm	Label112	MS Sans Serif	-11	0	(Range min/max values)	115
+TScanner2DefsForm	Label1	MS Sans Serif	-11	0	Pan DMX Offset	77
+TScanner2DefsForm	Label2	MS Sans Serif	-11	0	Tilt DMX Offset	72
+TScanner2DefsForm	Label59	MS Sans Serif	-11	0	Patch Pan MSB to	88
+TScanner2DefsForm	Label62	MS Sans Serif	-11	0	Patch Pan LSB to	85
+TScanner2DefsForm	Label63	MS Sans Serif	-11	0	Patch Tilt MSB to	83
+TScanner2DefsForm	Label64	MS Sans Serif	-11	0	Patch Tilt LSB to	80
+TScanner2DefsForm	Label74	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label75	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label76	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label77	MS Sans Serif	-11	0	DMX Offset	55
+TScanner2DefsForm	Label19	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label15	MS Sans Serif	-11	0	DMX Offset	55
+TScanner2DefsForm	Label11	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label16	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label20	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label43	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label44	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label45	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label51	MS Sans Serif	-11	0	Dmx Values	56
+TScanner2DefsForm	Label78	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label79	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label80	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	lColor1	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lColor3	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lColor2	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lColor4	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lColor5	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	Label93	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label94	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label66	MS Sans Serif	-11	0	Cyan/Red 	52
+TScanner2DefsForm	Label68	MS Sans Serif	-11	0	Magenta/Green	76
+TScanner2DefsForm	Label67	MS Sans Serif	-11	0	Yellow/Blue	57
+TScanner2DefsForm	Label83	MS Sans Serif	-11	0	No Color	41
+TScanner2DefsForm	Label84	MS Sans Serif	-11	0	Full Color	43
+TScanner2DefsForm	Label85	MS Sans Serif	-11	0	No Color	41
+TScanner2DefsForm	Label86	MS Sans Serif	-11	0	Full Color	43
+TScanner2DefsForm	Label87	MS Sans Serif	-11	0	No Color	41
+TScanner2DefsForm	Label88	MS Sans Serif	-11	0	Full Color	43
+TScanner2DefsForm	Label89	MS Sans Serif	-11	0	DMX Offset	55
+TScanner2DefsForm	Label91	MS Sans Serif	-11	0	Dmx Values	56
+TScanner2DefsForm	Label21	MS Sans Serif	-11	0	DMX Offset	55
+TScanner2DefsForm	Label17	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label13	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label14	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label18	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label52	MS Sans Serif	-11	0	Dmx Values	56
+TScanner2DefsForm	Label46	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label47	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label48	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label71	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label72	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label73	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	lGobo1	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lGobo2	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lGobo4	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lGobo5	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	LGobo3	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	Label95	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label96	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label25	MS Sans Serif	-11	0	DMX Offset	55
+TScanner2DefsForm	Label36	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label22	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label23	MS Sans Serif	-11	0	Open	26
+TScanner2DefsForm	Label24	MS Sans Serif	-11	0	Near	23
+TScanner2DefsForm	Label26	MS Sans Serif	-11	0	Wide	25
+TScanner2DefsForm	Label27	MS Sans Serif	-11	0	Off	14
+TScanner2DefsForm	Label28	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label29	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label37	MS Sans Serif	-11	0	Dmx Values	56
+TScanner2DefsForm	Label30	MS Sans Serif	-11	0	Closed	32
+TScanner2DefsForm	Label31	MS Sans Serif	-11	0	Far	15
+TScanner2DefsForm	Label32	MS Sans Serif	-11	0	Narrow	34
+TScanner2DefsForm	Label33	MS Sans Serif	-11	0	On	14
+TScanner2DefsForm	Label34	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label35	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label39	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label53	MS Sans Serif	-11	0	Dmx Values	56
+TScanner2DefsForm	Label40	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label49	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label41	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label50	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label60	MS Sans Serif	-11	0	DMX Offset	55
+TScanner2DefsForm	lEffects1	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lEffects3	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lEffects4	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lEffects5	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	lEffects2	MS Sans Serif	-11	0	Def	17
+TScanner2DefsForm	Label97	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label98	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label99	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label100	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label105	MS Sans Serif	-11	0	Name	28
+TScanner2DefsForm	Label106	MS Sans Serif	-11	0	Min	17
+TScanner2DefsForm	Label107	MS Sans Serif	-11	0	Max	20
+TScanner2DefsForm	Label65	MS Sans Serif	-11	0	Function Name	72
+TScanner2DefsForm	Label61	MS Sans Serif	-11	0	Function Values	76
+TScanner2DefsForm	Label69	MS Sans Serif	-11	1	Special Functions	102
+TScanner2DefsForm	Label38	MS Sans Serif	-11	0	Minimum Reset Time	98
+TScanner2DefsForm	Label102	MS Sans Serif	-11	0	Ms	14
+TScanner2DefsForm	Label70	MS Sans Serif	-11	1	Fixture Reset	76
+TScanner2DefsForm	Label110	MS Sans Serif	-11	1	Default DMX Values	115
+TScanner2DefsForm	Label113	MS Sans Serif	-11	1	Extended GM Control	121
+TScanner2DefsForm	Label58	MS Sans Serif	-11	0	Level Control	62
+TScanner2DefsForm	Label42	MS Sans Serif	-11	0	Level Caption	65
+TScanner2DefsForm	Label81	MS Sans Serif	-11	0	Fixture Uses	58
+TScanner2DefsForm	lChannels	MS Sans Serif	-11	0	32 Channels	59
+TScanner2DefsForm	Label108	MS Sans Serif	-11	0	Manufacturer	63
+TScanner2DefsForm	Label109	MS Sans Serif	-11	0	Fixture Model	63
+TScanner2DefsForm	Label111	MS Sans Serif	-11	0	Fixture Mode	61
+TSequenceForm	Label1	MS Sans Serif	-11	0	Seq#	26
+TSequenceForm	Label2	MS Sans Serif	-11	0	Sequence Name	80
+TSequenceForm	Label3	MS Sans Serif	-11	0	Sequence Type	76
+TSequenceForm	Label5	MS Sans Serif	-11	0	Scene Time (sec)	83
+TSequenceForm	Label6	MS Sans Serif	-11	0	Fade Time (Sec)	78
+TSequenceForm	lBPM	MS Sans Serif	-11	0	XXXX.X BPM	64
+TSeqUsedForm	Label1	MS Sans Serif	-11	0	Checking Cues	72
+TSeqUsedForm	Label2	MS Sans Serif	-11	0	Checking HouseLight Cues	129
+TSetSequenceForm	Label1	MS Sans Serif	-11	0	Start Sequence at :	92
+TSetSequenceForm	Label2	MS Sans Serif	-11	0	Channels to Patch : 	96
+TSetSequenceForm	Label3	MS Sans Serif	-11	0	Label3	32
+TSetup2518Form	Label1	MS Sans Serif	-11	0	OnLine	34
+TSetup2518Form	Label2	MS Sans Serif	-11	0	Blackout	42
+TSetup2518Form	lv0	MS Sans Serif	-11	0	000	18
+TSetup2518Form	lv1	MS Sans Serif	-11	0	000	18
+TSetup2518Form	lv2	MS Sans Serif	-11	0	000	18
+TSetup2518Form	lv3	MS Sans Serif	-11	0	000	18
+TSetup2518Form	lv4	MS Sans Serif	-11	0	000	18
+TSetup2518Form	lv5	MS Sans Serif	-11	0	000	18
+TSetup2518Form	Label3	MS Sans Serif	-11	0	Seq#1	32
+TSetup2518Form	Label4	MS Sans Serif	-11	0	Seq#2	32
+TSetup2518Form	Label6	MS Sans Serif	-11	0	Seq#4	32
+TSetup2518Form	Label5	MS Sans Serif	-11	0	Seq#3	32
+TSetup2518Form	Label7	MS Sans Serif	-11	0	Seq#5	32
+TSetup2518Form	Label8	MS Sans Serif	-11	0	Seq#6	32
+TSetup2518Form	vb0	MS Sans Serif	-11	0	vb0	18
+TSetup2518Form	vb1	MS Sans Serif	-11	0	vb1	18
+TSetup2518Form	vb2	MS Sans Serif	-11	0	vb2	18
+TSetup2518Form	vb3	MS Sans Serif	-11	0	vb3	18
+TShowHardwareWarningForm	Label1	MS Sans Serif	-13	1	No Transmitterhardware configured.	248
+TShowHardwareWarningForm	Label2	MS Sans Serif	-13	1	Select Hardware Setup from the Main Setup menu	341
+TShowHardwareWarningForm	Label3	MS Sans Serif	-13	1	to access Hardware configuration.	236
+TShowHotKeyWarningForm	Label1	MS Sans Serif	-13	1	Normal keyboard operation is 	211
+TShowHotKeyWarningForm	Label2	MS Sans Serif	-13	1	suspended when the Hotkey Dialog	245
+TShowHotKeyWarningForm	Label3	MS Sans Serif	-13	1	Is Open.	58
+TSmokeForm	Label1	MS Sans Serif	-11	0	Level	26
+TSmokeForm	Label2	MS Sans Serif	-11	0	Duration	40
+TSmokeForm	Label3	MS Sans Serif	-11	0	Cycle	26
+TSmokeForm	Label4	MS Sans Serif	-11	1	Smoke Control	83
+TSmokeForm	Label5	MS Sans Serif	-11	1	Hazer	34
+TSmokeForm	Label6	MS Sans Serif	-11	0	Level	26
+TSmokeForm	Label7	MS Sans Serif	-11	0	Fan	18
+TSnapshotSceneForm	Label1	MS Sans Serif	-11	1	Sample Rate	73
+TSnapshotSceneForm	Label2	MS Sans Serif	-11	1	Scenes (total)	80
+TSnapshotSceneForm	ltotalTime	MS Sans Serif	-11	1	Total Time	61
+TStartupForm	Label5	MS Sans Serif	-11	0	Auto Launch Programs	108
+TStartupForm	Label1	MS Sans Serif	-11	0	Sequence #	59
+TStartupForm	Label3	MS Sans Serif	-11	0	Cue #	29
+TStartupForm	Label4	MS Sans Serif	-11	0	Cuelist #	41
+TStartupForm	Label2	MS Sans Serif	-11	0	BG Cue #	47
+TStaticEntryPropertiesForm	lSlot	MS Sans Serif	-11	1	lSlot	26
+TStaticEntryPropertiesForm	lType	MS Sans Serif	-11	1	lType	32
+TStaticEntryPropertiesForm	lPage	MS Sans Serif	-11	1	lPage	33
+TStaticEntryPropertiesForm	lGroupCount	MS Sans Serif	-11	0	lGroupCount	59
+TStaticEntryPropertiesForm	Label1	MS Sans Serif	-11	1	Name	33
+TStaticEntryPropertiesForm	Label2	MS Sans Serif	-11	1	Activation	58
+TStaticEntryPropertiesForm	Label3	MS Sans Serif	-11	1	Replace	48
+TStaticEntryPropertiesForm	Label4	MS Sans Serif	-11	1	Fade Time	60
+TStatics2PrefsForm	Label3	Arial	-11	1	Visible Slots (1- 	89
+TStatics2PrefsForm	Label1	Arial	-11	1	Buton Width	66
+TStatics2PrefsForm	Label2	Arial	-11	1	Button Height	74
+TStatics2PrefsForm	lPages	Arial	-11	1	lPages	37
+TStaticsDebugForm	lUpdateEval	MS Sans Serif	-11	0	lUpdateEval	58
+TStatusWarningForm	LStatus	MS Sans Serif	-13	1	BLACKOUT ACTIVE	138
+TSystemPrefsForm	Label1	MS Sans Serif	-11	0	Password	46
+TTimeCodeOffsetForm	Label1	MS Sans Serif	-11	1	Offset Digital Audio Timecodes	176
+TTimeCodeOffsetForm	Label2	MS Sans Serif	-11	0	Hours	28
+TTimeCodeOffsetForm	Label3	MS Sans Serif	-11	0	Minutes	37
+TTimeCodeOffsetForm	Label4	MS Sans Serif	-11	0	Seconds	42
+TTimeCodeOffsetForm	Label5	MS Sans Serif	-11	0	Frames	34
+TTimeCodeOffsetForm	Label6	MS Sans Serif	-11	1	Offset CD Timecodes	121
+TTimeCodeOffsetForm	Label8	MS Sans Serif	-11	0	Minutes	37
+TTimeCodeOffsetForm	Label9	MS Sans Serif	-11	0	Seconds	42
+TTimeCodeOffsetForm	Label10	MS Sans Serif	-11	0	Frames	34
+TTimeCodeOffsetForm	Label7	MS Sans Serif	-11	1	Offset MIDI Timecodes	131
+TTimeCodeOffsetForm	Label11	MS Sans Serif	-11	0	Hours	28
+TTimeCodeOffsetForm	Label12	MS Sans Serif	-11	0	Minutes	37
+TTimeCodeOffsetForm	Label13	MS Sans Serif	-11	0	Seconds	42
+TTimeCodeOffsetForm	Label14	MS Sans Serif	-11	0	Frames	34
+TTimeCodeOffsetForm	Label15	MS Sans Serif	-11	1	Offset PC Clock	91
+TTimeCodeOffsetForm	Label16	MS Sans Serif	-11	0	Hours	28
+TTimeCodeOffsetForm	Label17	MS Sans Serif	-11	0	Minutes	37
+TTimeCodeOffsetForm	Label18	MS Sans Serif	-11	0	Seconds	42
+TTimeCodeOffsetForm	Label19	MS Sans Serif	-11	1	Offset Mediaplayer Timecodes	172
+TTimeCodeOffsetForm	Label20	MS Sans Serif	-11	0	Hours	28
+TTimeCodeOffsetForm	Label21	MS Sans Serif	-11	0	Minutes	37
+TTimeCodeOffsetForm	Label22	MS Sans Serif	-11	0	Seconds	42
+TTimeCodeOffsetForm	Label23	MS Sans Serif	-11	0	Frames	34
+TTranslationEditForm	Label1	MS Sans Serif	-11	1	Set Linear Range	100
+TTranslationEditForm	Label4	MS Sans Serif	-11	1	Value:	37
+TTranslationEditForm	Label2	MS Sans Serif	-11	1	to	12
+TTranslationEditForm	Label3	MS Sans Serif	-11	1	Translation:	68
+TTranslationEditForm	Label5	MS Sans Serif	-11	1	to	12
+TTranslationEditForm	Label6	MS Sans Serif	-11	1	ID	14
+TTranslationEditForm	Label8	MS Sans Serif	-11	1	Name	33
+TTranslationEditForm	Label9	MS Sans Serif	-11	1	Purpose	47
+TTranslationEditForm	Label10	MS Sans Serif	-11	1	Type	29
+TUnblockLasersForm	Label1	MS Sans Serif	-19	1	Enable laser output ?	199
+TUnblockLasersForm	Label2	MS Sans Serif	-19	1	Please confirm	139
+TUpdateBGCuesForm	Label1	MS Sans Serif	-11	0	Updating BGCues	85
+TUpdateCl2Form	Label1	MS Sans Serif	-13	1	Datafile format for cuelists in the current	273
+TUpdateCl2Form	Label2	MS Sans Serif	-11	1	An update of the cuelist datafiles are needed before	297
+TUpdateCl2Form	Label3	MS Sans Serif	-11	1	cuelists programmed with previus versions may be used	314
+TUpdateCl2Form	Label4	MS Sans Serif	-11	1	with this version.	97
+TUpdateCl2Form	Label5	MS Sans Serif	-11	0	(Old format cuelist files may be updated later by import via the	287
+TUpdateCl2Form	Label6	MS Sans Serif	-11	0	options menu on the cuelist control)	167
+TUpdateCl2Form	Label7	MS Sans Serif	-13	1	user library has changed	172
+TUpdateFileForm	Label1	MS Sans Serif	-11	0	Updating	43
+TUpdateFileForm	Label2	MS Sans Serif	-11	0	[]	6
+TUpdateForm	LSize	MS Sans Serif	-11	0	(..)	12
+TUpdateForm	LFree	MS Sans Serif	-11	0	(..)	12
+TUpdateProgramForm	Label1	MS Sans Serif	-11	1	Extracting file	79
+TUpdateProgramForm	lFile	MS Sans Serif	-11	0	lFile	18
+TUSBWarningForm	Label1	MS Sans Serif	-16	1	USB Interface Disconnected !	241
+TUserLibForm	Label1	MS Sans Serif	-11	0	Current User Library is 	106
+TUserLibForm	Label2	MS Sans Serif	-11	1	Label2	39

@@ -1,0 +1,45 @@
+name: Docker image
+
+# Builds docker/Dockerfile on a self-hosted runner and pushes it to GHCR as
+# ghcr.io/unbannablegt/lj4evr-ci:<short-sha> and :latest. ci.yml pulls :latest
+# (pin by digest after the first push: docs/ci.md). Never runs on pull_request:
+# self-hosted runners only see push-to-main and manual runs (project.md).
+
+on:
+  push:
+    branches: [main]
+    paths: ["docker/**", ".github/workflows/docker.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/unbannablegt/lj4evr-ci
+
+jobs:
+  build-push:
+    if: github.event_name != 'pull_request'
+    runs-on: [self-hosted, lj4evr]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build
+        run: docker build --pull -t "$IMAGE:${GITHUB_SHA::7}" -t "$IMAGE:latest" docker
+      - name: Smoke test
+        run: docker run --rm "$IMAGE:latest" sh -c 'id -u && cmake --version && ninja --version && gcc --version && clang --version && python3 --version'
+      - name: Push
+        run: |
+          docker push "$IMAGE:${GITHUB_SHA::7}"
+          docker push "$IMAGE:latest"
+      - name: Report digest (copy this into ci.yml to pin)
+        run: |
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:latest")
+          echo "$digest"
+          echo "Pushed \`$IMAGE:${GITHUB_SHA::7}\` and \`:latest\`; pin ci.yml to \`$digest\`" >> "$GITHUB_STEP_SUMMARY"

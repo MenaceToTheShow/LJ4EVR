@@ -1,0 +1,10 @@
+font: face='MS Sans Serif' raster=yes tmHeight=13 tmAscent=11 tmDescent=2 tmInternalLeading=2 tmAveCharWidth=5
+window client 466x163 (+19 menu bar), surface 466x182
+width 'Seq#': measured 26, DFM 26 OK
+width 'Sequence Name': measured 80, DFM 80 OK
+width 'Sequence Type': measured 76, DFM 76 OK
+width 'Scene Time (sec)': measured 83, DFM 83 OK
+width 'Fade Time (Sec)': measured 78, DFM 78 OK
+width 'XXXX.X BPM': measured 64, DFM 64 OK
+text height 13 px: OK; label widths: 0 mismatches
+saved D:\lj4evr\spikes\a-fidelity\judge-surface.bmp: ok

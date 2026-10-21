@@ -1,0 +1,40 @@
+# glyphmap.tsv - hand-maintained map from a DFM art blob (Glyph.Data / Picture.Data / Icon.Data / TImageList Bitmap)
+# to our own redrawn glyph under art/glyphs/<name> [D2]. dfm2c.py reads it; a blob without a row is emitted as
+# "missing" and listed in tools/dfm2c_blobs.txt as dropped:no-glyphmap-row. The fonts-pack / art agent appends
+# rows here; merge, never clobber. Columns are tab-separated.
+form	object	name
+TSEQUENCEFORM	sb1	previous
+TSEQUENCEFORM	sb2	next
+TSEQUENCEFORM	sb3	rewind
+TSEQUENCEFORM	sb4	fastforward
+TSEQUENCEFORM	sb5	insert
+TSEQUENCEFORM	sb6	delete
+TSEQUENCEFORM	sb7	add-scene
+TSEQUENCEFORM	sb8	new
+TSEQUENCEFORM	sb9	save
+TSEQUENCEFORM	sb10	load
+TSEQUENCEFORM	sb11	missing
+TSEQUENCEFORM	seqBlind	missing
+TCURRENTCUE	sbTrigRev	previous
+TCURRENTCUE	sbTrigFwd	next
+TCURRENTCUE	sbTrigRnd	missing
+TCURRENTCUE	sbTrigAll	fastforward
+TCURRENTCUE	sbStop	stop
+TCURRENTCUE	sbGo	play
+TCURRENTCUE	sbAutoTrig	missing
+TCURRENTCUE	sbManualTrig	missing
+TCURRENTCUE	sbMusic	missing
+TCURRENTCUE	sbDisable	cross
+TCURRENTCUE	sbEnable	check
+TCURRENTCUE	sbNewCue	new
+TCURRENTCUE	sbSaveCue	save
+TCURRENTCUE	sbGetCue	load
+TCURRENTCUE	sbCueTime	missing
+TCURRENTCUE	sbLoop	sync
+TCURRENTCUE	sbCueMacroScale	missing
+TCURRENTCUE	sbLoadBGCue	load
+TCURRENTCUE	sbDeleteBGCue	delete
+TCURRENTCUE	sbCueMacroControl	missing
+TCURRENTCUE	sbLoadMacro	load
+TCURRENTCUE	sbDisableMacro	cross
+TCURRENTCUE	sbDeleteMacro	delete

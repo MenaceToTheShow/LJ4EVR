@@ -1,0 +1,7 @@
+miniz 3.0.2 (amalgamated miniz.c / miniz.h), MIT licence (LICENSE beside this file).
+Source: https://github.com/richgel999/miniz/releases/download/3.0.2/miniz-3.0.2.zip
+Fetched 2026-10-21 on the work PC.
+sha256 miniz-3.0.2.zip  ada38db0b703a56d3dd6d57bf84a9c5d664921d870d8fea4db153979fb5332c5
+sha256 miniz.c          0fcdc9888cb3a29ca8f176bac087e5fe6c7258a6ab06b1c271c1e109a11d3740
+sha256 miniz.h          295d1a0041aea09609598c0f1f35c1977ca05ad662acbadcfdaac44c140af37b
+The file banner still says "miniz.c 3.0.0"; MZ_VERSION inside miniz.h is "11.0.2" (upstream's own numbering). Compiled as a SYSTEM include with warnings off (CMakeLists.txt).

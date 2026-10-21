@@ -1,0 +1,10 @@
+# dfm2c.py drop-list (design 7.6, ME-12): the only DFM properties the generator does not place.
+# Everything else lands in a slot of ui/forms/lj_form.h or is listed in tools/dfm2c_unknown.txt.
+OldCreateOrder
+PixelsPerInch
+Scaled
+Cursor
+DefaultMonitor
+Ctl3D
+ParentCtl3D
+Font.Charset

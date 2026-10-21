@@ -1,0 +1,1 @@
+# dfm2c.py: DFM properties with no slot in lj_form.h, as class.property count. Must stay empty.

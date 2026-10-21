@@ -1,0 +1,65 @@
+# Contributing to LJ4EVR
+
+LJ4EVR is a clone of Martin LightJockey 2 (2.209 feature set, 2.100 help as the
+behavioural reference). The goal is fidelity: a user who ran LightJockey should
+find every window, caption, menu item and DMX behaviour where they left it.
+
+## Fidelity first
+
+- Geometry, captions, menu trees, tab orders, default values and DMX facts are
+  facts and are reproduced verbatim, including Martin's typos and duplicated
+  popup items (decisions D2, D13). Do not "fix" a misspelled caption; if a
+  deviation is unavoidable it is tagged in the source and listed in `docs/`.
+- Behaviour comes from the 2.100 help and the research notes, not from memory.
+  A claim in a commit message or a comment names its source.
+- Pixel output is deterministic across Windows, macOS and Linux: no floats in
+  SDL-free code, integer fade maths, one font pack. The `determinism` CI job
+  compares frame dumps byte for byte and goes red on one differing byte.
+
+## No Martin assets
+
+Nothing of Martin's enters the repository: no bitmaps, icons, cursors, RTF
+notes, font bitmaps, fixture library files or installer pieces. The
+`reference/` tree is gitignored and read as data only. Chrome and icons are
+redrawn (ours live in `packaging/icons/` and `art/`); fixture definitions come
+from open sources with provenance headers. A pull request that adds a binary
+from `reference/` is closed.
+
+## Code rules (design section 2.0, `docs/conventions.md`)
+
+C11, no C++. Every identifier `lj_`/`LJ_`; files `lj_<name>.c` with one `.h`
+each; include guard `LJ_<DIR>_<NAME>_H`; `int` functions return 0/-1, pointer
+functions NULL on failure; no globals except the log sink; strings are CP1252
+bytes. `<SDL3/...>` only under `src/platform/sdl` and `src/app`. No `float`,
+`double`, `<math.h>`, `<stdatomic.h>` or `volatile` outside `platform/`.
+`tools/test_layering.py` enforces the mechanical ones and runs under CTest.
+
+Warnings are errors on every compiler (`docs/building.md`). Every non-trivial
+piece of logic leaves a runnable check behind: a subcommand in
+`tests/lj_tests.c` plus its name in `LJ_TEST_SUBCOMMANDS`.
+
+## Golden images
+
+`tests/ui/golden/*.bmp` are reviewed renders, one per form. CI fails on any
+pixel difference. Updating a golden is a reviewed commit of its own with the
+subject `golden: <form> <why>` (for example `golden: TSEQUENCEFORM arial14b
+glyph 'g' descender`), containing only the golden(s) and nothing else, so the
+diff is the picture.
+
+## Commits and pull requests
+
+- `main` is protected; work on a branch, open a pull request. Fork PRs run the
+  hosted jobs only (Windows, macOS) and need maintainer approval; the Linux
+  jobs run on self-hosted runners after merge (`docs/ci.md`).
+- Subject line: imperative, under 72 characters, with an area prefix when it
+  helps (`engine:`, `ui:`, `ci:`, `golden:`).
+- Do not bump `VERSION` in a feature PR; releases are cut separately
+  (`docs/releasing.md`).
+- Generated files (`lj_*_gen.c`) are committed; regenerate with the tool named
+  in the file's banner and commit the tool change and its output together.
+
+## Licence
+
+MIT (`LICENSE`). Third-party notices in `NOTICE`. By contributing you agree
+your changes are MIT. LightJockey is a trademark of Martin Professional; this
+project is not affiliated with Martin.

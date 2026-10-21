@@ -1,0 +1,78 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "dev-msvc",
+      "displayName": "Windows: Visual Studio 17 2022 x64",
+      "generator": "Visual Studio 17 2022",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "binaryDir": "${sourceDir}/build-msvc",
+      "cacheVariables": { "LJ_SDL": "ON" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "dev-ninja-msvc",
+      "displayName": "Windows: Ninja + cl (run inside a vcvars64 shell)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-ninja-msvc",
+      "cacheVariables": { "LJ_SDL": "ON", "CMAKE_C_COMPILER": "cl", "CMAKE_BUILD_TYPE": "Release" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "dev-mac",
+      "displayName": "macOS: Ninja + clang",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-mac",
+      "cacheVariables": { "LJ_SDL": "ON", "CMAKE_C_COMPILER": "clang", "CMAKE_BUILD_TYPE": "Release" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
+    },
+    {
+      "name": "ci-linux-asan",
+      "displayName": "Linux CI: gcc, no SDL, ASan+UBSan",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-linux-asan",
+      "cacheVariables": { "LJ_SDL": "OFF", "CMAKE_C_COMPILER": "gcc", "CMAKE_BUILD_TYPE": "Debug", "LJ_SANITIZE": "address,undefined" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "ci-linux-clang",
+      "displayName": "Linux CI: clang, no SDL",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-linux-clang",
+      "cacheVariables": { "LJ_SDL": "OFF", "CMAKE_C_COMPILER": "clang", "CMAKE_BUILD_TYPE": "Release" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "release-win",
+      "displayName": "Windows release (NSIS installer)",
+      "inherits": "dev-msvc",
+      "binaryDir": "${sourceDir}/build-release-win"
+    },
+    {
+      "name": "release-mac",
+      "displayName": "macOS release, universal, min 12.0 (DragNDrop)",
+      "inherits": "dev-mac",
+      "binaryDir": "${sourceDir}/build-release-mac",
+      "cacheVariables": { "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64", "CMAKE_OSX_DEPLOYMENT_TARGET": "12.0" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev-msvc",       "configurePreset": "dev-msvc",       "configuration": "Release" },
+    { "name": "dev-ninja-msvc", "configurePreset": "dev-ninja-msvc" },
+    { "name": "dev-mac",        "configurePreset": "dev-mac" },
+    { "name": "ci-linux-asan",  "configurePreset": "ci-linux-asan" },
+    { "name": "ci-linux-clang", "configurePreset": "ci-linux-clang" },
+    { "name": "release-win",    "configurePreset": "release-win",    "configuration": "Release" },
+    { "name": "release-mac",    "configurePreset": "release-mac" }
+  ],
+  "testPresets": [
+    { "name": "dev-msvc",       "configurePreset": "dev-msvc",       "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "dev-ninja-msvc", "configurePreset": "dev-ninja-msvc", "output": { "outputOnFailure": true } },
+    { "name": "dev-mac",        "configurePreset": "dev-mac",        "output": { "outputOnFailure": true } },
+    { "name": "ci-linux-asan",  "configurePreset": "ci-linux-asan",  "output": { "outputOnFailure": true } },
+    { "name": "ci-linux-clang", "configurePreset": "ci-linux-clang", "output": { "outputOnFailure": true } },
+    { "name": "release-win",    "configurePreset": "release-win",    "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "release-mac",    "configurePreset": "release-mac",    "output": { "outputOnFailure": true } }
+  ]
+}

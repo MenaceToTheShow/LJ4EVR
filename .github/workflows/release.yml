@@ -1,0 +1,131 @@
+name: Release
+
+# Design 9.5, the Anubis build-apps pattern: on a v* tag, both installers build on
+# GitHub-hosted runners and one final job attaches them to a single GitHub Release,
+# so the build jobs never race to create it. Everything here is hosted: nothing in
+# this workflow touches atlas-ci2.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag must equal v$(cat VERSION)
+        id: v
+        run: |
+          v=$(tr -d '[:space:]' < VERSION)
+          test "v$v" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != v$v (VERSION)"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: check
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: SDL3 tag from CMakeLists.txt
+        id: sdl
+        run: echo "tag=$(grep -oE 'GIT_TAG +\S+' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: sdl-cache
+        with:
+          path: ${{ runner.temp }}/sdl3-src
+          key: sdl3-src-${{ steps.sdl.outputs.tag }}
+      - if: steps.sdl-cache.outputs.cache-hit != 'true'
+        run: git clone --depth 1 --branch "${{ steps.sdl.outputs.tag }}" https://github.com/libsdl-org/SDL.git "$RUNNER_TEMP/sdl3-src"
+      - name: NSIS
+        shell: pwsh
+        run: if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { choco install nsis -y --no-progress }
+      - run: cmake --preset release-win -DFETCHCONTENT_SOURCE_DIR_SDL3="$RUNNER_TEMP/sdl3-src"
+      - run: cmake --build --preset release-win
+      - run: ctest --preset release-win
+      - run: cd build-release-win && cpack -G NSIS -C Release
+      - run: test -f "build-release-win/LJ4EVR-${{ needs.check.outputs.version }}-win64-setup.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-windows
+          path: build-release-win/LJ4EVR-*-win64-setup.exe
+          if-no-files-found: error
+
+  macos:
+    needs: check
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install ninja
+      - name: SDL3 tag from CMakeLists.txt
+        id: sdl
+        run: echo "tag=$(grep -oE 'GIT_TAG +\S+' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: sdl-cache
+        with:
+          path: ${{ runner.temp }}/sdl3-src
+          key: sdl3-src-${{ steps.sdl.outputs.tag }}
+      - if: steps.sdl-cache.outputs.cache-hit != 'true'
+        run: git clone --depth 1 --branch "${{ steps.sdl.outputs.tag }}" https://github.com/libsdl-org/SDL.git "$RUNNER_TEMP/sdl3-src"
+      - run: cmake --preset release-mac -DFETCHCONTENT_SOURCE_DIR_SDL3="$RUNNER_TEMP/sdl3-src"
+      - run: cmake --build --preset release-mac
+      - run: ctest --preset release-mac
+      - name: Strip, ad-hoc sign, verify
+        # CPACK_STRIP_FILES would re-strip the installed copy and break the signature,
+        # so strip here and tell cpack not to.
+        run: |
+          strip -x build-release-mac/lj4evr.app/Contents/MacOS/lj4evr
+          codesign --force --deep -s - build-release-mac/lj4evr.app
+          codesign --verify --deep --strict --verbose=2 build-release-mac/lj4evr.app
+      - run: cd build-release-mac && cpack -G DragNDrop -D CPACK_STRIP_FILES=OFF
+      - run: test -f "build-release-mac/LJ4EVR-${{ needs.check.outputs.version }}-macos.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-macos
+          path: build-release-mac/LJ4EVR-*-macos.dmg
+          if-no-files-found: error
+
+  release:
+    needs: [check, windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          merge-multiple: true
+          path: dist
+      - name: SHA256SUMS and notes
+        run: |
+          cd dist
+          ls -l
+          sha256sum LJ4EVR-*.exe LJ4EVR-*.dmg > SHA256SUMS
+          cat SHA256SUMS
+          cat > ../notes.md <<EOF
+          LJ4EVR $VERSION. Unsigned installers, built by GitHub-hosted runners; sums in \`SHA256SUMS\`.
+
+          - **Windows:** \`LJ4EVR-$VERSION-win64-setup.exe\`, per-user install (no admin), uninstaller in Settings > Apps. SmartScreen will warn on an unsigned installer: *More info > Run anyway*.
+          - **macOS 12+ (Intel + Apple Silicon):** \`LJ4EVR-$VERSION-macos.dmg\`, ad-hoc signed only. First launch: right-click LJ4EVR.app > **Open**, or clear the quarantine flag in Terminal: \`xattr -d com.apple.quarantine /Applications/lj4evr.app\`.
+
+          Mac acceptance (ME-21): Joey runs the .dmg on his Mac and screenshots the Sequence window and one menu.
+          EOF
+      - name: Create GitHub Release
+        run: |
+          pre=""; case "$VERSION" in 0.*) pre="--prerelease";; esac
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "LJ4EVR $VERSION" \
+            --notes-file notes.md $pre dist/LJ4EVR-*.exe dist/LJ4EVR-*.dmg dist/SHA256SUMS
