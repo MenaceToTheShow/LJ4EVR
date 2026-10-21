@@ -85,10 +85,20 @@ offset (3,22) inside the 472x207 classic frame), measured by a PIL script:
                 which counts the '&' and shifts "Snapshot"/"Help" right by one '&' advance), 0 pixels of any other colour pair
     = geometry identical pixel for pixel; only glyph ink differs (acceptance 2)
 
+    Fix pass r1 (ME-39 moved the menu-bar text to +6,+2 and the item pitch to text + 12; spike A keeps the old +7,+3 / +14):
+    compared 466x182, mismatching pixels: 2662 (3.14%), rows 4..118, 794 of them in the menu band (rows 0..18)
+    classified: 2662 black/face/white swaps, 0 pixels of any other colour pair = geometry still identical outside the bar;
+                the bar now matches the 1:1 LJ2 captures (REVIEWED.tsv), not the spike
+
 Goldens: `tests/ui/golden/{TSEQUENCEFORM,TSAVESEQFORM,TCURRENTCUE,TSYSTEMPREFSFORM,TLINKCONFIGFORM3}.bmp` (+ `REVIEWED.tsv`,
 KING_DAVE-20), gate `lj4evr_tests ui_golden` (`tests/ui/test_golden.c`, byte-exact file compare, in LJ_TEST_SUBCOMMANDS):
 
     ui_golden: 5 form(s), 0 failure(s)
+
+Fix pass r1 regenerated all five (ME-39/40/41 change pixels in every one) and added `TLJMANAGERPREFSFORM.bmp` as the sixth, the
+one coloured form with a 1:1 capture; every `REVIEWED.tsv` row now quotes the rows, columns and rects actually probed:
+
+    ui_golden: 6 form(s), 0 failure(s)
 
 ## 5. The app on screen (build-msvc/Release/lj4evr.exe, MSVC 19.44, Windows 11)
 
@@ -142,10 +152,10 @@ digest, `:latest` is retagged from it), bump the four `image:` lines in ci.yml.
 
 | # | Item | Status |
 |---|---|---|
-| 1 | `tests/fonts/test_corpus` 0 mismatches over every AutoSize label of the 208 DFMs, on Windows, macOS, Linux, from the in-repo font | **done**: `font_corpus: 826 rows, 34 skipped (face not packed), 0 mismatches` in all four ctest jobs (the 34 skipped rows use faces outside the design's five: Courier, Arial -12/-13/-15/-16, MS Sans Serif -13/-16/-19; harvested, no sheet yet) |
-| 2 | `lj4evr_render` writes 208 BMPs; TSEQUENCEFORM, TSAVESEQFORM, TCURRENTCUE, TSYSTEMPREFSFORM, TLINKCONFIGFORM3 reviewed and committed as goldens; TSEQUENCEFORM matches spike A's `surface.bmp` pixel for pixel except glyph shapes | **done**: 208 forms + MAINWINDOW written (209), 0 failed; goldens in `tests/ui/golden/` + `REVIEWED.tsv`, gate `ui_golden` green on every OS; spike A diff 2508 px = 2.96%, every one a glyph-ink swap (black/face/white), 0 geometry pixels |
+| 1 | `tests/fonts/test_corpus` 0 mismatches over every AutoSize label of the 208 DFMs, on Windows, macOS, Linux, from the in-repo font | **done for 792 of 826 rows (the five faces)**: `font_corpus: 826 rows, 34 skipped (face not packed), 0 mismatches` in all four ctest jobs; the 34 skipped rows use nine faces outside the design's five (Courier -11, Arial -11b/-12/-13/-15bi/-16, MS Sans Serif -13b/-16/-19; advances harvested, no sheet) and cannot fail: W1 fonts item, `font_corpus` skip ceiling 34 (ME-51) |
+| 2 | `lj4evr_render` writes 208 BMPs; TSEQUENCEFORM, TSAVESEQFORM, TCURRENTCUE, TSYSTEMPREFSFORM, TLINKCONFIGFORM3 reviewed and committed as goldens; TSEQUENCEFORM matches spike A's `surface.bmp` pixel for pixel except glyph shapes | **done (re-done in fix pass r1)**: 208 forms + MAINWINDOW written (209), 0 failed; six goldens in `tests/ui/golden/` + `REVIEWED.tsv` with the probed numbers, gate `ui_golden` green on every OS; spike A diff 2662 px = 3.14%, every one a glyph-ink swap (black/face/white), 0 geometry pixels, 794 in the menu band where spike A carries the pre-ME-39 offset |
 | 3 | `lj4evr` opens TSEQUENCEFORM in a self-drawn classic frame on Windows (PrintWindow screenshot) and on `macos-14` (`--selftest`); `Native=1` shows the OS frame; one taskbar button with main + TSEQUENCEFORM + TCURRENTCUE; minimising the main window hides both; same under `Native=1` | **done on Windows** (seqform-classic.png, taskbar.png / taskbar-button.png, UIA: 1 new button, SW_MINIMIZE hides Sequence + Cue; seqform-native.png + taskbar-native.png + minimise under Native=1 identical); **macOS `--selftest` OK on macos-14** (0 mismatching pixels). Not checked: the macOS frame / Spaces behaviour on a real Mac (needs Joey's Mac; the design's R1 escape hatch is `Native=1`) |
-| 4 | `release.yml` on `v0.0.1` produces a `.dmg` and an NSIS `.exe` whose About text reads `0.0.1` | **waits for the tag**: `VERSION` = 0.0.1; both installers already build as ci.yml artifacts (`installer-windows`, `installer-macos`) with the same presets; the About box text is W1 (no About form is wired in W0) |
+| 4 | `release.yml` on `v0.0.1` produces a `.dmg` and an NSIS `.exe` whose About text reads `0.0.1` | **installers produced on the tag; About text W1** (ME-45): `VERSION` = 0.0.1; both installers build as ci.yml artifacts (`installer-windows`, `installer-macos`) with the same presets and `release.yml` attaches them to the `v0.0.1` release (run id in the fix-pass section below); no About form is wired in W0, so "About text reads 0.0.1" is checked in W1 with `--version` |
 | 5 | `determinism` green on an engine stub frame dump; `test_layering` green | **done**: three identical 1641600-byte dumps (sha256 64236b68...), `test_layering` 0 findings with gcc (CI) and cl (local, 154 files, 66 headers alone) |
 
 Measured numbers: corpus 826 rows / 0 mismatches; 208 forms rendered (+ main window); 3632 control rows, 1081 menu items, 73

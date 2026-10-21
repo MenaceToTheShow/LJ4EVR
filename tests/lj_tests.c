@@ -42,7 +42,7 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "formsini", lj_test_formsini },
     { "hittest", lj_test_hittest },
     { "render", lj_test_render },
-    { "ui_golden", lj_test_ui_golden },        /* the five reviewed W0 goldens, byte-exact (tests/ui/golden) */
+    { "ui_golden", lj_test_ui_golden },        /* the six reviewed W0 goldens, byte-exact (tests/ui/golden) */
     { "draw_goldens", lj_test_draw_goldens },
     { "bmp", lj_test_bmp },
     { "text", lj_test_text },

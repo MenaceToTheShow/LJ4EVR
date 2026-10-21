@@ -1,4 +1,4 @@
-/* test_golden.c - the W0 golden-image gate (design 9.3, KING_DAVE-20): the five
+/* test_golden.c - the W0 golden-image gate (design 9.3, KING_DAVE-20): the six
  * reviewed forms painted through lj4evr_render's path must equal
  * tests/ui/golden/<FORM>.bmp byte for byte. A golden update is a reviewed commit
  * (tests/ui/golden/REVIEWED.tsv). Usage: lj4evr_tests ui_golden [tmp.bmp] */
@@ -12,7 +12,7 @@
 #define LJ_SOURCE_DIR "."
 #endif
 
-static const char *const lj_golden_forms[] = { "TSEQUENCEFORM", "TSAVESEQFORM", "TCURRENTCUE", "TSYSTEMPREFSFORM", "TLINKCONFIGFORM3" };
+static const char *const lj_golden_forms[] = { "TSEQUENCEFORM", "TSAVESEQFORM", "TCURRENTCUE", "TSYSTEMPREFSFORM", "TLINKCONFIGFORM3", "TLJMANAGERPREFSFORM" };
 
 static const lj_form_desc *find_form(const char *upper)
 {
