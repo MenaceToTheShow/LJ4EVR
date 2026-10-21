@@ -1,6 +1,7 @@
 /* lj_net.c - NIC enumeration and the host name for the sACN sender (design 8.1,
  * 08 s6.2): GetAdaptersAddresses on Windows, getifaddrs elsewhere. Names come
  * back from the OS as UTF-16 / UTF-8 and are converted to CP1252 here (design 2.1). */
+#define _DEFAULT_SOURCE 1   /* glibc under -std=c11: IFF_* of <net/if.h> and gethostname() need the default feature set */
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>

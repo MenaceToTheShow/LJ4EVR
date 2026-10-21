@@ -572,7 +572,7 @@ void lj_ctl_close(enum lj_ctl_kind kind)
 
 void lj_ctl_close_all(void) { int k; for (k = 0; k < LJ_CTL_COUNT; k++) lj_ctl_close(k); }
 void lj_ctl_toggle(enum lj_ctl_kind kind) { if (lj_ctl_window_get(kind)) lj_ctl_close(kind); else lj_ctl_open(kind); }
-void lj_ctl_open_only(enum lj_ctl_kind kind) { int k; for (k = 0; k < LJ_CTL_COUNT; k++) if (k != kind) lj_ctl_close(k); lj_ctl_open(kind); }
+void lj_ctl_open_only(enum lj_ctl_kind kind) { int k; for (k = 0; k < LJ_CTL_COUNT; k++) if (k != (int)kind) lj_ctl_close(k); lj_ctl_open(kind); }
 lj_window *lj_ctl_window_get(enum lj_ctl_kind kind) { lj_ctl_win *c = lj_ctl_rec(kind); return c ? c->win : NULL; }
 
 const char *lj_ctl_caption(enum lj_ctl_kind kind, const lj_profile *p)
