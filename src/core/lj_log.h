@@ -5,6 +5,7 @@
 #ifndef LJ_CORE_LOG_H
 #define LJ_CORE_LOG_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include "core/lj_types.h"
 

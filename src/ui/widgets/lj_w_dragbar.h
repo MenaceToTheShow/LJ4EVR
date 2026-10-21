@@ -6,6 +6,7 @@
 #ifndef LJ_UI_WIDGETS_W_DRAGBAR_H
 #define LJ_UI_WIDGETS_W_DRAGBAR_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include "ui/lj_widget.h"
 #include "ui/forms/lj_form.h"

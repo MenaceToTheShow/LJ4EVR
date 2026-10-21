@@ -8,9 +8,8 @@ RUN apt-get update \
       gcc clang cmake ninja-build python3 git ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# uid 1000 = the runner user on atlas-ci2, so the mounted workspace is owned by
-# the user that builds in it; safe.directory covers the case where it is not.
-RUN useradd --uid 1000 --create-home ci \
- && git config --system --add safe.directory '*'
-USER ci
-WORKDIR /home/ci
+# Root inside the container: the runner writes its file commands (save_state, outputs)
+# into _temp as the host runner user, and a container user with another uid cannot
+# open them (EACCES, seen on atlas-ci2). git refuses a workspace owned by another uid
+# without safe.directory.
+RUN git config --system --add safe.directory '*'

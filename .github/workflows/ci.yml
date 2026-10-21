@@ -97,12 +97,16 @@ jobs:
       - name: NSIS
         shell: pwsh
         run: if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { choco install nsis -y --no-progress }
-      - run: cmake --preset release-win -DFETCHCONTENT_SOURCE_DIR_SDL3="$RUNNER_TEMP/sdl3-src"
-      - run: cmake --build --preset release-win
-      - run: ctest --preset release-win
-      - run: build-release-win/Release/lj4evr.exe --selftest
-      - run: build-release-win/Release/lj4evr_tests.exe dump-frames frames-windows.bin
-      - run: cd build-release-win && cpack -G NSIS -C Release
+      - name: Build, test, selftest, frames, installer (Ninja + cl; vcvars64 from the newest VS on the image)
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+          cmake --preset release-win -DFETCHCONTENT_SOURCE_DIR_SDL3="%RUNNER_TEMP%\sdl3-src" || exit /b 1
+          cmake --build --preset release-win || exit /b 1
+          ctest --preset release-win || exit /b 1
+          build-release-win\lj4evr.exe --selftest || exit /b 1
+          build-release-win\lj4evr_tests.exe dump-frames frames-windows.bin || exit /b 1
+          cd build-release-win && cpack -G NSIS || exit /b 1
       - uses: actions/upload-artifact@v4
         with:
           name: frames-windows

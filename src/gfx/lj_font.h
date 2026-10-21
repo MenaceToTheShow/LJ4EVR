@@ -1,5 +1,5 @@
 /* lj_font.h - the in-repo 1-bit fonts (design 2.6, 7.4).
- * Five faces packed by tools/fontpack.py from art/fonts/*.txt into lj_fonts_gen.c.
+ * Five faces packed by tools/fontpack.py from art/fonts/<face>.txt into lj_fonts_gen.c.
  * Metrics (cell height, ascent, advances) are harvested facts; the glyph pixels
  * are our own. CP1252 32..255 = 224 glyphs.
  *

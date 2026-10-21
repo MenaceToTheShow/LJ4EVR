@@ -46,14 +46,17 @@ Rules the workflows enforce, in this order of defence:
 3. Workflow permissions default to read. `ci.yml` asks for `contents: read,
    packages: read` (pull the image); `docker.yml` for `packages: write`;
    only the `release` job in `release.yml` gets `contents: write`.
-4. The container runs as uid 1000 (`ci`), not root, matching the runner user
-   so the mounted workspace is writable without `chown`.
+4. The container runs as root. It ran as uid 1000 (`ci`) at first, but the runner
+   writes its file commands (`_temp/_runner_file_commands/save_state_*`) as the
+   host runner user and a container user with another uid gets EACCES on every
+   step (seen on atlas-ci2 at the first push). Root inside a throwaway container
+   with the workspace mounted is the GitHub-documented arrangement.
 
 ## The CI image
 
 `docker/Dockerfile`: `debian:trixie` (ME-20; trixie's gcc, clang, cmake,
 ninja-build and python3 >= 3.12, the exact versions are printed by the
-workflow's smoke-test step), `git`, `ca-certificates`, user `ci`. `docker.yml` builds
+workflow's smoke-test step), `git`, `ca-certificates`, root. `docker.yml` builds
 it on a self-hosted runner, smoke-tests the tool versions, and pushes
 `ghcr.io/unbannablegt/lj4evr-ci:<short-sha>` and `:latest`, logging in with
 `GITHUB_TOKEN` (`github.actor`). The package is private because the repo is;

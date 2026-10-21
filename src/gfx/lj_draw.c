@@ -3,6 +3,8 @@
  * masks below are our own pixel art of the Windows 95 stock glyphs (not Martin art). */
 #include "gfx/lj_draw.h"
 
+#include <stddef.h>
+
 static int lj_clip(const lj_surface *s, int *x, int *y, int *w, int *h)
 {
     if (!s || !s->px) return 0;

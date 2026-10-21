@@ -13,7 +13,7 @@ by CMake at configure time; nothing else is downloaded. Build directories are
 | `dev-mac` | macOS | Ninja + clang | on | day-to-day on a Mac |
 | `ci-linux-asan` | Linux | Ninja + gcc, Debug, ASan+UBSan | off | tests + headless renderer |
 | `ci-linux-clang` | Linux | Ninja + clang, Release | off | tests + headless renderer |
-| `release-win` | Windows | as `dev-msvc`, `build-release-win/` | on | NSIS installer |
+| `release-win` | Windows | as `dev-ninja-msvc` (Ninja + `cl`, vcvars64 shell), `build-release-win/` | on | NSIS installer; what CI builds (hosted runners carry whichever VS is newest, so no VS version is hard-wired) |
 | `release-mac` | macOS | as `dev-mac`, universal arm64+x86_64, min macOS 12 | on | DragNDrop `.dmg` |
 
 Every preset: `cmake --preset <p> && cmake --build --preset <p> && ctest --preset <p>`.
@@ -28,7 +28,7 @@ Executables land in `build-msvc/Release/`. The Ninja preset needs `cl` on PATH:
 open "x64 Native Tools Command Prompt for VS 2022" (or run `vcvars64.bat`) first,
 then `cmake --preset dev-ninja-msvc`.
 
-Installer: `cd build-release-win && cpack -G NSIS -C Release` (NSIS 3 on PATH;
+Installer: `cd build-release-win && cpack -G NSIS` (NSIS 3 on PATH;
 `choco install nsis`). Produces `LJ4EVR-<ver>-win64-setup.exe`, a per-user
 install under `%LOCALAPPDATA%\Programs\LJ4EVR`, no admin prompt (ME-19).
 
