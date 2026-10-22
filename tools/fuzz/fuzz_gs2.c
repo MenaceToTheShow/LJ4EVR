@@ -7,12 +7,15 @@
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    static uint8_t out[LJ_GS2_REC_SIZE];
+    static uint8_t rec[LJ_GS2_REC_SIZE], out[LJ_GS2_REC_SIZE];
     lj_profile p;
     char err[128];
+    if (size > LJ_GS2_REC_SIZE) return 0;
+    memset(rec, 0, sizeof rec);                       /* every input is a whole record (zero tail), so the parser itself is */
+    memcpy(rec, data, size);                          /* fuzzed, not only the size check */
     memset(&p, 0, sizeof p);
-    if (lj_gs2_read(data, size, &p, err, sizeof err) == 0) {
-        if (lj_gs2_write(&p, out) != 0 || memcmp(out, data, LJ_GS2_REC_SIZE) != 0) abort();
+    if (lj_gs2_read(rec, sizeof rec, &p, err, sizeof err) == 0) {
+        if (lj_gs2_write(&p, out) != 0 || memcmp(out, rec, LJ_GS2_REC_SIZE) != 0) abort();
         lj_gs2_free(&p);
     }
     return 0;

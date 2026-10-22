@@ -20,7 +20,7 @@ int lj_test_lock(int argc, char **argv);
 int lj_test_lock(int argc, char **argv)
 {
     uint64_t t0, t;
-    int i;
+    int i, base;
     char ring[LJ_LOG_RING_LINE];
     (void)argc; (void)argv;
 
@@ -29,17 +29,18 @@ int lj_test_lock(int argc, char **argv)
     for (i = 0; i < 100000; i++) { lj_lock(); lj_unlock(); }
     t = lj_clock_us() - t0;
     printf("test_lock: 100000 lock/unlock pairs in %u us\n", (unsigned)t);
-    CHECK(s_hold_lines == 0);
+    CHECK(s_hold_lines <= 2);                                  /* a pair preempted on a busy CI runner can hold > 2 ms (W3 CI, Debug ctest -j) */
+    base = s_hold_lines;
 
     lj_lock();
     t0 = lj_clock_us();
     while (lj_clock_us() - t0 < 3000) { }                     /* hold 3 ms, over the 2 ms rule */
     lj_unlock();
 #if defined(LJ_DEBUG) || !defined(NDEBUG)
-    CHECK(s_hold_lines == 1);
+    CHECK(s_hold_lines == base + 1);
     CHECK(lj_log_ring(0, ring, sizeof ring) == 1 && strncmp(ring, "lock: held", 10) == 0);
 #else
-    CHECK(s_hold_lines == 0);
+    CHECK(s_hold_lines == base);
     printf("test_lock: hold measurement compiled out (NDEBUG without LJ_DEBUG)\n");
     (void)ring;
 #endif

@@ -85,7 +85,7 @@ jobs:
           apt-get update -qq && apt-get install -y -qq --no-install-recommends libclang-rt-19-dev > /dev/null
           cmake -S . -B build-fuzz -G Ninja -DLJ_SDL=OFF -DLJ_FUZZ=ON -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined"
           cmake --build build-fuzz --target fuzz_gs2 fuzz_udf
-          build-fuzz/fuzz_gs2 -max_total_time=60
+          build-fuzz/fuzz_gs2 -max_total_time=60 -max_len=20851
           build-fuzz/fuzz_udf -max_total_time=60
 
   windows-msvc:
