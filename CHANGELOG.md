@@ -62,6 +62,35 @@ Cue lists, generic and movement macros, Generic DMX Control, follow spots, seque
 - ME-123: this changelog, the README status, the `w3-gates.md` Status column, the replay-grammar W3 paragraph and the
   W3 fidelity rows.
 
+### What v1.0.0 is not
+
+Unchanged from 0.2.0 and the README: no Audio Analyzer / audio trig, no DMX-in over sACN input or `.vtr` tables, no
+RS-232/TCP remote protocol, no External Application string output, no `.LJB` importer, no LJ MediaPlayer, no Art-Net.
+All seven are W5; their menu items, cue-list commands (CD / DA / MP lines load red and are skipped) and toolbar buttons
+stay present, greyed, hint `Not available in LJ4EVR`.
+
+### Known gaps (W3 code council, `W3_CODE_MASTER_ELDER_VERDICT.md` sections 5-6)
+
+- W4 track 0 (before the W4 contracts commit, ME-125): ME-43, the rest of ME-44, ME-46, ME-47, ME-53, ME-54, ME-57.
+  This ends the carry.
+- W4 entry: ME-126 legacy profile rename, ME-127 Movement Macro preview, ME-128 16-bit rank 6 from the 8.8 sample,
+  ME-129 one scene getter and the set-text helper, ME-130 the `U:` library create, ME-131 the unwired-dialog list
+  (the W4 work list, incl. the gs2 import / export sub-dialogs); ME-124 the design sentences (design owner, vault).
+- ME-45 (Joey): one install of this `v0.3.0` installer on a true standard-user account. Blocks the public flip and
+  `v1.0.0`.
+- ME-21 (Joey): the Mac run of this `.dmg`, plus the MIDI latch on macOS. Blocks `v1.0.0`.
+- Before the public flip: LORD_C-8, Execute File reaches `system()` with `&`, `|` and `;` unfiltered (off by default,
+  `AllowExecute=0`).
+- LOW: ListPop CD / DA / MP greyed without a hint (LORD_FIDELITY-6); `DipSwitch1` and the Notes scrollbar painted
+  while `Show Adr DIPSwitch` is off (LORD_FIDELITY-7); Delete Macros pads names with a date (LORD_FIDELITY-8); the
+  Function column shows class names (LORD_FIDELITY-9); the licence constant, two untagged literals, the statics2 popup
+  capture and the Fan Out auto-close row (LORD_FIDELITY-10, -11); Wait Elapsed measured from the wake (LORD_ENGINE-8);
+  Automatic Cue update on Run latches every earlier cue (LORD_ENGINE-9); `lj_pe_begin` on a built-in inflates the
+  footprint (LORD_FIXTURES-3); three hand-profile header clauses (LORD_FIXTURES-8); an empty `cmd=` loses its pstr
+  (LORD_C-7); `groups=` without `ERANGE` (LORD_C-9); no `.Cl2` line cap (LORD_C-10); W2 LORD_C-4, -5, -8;
+  `file-formats.md` lacks `.bez` and the Override / Import / Export folders (WIZARD_STYLES-8); `lj_app_w3.c` rename
+  (WIZARD_STYLES-12); integration s7 items; ME-66 and the earlier fidelity rows carried.
+
 ## [0.2.0] - 2026-10-22 - W2 Playback
 
 Everything an operator uses to run a show beyond one cue (design section 10 W2; acceptance walked through in
