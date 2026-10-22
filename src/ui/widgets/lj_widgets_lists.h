@@ -57,6 +57,10 @@ void lj_w_sbar_paint(lj_surface *s, const lj_w_sbar *b, int ax, int ay, int enab
 int  lj_w_sbar_set(lj_w_sbar *b, int pos);                                               /* clamps; 1 when pos changed */
 int  lj_w_sbar_mouse(lj_w_sbar *b, const lj_mouse_ev *m);                                /* -1 outside the rect, 0 hit, 1 pos changed */
 int  lj_w_sbar_key(lj_w_sbar *b, int key);                                               /* arrows/page/home/end along its axis; 1 when pos changed */
+/* ME-54: the vertical bar of a scrolled list (listbox, listview, memo, string grid, tree view): at x = owner_w - edge - LJ_SB_W,
+ * y, height h; n rows of which vis are visible (max = n - vis, page = vis); pos re-clamped. */
+void lj_w_sbar_fit(lj_w_sbar *b, int owner_w, int edge, int y, int h, int n, int vis);
+void lj_w_sbar_reveal(lj_w_sbar *b, int row, int vis);                                   /* pos moves so row is in [pos, pos + vis); row < 0: no-op */
 
 /* ---- TListBox / TCheckListBox (lj_w_listbox.c, lj_w_checklistbox.c) and the TComboBox drop list ---- */
 typedef struct {

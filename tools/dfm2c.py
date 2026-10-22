@@ -21,6 +21,8 @@ import sys
 
 GEN_VERSION = "1.0"
 DFM_DIR = os.path.join("reference", "installer", "exe_resources", "dfm_text")
+BIN_DIR = os.path.join("reference", "installer", "exe_resources")   # 10_<FORM>.bin: the full TPF0 streams (ME-47)
+WIDGET_C = os.path.join("src", "ui", "lj_widget.c")                  # lj_wev_names[]: the event names lj_window binds (ME-46)
 GEN_C = os.path.join("src", "ui", "forms", "lj_forms_gen.c")
 GEN_H = os.path.join("src", "ui", "forms", "lj_forms_gen.h")
 DROP_TXT = os.path.join("tools", "dfm2c_drop.txt")
@@ -386,7 +388,11 @@ MENU_BOOL = {"Checked": "checked", "RadioItem": "radio_item", "Enabled": "enable
 def cstr(b):
     """CP1252 bytes -> C string literal, ASCII only (octal escapes cannot run into the next char; ? dodges trigraphs)."""
     out = ['"']
+    octal = False
     for ch in b:
+        if octal and 0x30 <= ch <= 0x39:        # "\011" "0": a digit after an octal escape (C4125) starts a new literal
+            out.append('" "')
+        octal = False
         if ch == 0x22:
             out.append('\\"')
         elif ch == 0x5C:
@@ -397,6 +403,7 @@ def cstr(b):
             out.append(chr(ch))
         else:
             out.append("\\%03o" % ch)
+            octal = True
     out.append('"')
     return "".join(out)
 
@@ -458,6 +465,32 @@ def decode_listitems(data):
     return out
 
 
+def read_wev_names(repo):
+    """ME-46: the On* names lj_window can bind, from the lj_wev_names[] initializer in src/ui/lj_widget.c."""
+    text = open(os.path.join(repo, WIDGET_C), encoding="latin-1").read()
+    m = re.search(r"lj_wev_names\[[^\]]*\]\s*=\s*\{(.*?)\};", text, re.S)
+    if not m:
+        raise SystemExit("dfm2c: no lj_wev_names[] in %s" % WIDGET_C)
+    return set(re.findall(r'"(On\w+)"', m.group(1)))
+
+
+def bin_blob(buf, cur, key, data):
+    """ME-47: find property `key` as vaBinary in a binary TPF0 stream at or after `cur`, whose bytes start with `data`
+    (the dfm_text extraction kept the first 20). buf is untrusted: every length is bounds-checked.
+    Returns (full bytes, next cursor) or (None, cur)."""
+    name = key.encode("ascii")
+    pat = bytes([len(name)]) + name + b"\x0a"          # ShortString name, then vaBinary
+    i = buf.find(pat, cur)
+    while i >= 0:
+        j = i + len(pat)
+        if j + 4 <= len(buf):
+            n = int.from_bytes(buf[j:j + 4], "little")
+            if n >= len(data) and j + 4 + n <= len(buf) and buf[j + 4:j + 4 + len(data)] == data:
+                return buf[j + 4:j + 4 + n], j + 4 + n
+        i = buf.find(pat, i + 1)
+    return None, cur
+
+
 def read_lines(path):
     if not os.path.exists(path):
         return []
@@ -480,10 +513,31 @@ class Gen:
         self.c = []                              # output chunks
         self.forms = []                          # (FILESTEM, name, class)
         self.inputs = []                         # (file, sha256)
+        self.wev = read_wev_names(repo)
+        self.bins = {}                           # form stem -> [10_<FORM>.bin bytes, cursor]
 
     def warn_unknown(self, cls, key):
         k = cls + "." + key
         self.unknown[k] = self.unknown.get(k, 0) + 1
+
+    def event(self, cls, key, p, events):
+        if key not in self.wev:                  # ME-46: lj_window would log "unknown event" and never bind it
+            self.warn_unknown(cls, key + " (event not in lj_wev_names)")
+        events.append((key, p))
+
+    def blob(self, form, key, v):
+        """(bytes, truncated) of a blob: a truncated dfm_text blob is read in full from 10_<FORM>.bin (ME-47).
+        Every blob of the form is matched in DFM order so equal prefixes cannot pair with the wrong property."""
+        data, trunc = v[1]
+        if form not in self.bins:
+            p = os.path.join(self.repo, BIN_DIR, "10_%s.bin" % form)
+            self.bins[form] = [open(p, "rb").read() if os.path.exists(p) else b"", 0]
+        buf, cur = self.bins[form]
+        full, nxt = bin_blob(buf, cur, key, data)
+        if full is None or (not trunc and full != data):
+            return data, trunc
+        self.bins[form][1] = nxt
+        return full, False
 
     def color(self, v, cls, key):
         tag, p = v
@@ -496,7 +550,7 @@ class Gen:
         return None
 
     def art(self, form, obj, key, v):
-        data, trunc = v[1]
+        data, trunc = self.blob(form, key, v)
         name = self.glyphmap.get((form, obj.name))
         if name:
             self.blobs.append((form, obj.name, obj.cls, key, "glyph:" + name))
@@ -563,7 +617,7 @@ class Gen:
             if key in geom and tag == "int":
                 geom[key] = p
             elif key.startswith("On") and tag == "ident":
-                events.append((key, p))
+                self.event(cls, key, p, events)
             elif key in INT and tag == "int":
                 s[INT[key]] = str(p)
             elif key in BOOL and tag == "ident" and p in ("True", "False"):
@@ -599,7 +653,7 @@ class Gen:
                 items.extend(x[1] for x in p)
             elif key == "Items.Data" and tag == "blob":
                 try:
-                    items.extend(decode_listitems(p[0]))
+                    items.extend(decode_listitems(self.blob(form, key, v)[0]))
                     self.blobs.append((form, obj.name, cls, key, "decoded"))
                 except (ValueError, IndexError) as e:
                     self.blobs.append((form, obj.name, cls, key, "dropped:%s" % e))
@@ -667,7 +721,7 @@ class Gen:
                 elif key in MA_BOOL and tag == "ident" and p in ("maAutomatic", "maManual"):
                     d[BOOL[key]] = "LJ_YES" if p == "maAutomatic" else "LJ_NO"
                 elif key.startswith("On") and tag == "ident":
-                    events.append((key, p))
+                    self.event("TMenuItem", key, p, events)
                 else:
                     self.warn_unknown("TMenuItem", key)
             if "action" in d:
@@ -696,7 +750,7 @@ class Gen:
             if key in self.drop:
                 continue
             if key.startswith("On") and tag == "ident":
-                events.append((key, p))
+                self.event(root.cls, key, p, events)
             elif key in FORM_INT and tag == "int":
                 s[FORM_INT[key]] = str(p)
                 raw[key] = p
@@ -822,6 +876,28 @@ def selftest():
     except ValueError:
         pass
     assert cstr(b'a"\\?\xe7\x01') == '"a\\"\\\\\\?\\347\\001"', cstr(b'a"\\?\xe7\x01')
+    assert cstr(b"x\t0\ty") == '"x\\011" "0\\011y"', cstr(b"x\t0\ty")
+    # ME-46: an On* name lj_window cannot bind is an unknown row, so --check (against the committed, empty
+    # dfm2c_unknown.txt) goes red; OnClick is fine.
+    g = Gen(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    g.form("TF", parse_dfm("object F: TF\n  OnFoo = FFoo\n  object B: TButton\n    OnClick = BClick\n  end\nend\n"))
+    assert list(g.unknown) == ["TF.OnFoo (event not in lj_wev_names)"], g.unknown
+    assert "OnClick" in g.wev and "OnFoo" not in g.wev
+    # ME-47: a synthetic TPF0 stream with TBGCUEFORM's case (Items.Data vaBinary, length 158, name at offset 716):
+    # the 20-byte dfm_text prefix finds the whole stream and decodes 5 items; bad lengths and prefixes are refused.
+    body = b""
+    for k in range(5):
+        parts = [str(k + 1).encode(), b"Seq", b"1", b"L"]   # 30 bytes per item: 8 + 5 * 30 = 158
+        body += b"\0" * 12 + (len(parts) - 1).to_bytes(4, "little") + b"\0" * 4 + b"".join(bytes([len(x)]) + x for x in parts)
+    stream = (158).to_bytes(4, "little") + (5).to_bytes(4, "little") + body
+    buf = b"TPF0" + b"\x01" * (715 - 4) + bytes([10]) + b"Items.Data" + b"\x0a" + (158).to_bytes(4, "little") + stream + b"\0\0"
+    assert len(stream) == 158 and buf.index(b"Items.Data") == 716
+    full, nxt = bin_blob(buf, 0, "Items.Data", stream[:20])
+    assert full == stream and nxt == len(buf) - 2, (len(full or b""), nxt)
+    assert decode_listitems(full)[0] == b"1\tSeq\t1\tL" and len(decode_listitems(full)) == 5
+    assert bin_blob(buf[:-60], 0, "Items.Data", stream[:20]) == (None, 0)          # length runs past the end
+    assert bin_blob(buf, 0, "Items.Data", b"\x9f" + stream[1:20]) == (None, 0)    # prefix mismatch
+    assert bin_blob(buf, nxt, "Items.Data", stream[:20]) == (None, nxt)           # cursor past the only copy
     print("dfm2c --selftest: OK")
 
 

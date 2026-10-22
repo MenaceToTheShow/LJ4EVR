@@ -15,7 +15,7 @@ Delphi in 1999-2005. Numbers are facts and are not copyrightable; the pixels are
 
 | Step | Tool | Input | Output | Runs |
 |---|---|---|---|---|
-| 1 | `tools/widthcorpus.py` | `reference/.../dfm_text/*.dfm.txt` (208 forms) | `tests/fonts/widths.tsv` (826 AutoSize `TLabel` rows), `tests/fonts/font_census.tsv` (19 fonts) | developer, when the reference tree changes (never) |
+| 1 | (frozen, ME-53) | `reference/.../dfm_text/*.dfm.txt` (208 forms) | `tests/fonts/widths.tsv` (826 AutoSize `TLabel` rows), `tests/fonts/font_census.tsv` (19 fonts) | done once in W0 by `widthcorpus.py`, deleted in W4 track 0; the two files are frozen (`docs/generated-files.md`) |
 | 2 | `tools/fontharvest.c` | the census | `tests/fonts/advances_<name>.tsv` (17 files) | developer, Windows + GDI only, never CI |
 | 3 | `tools/fitfont.py` | `widths.tsv` alone | fitted advances vs the harvest | developer cross-check |
 | 4 | `art/fonts/<name>.txt` | a human and the advances | pixel art (`FORMAT.md`) | drawing |
@@ -89,7 +89,7 @@ is subtracted.
 
 Only on Windows, only when a new face appears in the census:
 
-    python -I tools/widthcorpus.py
+    (font_census.tsv is frozen, ME-53: add the new face's row by hand first)
     cl /nologo /W4 /WX /permissive- /utf-8 /std:c11 /D_CRT_SECURE_NO_WARNINGS tools\fontharvest.c gdi32.lib user32.lib
     fontharvest.exe tests\fonts\font_census.tsv tests\fonts
     python -I tools/fitfont.py                       # sans13 cross-check, expect 72 / 72

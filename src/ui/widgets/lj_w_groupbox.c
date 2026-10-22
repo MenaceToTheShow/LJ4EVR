@@ -23,7 +23,15 @@ void lj_w_groupbox_paint(lj_widget *w, lj_surface *s)
 
 static int mouse(lj_widget *w, const lj_mouse_ev *m) { return lj_w_plain_mouse(w, m); }
 
-static const lj_widget_vt vt = { lj_w_groupbox_paint, mouse, NULL, NULL };
+/* TCustomGroupBox.AdjustClientRect (ME-43): Top += TextHeight, inflate -1, and -1 again for Ctl3D (the VCL default;
+ * dfm2c drops Ctl3D). */
+static void client(const lj_widget *w, lj_rect *r)
+{
+    int th = lj_w_font_of((lj_widget *)w)->height;
+    r->x = 2; r->y = th + 2; r->w = w->w - 4; r->h = w->h - th - 4;
+}
+
+static const lj_widget_vt vt = { lj_w_groupbox_paint, mouse, NULL, NULL, client };
 
 lj_widget *lj_w_groupbox_create(lj_widget *parent, const lj_ctl_desc *d)
 {

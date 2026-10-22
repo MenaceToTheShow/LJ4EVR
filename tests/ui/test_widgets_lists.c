@@ -265,7 +265,7 @@ int lj_test_widgets_lists(int argc, char **argv)
     }
     repaint(&root, &s);
     CHECK(lj_w_tabs_count(w) == 2 && lj_w_tabs_page(w, 1) == p1 && ((lj_w_tabs *)w)->active == 0);
-    CHECK(p0->visible && !p1->visible && p0->x == 4 && p0->y == 21 + 4 && p0->w == 192 && p0->h == 150 - 21 - 8);
+    CHECK(p0->visible && !p1->visible && p0->x == 4 && p0->y == 24 && p0->w == 192 && p0->h == 150 - 28);   /* ME-43: the DFM page rect, one tab row */
     CHECK(px(&s, 10 + 0, 10 + 5) == LJ_CLR_BTNHIGHLIGHT);                                       /* active tab's white left edge at x-2 */
     CHECK(px(&s, 10, 10 + 21) == LJ_CLR_BTNHIGHLIGHT && px(&s, 10 + 199, 10 + 149) == LJ_CLR_3DDKSHADOW && px(&s, 10 + 198, 10 + 148) == LJ_CLR_BTNSHADOW);   /* page frame raised */
     CHECK(px(&s, 10 + 1 + 3, 10 + 21) == LJ_CLR_BTNFACE);                                       /* frame top line broken under the active tab */

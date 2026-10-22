@@ -89,14 +89,38 @@ int lj_widget_collect_dirty(lj_widget *root, lj_rect *out, int cap)
     return collect(root, root->x, root->y, out, cap, 0);
 }
 
+/* VCL TWinControl.AlignControls / DoAlign InsertBefore (Delphi 5): the order inside one align group. */
+static int align_before(const lj_widget *a, const lj_widget *b, lj_align which)
+{
+    switch (which) {
+    case LJ_AL_TOP:    return a->y < b->y;
+    case LJ_AL_BOTTOM: return a->y + a->h >= b->y + b->h;
+    case LJ_AL_LEFT:   return a->x < b->x;
+    case LJ_AL_RIGHT:  return a->x + a->w >= b->x + b->w;
+    default:           return 0;                          /* alClient: creation order */
+    }
+}
+
+#define LJ_ALIGN_GROUP_MAX 64   /* ponytail: aligned siblings of one group past this are not placed; the largest DFM group is 6, raise it if a code-built form needs more */
+
 /* Align pass as TWinControl.AlignControls: the client rect shrinks as each
- * aligned child takes its edge; alTop, alBottom, alLeft, alRight, alClient, in
- * creation order inside each group (design 7.6). Invisible children are skipped. */
+ * aligned child takes its edge; alTop, alBottom, alLeft, alRight, alClient, each
+ * group ordered as DoAlign inserts it, from the children's current rects (design
+ * 7.6, ME-43). Invisible children are skipped. */
 static void align_pass(lj_widget *parent, lj_align which, lj_rect *r)
 {
-    lj_widget *c;
+    lj_widget *list[LJ_ALIGN_GROUP_MAX], *c;
+    int n = 0, i, j;
     for (c = parent->first; c; c = c->next) {
         if (!c->visible || c->align != which) continue;
+        if (n == LJ_ALIGN_GROUP_MAX) break;   /* the rest of this group stays where it is */
+        for (j = 0; j < n && !align_before(c, list[j], which); j++) { }
+        for (i = n; i > j; i--) list[i] = list[i - 1];
+        list[j] = c;
+        n++;
+    }
+    for (i = 0; i < n; i++) {
+        c = list[i];
         switch (which) {
         case LJ_AL_TOP:    c->x = r->x; c->w = r->w; c->y = r->y;              r->y += c->h; r->h -= c->h; break;
         case LJ_AL_BOTTOM: c->x = r->x; c->w = r->w; c->y = r->y + r->h - c->h; r->h -= c->h; break;
@@ -129,6 +153,7 @@ void lj_widget_layout(lj_widget *parent)
     int i;
     if (!parent) return;
     r.x = 0; r.y = 0; r.w = parent->w; r.h = parent->h;
+    if (parent->vt && parent->vt->client) parent->vt->client(parent, &r);
     for (i = 0; i < 5; i++) align_pass(parent, order[i], &r);
     if (parent->vt && parent->vt->layout) parent->vt->layout(parent);
     for (c = parent->first; c; c = c->next) lj_widget_layout(c);

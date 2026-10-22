@@ -54,7 +54,19 @@ static void paint(lj_widget *w, lj_surface *s)
 
 static int mouse(lj_widget *w, const lj_mouse_ev *m) { return lj_w_plain_mouse(w, m); }
 
-static const lj_widget_vt vt = { paint, mouse, NULL, NULL };
+/* TCustomPanel.AdjustClientRect (ME-43): the rect lj_w_panel_paint_frame leaves inside the frame and bevels. */
+static void client(const lj_widget *w, lj_rect *r)
+{
+    const lj_ctl_desc *d = w->desc;
+    int bw = d && d->bevel_width > 0 ? d->bevel_width : 1, in = 0;
+    if (d && d->border_style && strcmp(d->border_style, "bsSingle") == 0) in++;
+    if (!d || d->bevel_outer != LJ_BV_NONE) in += bw;          /* unset = bvRaised */
+    if (d && d->border_width > 0) in += d->border_width;
+    if (d && d->bevel_inner && d->bevel_inner != LJ_BV_NONE) in += bw;
+    r->x = in; r->y = in; r->w = w->w - 2 * in; r->h = w->h - 2 * in;
+}
+
+static const lj_widget_vt vt = { paint, mouse, NULL, NULL, client };
 
 lj_widget *lj_w_panel_create(lj_widget *parent, const lj_ctl_desc *d)
 {

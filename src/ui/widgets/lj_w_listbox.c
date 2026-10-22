@@ -12,22 +12,7 @@ static int inner_h(const lj_w_list *l) { return l->base.h - 2 * LB_BORDER; }
 static int visible_rows(const lj_w_list *l) { int v = inner_h(l) / (l->item_h > 0 ? l->item_h : 13); return v < 1 ? 1 : v; }
 static int needs_sb(const lj_w_list *l) { return l->n * l->item_h > inner_h(l); }
 
-static void fit_sb(lj_w_list *l)
-{
-    int vis = visible_rows(l);
-    l->sb.vertical = 1;
-    l->sb.x = l->base.w - LB_BORDER - LJ_SB_W; l->sb.y = LB_BORDER; l->sb.w = LJ_SB_W; l->sb.h = inner_h(l);
-    l->sb.min = 0; l->sb.max = l->n - vis > 0 ? l->n - vis : 0; l->sb.page = vis;
-    lj_w_sbar_set(&l->sb, l->sb.pos);
-}
-
-static void ensure_visible(lj_w_list *l)
-{
-    int vis = visible_rows(l);
-    if (l->index < 0) return;
-    if (l->index < l->sb.pos) l->sb.pos = l->index;
-    else if (l->index >= l->sb.pos + vis) l->sb.pos = l->index - vis + 1;
-}
+#define FIT(l) lj_w_sbar_fit(&(l)->sb, (l)->base.w, LB_BORDER, LB_BORDER, inner_h(l), (l)->n, visible_rows(l))
 
 int lj_w_list_row_at(const lj_widget *w, int y)
 {
@@ -57,7 +42,7 @@ void lj_w_list_paint(lj_widget *w, lj_surface *s)
     if (l->flat) lj_fill(s, ax, ay, w->w, w->h, w->color);               /* BorderStyle = bsNone */
     else if (l->owner) { lj_fill(s, ax, ay, w->w, w->h, w->color); lj_bevel1(s, ax, ay, w->w, w->h, LJ_CLR_3DDKSHADOW, LJ_CLR_3DDKSHADOW); }   /* combo drop list: 1-px black frame */
     else lj_edge_sunken(s, ax, ay, w->w, w->h, w->color);
-    fit_sb(l);
+    FIT(l);
     sb = needs_sb(l);
     vis = visible_rows(l);
     row_w = w->w - 2 * LB_BORDER - (sb ? LJ_SB_W : 0);
@@ -85,7 +70,7 @@ int lj_w_list_mouse(lj_widget *w, const lj_mouse_ev *m)
     lj_w_list *l = (lj_w_list *)w;
     int row;
     if (!w->enabled) return 0;
-    fit_sb(l);
+    FIT(l);
     if (m->type == LJ_EV_MOUSE_WHEEL) {
         if (lj_w_sbar_set(&l->sb, l->sb.pos - 3 * m->wheel)) lj_widget_invalidate(w);
         return 1;
@@ -128,7 +113,7 @@ int lj_w_list_key(lj_widget *w, const lj_key_ev *k)
     }
     if (next != l->index) {
         l->index = next;
-        fit_sb(l); ensure_visible(l);
+        FIT(l); lj_w_sbar_reveal(&l->sb, l->index, visible_rows(l));
         lj_widget_invalidate(w);
         lj_w_emit(w, LJ_WEV_CLICK);
     }

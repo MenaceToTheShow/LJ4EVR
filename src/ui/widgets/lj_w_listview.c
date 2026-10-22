@@ -14,22 +14,7 @@ static int rows_h(const lj_w_listview *v) { return v->base.h - rows_top(v) - LV_
 static int visible_rows(const lj_w_listview *v) { int n = rows_h(v) / v->row_h; return n < 1 ? 1 : n; }
 static int needs_sb(const lj_w_listview *v) { return v->n * v->row_h > rows_h(v); }
 
-static void fit_sb(lj_w_listview *v)
-{
-    int vis = visible_rows(v);
-    v->sb.vertical = 1;
-    v->sb.x = v->base.w - LV_BORDER - LJ_SB_W; v->sb.y = rows_top(v); v->sb.w = LJ_SB_W; v->sb.h = rows_h(v);
-    v->sb.min = 0; v->sb.max = v->n - vis > 0 ? v->n - vis : 0; v->sb.page = vis;
-    lj_w_sbar_set(&v->sb, v->sb.pos);
-}
-
-static void ensure_visible(lj_w_listview *v)
-{
-    int vis = visible_rows(v);
-    if (v->index < 0) return;
-    if (v->index < v->sb.pos) v->sb.pos = v->index;
-    else if (v->index >= v->sb.pos + vis) v->sb.pos = v->index - vis + 1;
-}
+#define FIT(v) lj_w_sbar_fit(&(v)->sb, (v)->base.w, LV_BORDER, rows_top(v), rows_h(v), (v)->n, visible_rows(v))
 
 int lj_w_listview_row_at(const lj_widget *w, int y)
 {
@@ -59,7 +44,7 @@ static void lv_paint(lj_widget *w, lj_surface *s)
     char buf[256];
     lj_widget_abs(w, &ax, &ay);
     lj_edge_sunken(s, ax, ay, w->w, w->h, w->color);
-    fit_sb(v);
+    FIT(v);
     sb = needs_sb(v);
     vis = visible_rows(v);
     area_w = w->w - 2 * LV_BORDER - (sb ? LJ_SB_W : 0);
@@ -98,7 +83,7 @@ static void select_row(lj_w_listview *v, int row)
 {
     if (row < 0 || row >= v->n || row == v->index) return;
     v->index = row;
-    fit_sb(v); ensure_visible(v);
+    FIT(v); lj_w_sbar_reveal(&v->sb, v->index, visible_rows(v));
     lj_widget_invalidate(&v->base);
     lj_w_emit(&v->base, LJ_WEV_SELECT_ITEM);
     lj_w_emit(&v->base, LJ_WEV_CLICK);
@@ -112,7 +97,7 @@ static int lv_mouse(lj_widget *w, const lj_mouse_ev *m)
     lj_w_listview *v = (lj_w_listview *)w;
     int row, hx = m->x - LV_BORDER;
     if (!w->enabled) return 0;
-    fit_sb(v);
+    FIT(v);
     if (m->type == LJ_EV_MOUSE_WHEEL) { if (lj_w_sbar_set(&v->sb, v->sb.pos - 3 * m->wheel)) lj_widget_invalidate(w); return 1; }
     if (v->drag_col > 0) {
         if (m->type == LJ_EV_MOUSE_MOVE) { v->col_w[v->drag_col - 1] = hx - v->drag_x > 0 ? hx - v->drag_x : 0; lj_widget_invalidate(w); }

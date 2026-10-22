@@ -68,6 +68,7 @@ typedef struct {
     int  (*mouse)(lj_widget *w, const lj_mouse_ev *m);           /* m->type says down/up/move/wheel/leave; 1 = consumed */
     int  (*key)(lj_widget *w, const lj_key_ev *k);               /* k->type says key down/up/char; 1 = consumed */
     void (*layout)(lj_widget *w);                        /* after lj_widget_layout placed the children; NULL = nothing extra */
+    void (*client)(const lj_widget *w, lj_rect *r);      /* ME-43: AdjustClientRect, the rect aligned children share (widget-relative); NULL = 0,0,w,h */
 } lj_widget_vt;
 
 struct lj_widget {
@@ -93,7 +94,7 @@ void       lj_widget_abs(const lj_widget *w, int *x, int *y);            /* orig
 void       lj_widget_invalidate(lj_widget *w);                           /* marks w (and so its covered children) for repaint */
 int        lj_widget_collect_dirty(lj_widget *root, lj_rect *out, int cap);   /* absolute rects of dirty widgets, flags cleared; returns the count, which may exceed cap (then repaint everything) */
 void       lj_widget_layout_hooks(lj_widget *parent);                    /* vt->layout only, recursively: the creation pass, DFM rects stand (ME-41) */
-void       lj_widget_layout(lj_widget *parent);                          /* Align pass over the children as the VCL resolves it (alTop, alBottom, alLeft, alRight, alClient, creation order), then vt->layout, recursively */
+void       lj_widget_layout(lj_widget *parent);                          /* Align pass over the children as TWinControl.AlignControls resolves it (ME-43: alTop by Top, alBottom by bottom edge descending, alLeft by Left, alRight by right edge descending, alClient in creation order; inside vt->client), then vt->layout, recursively */
 void       lj_widget_resize(lj_widget *w, int new_w, int new_h);         /* applies Anchors to the children for the delta, then lj_widget_layout(w) */
 lj_widget *lj_widget_hit(lj_widget *root, int x, int y);                 /* deepest visible widget under root-relative x,y; the last child declared wins; NULL outside root */
 lj_widget *lj_widget_set_focus(lj_widget *w);                            /* clears the focused flag elsewhere in the tree, sets it on w when visible+enabled; returns the previously focused widget or NULL */

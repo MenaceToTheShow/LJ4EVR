@@ -159,6 +159,21 @@ int lj_w_sbar_set(lj_w_sbar *b, int pos)
     return 1;
 }
 
+void lj_w_sbar_fit(lj_w_sbar *b, int owner_w, int edge, int y, int h, int n, int vis)
+{
+    b->vertical = 1;
+    b->x = owner_w - edge - LJ_SB_W; b->y = y; b->w = LJ_SB_W; b->h = h;
+    b->min = 0; b->max = n - vis > 0 ? n - vis : 0; b->page = vis;
+    lj_w_sbar_set(b, b->pos);
+}
+
+void lj_w_sbar_reveal(lj_w_sbar *b, int row, int vis)
+{
+    if (row < 0) return;
+    if (row < b->pos) b->pos = row;
+    else if (row >= b->pos + vis) b->pos = row - vis + 1;
+}
+
 int lj_w_sbar_mouse(lj_w_sbar *b, const lj_mouse_ev *m)
 {
     int btn, track, tl, tp, len = b->vertical ? b->h : b->w;

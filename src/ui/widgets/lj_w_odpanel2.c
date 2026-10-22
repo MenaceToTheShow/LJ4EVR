@@ -15,7 +15,9 @@ static void paint(lj_widget *w, lj_surface *s)
 
 static int mouse(lj_widget *w, const lj_mouse_ev *m) { return lj_w_plain_mouse(w, m); }
 
-static const lj_widget_vt vt = { paint, mouse, NULL, NULL };
+static void client(const lj_widget *w, lj_rect *r) { r->x = 1; r->y = 1; r->w = w->w - 2; r->h = w->h - 2; }   /* ME-43: inside the 1-px frame, as every DFM child sits */
+
+static const lj_widget_vt vt = { paint, mouse, NULL, NULL, client };
 
 lj_widget *lj_w_odpanel2_create(lj_widget *parent, const lj_ctl_desc *d)
 {

@@ -13,6 +13,9 @@ Checks, over src/:
   6. Every header compiles alone in its own translation unit (compiler from --cc).
   7. ME-101 counts, both must stay 0: byte-identical do-nothing widget handlers (lj_handler_noop is the one) and
      "x ? lj_ini_get*" ternaries (lj_ini_geti / lj_ini_gets read a NULL ini as empty).
+  8. ME-44: every .c has its .h (same stem), unless a blessed group header declares it (GROUP_HEADERS) or it is
+     on PAIR_EXEMPT; every identifier a header declares at file scope (macros, enum constants, tags, typedefs,
+     functions, variables) starts with lj_ / LJ_; every OS_ALLOW row names a file that has that include.
 
 usage: test_layering.py --src <repo>/src --cc <compiler> [--gen <dir with version.h>]
 exit 0 = clean, 1 = findings printed one per line.
@@ -48,7 +51,7 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "core/lj_clock.c": {"windows.h", "time.h"},
     "core/lj_lock.c": {"windows.h", "pthread.h"},
     "io/lj_net.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
-    "io/lj_sacn.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
+    "io/lj_sacn.c": {"winsock2.h", "ws2tcpip.h", "sys/socket.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},   # ME-44: iphlpapi.h / ifaddrs.h live in lj_net.c
     "io/lj_midi_winmm.c": {"windows.h", "mmsystem.h"},
     "model/lj_library.c": {"sys/stat.h", "direct.h", "io.h", "dirent.h"},   # the library folder walk and rmdir (_findfirst / opendir)
     "model/lj_movemacro.c": {"io.h", "dirent.h"},   # W3: the MacroShapes\*.bez listing
@@ -57,6 +60,23 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "core/lj_fsinfo.c": {"sys/types.h", "sys/stat.h", "direct.h"},   # W3 movement: file mtime (LORD_FIDELITY-12) and lj_fs_mkdir (_mkdir)
 }
 NAME_EXEMPT = {"app/main.c"}
+# ME-44: the group headers blessed in docs/conventions.md and design 2.0. A ui/widgets/lj_w_<x>.c without its own
+# header is fine when one of these declares lj_w_<x>*.
+GROUP_HEADERS = ["ui/widgets/lj_widgets_basic.h", "ui/widgets/lj_widgets_lists.h"]
+PAIR_EXEMPT = {   # .c files with no same-stem header, and why
+    "app/main.c": "the program entry",
+    "app/lj_render_main.c": "the lj4evr_render entry",
+    "gfx/lj_art_gen.c": "generated; declared by gfx/lj_glyphs.h",
+    "gfx/lj_fonts_gen.c": "generated; declared by gfx/lj_font.h",
+    "io/lj_midi_winmm.c": "a backend of io/lj_midi.h",
+    "io/lj_midi_coremidi.c": "a backend of io/lj_midi.h",
+    "io/lj_midi_null.c": "a backend of io/lj_midi.h",
+}
+ID = re.compile(r"[A-Za-z_]\w*")
+ID_OK = re.compile(r"^(lj_|LJ_)")
+KEYWORDS = {"void", "int", "char", "unsigned", "signed", "short", "long", "const", "static", "extern", "struct", "enum",
+            "union", "typedef", "inline", "size_t", "uint8_t", "uint16_t", "uint32_t", "uint64_t", "int8_t", "int16_t",
+            "int32_t", "int64_t", "bool", "_Bool", "restrict", "_Static_assert", "register", "auto"}
 
 NOOP_RE = re.compile(r'void\s+(\w+)\s*\(\s*lj_widget\s*\*\s*w\s*,\s*void\s*\*\s*ud\s*\)\s*\{\s*\(void\)\s*w\s*;\s*\(void\)\s*ud\s*;\s*\}')
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*([<"])([^>"]+)[>"]', re.M)
@@ -84,6 +104,84 @@ def strip_code(text, strings=True):
             out.append(c)
             i += 1
     return "".join(out)
+
+
+def drop_pp(code):
+    out, cont = [], False
+    for line in code.split(chr(10)):
+        pp = cont or line.lstrip().startswith("#")
+        cont = pp and line.rstrip().endswith(chr(92))
+        out.append("" if pp else line)
+    return chr(10).join(out)
+
+
+def header_ids(text):
+    """(kind, name) of every file-scope identifier a header declares or defines."""
+    code = strip_code(text, strings=True)
+    out = []
+    for m in re.finditer(r"^[ \t]*#[ \t]*define[ \t]+(\w+)", code, re.M):
+        out.append(("macro", m.group(1)))
+    code = drop_pp(code)
+    # walk at depth 0; collect enum bodies
+    depth, buf, stmts, i = 0, [], [], 0
+    while i < len(code):
+        c = code[i]
+        if c == "{":
+            if depth == 0:
+                head = "".join(buf)
+                j, d = i, 0
+                while True:
+                    if code[j] == "{": d += 1
+                    elif code[j] == "}":
+                        d -= 1
+                        if d == 0: break
+                    j += 1
+                body = code[i + 1:j]
+                if re.search(r"\benum\b[^;]*$", head):
+                    for item in body.split(","):
+                        m = ID.match(item.strip())
+                        if m: out.append(("enum constant", m.group(0)))
+                buf.append(" {} ")
+                i = j + 1
+                continue
+        if c == ";" and depth == 0:
+            stmts.append("".join(buf)); buf = []
+        else:
+            buf.append(c)
+        i += 1
+    for s in stmts:
+        s = " ".join(s.split())
+        if not s or s.startswith("_Static_assert"): continue
+        for m in re.finditer(r"\b(struct|enum|union)\s+(\w+)\s*\{", s):
+            out.append((m.group(1) + " tag", m.group(2)))
+        if s.startswith("typedef"):
+            m = re.search(r"\(\s*\*\s*(\w+)\s*\)", s)
+            name = m.group(1) if m else ID.findall(re.sub(r"\[.*?\]", "", s))[-1]
+            out.append(("typedef", name))
+            continue
+        if "(" in s:
+            m = re.search(r"(\w+)\s*$", s[:s.index("(")])
+            if m and m.group(1) not in KEYWORDS:
+                out.append(("function", m.group(1)))
+            else:
+                m = re.search(r"\(\s*\*\s*(\w+)\s*\)", s)
+                if m: out.append(("variable", m.group(1)))
+            continue
+        decl = re.sub(r"\{\s*\}", "", s)
+        for part in decl.split(","):
+            part = re.sub(r"=.*", "", re.sub(r"\[.*?\]", "", part)).strip()
+            ids = ID.findall(part)
+            if ids and ids[-1] not in KEYWORDS and not re.fullmatch(r"(struct|enum|union)\s+\w+", part):
+                out.append(("variable", ids[-1]))
+    return out
+
+
+def selfcheck_ids():
+    """The identifier scan must see every kind it claims to (a planted header)."""
+    planted = ("#define BAR 1\nint foo(void);\nvoid lj_ok(void (*cb)(int x), void *ud);\nenum lj_e { LJ_A, BAD_K = 2 };\n"
+               "typedef struct { int a; } bad_t;\ntypedef void (*bad_fn)(void);\nextern const int bad_var[3], lj_v;\n")
+    names = sorted(n for _, n in header_ids(planted) if not ID_OK.match(n))
+    assert names == ["BAD_K", "BAR", "bad_fn", "bad_t", "bad_var", "foo"], names
 
 
 def layer_of(rel):
@@ -135,6 +233,16 @@ def main():
     headers = []
     nfiles = 0
     noops = ternaries = 0
+    selfcheck_ids()
+    group_text = "".join(open(os.path.join(src, g), encoding="latin-1").read() for g in GROUP_HEADERS)
+    for g in GROUP_HEADERS:
+        if not os.path.exists(os.path.join(src, g)):
+            findings.append("%s: blessed group header missing" % g)
+    for rel, hdrs in OS_ALLOW.items():          # ME-44: no phantom allow rows
+        p = os.path.join(src, rel)
+        incs = set(i for _, i in INCLUDE_RE.findall(strip_code(open(p, encoding="latin-1").read(), strings=False))) if os.path.exists(p) else set()
+        for h in sorted(hdrs - incs):
+            findings.append("%s: OS_ALLOW row for <%s> but the file does not include it" % (rel, h))
     for dirpath, _, files in os.walk(src):
         for fn in sorted(files):
             if not fn.endswith((".c", ".h")):
@@ -149,6 +257,15 @@ def main():
             text = open(path, encoding="latin-1").read()
             code = strip_code(text)                           # for the word greps
             nocomment = strip_code(text, strings=False)       # for #include lines (the file name is a string literal)
+            # 8. ME-44 pairing and header identifiers
+            if fn.endswith(".c") and rel not in PAIR_EXEMPT and not os.path.exists(path[:-2] + ".h"):
+                stem = fn[:-2]
+                if not (rel.startswith("ui/widgets/lj_w_") and re.search(r"\b%s\w*" % stem, group_text)):
+                    findings.append("%s: no %s.h and no blessed group header declares it (ME-44)" % (rel, stem))
+            if fn.endswith(".h"):
+                for kind, name in header_ids(text):
+                    if not ID_OK.match(name):
+                        findings.append("%s: %s '%s' does not start with lj_/LJ_ (ME-44)" % (rel, kind, name))
             # 5. names and guards
             if rel not in NAME_EXEMPT and not fn.startswith("lj_"):
                 findings.append("%s: file name must be lj_<name>.c/.h" % rel)

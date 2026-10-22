@@ -374,3 +374,5 @@ add_test(NAME test_movement_w3 COMMAND lj4evr_tests test_movement_w3)
 
 # W3 genmacro (append-only): the Generic Macro Editor, Save Macro and Select Macro headless (tests/ui/test_genmacro_editor.c, golden W3GM_EDITOR)
 add_test(NAME test_genmacro_editor COMMAND lj4evr_tests test_genmacro_editor)
+# W4 track 0 (append-only): ME-43 the full align pass reproduces every DFM at its design client (tests/ui/test_align.c)
+add_test(NAME test_align COMMAND lj4evr_tests test_align)

@@ -98,6 +98,8 @@ int lj_test_cuelist_form(int argc, char **argv);   /* W3 cuelist-window */
 int lj_test_uiscript_w3(int argc, char **argv);    /* W3 desktop-app */
 int lj_test_profiles_w3(int argc, char **argv);   /* W3 profiles */
 int lj_test_genmacro_editor(int argc, char **argv);   /* W3 genmacro: the editor and its dialogs headless */
+/* W4 (appended) */
+int lj_test_align(int argc, char **argv);   /* W4 track 0, ME-43 */
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
     { "font_cells", lj_test_font_cells },
@@ -190,6 +192,8 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_gdc_fades_fs", lj_test_gdc_fades_fs },   /* gdc-fades-followspot: Generic DMX Control, Set Fade Status, follow spot windows headless, ME-16, W3GDC_* goldens (tests/ui/test_gdc_fades_fs.c) */
     { "test_movement_w3", lj_test_movement_w3 },   /* movement: Movement Macro + Bezier, Delete Macros, Fan Out, Auto Delay, Cue Macro Control headless; ME-16, LORD_FIDELITY-12, goldens W3MM_* (tests/ui/test_movement_w3.c) */
     { "test_genmacro_editor", lj_test_genmacro_editor },   /* genmacro: Generic Macro Editor + Save / Select Macro headless, ME-16, F19 caption, F39 shapes, golden W3GM_EDITOR (tests/ui/test_genmacro_editor.c) */
+    /* W4 (appended) */
+    { "test_align", lj_test_align },   /* ME-43: the full align pass reproduces every DFM at its design client, 0 misplaced (tests/ui/test_align.c) */
 };
 
 int main(int argc, char **argv)

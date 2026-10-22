@@ -29,3 +29,14 @@ Every file under `src/` follows these; `tools/test_layering.py` checks the mecha
 - Widget classes embed `lj_widget` as their first struct member.
 - `tests/lj_tests.c` is the one test driver; a check is a subcommand there plus one
   name in `LJ_TEST_SUBCOMMANDS` in the root `CMakeLists.txt`.
+
+## Group headers (ME-44, W4 track 0)
+
+- Two blessed group headers stand in for "one `.h` per `.c`": `ui/widgets/lj_widgets_basic.h` and
+  `ui/widgets/lj_widgets_lists.h` declare the widget classes of several `ui/widgets/lj_w_<x>.c` files (the
+  list, grid, tab, bar and tree widgets have no header of their own). A `ui/widgets/lj_w_<x>.c` with no
+  `lj_w_<x>.h` is accepted only when one of the two declares `lj_w_<x>*`. Every other `.c` without its
+  same-stem header is named, with its reason, in `PAIR_EXEMPT` of `tools/test_layering.py` (program entries,
+  generated tables, the MIDI backends of `io/lj_midi.h`). `test_layering.py` also checks that every
+  identifier a header declares at file scope starts with `lj_`/`LJ_`, and that every `OS_ALLOW` row names a
+  file that has that include.

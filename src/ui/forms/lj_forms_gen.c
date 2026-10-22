@@ -901,6 +901,13 @@ static const lj_column_desc tbgcueform_lv1_cols[] = {
     { .caption = "Scene", .width = 45, .image_index = -1 },
     { .caption = "Mode", .image_index = -1 },
 };
+static const char *const tbgcueform_lv1_items[] = {
+    "\011\011\011",
+    "\011\011\011",
+    "\011\011\011",
+    "\011\011\011",
+    "\011\011\011",
+};
 static const lj_ctl_desc tbgcueform_panel1[] = {
     { LJ_K_SPEEDBUTTON, "sb1", 1, 21, 30, 14, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_SPEEDBUTTON, "sb2", 1, 35, 30, 14, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
@@ -924,7 +931,7 @@ static const lj_ctl_desc tbgcueform_panel2[] = {
 };
 static const lj_ctl_desc tbgcueform_ctls[] = {
     { LJ_K_SPEEDBUTTON, "SpeedButton4", 0, 16, 30, 16, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
-    { LJ_K_LISTVIEW, "LV1", 32, 0, 352, 95, .align = LJ_AL_CLIENT, .columns = tbgcueform_lv1_cols, .ncolumns = LJ_COUNT_OF(tbgcueform_lv1_cols), .column_click = LJ_NO, .drag_mode = "dmAutomatic", .grid_lines = LJ_YES, .hide_selection = LJ_NO, .multiselect = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .popup_menu = "PopupMenu1", .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnDblClick", "LV1DblClick" }, { "OnDragDrop", "LV1DragDrop" }, { "OnDragOver", "LV1DragOver" } } },
+    { LJ_K_LISTVIEW, "LV1", 32, 0, 352, 95, .align = LJ_AL_CLIENT, .columns = tbgcueform_lv1_cols, .ncolumns = LJ_COUNT_OF(tbgcueform_lv1_cols), .column_click = LJ_NO, .drag_mode = "dmAutomatic", .grid_lines = LJ_YES, .hide_selection = LJ_NO, .multiselect = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .popup_menu = "PopupMenu1", .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tbgcueform_lv1_items, .nitems = LJ_COUNT_OF(tbgcueform_lv1_items), .events = { { "OnDblClick", "LV1DblClick" }, { "OnDragDrop", "LV1DragDrop" }, { "OnDragOver", "LV1DragOver" } } },
     { LJ_K_PANEL, "Panel1", 0, 0, 32, 95, .align = LJ_AL_LEFT, .bevel_outer = LJ_BV_NONE, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tbgcueform_panel1, .nchildren = LJ_COUNT_OF(tbgcueform_panel1) },
     { LJ_K_PANEL, "Panel2", 0, 95, 384, 29, .align = LJ_AL_BOTTOM, .bevel_outer = LJ_BV_LOWERED, .tab_order = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tbgcueform_panel2, .nchildren = LJ_COUNT_OF(tbgcueform_panel2) },
     { LJ_K_MAINMENU, "MainMenu1", 272, 8, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -4015,8 +4022,16 @@ static const lj_column_desc tdebugform_tsdebug_ts2532_lv2532_cols[] = {
     { .image_index = -1 },
     { .autosize = LJ_YES, .image_index = -1 },
 };
+static const char *const tdebugform_tsdebug_ts2532_lv2532_items[] = {
+    "MUXA\011",
+    "MUXB\011",
+    "MUXC\011",
+    "MUXD\011",
+    "MUXE\011",
+    "MUXF\011",
+};
 static const lj_ctl_desc tdebugform_tsdebug_ts2532[] = {
-    { LJ_K_LISTVIEW, "lv2532", 1, 1, 250, 242, .columns = tdebugform_tsdebug_ts2532_lv2532_cols, .ncolumns = LJ_COUNT_OF(tdebugform_tsdebug_ts2532_lv2532_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1 },
+    { LJ_K_LISTVIEW, "lv2532", 1, 1, 250, 242, .columns = tdebugform_tsdebug_ts2532_lv2532_cols, .ncolumns = LJ_COUNT_OF(tdebugform_tsdebug_ts2532_lv2532_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tdebugform_tsdebug_ts2532_lv2532_items, .nitems = LJ_COUNT_OF(tdebugform_tsdebug_ts2532_lv2532_items) },
 };
 static const lj_ctl_desc tdebugform_tsdebug_tabsheet8[] = {
     { LJ_K_RICHEDIT, "reDetect", 0, 0, 305, 247, .align = LJ_AL_LEFT, .scroll_bars = "ssBoth", .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -6170,9 +6185,21 @@ static const lj_ctl_desc tfollowlistform_panel1[] = {
 static const lj_column_desc tfollowlistform_lv1_cols[] = {
     { .autosize = LJ_YES, .image_index = -1 },
 };
+static const char *const tfollowlistform_lv1_items[] = {
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+};
 static const lj_ctl_desc tfollowlistform_ctls[] = {
     { LJ_K_PANEL, "Panel1", 0, 150, 192, 34, .align = LJ_AL_BOTTOM, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tfollowlistform_panel1, .nchildren = LJ_COUNT_OF(tfollowlistform_panel1) },
-    { LJ_K_LISTVIEW, "lv1", 0, 0, 192, 150, .align = LJ_AL_CLIENT, .columns = tfollowlistform_lv1_cols, .ncolumns = LJ_COUNT_OF(tfollowlistform_lv1_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .hide_selection = LJ_NO, .readonly = LJ_YES, .row_select = LJ_YES, .show_column_headers = LJ_NO, .tab_order = 1, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "lv1Change" }, { "OnDblClick", "lv1DblClick" } } },
+    { LJ_K_LISTVIEW, "lv1", 0, 0, 192, 150, .align = LJ_AL_CLIENT, .columns = tfollowlistform_lv1_cols, .ncolumns = LJ_COUNT_OF(tfollowlistform_lv1_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .hide_selection = LJ_NO, .readonly = LJ_YES, .row_select = LJ_YES, .show_column_headers = LJ_NO, .tab_order = 1, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tfollowlistform_lv1_items, .nitems = LJ_COUNT_OF(tfollowlistform_lv1_items), .events = { { "OnChange", "lv1Change" }, { "OnDblClick", "lv1DblClick" } } },
     { LJ_K_MAINMENU, "MainMenu1", 88, 16, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
 };
 static const lj_menu_item_desc tfollowlistform_mainmenu1_options1[] = {
@@ -8951,15 +8978,27 @@ static const lj_column_desc tmcxsetupform_lv1_cols[] = {
     { .image_index = -1 },
     { .caption = "Cue", .width = -2, .image_index = -1 },
 };
+static const char *const tmcxsetupform_lv1_items[] = {
+    "Preset 1\011",
+    "Preset 2\011",
+    "Preset 3\011",
+    "Preset 4\011",
+    "Preset 5\011",
+    "Preset 6\011",
+    "Preset 7\011",
+};
 static const lj_column_desc tmcxsetupform_lv2_cols[] = {
     { .image_index = -1 },
     { .caption = "CueList", .width = -2, .image_index = -1 },
 };
+static const char *const tmcxsetupform_lv2_items[] = {
+    "Auto\011",
+};
 static const lj_ctl_desc tmcxsetupform_ctls[] = {
     { LJ_K_BEVEL, "Bevel2", 0, 184, 278, 34, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BEVEL, "Bevel1", 0, 0, 279, 177, .align = LJ_AL_TOP, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_LISTVIEW, "LV1", 8, 8, 265, 125, .columns = tmcxsetupform_lv1_cols, .ncolumns = LJ_COUNT_OF(tmcxsetupform_lv1_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .popup_menu = "PopupMenu1", .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnDragDrop", "LV1DragDrop" }, { "OnDragOver", "LV1DragOver" } } },
-    { LJ_K_LISTVIEW, "LV2", 8, 136, 265, 39, .columns = tmcxsetupform_lv2_cols, .ncolumns = LJ_COUNT_OF(tmcxsetupform_lv2_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .popup_menu = "PopupMenu2", .tab_order = 1, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnDragDrop", "LV2DragDrop" }, { "OnDragOver", "LV2DragOver" } } },
+    { LJ_K_LISTVIEW, "LV1", 8, 8, 265, 125, .columns = tmcxsetupform_lv1_cols, .ncolumns = LJ_COUNT_OF(tmcxsetupform_lv1_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .popup_menu = "PopupMenu1", .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tmcxsetupform_lv1_items, .nitems = LJ_COUNT_OF(tmcxsetupform_lv1_items), .events = { { "OnDragDrop", "LV1DragDrop" }, { "OnDragOver", "LV1DragOver" } } },
+    { LJ_K_LISTVIEW, "LV2", 8, 136, 265, 39, .columns = tmcxsetupform_lv2_cols, .ncolumns = LJ_COUNT_OF(tmcxsetupform_lv2_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .popup_menu = "PopupMenu2", .tab_order = 1, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tmcxsetupform_lv2_items, .nitems = LJ_COUNT_OF(tmcxsetupform_lv2_items), .events = { { "OnDragDrop", "LV2DragDrop" }, { "OnDragOver", "LV2DragOver" } } },
     { LJ_K_BITBTN, "bSave", 62, 189, 75, 25, .caption = "&Save", .modal_result = 1, .tab_order = 2, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bSaveClick" } } },
     { LJ_K_BITBTN, "bClose", 142, 189, 75, 25, .tab_order = 3, .kind_str = "bkClose", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_POPUPMENU, "PopupMenu1", 168, 40, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnPopup", "PopupMenu1Popup" } } },
@@ -9184,8 +9223,26 @@ static const lj_column_desc tmemoryviewform_lv_cols[] = {
     { .caption = "Size", .width = 100, .image_index = -1 },
     { .width = 100, .image_index = -1 },
 };
+static const char *const tmemoryviewform_lv_items[] = {
+    "Total Address Space\011" "0\011",
+    "Total Uncomitted\011" "0\011",
+    "Total Comitted\011" "0\011",
+    "Total Allocated\011" "0\011",
+    "Total Free\011" "0\011",
+    "Free Small\011" "0\011",
+    "Free Big\011" "0\011",
+    "Unused\011" "0\011",
+    "Overhead\011" "0\011",
+    "MemoryLoad\011\011",
+    "Total Physical\011\011",
+    "Available Physical\011\011",
+    "Total PageFile\011\011",
+    "Available PageFile\011\011",
+    "Total Virtual\011\011",
+    "Available Virtual\011\011",
+};
 static const lj_ctl_desc tmemoryviewform_ctls[] = {
-    { LJ_K_LISTVIEW, "LV", 0, 0, 312, 249, .align = LJ_AL_TOP, .columns = tmemoryviewform_lv_cols, .ncolumns = LJ_COUNT_OF(tmemoryviewform_lv_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .hide_selection = LJ_NO, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "LVClick" } } },
+    { LJ_K_LISTVIEW, "LV", 0, 0, 312, 249, .align = LJ_AL_TOP, .columns = tmemoryviewform_lv_cols, .ncolumns = LJ_COUNT_OF(tmemoryviewform_lv_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .hide_selection = LJ_NO, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tmemoryviewform_lv_items, .nitems = LJ_COUNT_OF(tmemoryviewform_lv_items), .events = { { "OnClick", "LVClick" } } },
     { LJ_K_TIMER, "Timer1", 72, 40, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnTimer", "Timer1Timer" } } },
 };
 const lj_form_desc lj_form_TMEMORYVIEWFORM = {
@@ -9569,13 +9626,20 @@ static const lj_column_desc tpalettevaluetypeform_lvselection_cols[] = {
     { .caption = "No", .width = 30, .image_index = -1 },
     { .caption = "Value Type", .width = -2, .image_index = -1 },
 };
+static const char *const tpalettevaluetypeform_lvselection_items[] = {
+    "1\011",
+    "2\011",
+    "3\011",
+    "4\011",
+    "5\011",
+};
 static const lj_ctl_desc tpalettevaluetypeform_ctls[] = {
     { LJ_K_BEVEL, "Bevel1", 2, 2, 326, 105, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BEVEL, "Bevel2", 2, 109, 326, 32, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BITBTN, "bCancel", 87, 113, 75, 25, .tab_order = 0, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_BITBTN, "bOk", 167, 113, 75, 25, .tab_order = 1, .kind_str = "bkOK", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
     { LJ_K_LISTVIEW, "lvTypes", 198, 8, 125, 95, .columns = tpalettevaluetypeform_lvtypes_cols, .ncolumns = LJ_COUNT_OF(tpalettevaluetypeform_lvtypes_cols), .drag_mode = "dmAutomatic", .grid_lines = LJ_YES, .hide_selection = LJ_NO, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 2, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "lvTypesChange" }, { "OnClick", "lvClick" }, { "OnDblClick", "lvTypesDblClick" }, { "OnStartDrag", "lvTypesStartDrag" } } },
-    { LJ_K_LISTVIEW, "lvSelection", 8, 8, 145, 95, .columns = tpalettevaluetypeform_lvselection_cols, .ncolumns = LJ_COUNT_OF(tpalettevaluetypeform_lvselection_cols), .grid_lines = LJ_YES, .hide_selection = LJ_NO, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 3, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "lvClick" }, { "OnDragDrop", "lvSelectionDragDrop" }, { "OnDragOver", "lvSelectionDragOver" } } },
+    { LJ_K_LISTVIEW, "lvSelection", 8, 8, 145, 95, .columns = tpalettevaluetypeform_lvselection_cols, .ncolumns = LJ_COUNT_OF(tpalettevaluetypeform_lvselection_cols), .grid_lines = LJ_YES, .hide_selection = LJ_NO, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 3, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tpalettevaluetypeform_lvselection_items, .nitems = LJ_COUNT_OF(tpalettevaluetypeform_lvselection_items), .events = { { "OnClick", "lvClick" }, { "OnDragDrop", "lvSelectionDragDrop" }, { "OnDragOver", "lvSelectionDragOver" } } },
     { LJ_K_BITBTN, "bSet", 156, 9, 41, 25, .caption = "<-Set", .enabled = LJ_NO, .tab_order = 4, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bSetClick" } } },
     { LJ_K_PANEL, "Panel1", 160, 73, 32, 24, .tab_order = 5, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1 },
 };
@@ -12087,8 +12151,16 @@ static const lj_column_desc tsetup2518form_panel4_lvseq_cols[] = {
     { .caption = "Button", .image_index = -1 },
     { .caption = "Sequence", .width = -2, .image_index = -1 },
 };
+static const char *const tsetup2518form_panel4_lvseq_items[] = {
+    "Scene 1\011",
+    "Scene 2\011",
+    "Scene 3\011",
+    "Scene 4\011",
+    "Scene 5\011",
+    "Scene 6\011",
+};
 static const lj_ctl_desc tsetup2518form_panel4[] = {
-    { LJ_K_LISTVIEW, "lvSeq", 1, 1, 224, 110, .columns = tsetup2518form_panel4_lvseq_cols, .ncolumns = LJ_COUNT_OF(tsetup2518form_panel4_lvseq_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .hide_selection = LJ_NO, .row_select = LJ_YES, .popup_menu = "SeqPopUp", .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnDragDrop", "lvSeqDragDrop" }, { "OnDragOver", "lvSeqDragOver" } } },
+    { LJ_K_LISTVIEW, "lvSeq", 1, 1, 224, 110, .columns = tsetup2518form_panel4_lvseq_cols, .ncolumns = LJ_COUNT_OF(tsetup2518form_panel4_lvseq_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .hide_selection = LJ_NO, .row_select = LJ_YES, .popup_menu = "SeqPopUp", .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tsetup2518form_panel4_lvseq_items, .nitems = LJ_COUNT_OF(tsetup2518form_panel4_lvseq_items), .events = { { "OnDragDrop", "lvSeqDragDrop" }, { "OnDragOver", "lvSeqDragOver" } } },
 };
 static const lj_ctl_desc tsetup2518form_panel5[] = {
     { LJ_K_LABEL, "vb0", 8, 4, 18, 13, .caption = "vb0", .visible = LJ_NO, .font = LJ_FONT_SANS13, .font_inherited = 1 },

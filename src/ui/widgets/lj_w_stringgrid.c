@@ -15,13 +15,10 @@ static int data_rows_h(const lj_w_grid *g) { return g->base.h - GR_BORDER * 2 - 
 static int visible_data_rows(const lj_w_grid *g) { int v = data_rows_h(g) / (g->def_rh + GR_LINE); return v < 1 ? 1 : v; }
 static int needs_sb(const lj_w_grid *g) { return (g->rows - g->fixed_rows) * (g->def_rh + GR_LINE) > data_rows_h(g); }
 
-static void fit_sb(lj_w_grid *g)
+static void fit(lj_w_grid *g)   /* top_row is the grid's own scroll state; the bar mirrors it */
 {
-    int vis = visible_data_rows(g), data = g->rows - g->fixed_rows;
-    g->sb.vertical = 1;
-    g->sb.x = g->base.w - GR_BORDER - LJ_SB_W; g->sb.y = GR_BORDER; g->sb.w = LJ_SB_W; g->sb.h = g->base.h - 2 * GR_BORDER;
-    g->sb.min = 0; g->sb.max = data - vis > 0 ? data - vis : 0; g->sb.page = vis;
-    lj_w_sbar_set(&g->sb, g->top_row);
+    g->sb.pos = g->top_row;
+    lj_w_sbar_fit(&g->sb, g->base.w, GR_BORDER, GR_BORDER, g->base.h - 2 * GR_BORDER, g->rows - g->fixed_rows, visible_data_rows(g));
     g->top_row = g->sb.pos;
 }
 
@@ -67,7 +64,7 @@ static void grid_paint(lj_widget *w, lj_surface *s)
     lj_rect cr;
     lj_widget_abs(w, &ax, &ay);
     lj_edge_sunken(s, ax, ay, w->w, w->h, w->color);
-    fit_sb(g);
+    fit(g);
     sb = needs_sb(g);
     for (r = 0; r < g->rows; r++) {
         if (r >= g->fixed_rows && r - g->fixed_rows < g->top_row) continue;
@@ -99,13 +96,6 @@ static void grid_paint(lj_widget *w, lj_surface *s)
     if (sb) lj_w_sbar_paint(s, &g->sb, ax, ay, w->enabled);
 }
 
-static void ensure_visible(lj_w_grid *g)
-{
-    int vis = visible_data_rows(g), dr = g->row - g->fixed_rows;
-    if (dr < 0) return;
-    if (dr < g->top_row) g->top_row = dr;
-    else if (dr >= g->top_row + vis) g->top_row = dr - vis + 1;
-}
 
 static void select_cell(lj_w_grid *g, int col, int row)
 {
@@ -115,7 +105,7 @@ static void select_cell(lj_w_grid *g, int col, int row)
     if (row >= g->rows) row = g->rows - 1;
     if (col == g->col && row == g->row) return;
     g->col = col; g->row = row;
-    ensure_visible(g);
+    g->sb.pos = g->top_row; lj_w_sbar_reveal(&g->sb, g->row - g->fixed_rows, visible_data_rows(g)); g->top_row = g->sb.pos;
     lj_widget_invalidate(&g->base);
     lj_w_emit(&g->base, LJ_WEV_SELECT_CELL);
     lj_w_emit(&g->base, LJ_WEV_CLICK);
@@ -126,7 +116,7 @@ static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
     lj_w_grid *g = (lj_w_grid *)w;
     int col, row;
     if (!w->enabled) return 0;
-    fit_sb(g);
+    fit(g);
     if (m->type == LJ_EV_MOUSE_WHEEL) { if (lj_w_sbar_set(&g->sb, g->sb.pos - 3 * m->wheel)) { g->top_row = g->sb.pos; lj_widget_invalidate(w); } return 1; }
     if (needs_sb(g) || g->sb.drag) {
         int r = lj_w_sbar_mouse(&g->sb, m);

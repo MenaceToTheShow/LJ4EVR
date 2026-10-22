@@ -74,22 +74,7 @@ static int visible_rows(const lj_w_treeview *t) { int v = inner_h(t) / t->row_h;
 static int total_rows(const lj_w_treeview *t) { return walk(t, -1); }
 static int needs_sb(const lj_w_treeview *t) { return total_rows(t) * t->row_h > inner_h(t); }
 
-static void fit_sb(lj_w_treeview *t)
-{
-    int vis = visible_rows(t), tot = total_rows(t);
-    t->sb.vertical = 1;
-    t->sb.x = t->base.w - TV_BORDER - LJ_SB_W; t->sb.y = TV_BORDER; t->sb.w = LJ_SB_W; t->sb.h = inner_h(t);
-    t->sb.min = 0; t->sb.max = tot - vis > 0 ? tot - vis : 0; t->sb.page = vis;
-    lj_w_sbar_set(&t->sb, t->sb.pos);
-}
-
-static void ensure_visible(lj_w_treeview *t)
-{
-    int row = row_of_item(t, t->index), vis = visible_rows(t);
-    if (row < 0) return;
-    if (row < t->sb.pos) t->sb.pos = row;
-    else if (row >= t->sb.pos + vis) t->sb.pos = row - vis + 1;
-}
+#define FIT(t) lj_w_sbar_fit(&(t)->sb, (t)->base.w, TV_BORDER, TV_BORDER, inner_h(t), total_rows(t), visible_rows(t))
 
 static int node_x(const lj_w_treeview *t, int level) { return TV_BORDER + (level + (t->show_root ? 0 : -1)) * t->indent + t->indent / 2; }   /* centre of the button column */
 static int text_x(const lj_w_treeview *t, int level) { return node_x(t, level) + t->indent / 2 + 2; }
@@ -104,7 +89,7 @@ static void tv_paint(lj_widget *w, lj_surface *s)
     int ax, ay, r, vis, sb;
     lj_widget_abs(w, &ax, &ay);
     lj_edge_sunken(s, ax, ay, w->w, w->h, w->color);
-    fit_sb(t);
+    FIT(t);
     sb = needs_sb(t);
     vis = visible_rows(t);
     for (r = 0; r < vis; r++) {
@@ -147,7 +132,7 @@ static void select_item(lj_w_treeview *t, int item)
 {
     if (item < 0 || item >= t->n || item == t->index) return;
     t->index = item;
-    fit_sb(t); ensure_visible(t);
+    FIT(t); lj_w_sbar_reveal(&t->sb, row_of_item(t, t->index), visible_rows(t));
     lj_widget_invalidate(&t->base);
     lj_w_emit(&t->base, LJ_WEV_CHANGE);
 }
@@ -156,7 +141,7 @@ static void toggle(lj_w_treeview *t, int item)
 {
     if (!has_children(t, item)) return;
     lj_w_treeview_expand(&t->base, item, !lj_w_treeview_expanded(&t->base, item));
-    fit_sb(t);
+    FIT(t);
 }
 
 static int tv_mouse(lj_widget *w, const lj_mouse_ev *m)
@@ -164,7 +149,7 @@ static int tv_mouse(lj_widget *w, const lj_mouse_ev *m)
     lj_w_treeview *t = (lj_w_treeview *)w;
     int row, item, l, nx;
     if (!w->enabled) return 0;
-    fit_sb(t);
+    FIT(t);
     if (m->type == LJ_EV_MOUSE_WHEEL) { if (lj_w_sbar_set(&t->sb, t->sb.pos - 3 * m->wheel)) lj_widget_invalidate(w); return 1; }
     if (needs_sb(t) || t->sb.drag) {
         int r = lj_w_sbar_mouse(&t->sb, m);

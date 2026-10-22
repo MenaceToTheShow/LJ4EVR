@@ -15,14 +15,10 @@
 static int inner_h(const lj_w_memo *m) { return m->base.h - 2 * (m->border ? MM_BORDER : 0) - 2 * MM_PADY; }
 static int visible_lines(const lj_w_memo *m) { int v = inner_h(m) / m->line_h; return v < 1 ? 1 : v; }
 
-static void fit_sb(lj_w_memo *m)
+static void fit(lj_w_memo *m)
 {
-    int vis = visible_lines(m), b = m->border ? MM_BORDER : 0;
-    m->sb.vertical = 1;
-    m->sb.x = m->base.w - b - LJ_SB_W; m->sb.y = b; m->sb.w = LJ_SB_W; m->sb.h = m->base.h - 2 * b;
-    m->sb.min = 0; m->sb.max = m->n - vis > 0 ? m->n - vis : 0; m->sb.page = vis;
-    if (!m->vscroll) m->sb.max = 0;
-    lj_w_sbar_set(&m->sb, m->sb.pos);
+    int b = m->border ? MM_BORDER : 0;
+    lj_w_sbar_fit(&m->sb, m->base.w, b, b, m->base.h - 2 * b, m->vscroll ? m->n : 0, visible_lines(m));
 }
 
 void lj_w_memo_paint(lj_widget *w, lj_surface *s)
@@ -33,7 +29,7 @@ void lj_w_memo_paint(lj_widget *w, lj_surface *s)
     lj_widget_abs(w, &ax, &ay);
     if (m->border) lj_edge_sunken(s, ax, ay, w->w, w->h, w->color);
     else lj_fill(s, ax, ay, w->w, w->h, w->color);
-    fit_sb(m);
+    fit(m);
     vis = visible_lines(m);
     for (i = 0; i < vis && m->sb.pos + i < m->n; i++) {   /* the desc's Font.Color (ME-89: About is white on black), cut at the last glyph that fits left of the scrollbar */
         size_t n = strlen(m->lines[m->sb.pos + i]);
@@ -50,7 +46,7 @@ int lj_w_memo_mouse(lj_widget *w, const lj_mouse_ev *mo)
     lj_w_memo *m = (lj_w_memo *)w;
     int r;
     if (!w->enabled) return 0;
-    fit_sb(m);
+    fit(m);
     if (mo->type == LJ_EV_MOUSE_WHEEL) { if (lj_w_sbar_set(&m->sb, m->sb.pos - 3 * mo->wheel)) lj_widget_invalidate(w); return 1; }
     if (m->vscroll) {
         r = lj_w_sbar_mouse(&m->sb, mo);
@@ -65,7 +61,7 @@ int lj_w_memo_key(lj_widget *w, const lj_key_ev *k)
 {
     lj_w_memo *m = (lj_w_memo *)w;
     if (k->type != LJ_EV_KEY_DOWN || !w->enabled) return 0;
-    fit_sb(m);
+    fit(m);
     if (lj_w_sbar_key(&m->sb, k->key)) lj_widget_invalidate(w);
     return k->key == LJ_VK_UP || k->key == LJ_VK_DOWN || k->key == LJ_VK_PRIOR || k->key == LJ_VK_NEXT || k->key == LJ_VK_HOME || k->key == LJ_VK_END;
 }

@@ -59,6 +59,25 @@ int lj_test_text(int argc, char **argv)
     lj_text(&s, f, 60, 20, "clip", LJ_CLR_RED, 1);
     lj_surface_free(&s);
 
+    {   /* ME-57: the five sans13 codes drawn freehand (ellipsis, per mille, OE, trade mark, oe) are not the 3x9 box */
+        static const unsigned char codes[5] = { 0x85, 0x89, 0x8C, 0x99, 0x9C };
+        int k, x, y;
+        CHECK(lj_surface_init(&s, 8, 16) == 0);
+        for (k = 0; k < 5; k++) {
+            char str[2] = { (char)codes[k], 0 };
+            int differ = 0, ink = 0;
+            lj_fill(&s, 0, 0, 8, 16, LJ_CLR_BTNFACE);
+            lj_text(&s, f, 0, 0, str, LJ_CLR_RED, 0);
+            for (y = 0; y < 13; y++) for (x = 0; x < 3; x++) {
+                int on = px(&s, x, y) == LJ_CLR_RED;
+                int box = y >= 2 && y <= 10 && (x != 1 || y == 2 || y == 10);
+                ink += on;
+                differ += on != box;
+            }
+            CHECK(ink > 0 && differ > 0);
+        }
+        lj_surface_free(&s);
+    }
     CHECK(lj_glyph_get("no_such_glyph") == NULL && lj_glyph_get(NULL) == NULL);
     printf("text: %d failures\n", fails);
     return fails ? 1 : 0;

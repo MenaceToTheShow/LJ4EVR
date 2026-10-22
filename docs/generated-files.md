@@ -19,6 +19,11 @@ the tool, its version and the SHA-256 of every input; nobody edits them by hand.
 | `src/engine/lj_trig_gen.c` | `tools/gen_vectors.py` | `tools/ref/17-position_ref.py` | same row |
 | `src/engine/lj_shapes_gen.c` | `tools/gen_vectors.py --shapes` (W3 genmacro) | the authored definitions in `gm_shapes()` of `tools/gen_vectors.py`; no reference data | `gen_vectors.py --shapes --check` (CTest `gen_vectors_shapes_check`) and `--shapes --check --mutate` (CTest `gen_vectors_shapes_mutated`, WILL_FAIL: one flipped sample of the committed file must be caught) |
 
+**Frozen (ME-53).** `tests/fonts/widths.tsv` and `tests/fonts/font_census.tsv` were written once in W0 by
+`tools/widthcorpus.py` from the 208 DFMs, which never change; the tool (a second DFM parser) was deleted in W4
+track 0. The two files are frozen facts: nobody regenerates them, `font_corpus` reads `widths.tsv`, and a new
+face found in the forms is added to both by hand with a reviewer.
+
 ## dfm2c.py
 
     .venv/Scripts/python.exe -I tools/dfm2c.py           # regenerate all five files

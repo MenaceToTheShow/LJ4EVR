@@ -92,7 +92,7 @@ void lj_w_tabs_layout(lj_widget *w)
     lj_w_tabs *t = (lj_w_tabs *)w;
     lj_widget *c;
     tab_pos p[TAB_MAX];
-    int i = 0, n = lj_w_tabs_count(w);
+    int i = 0, n = lj_w_tabs_count(w), rows;
     if (t->active < 0 && w->kind != LJ_K_TABCONTROL && n > 0) {               /* ActivePage = TabSheet2, resolved once the children exist */
         const char *want = w->desc ? w->desc->active_page : NULL;
         t->active = 0;
@@ -114,11 +114,14 @@ void lj_w_tabs_layout(lj_widget *w)
         }
         return;
     }
-    t->tab_h = tab_rows(w, p, n > TAB_MAX ? TAB_MAX : n) * row_h(w) + 2;
+    rows = tab_rows(w, p, n > TAB_MAX ? TAB_MAX : n);
+    t->tab_h = rows * row_h(w) + 2;
     for (c = w->first; c; c = c->next) {
         if (c->kind != LJ_K_TABSHEET) continue;
-        c->x = LJ_TAB_PAD; c->y = t->tab_h + LJ_TAB_PAD;
-        c->w = w->w - 2 * LJ_TAB_PAD; c->h = w->h - t->tab_h - 2 * LJ_TAB_PAD;
+        /* ME-43: the page rect the DFMs record, PageControl height - TabSheet height = 28 with one row of tabs
+         * (11 forms) and 46 with two (4 forms): top = rows * 18 + 6, 4 px at the other three sides. */
+        c->x = LJ_TAB_PAD; c->y = rows * 18 + 6;
+        c->w = w->w - 2 * LJ_TAB_PAD; c->h = w->h - c->y - LJ_TAB_PAD;
         if (c->w < 0) c->w = 0;
         if (c->h < 0) c->h = 0;
         c->visible = (i == t->active) ? 1u : 0u;
