@@ -51,7 +51,7 @@ static void row_text(int c)
 {
     const lj_show *sh = lj_ctx_get()->show;
     const lj_patch_ch *p = &gp->work[c];
-    char adr[12], fx[48] = "", desc[16] = "", out[12] = "", in[8] = "", mode[12] = "", htp[72] = "", mn[4] = "", mx[4] = "";
+    char adr[24], fx[48] = "", desc[16] = "", out[12] = "", in[8] = "", mode[12] = "", htp[72] = "", mn[4] = "", mx[4] = "";
     int f = sh ? lj_show_fixture_at(sh, c) : -1, k, n = 0;
     addr_text(c, adr, sizeof adr);
     if (f >= 0) {

@@ -30,7 +30,7 @@ static struct {
     lj_window *win;
     lj_widget *num[LJ_S2_N], *btn[LJ_S2_N], *mode[LJ_S2_N], *lvl[LJ_S2_N];
     int idx[LJ_S2_N], n;
-    char numtxt[LJ_S2_N][12], lvltxt[LJ_S2_N][16], tabtxt[LJ_STATIC_PAGES_MAX][16];
+    char numtxt[LJ_S2_N][12], lvltxt[LJ_S2_N][16], tabtxt[LJ_STATIC_PAGES_MAX][20];
     const char *tabs[LJ_STATIC_PAGES_MAX];
     int pop_slot, drag;
     lj_cmd last; int has_last;

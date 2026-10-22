@@ -47,7 +47,7 @@ lj_window *lj_htp_groups_window(void) { return hg.win; }
 static lj_widget *find(const char *n) { return hg.win ? lj_window_find(hg.win, n) : NULL; }
 static const char *name_of(int g)
 {
-    static char dflt[16];
+    static char dflt[24];
     const lj_ctx *ctx = lj_ctx_get();
     if (ctx->htp_names && ctx->htp_names->name[g - 1][0]) return ctx->htp_names->name[g - 1];
     snprintf(dflt, sizeof dflt, "HTP group %d", g);   /* PROPOSAL default (model/lj_groups.h) */

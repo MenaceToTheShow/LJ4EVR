@@ -24,7 +24,7 @@ static struct {
 
 lj_window *lj_intensity_groups_window(void) { return ig.win; }
 static lj_widget *find(const char *n) { return ig.win ? lj_window_find(ig.win, n) : NULL; }
-static lj_widget *findn(const char *stem, int k) { char n[16]; snprintf(n, sizeof n, "%s%d", stem, k); return find(n); }
+static lj_widget *findn(const char *stem, int k) { char n[32]; snprintf(n, sizeof n, "%s%d", stem, k); return find(n); }
 int lj_intensity_groups_group_of(int f) { return ig.win && f >= 0 && f < LJ_FIXTURES ? ig.grp[f] : -1; }
 
 void lj_intensity_groups_refresh(void)

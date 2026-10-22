@@ -135,7 +135,7 @@ static void status_paint(lj_widget *w, lj_surface *s)
     for (u = 0; u < rp.units; u++) {
         int px, py, tw;
         uint8_t v[3], st;
-        char cap[16], num[12];
+        char cap[24], num[12];
         panel_xy(u, &px, &py);
         px += ax; py += ay;
         lj_edge_sunken(s, px, py, LJ_RP_PW, LJ_RP_PH, LJ_CLR_BTNFACE);
