@@ -24,15 +24,18 @@
 #include "windows/lj_windows.h"
 
 enum {
-    LJ_CTL_PITCH      = 20,    /* row pitch, design 7.7 */
-    LJ_CTL_ROW_H      = 18,    /* measured from intensitycontrol.gif: rows y 33-52 / 53-71 / 75-92 */
-    LJ_CTL_OSF_W      = 39,    /* measured from intensitycontrol.gif, fade column x 2-40 (design 7.7's 48 is off.gif on its own) */
-    LJ_CTL_X          = 41,    /* content column: measured x 43 minus the 2-px frame */
-    LJ_CTL_BAR_W      = 135,   /* measured x 43-177 */
-    LJ_CTL_SPEC_X     = 181,   /* specials block: label x 183-244, buttons from 247 (measured, minus the frame) */
-    LJ_CTL_SPEC_LBL_W = 62,
-    LJ_CTL_SPEC_BTN_X = 245,
-    LJ_CTL_GAP        = 4,     /* measured gap between the special buttons */
+    /* ME-67: intensitycontrol.gif (480x98) is a 0.8 reduction (its O/S/F reads 39 wide where off.gif, 1:1, is 48x24); every
+     * number below is the GIF measurement x1.25 snapped to the 1:1 anchors off.gif 48x24 and the 26-px pitch (3 rows = the
+     * 78-px client of the 600x122 window). "measured from intensitycontrol.gif, reduced x1.25, rig item" throughout. */
+    LJ_CTL_PITCH      = 26,    /* row pitch: O/S/F 24 + 2 (GIF rows y 33-52 / 53-71 / 75-92 = 20 x1.25) */
+    LJ_CTL_ROW_H      = 24,    /* off.gif / snap.gif / fade.gif 48x24 (1:1 crops), design 7.7 */
+    LJ_CTL_OSF_W      = 48,    /* off.gif 48x24 (the GIF's fade column x 2-40 = 39 x1.25 = 48.75) */
+    LJ_CTL_X          = 51,    /* content column: GIF x 43 minus the 2-px frame = 41, x1.25 */
+    LJ_CTL_BAR_W      = 169,   /* GIF x 43-177 = 135, x1.25 */
+    LJ_CTL_SPEC_X     = 226,   /* specials block: GIF label x 183-244, buttons from 247, minus the frame, x1.25 */
+    LJ_CTL_SPEC_LBL_W = 78,
+    LJ_CTL_SPEC_BTN_X = 306,
+    LJ_CTL_GAP        = 4,     /* GIF gap between the special buttons 3, x1.25 */
     LJ_CTL_SHUTTER_OPEN = 20,  /* PROPOSAL rig F47: the one value "Shutter Open" emits inside the Martin 20-49 range */
     LJ_CTL_ELEMS      = 96,
     LJ_CTL_MENU_MAX   = 8

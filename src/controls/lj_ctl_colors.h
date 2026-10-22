@@ -9,10 +9,13 @@
  * and the create / refresh / destroy entry points.
  *
  * Geometry (client px) measured from colorcontrol.gif, beam.gif, goboindex.gif,
- * effectcontrol4.gif (1:1 captures, note 07 s14): fade column 38 wide, content
- * column at x = 39, scroll line 34 tall, bar line 21, palette tiles 26x26 at a
- * 27-px pitch, 10 per row. The LJ2 captures carry 3-px frames and a 29-px
- * caption + menu band; the client is what is left (w - 6, h - 35).
+ * goboshake.gif, colourrotate.gif, effectcontrol4.gif (note 07 s14), which are 0.8
+ * reductions (ME-67: their O/S/F reads 39 wide where off.gif, 1:1, is 48x24), so
+ * every number is the measurement x1.25 snapped to the 1:1 anchors (O/S/F 48, the
+ * 31x30 Colors\ / Gobos\ tiles, the 26-px row pitch): fade column 48 wide, content
+ * column at x = 49, scroll line 42 tall, bar line 26, palette tiles 31x30 at a
+ * 32 / 31-px pitch, 10 per row. The LJ2 captures carry 3-px frames and a 29-px
+ * (reduced) caption + menu band; the client is what is left.
  *
  * Table conventions this engine reads (PROPOSAL, for the fixlib hand files):
  *  - LJ_W_SCROLL: buttons[] = the wheel entries {caption, ch, value, lo, hi}
@@ -49,8 +52,9 @@ void       lj_ctl_colors_refresh(lj_window *win);       /* repaint every bound w
 void       lj_ctl_colors_destroy(lj_window *win);
 
 /* ---- the shared engine ---- */
-enum { LJ_CTL_C_BINDS = 160, LJ_CTL_C_COL = 39, LJ_CTL_C_OSF_W = 38, LJ_CTL_C_SCROLL_LINE = 34, LJ_CTL_C_BAR_LINE = 21,
-       LJ_CTL_C_TILE = 26, LJ_CTL_C_TILE_PITCH = 27, LJ_CTL_C_TILES_PER_ROW = 10, LJ_CTL_C_ROT_W = 129, LJ_CTL_C_SPECIAL_GAP = 4 };
+enum { LJ_CTL_C_BINDS = 160, LJ_CTL_C_COL = 49, LJ_CTL_C_OSF_W = 48, LJ_CTL_C_SCROLL_LINE = 42, LJ_CTL_C_BAR_LINE = 26,
+       LJ_CTL_C_TILE_W = 31, LJ_CTL_C_TILE_H = 30, LJ_CTL_C_TILE_PITCH_X = 32, LJ_CTL_C_TILE_PITCH_Y = 31, LJ_CTL_C_TILES_PER_ROW = 10,
+       LJ_CTL_C_ROT_W = 161, LJ_CTL_C_SPECIAL_GAP = 5 };   /* measured from the reduced GIFs above, x1.25, rig item (ME-67) */
 enum lj_ctl_c_role { LJ_CTL_C_OSF = 0, LJ_CTL_C_SCROLL, LJ_CTL_C_TILE_ROLE, LJ_CTL_C_ROT_CCW, LJ_CTL_C_ROT_CW, LJ_CTL_C_ROT_BAR,
                      LJ_CTL_C_SPECIAL_BTN, LJ_CTL_C_SPECIAL_BAR, LJ_CTL_C_MODE, LJ_CTL_C_INDEX, LJ_CTL_C_SHAKE_BTN, LJ_CTL_C_SHAKE_BAR,
                      LJ_CTL_C_FXBTN, LJ_CTL_C_BEAM_BAR, LJ_CTL_C_PLAIN };

@@ -477,10 +477,13 @@ static int lj_us_shot_one(lj_window *win, const char *stem, const char *ext, int
 {
     char path[LJ_PATH_CAP];
     const lj_form_desc *d = lj_window_desc(win);
+    const lj_surface *s = lj_window_surface(win);
     int rc;
+    if (lj_win_host_get() && !lj_window_native(win)) return 0;   /* ME-68: a hosted window with no native handle (closed by AutoClose, not yet unregistered) is not a capture; headless tests have no host */
+    if (!s || s->w == 0 || s->h == 0) { lj_log("shot: %s has a %dx%d surface", d && d->class_name ? d->class_name : "window", s ? s->w : 0, s ? s->h : 0); return -1; }
     if (snprintf(path, sizeof path, "%s-%s%s", stem, d && d->class_name ? d->class_name : "window", ext) >= (int)sizeof path) return -1;
     lj_window_paint(win);
-    rc = strcmp(ext, ".bmp") == 0 ? lj_bmp_write(lj_window_surface(win), path) : lj_us_png(lj_window_surface(win), path);
+    rc = strcmp(ext, ".bmp") == 0 ? lj_bmp_write(s, path) : lj_us_png(s, path);
     if (rc == 0) (*n)++;
     return rc;
 }

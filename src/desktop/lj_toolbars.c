@@ -26,36 +26,41 @@ enum { B_SEQ_VIEW = 1, B_SEQ_NEW, B_SEQ_SAVE, B_SEQ_LOAD, B_CUE_VIEW, B_CUE_NEW,
 #define TB_LABEL(nm, x, cap) { LJ_K_LABEL, nm, x, 6, 36, 18, .caption = cap, .font = LJ_FONT_ARIALBLACK18, .transparent = LJ_YES }   /* bold 12-pt Seq / Cue / C-L (design 7.7) */
 #define TB_FIELD(nm, x, w) { LJ_K_EDIT, nm, x, 4, w, 22, .readonly = LJ_YES, .tabstop = LJ_NO, .color = LJ_CLR(LJ_CLR_BTNFACE), .font = LJ_FONT_ARIAL14 }
 
+/* ME-72: every x and width below is the left bevel column / face run of toolandstatusbars.gif (1:1) minus the 9-px frame, rig item:
+ * row 1 field 39-216, Seq 222, new 276 / save 301 / load 326, counter 355-413, Cue label 427, field 464-641, Cue 647, 705 / 730 / 755;
+ * row 2 field 43-220, CueList 226, 291 / 316 / 341, Background Cue 366-475, Statics 476-565, CD 570, MC-X 595, 620 / 660 / 700 / 740;
+ * row 3 seven buttons at 4..154, a 17-px gap, Lamp 196, Reset 221, Controls 248, Groups 300, All 330, None 365, Inclusive 400, Prev 450,
+ * Next 474, Solo 498, Follow Spot 528, Smoke 664, Blackout 704, Master 740 (OnLine LED and Freeze: no bevel run, unchanged). */
 static const lj_ctl_desc lj_row1[] = {   /* [07 s4.3] */
     TB_LABEL("tb_seqlabel", 8, "Seq"),
-    TB_FIELD("tb_seqname", 48, 172),
-    TB_BTN("tb_seqcue_1", B_SEQ_VIEW, 226, 50, "Seq", "view", "View Sequence Control"),
-    TB_BTN("tb_seqcue_2", B_SEQ_NEW, 290, LJ_TB_BTN, NULL, "new", "New/Clear Sequence"),
-    TB_BTN("tb_seqcue_3", B_SEQ_SAVE, 315, LJ_TB_BTN, NULL, "save", "Save Sequence"),
-    TB_BTN("tb_seqcue_4", B_SEQ_LOAD, 340, LJ_TB_BTN, NULL, "load", "List of Sequences"),
-    { LJ_K_PANEL, "sb_seqcounter", 372, 4, 50, 22, .caption = "1:1", .bevel_outer = LJ_BV_LOWERED, .font = LJ_FONT_ARIAL14 },   /* "1:1" when the sequence is empty [F7] */
-    TB_LABEL("tb_cuelabel", 436, "Cue"),
-    TB_FIELD("tb_cuename", 472, 184),
-    TB_BTN("tb_seqcue_5", B_CUE_VIEW, 662, 50, "Cue", "view", "View Cue Control"),
-    TB_BTN("tb_seqcue_6", B_CUE_NEW, 714, LJ_TB_BTN, NULL, "new", "New/Clear Cue"),
-    TB_BTN("tb_seqcue_7", B_CUE_SAVE, 739, LJ_TB_BTN, NULL, "save", "Save Cue"),
-    TB_BTN("tb_seqcue_8", B_CUE_LOAD, 764, LJ_TB_BTN, NULL, "load", "List of Cues"),
+    TB_FIELD("tb_seqname", 39, 178),
+    TB_BTN("tb_seqcue_1", B_SEQ_VIEW, 222, 50, "Seq", "view", "View Sequence Control"),
+    TB_BTN("tb_seqcue_2", B_SEQ_NEW, 276, LJ_TB_BTN, NULL, "new", "New/Clear Sequence"),
+    TB_BTN("tb_seqcue_3", B_SEQ_SAVE, 301, LJ_TB_BTN, NULL, "save", "Save Sequence"),
+    TB_BTN("tb_seqcue_4", B_SEQ_LOAD, 326, LJ_TB_BTN, NULL, "load", "List of Sequences"),
+    { LJ_K_PANEL, "sb_seqcounter", 355, 4, 59, 22, .caption = "1:1", .bevel_outer = LJ_BV_LOWERED, .font = LJ_FONT_ARIAL14 },   /* "1:1" when the sequence is empty [F7] */
+    TB_LABEL("tb_cuelabel", 427, "Cue"),
+    TB_FIELD("tb_cuename", 464, 178),
+    TB_BTN("tb_seqcue_5", B_CUE_VIEW, 647, 54, "Cue", "view", "View Cue Control"),
+    TB_BTN("tb_seqcue_6", B_CUE_NEW, 705, LJ_TB_BTN, NULL, "new", "New/Clear Cue"),
+    TB_BTN("tb_seqcue_7", B_CUE_SAVE, 730, LJ_TB_BTN, NULL, "save", "Save Cue"),
+    TB_BTN("tb_seqcue_8", B_CUE_LOAD, 755, LJ_TB_BTN, NULL, "load", "List of Cues"),
 };
 static const lj_ctl_desc lj_row2[] = {   /* [07 s4.4], F8 order */
     TB_LABEL("tb_cllabel", 8, "C-L"),
-    TB_FIELD("tb_clname", 48, 180),
-    TB_BTN("tb_cuelist_1", B_CL_VIEW, 234, 64, "CueList", "view", "Toggle Cue List control"),
-    TB_BTN("tb_cuelist_2", B_CL_NEW, 300, LJ_TB_BTN, NULL, "new", "New/Clear Cue List"),
-    TB_BTN("tb_cuelist_3", B_CL_SAVE, 325, LJ_TB_BTN, NULL, "save", "Save Cue List"),
-    TB_BTN("tb_cuelist_4", B_CL_LOAD, 350, LJ_TB_BTN, NULL, "load", "List of Cue Lists"),
-    TB_LED("tb_cuelist_5", B_CL_BGCUE, 382, 109, 24, "Background Cue", "Background Cue"),   /* backgroundcueicon.gif 109x24 */
-    TB_LED("tb_cuelist_6", B_CL_STATICS, 494, 90, 25, "Statics", "Statics"),               /* staticcontrollicon.gif 90x25 */
-    TB_BTN("tb_cuelist_7", B_CL_CD, 580, LJ_TB_BTN, NULL, "cd", "CD Control"),
-    TB_BTN("tb_cuelist_8", B_CL_MCX, 605, LJ_TB_BTN, NULL, "mcx", "MC-X"),
-    TB_BTN("tb_cuelist_9", B_CL_2518, 631, 39, NULL, "a2518", "2518 Controller"),           /* a2518icon.gif 39x24 */
-    TB_BTN("tb_cuelist_10", B_CL_DMXIN, 670, 39, NULL, "dmxin", "DMX In"),
-    TB_BTN("tb_cuelist_11", B_CL_MIDIIN, 709, 39, NULL, "midiin", "MIDI In"),
-    TB_BTN("tb_cuelist_12", B_CL_2532, 748, 39, NULL, "da2532", "2532 Direct Access"),
+    TB_FIELD("tb_clname", 43, 178),
+    TB_BTN("tb_cuelist_1", B_CL_VIEW, 226, 64, "CueList", "view", "Toggle Cue List control"),
+    TB_BTN("tb_cuelist_2", B_CL_NEW, 291, LJ_TB_BTN, NULL, "new", "New/Clear Cue List"),
+    TB_BTN("tb_cuelist_3", B_CL_SAVE, 316, LJ_TB_BTN, NULL, "save", "Save Cue List"),
+    TB_BTN("tb_cuelist_4", B_CL_LOAD, 341, LJ_TB_BTN, NULL, "load", "List of Cue Lists"),
+    TB_LED("tb_cuelist_5", B_CL_BGCUE, 366, 110, 24, "Background Cue", "Background Cue"),   /* backgroundcueicon.gif 109x24 */
+    TB_LED("tb_cuelist_6", B_CL_STATICS, 476, 90, 25, "Statics", "Statics"),               /* staticcontrollicon.gif 90x25 */
+    TB_BTN("tb_cuelist_7", B_CL_CD, 570, LJ_TB_BTN, NULL, "cd", "CD Control"),
+    TB_BTN("tb_cuelist_8", B_CL_MCX, 595, LJ_TB_BTN, NULL, "mcx", "MC-X"),
+    TB_BTN("tb_cuelist_9", B_CL_2518, 620, 40, NULL, "a2518", "2518 Controller"),           /* a2518icon.gif 39x24 */
+    TB_BTN("tb_cuelist_10", B_CL_DMXIN, 660, 40, NULL, "dmxin", "DMX In"),
+    TB_BTN("tb_cuelist_11", B_CL_MIDIIN, 700, 40, NULL, "midiin", "MIDI In"),
+    TB_BTN("tb_cuelist_12", B_CL_2532, 740, 40, NULL, "da2532", "2532 Direct Access"),
 };
 static const lj_ctl_desc lj_row3[] = {   /* [07 s4.6], F9 order 1-21 (+ OnLine/OffLine, Freeze) */
     TB_BTN("tb_fixture_1", B_FX_INTENSITY, 4, LJ_TB_BTN, NULL, "intensity", "Intensity"),
@@ -65,22 +70,22 @@ static const lj_ctl_desc lj_row3[] = {   /* [07 s4.6], F9 order 1-21 (+ OnLine/O
     TB_BTN("tb_fixture_5", B_FX_BEAM, 104, LJ_TB_BTN, NULL, "beam", "Beam"),
     TB_BTN("tb_fixture_6", B_FX_EFFECTS, 129, LJ_TB_BTN, NULL, "effects", "Effects"),
     TB_BTN("tb_fixture_7", B_FX_LEVELS, 154, LJ_TB_BTN, NULL, "levels", "Levels/Extended Controls"),
-    TB_BTN("tb_fixture_8", B_FX_LAMP, 179, LJ_TB_BTN, NULL, "lamp", "Lamp Control"),
-    TB_BTN("tb_fixture_9", B_FX_RESET, 204, LJ_TB_BTN, NULL, "reset", "Fixture Reset"),
-    TB_BTN("tb_fixture_10", B_FX_CONTROLS, 236, 50, NULL, "controls", "Hide/Show Fixture Controls"),   /* fixturecontrols.gif 50x25 */
-    TB_BTN("tb_fixture_11", B_FX_GROUPS, 289, 29, NULL, "groups", "Fixture Groups"),               /* fixturegroupsicon.gif 29x24 */
-    TB_BTN("tb_fixture_12", B_FX_ALL, 321, 34, "All", NULL, "Select All Fixtures"),
-    TB_BTN("tb_fixture_13", B_FX_NONE, 356, 40, "None", NULL, "Deselect All Fixtures"),
-    TB_BTN("tb_fixture_14", B_FX_INCL, 397, 56, "Inclusive", NULL, "Inclusive/Exclusive Selection"),   /* 13 exe strings: "Inclusive" / "Exclusive" */
-    TB_BTN("tb_fixture_15", B_FX_PREV, 454, 23, NULL, "previous", "Previous Fixture"),             /* nextprevfixturebuttons.gif 47x24 */
-    TB_BTN("tb_fixture_16", B_FX_NEXT, 477, 23, NULL, "next", "Next Fixture"),
-    { LJ_K_SPEEDBUTTON, "tb_fixture_17", 501, LJ_TB_BTN_Y, 34, LJ_TB_BTN, .tag = B_FX_SOLO, .caption = "Solo", .hint = "Fixture Solo", .show_hint = LJ_YES, .group_index = 1, .allow_all_up = LJ_YES, .font = LJ_FONT_ARIAL14 },   /* latches while solo is on */
-    TB_BTN("tb_fixture_18", B_FX_FOLLOW, 538, 29, NULL, "followspot", "Follow Spot"),            /* followspoticon.gif 29x24 */
+    TB_BTN("tb_fixture_8", B_FX_LAMP, 196, LJ_TB_BTN, NULL, "lamp", "Lamp Control"),
+    TB_BTN("tb_fixture_9", B_FX_RESET, 221, LJ_TB_BTN, NULL, "reset", "Fixture Reset"),
+    TB_BTN("tb_fixture_10", B_FX_CONTROLS, 248, 50, NULL, "controls", "Hide/Show Fixture Controls"),   /* fixturecontrols.gif 50x25 */
+    TB_BTN("tb_fixture_11", B_FX_GROUPS, 300, 29, NULL, "groups", "Fixture Groups"),               /* fixturegroupsicon.gif 29x24 */
+    TB_BTN("tb_fixture_12", B_FX_ALL, 330, 34, "All", NULL, "Select All Fixtures"),
+    TB_BTN("tb_fixture_13", B_FX_NONE, 365, 35, "None", NULL, "Deselect All Fixtures"),
+    TB_BTN("tb_fixture_14", B_FX_INCL, 400, 50, "Inclusive", NULL, "Inclusive/Exclusive Selection"),   /* 13 exe strings: "Inclusive" / "Exclusive" */
+    TB_BTN("tb_fixture_15", B_FX_PREV, 450, 23, NULL, "previous", "Previous Fixture"),             /* nextprevfixturebuttons.gif 47x24 */
+    TB_BTN("tb_fixture_16", B_FX_NEXT, 474, 23, NULL, "next", "Next Fixture"),
+    { LJ_K_SPEEDBUTTON, "tb_fixture_17", 498, LJ_TB_BTN_Y, 30, LJ_TB_BTN, .tag = B_FX_SOLO, .caption = "Solo", .hint = "Fixture Solo", .show_hint = LJ_YES, .group_index = 1, .allow_all_up = LJ_YES, .font = LJ_FONT_ARIAL14 },   /* latches while solo is on */
+    TB_BTN("tb_fixture_18", B_FX_FOLLOW, 528, 29, NULL, "followspot", "Follow Spot"),            /* followspoticon.gif 29x24 */
     TB_LED("tb_fixture_19", B_FX_ONLINE, 570, 64, 25, "OnLine", "DMX OnLine/OffLine"),            /* onlineicon.gif 64x25 */
     TB_BTN("tb_fixture_20", B_FX_FREEZE, 636, 26, NULL, "freeze", "Freeze Output"),               /* blindicon.gif 26x24 */
     TB_BTN("tb_fixture_21", B_FX_SMOKE, 664, 36, NULL, "smoke", "Smoke Control"),                 /* smokecontrolicon.gif 36x24 */
-    TB_BTN("tb_fixture_22", B_FX_BLACKOUT, 702, 38, NULL, "blackout", "Blackout/Restore"),        /* blackouticon.gif 38x25 */
-    TB_BTN("tb_fixture_23", B_FX_MASTER, 742, 40, NULL, "master", "Master Intensity"),            /* masterintensityicon.gif 40x25 */
+    TB_BTN("tb_fixture_22", B_FX_BLACKOUT, 704, 36, NULL, "blackout", "Blackout/Restore"),        /* blackouticon.gif 38x25 */
+    TB_BTN("tb_fixture_23", B_FX_MASTER, 740, 40, NULL, "master", "Master Intensity"),            /* masterintensityicon.gif 40x25 */
 };
 static const lj_ctl_desc lj_rows[LJ_TB_COUNT] = {
     { LJ_K_PANEL, "tb_row_seqcue", 0, 0, 791, LJ_TB_ROW_H, .align = LJ_AL_TOP, .bevel_outer = LJ_BV_NONE, .font = LJ_FONT_ARIAL14 },

@@ -5,6 +5,79 @@ single source of the number.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-21 - W1 First light
+
+The program runs a show: fixtures configured, a sequence programmed, a cue
+running, DMX on the wire over sACN (design section 10 W1, acceptance 1-10
+walked through in `docs/w1-integration.md`).
+
+- Engine (`src/engine/`): the design 3.x pipeline in C11 integers, command
+  array + `lj_lock`, runners for the current sequence, 12 cue slots, statics
+  and the background cue; snap / fade per channel with 16-bit pairs as one
+  value; post stages S1-S9 (masters, blackout, patch, pan/tilt, overwrite,
+  freeze / offline); GM Fade; movement and generic macros; 16 replay
+  scenarios under `tests/engine/replay/` (`replay_all`), `test_engine_perf`,
+  the `determinism` frame dump (sha 5e61478e...).
+- Fixture library (`src/fixlib/`): the 201 exe profile rows, tier-1 hand
+  profiles (MAC 500 / 918, the generics), tier-2 QLC+ profiles through
+  `tools/qxf2c.py` and `qxf_map.tsv`; `lj_layout_derive` builds every
+  control-window table from the profile.
+- Model + I/O (`src/model/`, `src/io/`): the user library on disk as text
+  records (`Config.dat`, sequences, cues, cue lists, `DefaultOut.dat`,
+  `forms.ini` / `Main.Ini` positions, hotkey setups), `.lj4b` backup /
+  restore; the sACN sender (E1.31-2018, 40 packets/s cap, keep-alive,
+  discovery, Stream_Terminated), `Hardware.Ini [SACN]`.
+- Windows (`src/windows/`, `src/controls/`, `src/desktop/`): main window with
+  the three toolbars, status bar, fixture desktop and Unassigned list;
+  Sequence control, Cue control, Save Sequence / Save Cue, List of Cues,
+  Master Intensity, Fixture Configuration, Hardware Setup, Startup Options,
+  DMX Output Monitor, the warning boxes; the fixture controls Intensity,
+  Movement, Colors, Gobos, Beam, Effects, Levels, Lamp and Extended, code-built
+  from the profile tables with O/S/F buttons, drag bars, scroll controls and
+  palette tiles.
+- App (`src/app/`): the UI script driver (`--script`, `docs/ui-script.md`),
+  15 acceptance screenshots under `docs/screenshots/w1/`, the startup status
+  window, `--selftest` extended with the DMX monitor binding check.
+- Tests: 55 CTest rows on three OSes (`ui_golden` 10 forms, `ui_golden_ctl`
+  9 control windows, `test_desktop` MAINWINDOW), CI runs `ctest` on the MSVC
+  Debug tree too.
+
+### Fix pass r1 (W1 code council, ME-67..ME-75)
+
+- ME-67: the seven code-built control windows were built to CHM captures that
+  are 0.8 reductions; every constant is now x1.25 to the 1:1 anchors (O/S/F
+  48x24, Intensity 600x122, Beam 257x96, Lamp 166x125, Extended boxes 346x101,
+  scroll control 165x41); goldens regenerated.
+- ME-69: the engine thread copies the sACN config under the lock.
+- ME-70: `test_controls_a` writes `uint8_t` state (a fresh MSVC Debug `ctest`
+  is 55/55); `windows-msvc` runs the Debug `ctest`.
+- ME-71: the GM Fade runner keeps running while frozen and is not shifted at
+  unfreeze (note 11 S9; replay `gm_fade_under_freeze`).
+- ME-72: the fixture toolbar's x table measured from `toolandstatusbars.gif`
+  (1:1): Lamp at 196 after the 17-px gap, Controls 248, Groups 300, All 330.
+- ME-74: `OnMouseWheelDown` / `OnMouseWheelUp` are dispatched; no `unknown
+  event` line at the DMX monitor open (`--selftest` asserts it).
+- ME-75: the cue grid prints `1:00 | 0:05` (one `lj_fmt_time`) and `Fwd` /
+  `Auto`.
+- ME-68: `shot` skips a window AutoClose has already closed; every W1 screenshot
+  re-taken.
+
+### Known gaps (W1 code council; W2 entry gates unless noted)
+
+- ME-43 full align, ME-44 header pairing, ME-46 dfm2c event-name check,
+  ME-47 `Items.Data` from the binary DFMs, ME-51 skip ceiling, ME-53
+  widthcorpus, ME-54 shared scrollbar helpers, ME-57 five sans13 glyphs.
+- ME-45 non-admin install screenshot (needs the `v0.1.0` installer).
+- ME-76 `exe_profiles_check --check` runs nowhere; ME-77 loaders cast before
+  they validate; ME-78 `replay-frames.bin` is compared nowhere (the
+  `determinism` job compares `dump-frames` only).
+- ME-50 design.md sentences (design owner); ME-21 the Mac run (Joey).
+- LOW: ME-79 O/S/F focus ring, ME-80 pinned-static unfreeze, ME-81
+  `test_lock_hold`, ME-82 clock / log under the lock, ME-83 negative macro
+  index, ME-84 UTF-8 name cut, ME-85 dead `LJ_NOOP` table, ME-86 orphan API,
+  ME-87 status-bar and monitor PROPOSALs; hotkey dispatch, `lj_ctl_set_confirm`
+  and the memory gauge from `docs/w1-integration.md` section 7.
+
 ## [0.0.1] - 2026-10-21 - W0 Foundation
 
 The build skeleton: every one of the 208 LJ2 forms renders from its DFM facts

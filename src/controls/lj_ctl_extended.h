@@ -10,7 +10,7 @@
 
 #include "controls/lj_ctl_common.h"
 
-enum { LJ_CTL_EXT_COL_W = 139, LJ_CTL_EXT_BOX_W = 137, LJ_CTL_EXT_BOX_H = 81 };   /* measured from extended.gif: boxes x 1-137 and 139-276, 81 tall */
+enum { LJ_CTL_EXT_COL_W = 174, LJ_CTL_EXT_BOX_W = 171, LJ_CTL_EXT_BOX_H = 101 };   /* measured from extended.gif: boxes x 1-137 and 139-276, 81 tall; reduced x1.25 = 346x101 for the pair (ME-67), rig item */
 
 int lj_ctl_extended_row(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row, int x, int y);   /* LJ_W_RADIOGROUP_FADER: one column at x; returns the box height */
 

@@ -165,7 +165,7 @@ int lj_test_controls_c(int argc, char **argv)
         for (i = 6; i < 10 && i < n; i++) CHECK(strcmp(pal->e[i].bitmap, note_col1[i]) == 0);
         printf("controls_c: fixlib MAC 500 Colors wheel 1: %d entries checked against 15/01\n", n);
         fw = lj_ctl_colors_create(fixlib);
-        CHECK(fw && lj_window_root(fw)->w == 301 && lj_window_root(fw)->h == 122);
+        CHECK(fw && lj_window_root(fw)->w == 376 && lj_window_root(fw)->h == 146);
         if (fw) {
             lj_ctl_c *fc = lj_ctl_c_of(fw);
             lj_ctl_c_bind *ft = bind_of(fc, LJ_CTL_C_TILE_ROLE, 2, 9);
@@ -177,7 +177,7 @@ int lj_test_controls_c(int argc, char **argv)
         fw = lj_ctl_gobos_create(fixlib);
         if (fw) { printf("controls_c: fixlib MAC 500 Gobos client %dx%d\n", lj_window_root(fw)->w, lj_window_root(fw)->h); lj_window_paint(fw); lj_ctl_gobos_destroy(fw); }
         fw = lj_ctl_beam_create(fixlib);
-        CHECK(fw && lj_window_root(fw)->w == 200 && lj_window_root(fw)->h == 42);
+        CHECK(fw && lj_window_root(fw)->w == 251 && lj_window_root(fw)->h == 52);
         if (fw) lj_ctl_beam_destroy(fw);
         fw = lj_ctl_effects_create(fixlib);
         if (fw) { lj_window_paint(fw); lj_ctl_effects_destroy(fw); }
@@ -185,14 +185,14 @@ int lj_test_controls_c(int argc, char **argv)
     CHECK(m_colors_rows[1].nbuttons == 10);
     for (i = 0; i < 10; i++) CHECK(strcmp(m_col1[i].caption, note_col1[i]) == 0);
 
-    /* ---- Colors: 301 wide (colorcontrol.gif 307 - 2 x 3 frame, measured), 2 wheel lines + 2 palette rows = 122 ---- */
+    /* ---- Colors: colorcontrol.gif 307x227 is a 0.8 reduction (ME-67): 376 wide (O/S/F 48, scroll control 165, rotation 161), 2 wheel lines (42) + 2 palette rows (31) = 146 ---- */
     colors = lj_ctl_colors_create(&m_mac500);
     CHECK(colors != NULL);
     if (!colors) return 1;
     c = lj_ctl_c_of(colors);
     root = lj_window_root(colors);
     CHECK(c != NULL && c->kind == LJ_CTL_COLORS);
-    CHECK(root->w == 301 && root->h == 122);
+    CHECK(root->w == 376 && root->h == 146);
     CHECK(strcmp(lj_window_caption(colors)->text, "Colors") == 0);
     CHECK(lj_window_caption(colors)->icons == LJ_BI_SYSMENU && lj_window_caption(colors)->border == LJ_BS_SINGLE);
     CHECK(lj_window_menu(colors) && lj_window_menu(colors)->n == 4 && strcmp(lj_window_menu(colors)->items[0].caption, "&UserPalette") == 0);
@@ -201,16 +201,16 @@ int lj_test_controls_c(int argc, char **argv)
     CHECK(lj_menu_rt_named(lj_window_menus(colors), "M_Fades") && strcmp(lj_menu_rt_named(lj_window_menus(colors), "M_Fades")->item->caption, "&Fades") == 0);
     printf("controls_c: Colors client %dx%d, %d bound widgets\n", root->w, root->h, c->nb);
 
-    /* scroll control at the content column, rotation panel right of it, 20 tiles at the 27-px pitch */
+    /* scroll control at the content column, rotation panel right of it, 20 tiles (31x30) at the 32-px pitch */
     b = bind_of(c, LJ_CTL_C_SCROLL, 2, -1);
     CHECK(b && b->w->x == LJ_CTL_C_COL && b->w->y == 0 && b->w->w == LJ_SCROLLCTL_W && b->w->h == LJ_SCROLLCTL_H);
     CHECK(((lj_w_scrollctl *)b->w)->big == 16);
     b = bind_of(c, LJ_CTL_C_ROT_BAR, 2, -1);
-    CHECK(b && b->w->parent && b->w->parent->x == LJ_CTL_C_COL + LJ_SCROLLCTL_W + 1 && b->w->parent->x + b->w->parent->w == 301);
+    CHECK(b && b->w->parent && b->w->parent->x == LJ_CTL_C_COL + LJ_SCROLLCTL_W + 1 && b->w->parent->x + b->w->parent->w == 376);
     t0 = bind_of(c, LJ_CTL_C_TILE_ROLE, 2, 0); t3 = bind_of(c, LJ_CTL_C_TILE_ROLE, 2, 3);
-    CHECK(t0 && t3 && t0->w->w == 26 && t0->w->h == 26 && t3->w->x - t0->w->x == 3 * 27 && t0->w->y == 69);
+    CHECK(t0 && t3 && t0->w->w == 31 && t0->w->h == 30 && t3->w->x - t0->w->x == 3 * 32 && t0->w->y == 85);
     b = bind_of(c, LJ_CTL_C_TILE_ROLE, 3, 9);
-    CHECK(b && b->w->y == 96 && b->w->x == 1 + 9 * 27);
+    CHECK(b && b->w->y == 116 && b->w->x == 1 + 9 * 32);
 
     /* ---- a palette tile click emits the table's value on the row's channel ---- */
     lj_window_paint(colors);
@@ -230,14 +230,14 @@ int lj_test_controls_c(int argc, char **argv)
     }
     /* the scroll control's split step: one DMX step, the whole step: one entry */
     b = bind_of(c, LJ_CTL_C_SCROLL, 2, -1);
-    click_at(colors, b->w, 84 + 10, 5 + 10, 1);                           /* ►| : +1 (lj_w_scrollctl button 3) */
+    click_at(colors, b->w, 105 + 10, 6 + 10, 1);                          /* ►| : +1 (lj_w_scrollctl button 3) */
     CHECK(value_of(c, 2) == 49);
-    click_at(colors, b->w, 107 + 10, 5 + 10, 1);                          /* ► : +16 (one whole position) */
+    click_at(colors, b->w, 134 + 10, 6 + 10, 1);                          /* ► : +16 (one whole position) */
     CHECK(value_of(c, 2) == 65 && lj_w_palette_selected(bind_of(c, LJ_CTL_C_TILE_ROLE, 2, 4)->w));   /* nearest entry: Green 202 (64) */
 
     /* ---- O/S/F: left click cycles Snap -> Fade, right click back (D10); the channel state follows through lj_prog_set_state_sel ---- */
     b = bind_of(c, LJ_CTL_C_OSF, 2, -1);
-    CHECK(b && b->w->x == 0 && b->w->y == 1 && b->w->w == 38 && b->w->h == 32 && lj_w_osf_state(b->w) == LJ_SNAP);
+    CHECK(b && b->w->x == 0 && b->w->y == 1 && b->w->w == 48 && b->w->h == 40 && lj_w_osf_state(b->w) == LJ_SNAP);
     click_at(colors, b->w, 10, 10, 1);
     CHECK(lj_w_osf_state(b->w) == LJ_FADE);
     click_at(colors, b->w, 10, 10, 2);
@@ -254,15 +254,15 @@ int lj_test_controls_c(int argc, char **argv)
     lj_menu_rt_named(lj_window_menus(colors), "M_ShowSpecial")->fn(NULL, lj_menu_rt_named(lj_window_menus(colors), "M_ShowSpecial")->ud);
     c = lj_ctl_c_of(colors);
     b = bind_of(c, LJ_CTL_C_SPECIAL_BTN, 3, 1);
-    CHECK(b && b->w->visible && root->w > 301 && lj_menu_rt_named(lj_window_menus(colors), "M_ShowSpecial")->checked == 1);
+    CHECK(b && b->w->visible && root->w > 376 && lj_menu_rt_named(lj_window_menus(colors), "M_ShowSpecial")->checked == 1);
     click_at(colors, b->w, 5, 5, 1);
     CHECK(value_of(c, 3) == 249 && lj_ctl_c_btn_down(b->w));             /* Rnd Med */
     /* Show Palette off: the tiles go, the window shrinks to the two wheel lines */
     lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette")->fn(NULL, lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette")->ud);
-    CHECK(root->h == 68 && lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette")->checked == 0);
+    CHECK(root->h == 84 && lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette")->checked == 0);
     CHECK(bind_of(c, LJ_CTL_C_TILE_ROLE, 2, 0) && !bind_of(c, LJ_CTL_C_TILE_ROLE, 2, 0)->w->visible);
     lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette")->fn(NULL, lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette")->ud);
-    CHECK(root->h == 122);
+    CHECK(root->h == 146);
 
     /* ---- Gobos: static row + palette, rotating group with the Index | Rotate pair and the Fade / index / rotation group to its right (goboindex.gif) ---- */
     gobos = lj_ctl_gobos_create(&m_mac500);
@@ -272,24 +272,24 @@ int lj_test_controls_c(int argc, char **argv)
         lj_widget *gr = lj_window_root(gobos);
         lj_ctl_c_bind *mode1, *tile1, *idx, *scroll;
         printf("controls_c: Gobos client %dx%d\n", gr->w, gr->h);
-        CHECK(gr->h == 34 + 27 + 34 + 21 + 27);                             /* static line, 10 tiles, rotating line, mode pair, 6 tiles */
+        CHECK(gr->h == 42 + 31 + 42 + 26 + 31);                             /* static line, 10 tiles, rotating line, mode pair, 6 tiles (ME-67 pitches) */
         scroll = bind_of(g, LJ_CTL_C_SCROLL, 6, -1);
         CHECK(scroll && ((lj_w_scrollctl *)scroll->w)->tile == lj_glyph_get("gobo_open") && ((lj_w_scrollctl *)scroll->w)->big == 10);
         tile1 = bind_of(g, LJ_CTL_C_TILE_ROLE, 6, 1);
-        CHECK(tile1 && ((lj_w_palette *)tile1->w)->tile == lj_glyph_get("gobo_cone") && tile1->w->y == 35);
+        CHECK(tile1 && ((lj_w_palette *)tile1->w)->tile == lj_glyph_get("gobo_cone") && tile1->w->y == 43);
         click_at(gobos, tile1->w, 12, 12, 1);
         CHECK(value_of(g, 6) == 10);
         b = bind_of(g, LJ_CTL_C_OSF, 4, -1);
-        CHECK(b && b->w->y == 62 && b->w->h == 34 + 21 - 2);                /* Snap spans the scroll + mode lines */
+        CHECK(b && b->w->y == 74 && b->w->h == 42 + 26 - 2);                /* Snap spans the scroll + mode lines */
         idx = bind_of(g, LJ_CTL_C_INDEX, 5, -1);
         b = bind_of(g, LJ_CTL_C_OSF, 5, -1);
-        CHECK(idx && b && b->w->x == LJ_CTL_C_COL + LJ_SCROLLCTL_W + 4 && b->w->y == 62 && idx->w->y == 61 && idx->w->x == b->w->x + 25 && b->w->w == 24);
+        CHECK(idx && b && b->w->x == LJ_CTL_C_COL + LJ_SCROLLCTL_W + 5 && b->w->y == 74 && idx->w->y == 73 && idx->w->x == b->w->x + 31 && b->w->w == 30);
         b = bind_of(g, LJ_CTL_C_ROT_BAR, 5, -1);
-        CHECK(b && b->w->parent->y == 82 && b->w->parent->x == idx->w->x);
+        CHECK(b && b->w->parent->y == 99 && b->w->parent->x == idx->w->x);
         mode1 = bind_of(g, LJ_CTL_C_MODE, 4, 1);
-        CHECK(mode1 && strcmp(mode1->btn->caption, "Rotate") == 0 && !lj_ctl_c_btn_down(mode1->w) && mode1->w->y == 96);
+        CHECK(mode1 && strcmp(mode1->btn->caption, "Rotate") == 0 && !lj_ctl_c_btn_down(mode1->w) && mode1->w->y == 116);
         tile1 = bind_of(g, LJ_CTL_C_TILE_ROLE, 4, 1);
-        CHECK(tile1 && tile1->w->y == 117);
+        CHECK(tile1 && tile1->w->y == 142);
         click_at(gobos, tile1->w, 12, 12, 1);
         CHECK(value_of(g, 4) == 56);                                        /* Triangle, Index mode */
         click_at(gobos, mode1->w, 10, 10, 1);
@@ -309,22 +309,22 @@ int lj_test_controls_c(int argc, char **argv)
         lj_ctl_gobos_destroy(gobos);
     }
 
-    /* ---- Beam: 200x42 (beam.gif 206x77 less frame and caption/menu band, measured) ---- */
+    /* ---- Beam: 251x52 (beam.gif 206x77 is a 0.8 reduction: 257x96 less frame and caption/menu band, ME-67) ---- */
     beam = lj_ctl_beam_create(&m_mac500);
     CHECK(beam != NULL);
     if (beam) {
         lj_ctl_c *bm = lj_ctl_c_of(beam);
         lj_widget *br = lj_window_root(beam);
         printf("controls_c: Beam client %dx%d\n", br->w, br->h);
-        CHECK(br->w == 200 && br->h == 42);
+        CHECK(br->w == 251 && br->h == 52);
         b = bind_of(bm, LJ_CTL_C_BEAM_BAR, 8, -1);
-        CHECK(b && b->w->x == LJ_CTL_C_COL + 22 && b->w->w == 117 && b->w->y == 0);
+        CHECK(b && b->w->x == LJ_CTL_C_COL + 28 && b->w->w == 146 && b->w->y == 0);
         click_at(beam, b->w, b->w->w - 5, 10, 1);
         CHECK(value_of(bm, 8) == 1);
         click_at(beam, b->w, b->w->w - 5, 10, 2);                            /* right-click ► = max of the range */
         CHECK(value_of(bm, 8) == 199);
         b = bind_of(bm, LJ_CTL_C_OSF, 7, -1);
-        CHECK(b && b->w->y == 22 && b->w->h == 19 && lj_w_osf_state(b->w) == LJ_OFF);
+        CHECK(b && b->w->y == 27 && b->w->h == 24 && lj_w_osf_state(b->w) == LJ_OFF);
         lj_window_paint(beam);
         lj_ctl_beam_destroy(beam);
     }
@@ -336,10 +336,10 @@ int lj_test_controls_c(int argc, char **argv)
         lj_ctl_c *f = lj_ctl_c_of(fx);
         lj_widget *fr = lj_window_root(fx);
         printf("controls_c: Effects client %dx%d\n", fr->w, fr->h);
-        CHECK(fr->h == 34 && fr->w == LJ_CTL_C_COL + 4 + 27 + 2 + LJ_CTL_C_ROT_W);
+        CHECK(fr->h == 42 && fr->w == LJ_CTL_C_COL + 5 + 34 + 2 + LJ_CTL_C_ROT_W);
         CHECK(lj_window_menu(fx)->n == 3 && strcmp(lj_window_menu(fx)->items[1].caption, "&Fades") == 0);
         b = bind_of(f, LJ_CTL_C_FXBTN, 9, -1);
-        CHECK(b && b->w->x == LJ_CTL_C_COL + 4 && b->w->w == 27 && !lj_ctl_c_btn_down(b->w));
+        CHECK(b && b->w->x == LJ_CTL_C_COL + 5 && b->w->w == 34 && !lj_ctl_c_btn_down(b->w));
         click_at(fx, b->w, 10, 10, 1);
         CHECK(value_of(f, 9) == 80 && lj_ctl_c_btn_down(b->w));
         click_at(fx, bind_of(f, LJ_CTL_C_ROT_CW, 9, -1)->w, 5, 5, 1);

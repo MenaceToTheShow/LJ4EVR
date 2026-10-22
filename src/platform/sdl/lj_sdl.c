@@ -554,11 +554,10 @@ static int SDLCALL lj_sdl_engine_main(void *ud)
         now = lj_clock_us();
         if (next > now) lj_platform_sleep_us(next - now);                  /* sleep_until(next) */
         now = lj_clock_us();
-        lj_lock(); lj_engine_tick(lj_sdl.engine, now); newcfg = lj_engine_take_sacn_cfg(lj_sdl.engine); offline = lj_engine_is_offline(lj_sdl.engine); lj_unlock();
-        if (newcfg) {                                                       /* LJ_CMD_SACN_CFG: close-old then open-new, outside the lock (ME-23) */
-            memcpy(&sacn, newcfg, sizeof sacn);
-            have_sacn = lj_sacn_open(&sacn) == 0;
-        }
+        lj_lock(); lj_engine_tick(lj_sdl.engine, now); newcfg = lj_engine_take_sacn_cfg(lj_sdl.engine); offline = lj_engine_is_offline(lj_sdl.engine);
+        if (newcfg) memcpy(&sacn, newcfg, sizeof sacn);                     /* ME-69: copied under the lock (Hardware Setup Apply rewrites the record under it) */
+        lj_unlock();
+        if (newcfg) have_sacn = lj_sacn_open(&sacn) == 0;                   /* LJ_CMD_SACN_CFG: close-old then open-new, outside the lock (ME-23) */
         if (have_sacn) {                                                    /* design 3.1: set per link unless offline (S9), then one pump */
             frame = lj_engine_frame(lj_sdl.engine);
             if (!offline) for (link = 0; link < LJ_LINKS; link++) lj_sacn_set(sacn.universe_of_link[link], frame->out[link]);

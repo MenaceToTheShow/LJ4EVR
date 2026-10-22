@@ -49,7 +49,7 @@ typedef struct { int type; union { lj_mouse_ev mouse; lj_key_ev key; struct { in
  * bound handler to (widget, event) and calls widget->on_event(w, ev, ud). */
 enum lj_widget_event {
     LJ_WEV_CLICK, LJ_WEV_DBLCLICK, LJ_WEV_CHANGE, LJ_WEV_ENTER, LJ_WEV_EXIT,
-    LJ_WEV_MOUSE_DOWN, LJ_WEV_MOUSE_UP, LJ_WEV_MOUSE_MOVE, LJ_WEV_MOUSE_WHEEL,
+    LJ_WEV_MOUSE_DOWN, LJ_WEV_MOUSE_UP, LJ_WEV_MOUSE_MOVE, LJ_WEV_MOUSE_WHEEL, LJ_WEV_MOUSE_WHEEL_DOWN, LJ_WEV_MOUSE_WHEEL_UP,   /* WheelDown/Up: fired by sign of the notch before the widget's own wheel handling, as the VCL does (ME-74) */
     LJ_WEV_KEY_DOWN, LJ_WEV_KEY_UP, LJ_WEV_KEY_PRESS,
     LJ_WEV_DRAG_OVER, LJ_WEV_DRAG_DROP, LJ_WEV_START_DRAG, LJ_WEV_END_DRAG,
     LJ_WEV_SELECT_ITEM, LJ_WEV_SELECT_CELL, LJ_WEV_DRAW_CELL, LJ_WEV_DRAW_ITEM, LJ_WEV_CUSTOM_DRAW_ITEM, LJ_WEV_CUSTOM_DRAW_SUBITEM,

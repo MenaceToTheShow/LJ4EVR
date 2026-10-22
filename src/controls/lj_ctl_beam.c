@@ -1,5 +1,5 @@
 /* lj_ctl_beam.c - the Beam window and the LJ_W_DRAGBAR row (lj_ctl_beam.h): [icon] bar [icon]
- * lines of 21 px, iris / focus / zoom / frost (beam.gif 206x77, beam2.gif). */
+ * lines of 26 px, iris / focus / zoom / frost (beam.gif 206x77 and beam2.gif are 0.8 reductions: x1.25 = 257x96, ME-67). */
 #include "controls/lj_ctl_beam.h"
 
 #include <string.h>
@@ -8,25 +8,25 @@
 
 int lj_ctl_c_dragbar_build(lj_ctl_c *c, const lj_ctl_row *r, int x, int y)
 {
-    /* measured from beam.gif: left icon at client (40,2) 19x16, bar to x = 177, right icon at (178,2); 21-px line pitch */
+    /* measured from beam.gif: left icon at client (40,2) 19x16, bar to x = 177, right icon at (178,2); 21-px line pitch; reduced x1.25 (ME-67), rig item */
     lj_widget *root = lj_window_root(c->win), *b, *icon;
     static const struct { const char *caption, *left, *right; } icons[] = {   /* 15/00 s2: IrisOpen / IrisClosed, Far / Near, ZoomWide / ZoomNarrow at the bar ends; ours */
         { "Iris", "irisopen", "irisclosed" }, { "Focus", "far", "near" }, { "Zoom", "zoomwide", "zoomnarrow" } };
     const char *left = r->items && r->items[0] ? r->items[0] : NULL, *rightg = r->items && r->items[0] && r->items[1] ? r->items[1] : NULL;
-    int bx = x, bw = 161, i;
+    int bx = x, bw = 202, i;
     if (!r->items && r->caption)
         for (i = 0; i < LJ_COUNT_OF(icons); i++) if (strcmp(icons[i].caption, r->caption) == 0) { left = icons[i].left; rightg = icons[i].right; }
     if (left) {
-        icon = lj_ctl_c_btn(c, root, x, y + 1, 22, 19, NULL, left, LJ_CLR_3DDKSHADOW, LJ_CLR_BTNHIGHLIGHT, 1);
-        icon->enabled = 0; bx += 22; bw -= 22;
+        icon = lj_ctl_c_btn(c, root, x, y + 1, 28, 24, NULL, left, LJ_CLR_3DDKSHADOW, LJ_CLR_BTNHIGHLIGHT, 1);
+        icon->enabled = 0; bx += 28; bw -= 28;
     }
     if (rightg) {
-        icon = lj_ctl_c_btn(c, root, x + 139, y + 1, 22, 19, NULL, rightg, LJ_CLR_3DDKSHADOW, LJ_CLR_BTNHIGHLIGHT, 1);
-        icon->enabled = 0; bw -= 22;
+        icon = lj_ctl_c_btn(c, root, x + 174, y + 1, 28, 24, NULL, rightg, LJ_CLR_3DDKSHADOW, LJ_CLR_BTNHIGHLIGHT, 1);
+        icon->enabled = 0; bw -= 28;
     }
-    b = lj_ctl_c_bar(c, root, bx, y, bw, 21, r->caption, r->hi > r->lo ? r->hi - r->lo : 255);
+    b = lj_ctl_c_bar(c, root, bx, y, bw, 26, r->caption, r->hi > r->lo ? r->hi - r->lo : 255);
     lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_BEAM_BAR, -1, r->ch);
-    return 20;
+    return 25;
 }
 
 int lj_ctl_c_beam_event(lj_ctl_c_bind *b, int ev)

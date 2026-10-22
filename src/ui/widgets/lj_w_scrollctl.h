@@ -1,7 +1,9 @@
 /* lj_w_scrollctl.h - the wheel scroll control (note 07 §3.3, goboscroll.gif 132x33
- * measured): a raised group of four 23x24 buttons `◄` `|◄` [swatch] `►|` `►` around a
- * 36x30 black well holding the current 31x30 colour/gobo tile. `◄`/`►` move one
- * whole effect (big), `|◄`/`►|` one DMX step. */
+ * measured; the crop is a 0.8 reduction like the control-window GIFs, ME-67, so
+ * every number is x1.25, rig item): a raised group of four 29x30 buttons `◄` `|◄`
+ * [swatch] `►|` `►` around a 45x37 black well holding the current 31x30 colour/gobo
+ * tile (the 1:1 Colors\ / Gobos\ bitmaps). `◄`/`►` move one whole effect (big),
+ * `|◄`/`►|` one DMX step. */
 #ifndef LJ_UI_WIDGETS_W_SCROLLCTL_H
 #define LJ_UI_WIDGETS_W_SCROLLCTL_H
 
@@ -10,8 +12,8 @@
 #include "ui/lj_widget.h"
 #include "ui/forms/lj_form.h"
 
-#define LJ_SCROLLCTL_W 132
-#define LJ_SCROLLCTL_H 33
+#define LJ_SCROLLCTL_W 165
+#define LJ_SCROLLCTL_H 41
 
 typedef struct {
     lj_widget base;

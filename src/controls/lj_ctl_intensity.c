@@ -18,7 +18,7 @@ static void shutter_event(lj_widget *w, int ev, void *ud)
 
 static int build_shutter(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row, int x, int y, int w)
 {
-    lj_widget *b = lj_ctl_button_new(c, parent, row, NULL, LJ_CE_SHUTTER, row->caption, x, y, w, LJ_CTL_ROW_H, 1);   /* black bar, measured x 43-177 */
+    lj_widget *b = lj_ctl_button_new(c, parent, row, NULL, LJ_CE_SHUTTER, row->caption, x, y, w, LJ_CTL_ROW_H, 1);   /* black bar, measured from intensitycontrol.gif x 43-177, reduced x1.25 (LJ_CTL_BAR_W), rig item */
     lj_ctl_elem *e = b ? (lj_ctl_elem *)b->ud : NULL;
     if (!e) return 0;
     e->lo = row->buttons && row->nbuttons > 0 ? row->buttons[0].value : row->lo;
@@ -27,7 +27,7 @@ static int build_shutter(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row
     return LJ_CTL_ROW_H;
 }
 
-/* label | black buttons [| drag bar captioned caption2] across x .. x + w (measured: label 183-244, buttons from 247, 4-px gaps) */
+/* label | black buttons [| drag bar captioned caption2] across x .. x + w (measured from intensitycontrol.gif: label 183-244, buttons from 247, 3-px gaps; reduced x1.25 in lj_ctl_common.h, rig item) */
 static int build_special(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row, int x, int y, int w)
 {
     int bx = x + (LJ_CTL_SPEC_BTN_X - LJ_CTL_SPEC_X), avail = x + w - bx, slots = row->nbuttons + (row->caption2 ? 1 : 0), bw, i;

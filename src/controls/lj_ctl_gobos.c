@@ -8,42 +8,42 @@
 
 int lj_ctl_c_modepair_build(lj_ctl_c *c, const lj_ctl_row *r, int x, int y)
 {
-    /* measured from goboindex.gif: two 65x19 flat buttons under the scroll control (130 wide), selected one black with white text */
+    /* measured from goboindex.gif: two 65x19 flat buttons under the scroll control (130 wide), selected one black with white text; reduced x1.25 = 81x24 (ME-67), rig item */
     static const char *const pair[] = { "Index", "Rotate" };   /* the captions on screen; "Index Gobo" / "Rotate Gobo" are the exe hints (15/01 s6) */
-    int j, n = r->buttons ? r->nbuttons : 2, bw = n > 0 ? (LJ_SCROLLCTL_W - 2) / n : 65;
+    int j, n = r->buttons ? r->nbuttons : 2, bw = n > 0 ? (LJ_SCROLLCTL_W - 2) / n : 81;
     for (j = 0; j < n; j++) {
         const char *cap = r->buttons ? r->buttons[j].caption : pair[j & 1];
-        lj_widget *b = lj_ctl_c_btn(c, lj_window_root(c->win), x + j * bw, y + 1, bw, 19, cap, NULL, LJ_CLR_BTNHIGHLIGHT, LJ_CLR_3DDKSHADOW, 1);
+        lj_widget *b = lj_ctl_c_btn(c, lj_window_root(c->win), x + j * bw, y + 1, bw, 24, cap, NULL, LJ_CLR_BTNHIGHLIGHT, LJ_CLR_3DDKSHADOW, 1);
         lj_ctl_c_bind *bd = lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_MODE, j, r->ch);
         b->hint = j == 0 ? r->caption : r->caption2;
         if (bd && r->buttons) bd->btn = &r->buttons[j];
     }
-    return 20;
+    return 25;
 }
 
 int lj_ctl_c_indexbar_build(lj_ctl_c *c, const lj_ctl_row *r, int x, int y)
 {
-    /* measured from goboindexcontrol.gif 134x22: the bar alone, "nn,n%" caption, hint Gobo Index */
-    lj_widget *b = lj_ctl_c_bar(c, lj_window_root(c->win), x, y, 133, 20, NULL, r->hi > r->lo ? r->hi - r->lo : 255);
+    /* measured from goboindexcontrol.gif 134x22: the bar alone, "nn,n%" caption, hint Gobo Index; reduced x1.25 = 166x25 (ME-67), rig item */
+    lj_widget *b = lj_ctl_c_bar(c, lj_window_root(c->win), x, y, 166, 25, NULL, r->hi > r->lo ? r->hi - r->lo : 255);
     b->hint = r->caption;
     lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_INDEX, -1, r->ch);
-    return 20;
+    return 25;
 }
 
 int lj_ctl_c_shake_build(lj_ctl_c *c, const lj_ctl_row *r, int x, int y)
 {
-    /* measured from goboshake.gif 121x32: shake glyph button (4,3) 21x23, speed bar (28,6) 90x20 */
+    /* measured from goboshake.gif 121x32: shake glyph button (4,3) 21x23, speed bar (28,6) 90x20; reduced x1.25 = 151x41 (ME-67), rig item */
     lj_widget *panel = lj_w_panel_create(lj_window_root(c->win), NULL), *b;
     lj_ctl_c_bind *bd;
-    panel->x = x; panel->y = y; panel->w = 121; panel->h = 33;
-    b = lj_ctl_c_btn(c, panel, 4, 4, 21, 25, NULL, "shake", LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 0);
+    panel->x = x; panel->y = y; panel->w = 151; panel->h = 41;
+    b = lj_ctl_c_btn(c, panel, 5, 5, 26, 31, NULL, "shake", LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 0);
     b->hint = r->caption;
     bd = lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_SHAKE_BTN, 0, r->ch);
     if (bd) bd->btn = r->nbuttons > 0 ? &r->buttons[0] : NULL;
-    b = lj_ctl_c_bar(c, panel, 28, 7, 90, 20, NULL, r->hi > r->lo ? r->hi - r->lo : 255);
+    b = lj_ctl_c_bar(c, panel, 35, 9, 113, 25, NULL, r->hi > r->lo ? r->hi - r->lo : 255);
     b->hint = r->caption2;
     lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_SHAKE_BAR, -1, r->ch);
-    return 33;
+    return 41;
 }
 
 static void shake_emit(lj_ctl_c_bind *b, int on)

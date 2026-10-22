@@ -270,26 +270,26 @@ int lj_test_widgets_lj(int argc, char **argv)
         lj_widget_remove(w); free(w);
     }
 
-    /* scroll control 132x33 */
+    /* scroll control 165x41 (goboscroll.gif 132x33 reduced x1.25, ME-67) */
     {
-        static const lj_ctl_desc d = { LJ_K_UNKNOWN, "scroll", 0, 60, 132, 33, .position = 100, .max = 255, .step = 16 };
+        static const lj_ctl_desc d = { LJ_K_UNKNOWN, "scroll", 0, 60, 165, 41, .position = 100, .max = 255, .step = 16 };
         lj_surface tile;
         w = mk(&root, lj_w_scrollctl_create, &d);
         paint(w, &s);
-        CHECK(px(&s, 0, 60) == LJ_CLR_BTNHIGHLIGHT && px(&s, 131, 92) == LJ_CLR_3DDKSHADOW);
-        CHECK(px(&s, 2, 65) == LJ_CLR_BTNHIGHLIGHT && px(&s, 24, 88) == LJ_CLR_3DDKSHADOW);          /* button 1 at (2,5) 23x24 */
-        CHECK(px(&s, 49, 63) == LJ_CLR_3DDKSHADOW && px(&s, 66, 77) == LJ_CLR_BTNHIGHLIGHT);         /* well frame, white swatch */
-        CHECK(non(&s, 4, 70, 19, 14, LJ_CLR_BTNFACE) > 5 && non(&s, 27, 70, 19, 14, LJ_CLR_BTNFACE) > 5);   /* glyphs */
-        click(w, 112, 10, 1);
+        CHECK(px(&s, 0, 60) == LJ_CLR_BTNHIGHLIGHT && px(&s, 164, 100) == LJ_CLR_3DDKSHADOW);
+        CHECK(px(&s, 2, 66) == LJ_CLR_BTNHIGHLIGHT && px(&s, 30, 95) == LJ_CLR_3DDKSHADOW);          /* button 1 at (2,6) 29x30 */
+        CHECK(px(&s, 61, 63) == LJ_CLR_3DDKSHADOW && px(&s, 82, 80) == LJ_CLR_BTNHIGHLIGHT);         /* well frame, white swatch */
+        CHECK(non(&s, 4, 72, 25, 18, LJ_CLR_BTNFACE) > 5 && non(&s, 33, 72, 25, 18, LJ_CLR_BTNFACE) > 5);   /* glyphs */
+        click(w, 140, 15, 1);
         CHECK(lj_w_scrollctl_value(w) == 116 && lj_w_scrollctl_last(w) == 2 && took(LJ_WEV_CHANGE) == 1);
-        click(w, 30, 10, 1);
+        click(w, 36, 15, 1);
         CHECK(lj_w_scrollctl_value(w) == 115 && lj_w_scrollctl_last(w) == -1);
-        click(w, 10, 10, 1);
+        click(w, 10, 15, 1);
         CHECK(lj_w_scrollctl_value(w) == 99 && lj_w_scrollctl_last(w) == -2);
-        click(w, 90, 10, 1);
+        click(w, 110, 15, 1);
         CHECK(lj_w_scrollctl_value(w) == 100 && lj_w_scrollctl_last(w) == 1);
-        mouse(w, LJ_EV_MOUSE_DOWN, 112, 10, 1, 0);
-        mouse(w, LJ_EV_MOUSE_UP, 60, 10, 1, 0);                                                      /* released off the button */
+        mouse(w, LJ_EV_MOUSE_DOWN, 140, 15, 1, 0);
+        mouse(w, LJ_EV_MOUSE_UP, 75, 15, 1, 0);                                                      /* released off the button */
         CHECK(lj_w_scrollctl_value(w) == 100);
         key(w, LJ_EV_KEY_DOWN, LJ_VK_RIGHT, 0);
         CHECK(lj_w_scrollctl_value(w) == 101);
@@ -297,7 +297,7 @@ int lj_test_widgets_lj(int argc, char **argv)
         lj_fill(&tile, 0, 0, 31, 30, 0xFF00FF);
         lj_w_scrollctl_set_tile(w, &tile, 0);
         paint(w, &s);
-        CHECK(px(&s, 55, 67) == 0xFF00FFu && px(&s, 49, 63) == LJ_CLR_3DDKSHADOW);
+        CHECK(px(&s, 70, 70) == 0xFF00FFu && px(&s, 61, 63) == LJ_CLR_3DDKSHADOW);
         lj_surface_free(&tile);
         took(LJ_WEV_CHANGE);
         lj_widget_remove(w); free(w);
@@ -433,7 +433,7 @@ int lj_test_widgets_lj(int argc, char **argv)
 
     /* code-built defaults: NULL desc gives the LJ2 sizes */
     w = lj_w_osf_create(NULL, NULL);     CHECK(w && w->w == 48 && w->h == 24); free(w);
-    w = lj_w_scrollctl_create(NULL, NULL); CHECK(w && w->w == 132 && w->h == 33); free(w);
+    w = lj_w_scrollctl_create(NULL, NULL); CHECK(w && w->w == 165 && w->h == 41); free(w);
     w = lj_w_palette_create(NULL, NULL); CHECK(w && w->w == 31 && w->h == 30); free(w);
     w = lj_w_fader_create(NULL, NULL);   CHECK(w && w->w == 32 && w->h == 160); free(w);
     w = lj_w_fixicon_create(NULL, NULL); CHECK(w && w->w == 63 && w->h == 53); free(w);

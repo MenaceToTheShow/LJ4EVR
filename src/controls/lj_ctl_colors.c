@@ -266,7 +266,7 @@ static void osf_build(lj_ctl_c *c, const lj_ctl_row *r, int x, int y, int w)
 {
     lj_widget *o = lj_w_osf_create(lj_window_root(c->win), NULL);
     unsigned allowed = r->states_allowed ? r->states_allowed : LJ_STATES_ALL;
-    place(o, x, y, w, 32);
+    place(o, x, y, w, 40);                                    /* resized to the lines it spans by build() */
     lj_w_osf_set_allowed(o, allowed);
     lj_w_osf_set_state(o, r->dflt_state <= LJ_FADE ? r->dflt_state : LJ_OFF);
     lj_ctl_c_bind_add(c, o, r, LJ_CTL_C_OSF, -1, r->ch);
@@ -291,16 +291,16 @@ int lj_ctl_c_rotation_build(lj_ctl_c *c, const lj_ctl_row *r, int x, int y, int 
 {
     lj_widget *root = lj_window_root(c->win), *panel = lj_w_panel_create(root, NULL), *b;
     lj_ctl_c_bind *bd;
-    place(panel, x, y, w, 33);
-    /* measured from colourrotate.gif 130x34: CCW at (3,4) 20x25, CW at (23,4), speed bar at (45,7) 80x20 */
-    b = lj_ctl_c_btn(c, panel, 3, 4, 20, 25, NULL, "rotccw", LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 0);
+    place(panel, x, y, w, 41);
+    /* measured from colourrotate.gif 130x34: CCW at (3,4) 20x25, CW at (23,4), speed bar at (45,7) 80x20; reduced x1.25 (ME-67), rig item */
+    b = lj_ctl_c_btn(c, panel, 4, 5, 25, 31, NULL, "rotccw", LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 0);
     bd = lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_ROT_CCW, 1, r->ch); if (bd) bd->btn = r->nbuttons > 1 ? &r->buttons[1] : NULL;
-    b = lj_ctl_c_btn(c, panel, 23, 4, 20, 25, NULL, "rotcw", LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 0);
+    b = lj_ctl_c_btn(c, panel, 29, 5, 25, 31, NULL, "rotcw", LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 0);
     bd = lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_ROT_CW, 0, r->ch); if (bd) bd->btn = r->nbuttons > 0 ? &r->buttons[0] : NULL;
-    b = lj_ctl_c_bar(c, panel, 45, 7, w - 49, 20, NULL, 255);
+    b = lj_ctl_c_bar(c, panel, 56, 9, w - 61, 25, NULL, 255);
     b->hint = r->caption;
     lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_ROT_BAR, -1, r->ch);
-    return 33;
+    return 41;
 }
 
 static int palette_build(lj_ctl_c *c, const lj_ctl_row *r, int y)
@@ -309,13 +309,13 @@ static int palette_build(lj_ctl_c *c, const lj_ctl_row *r, int y)
     int i, n = sr ? entries(c, sr) : entries(c, r), rows = (n + LJ_CTL_C_TILES_PER_ROW - 1) / LJ_CTL_C_TILES_PER_ROW;
     for (i = 0; i < n; i++) {
         lj_widget *t = lj_w_palette_create(lj_window_root(c->win), NULL);
-        place(t, 1 + (i % LJ_CTL_C_TILES_PER_ROW) * LJ_CTL_C_TILE_PITCH, y + 1 + (i / LJ_CTL_C_TILES_PER_ROW) * LJ_CTL_C_TILE_PITCH, LJ_CTL_C_TILE, LJ_CTL_C_TILE);
+        place(t, 1 + (i % LJ_CTL_C_TILES_PER_ROW) * LJ_CTL_C_TILE_PITCH_X, y + 1 + (i / LJ_CTL_C_TILES_PER_ROW) * LJ_CTL_C_TILE_PITCH_Y, LJ_CTL_C_TILE_W, LJ_CTL_C_TILE_H);
         ((lj_w_palette *)t)->index = i;
         t->visible = c->show_palette;
         t->hint = sr && sr->buttons ? sr->buttons[i].caption : NULL;
         lj_ctl_c_bind_add(c, t, sr ? sr : r, LJ_CTL_C_TILE_ROLE, i, r->ch);
     }
-    return rows > 0 ? rows * LJ_CTL_C_TILE_PITCH - 1 : 0;
+    return rows > 0 ? rows * LJ_CTL_C_TILE_PITCH_Y - 1 : 0;
 }
 
 static int note_build(lj_ctl_c *c, const lj_ctl_row *r, int x, int y)
@@ -331,21 +331,21 @@ static void specials_build(lj_ctl_c *c, int x0, int *w, int *h)
     int j, k, y = 0, right = x0;
     for (j = 0; j < c->t->nspecials; j++) {
         const lj_ctl_row *r = &c->t->specials[j];
-        int bx = x0 + 86;
-        lj_widget *l = lj_ctl_c_btn(c, root, x0, y + 2, 84, 17, r->caption, NULL, LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 1);
+        int bx = x0 + 108;
+        lj_widget *l = lj_ctl_c_btn(c, root, x0, y + 2, 105, 21, r->caption, NULL, LJ_CLR_BTNFACE, LJ_CLR_3DDKSHADOW, 1);
         l->enabled = 0; l->visible = c->show_special;
-        for (k = 0; k < r->nbuttons; k++) {                                  /* intensitycontrol.gif: flat black buttons, white text, 56x19 */
-            lj_widget *b = lj_ctl_c_btn(c, root, bx, y + 1, 56, 19, r->buttons[k].caption, NULL, LJ_CLR_3DDKSHADOW, LJ_CLR_BTNHIGHLIGHT, 0);
+        for (k = 0; k < r->nbuttons; k++) {                                  /* intensitycontrol.gif: flat black buttons, white text, 56x19; reduced x1.25 = 70x24 (ME-67), rig item */
+            lj_widget *b = lj_ctl_c_btn(c, root, bx, y + 1, 70, 24, r->buttons[k].caption, NULL, LJ_CLR_3DDKSHADOW, LJ_CLR_BTNHIGHLIGHT, 0);
             lj_ctl_c_bind *bd = lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_SPECIAL_BTN, k, r->buttons[k].ch);
             if (bd) bd->btn = &r->buttons[k];
             b->visible = c->show_special;
-            bx += 58;
+            bx += 73;
         }
         if (r->caption2 && r->hi > r->lo) {                                   /* "<  Pulse Off  >": the speed bar of a pulse special; ponytail: percent caption, LJ2 prints the caption alone at rest */
-            lj_widget *b = lj_ctl_c_bar(c, root, bx, y + 1, 90, 19, r->caption2, r->hi - r->lo);
+            lj_widget *b = lj_ctl_c_bar(c, root, bx, y + 1, 112, 24, r->caption2, r->hi - r->lo);
             lj_ctl_c_bind_add(c, b, r, LJ_CTL_C_SPECIAL_BAR, -1, r->ch);
             b->visible = c->show_special;
-            bx += 92;
+            bx += 115;
         }
         if (bx > right) right = bx;
         y += LJ_CTL_C_BAR_LINE;
@@ -380,7 +380,7 @@ static void build(lj_ctl_c *c)
             if (i > 0 && i + 1 < t->nrows && t->rows[i + 1].kind == LJ_W_INDEXBAR) {   /* goboindex.gif: the Fade / index / rotation group sits right of the Snap / scroll / mode group */
                 int gr = 0;
                 for (w = root->first; w; w = w->next) if (w->y >= grp_y0 && w->x + w->w > gr) gr = w->x + w->w;
-                grp_y_end = y; y = grp_y0; grp_x = gr + 4; osf_w = 24; right = 1;
+                grp_y_end = y; y = grp_y0; grp_x = gr + 5; osf_w = 30; right = 1;   /* goboindex.gif: the narrow Fade 24 wide, reduced x1.25 */
             } else { grp_x = 0; grp_y0 = y; }
             col = grp_x + osf_w + 1;
             osf_build(c, r, grp_x, y + 1, osf_w);
@@ -393,7 +393,7 @@ static void build(lj_ctl_c *c)
         case LJ_W_ROTATION: case LJ_W_WHEELSCROLL:
             if (prev == LJ_W_SCROLL || prev == LJ_W_EFFECT_BTN) { attach = 1; x = cur_x; cur_x = x + LJ_CTL_C_ROT_W + 1; }
             h = lj_ctl_c_rotation_build(c, r, x, attach ? line_y : y, LJ_CTL_C_ROT_W); break;
-        case LJ_W_SHAKE:       if (prev == LJ_W_SCROLL || prev == LJ_W_WHEELSCROLL) { attach = 1; x = cur_x; cur_x = x + 122; } h = lj_ctl_c_shake_build(c, r, x, attach ? line_y : y); break;
+        case LJ_W_SHAKE:       if (prev == LJ_W_SCROLL || prev == LJ_W_WHEELSCROLL) { attach = 1; x = cur_x; cur_x = x + 152; } h = lj_ctl_c_shake_build(c, r, x, attach ? line_y : y); break;
         case LJ_W_PALETTE:     h = palette_build(c, r, y); break;
         case LJ_W_MODEPAIR:    h = lj_ctl_c_modepair_build(c, r, x, y); break;
         case LJ_W_INDEXBAR:    h = lj_ctl_c_indexbar_build(c, r, x, y); break;

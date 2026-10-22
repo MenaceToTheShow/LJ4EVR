@@ -25,6 +25,7 @@
 #define LJ_GM_RANGE_RELATIVE          1   /* 11 G5 DERIVED, rig M21 */
 #define LJ_GM_FADE_MIN_MS           500   /* 11 G11: GM Fade Out/In 0.5-10 s */
 #define LJ_GM_FADE_MAX_MS         10000   /* 11 G11 */
+#define LJ_GM_FADE_RUNS_FROZEN        1   /* 11 S9 PROPOSAL, rig row (ME-71): masters keep working while frozen; the GM Fade runner is a master move (G11), not a scene fade (F20), so it steps while frozen and unfreeze does not shift its t0 */
 #define LJ_SWITCH_UNSCALED            1   /* ME-25 (S3): LJ_CH_SWITCH keeps v unless gm == 0 || sub == 0 (no Fade, unscaled until a master hits 0) */
 #define LJ_CATCHUP_BOUNDED            1   /* LORD_ENGINE-23: a late tick runs one pass and re-bases `next = now + tick_us`, never a burst (design 3.1) */
 #define LJ_MOVEMACRO_N_TABLE       4096   /* 17 s7.3 ASSUMED, rig 17 s8 item 6; == size of lj_sin4096 */

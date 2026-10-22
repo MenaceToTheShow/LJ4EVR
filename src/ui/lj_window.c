@@ -524,6 +524,7 @@ static void mouse(lj_window *win, const lj_mouse_ev *m)
         win->capture = target; win->down_w = target; win->down_button = m->button;
         if (target->tabstop && target->enabled && target->visible) lj_focus_set(target);
     }
+    if (m->type == LJ_EV_MOUSE_WHEEL && target->enabled && m->wheel) fire(target, m->wheel < 0 ? LJ_WEV_MOUSE_WHEEL_DOWN : LJ_WEV_MOUSE_WHEEL_UP);   /* ME-74: the VCL's OnMouseWheelDown/Up, before the widget's own wheel handling */
     if (target->enabled && target->vt && target->vt->mouse) target->vt->mouse(target, &rel);
     else if (target->enabled) plain = 1;   /* root / stub: the window emits the OnMouse* events itself */
     switch (m->type) {

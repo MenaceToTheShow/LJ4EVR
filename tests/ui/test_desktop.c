@@ -137,6 +137,8 @@ int lj_test_desktop(int argc, char **argv)
     w = lj_window_find(win, "sb_status");      CHECK(w && w->y == cr.h - LJ_SB_H && w->h == LJ_SB_H);
     w = lj_window_find(win, "desktop_tabs");   CHECK(w && w->y == 3 * LJ_TB_ROW_H && w->h == cr.h - 3 * LJ_TB_ROW_H - LJ_SB_H);
     w = lj_window_find(win, "tb_seqcue_2");    CHECK(w && w->w == 25 && w->h == 25 && w->y == 2);
+    w = lj_window_find(win, "tb_fixture_8");   CHECK(w && w->x == 196 && w->w == 25);              /* ME-72: Lamp after the 17-px gap, toolandstatusbars.gif bevel 205 - frame 9 */
+    w = lj_window_find(win, "tb_fixture_10");  CHECK(w && w->x == 248 && w->w == 50);              /* Controls 257 - 9 */
     w = lj_window_find(win, "sb_seqcounter");  CHECK(w && strcmp(lj_w_caption(w), "1:1") == 0);   /* [F7] empty sequence */
     CHECK(strcmp(lj_window_caption(win)->text, "Please Wait..") == 0);     /* LORD_FIDELITY-20: the DFM caption until the library is open */
     lj_desktop_set_library("Default");

@@ -56,7 +56,7 @@ int lj_test_windows_b(int argc, char **argv)
     lj_cmd cmd;
     const int *cw;
     const char *const *items;
-    char cap[128], cell[40], want[40];
+    char cap[128], cell[40];
     int i, n, ax, ay;
     (void)argc; (void)argv;
 
@@ -129,13 +129,11 @@ int lj_test_windows_b(int argc, char **argv)
     CHECK(lj_cue_form_cell(0, 1, cell, sizeof cell) == 0 && strcmp(cell, "name") == 0);
     CHECK(lj_cue_form_cell(0, 2, cell, sizeof cell) == 0 && cell[0] == 0);
     CHECK(lj_cue_form_cell(0, 3, cell, sizeof cell) == 0 && strcmp(cell, "1:2") == 0);
-    snprintf(want, sizeof want, "4%c00", lj_locale_decimal());
-    CHECK(lj_cue_form_cell(0, 4, cell, sizeof cell) == 0 && strcmp(cell, want) == 0);
-    snprintf(want, sizeof want, "3%c00", lj_locale_decimal());
-    CHECK(lj_cue_form_cell(0, 5, cell, sizeof cell) == 0 && strcmp(cell, want) == 0);
+    CHECK(lj_cue_form_cell(0, 4, cell, sizeof cell) == 0 && strcmp(cell, "4:00") == 0);   /* ME-75: lj_fmt_time's colon, as cuecontrol.gif reads */
+    CHECK(lj_cue_form_cell(0, 5, cell, sizeof cell) == 0 && strcmp(cell, "3:00") == 0);
     CHECK(lj_cue_form_cell(0, 6, cell, sizeof cell) == 0 && cell[0] == 0);
-    CHECK(lj_cue_form_cell(0, 7, cell, sizeof cell) == 0 && strcmp(cell, "fwd") == 0);
-    CHECK(lj_cue_form_cell(0, 8, cell, sizeof cell) == 0 && strcmp(cell, "auto") == 0);
+    CHECK(lj_cue_form_cell(0, 7, cell, sizeof cell) == 0 && strcmp(cell, "Fwd") == 0);   /* ME-75: display words capitalised like the GIF */
+    CHECK(lj_cue_form_cell(0, 8, cell, sizeof cell) == 0 && strcmp(cell, "Auto") == 0);
     CHECK(lj_cue_form_cell(1, 0, cell, sizeof cell) == 0 && cell[0] == 0);     /* empty slot */
     CHECK(lj_cue_form_cell(12, 0, cell, sizeof cell) == -1);
     lj_window_paint(win);
@@ -184,7 +182,7 @@ int lj_test_windows_b(int argc, char **argv)
         mouse(win, LJ_EV_MOUSE_UP, cr.x + 105, cr.y + 2 + 17 + 8, 1);
         CHECK(!lj_cue_popup_is_open(win));
         CHECK(cue->slot[0].trig == LJ_TRIG_MANUAL);
-        CHECK(lj_cue_form_cell(0, 8, cell, sizeof cell) == 0 && strcmp(cell, "manual") == 0);
+        CHECK(lj_cue_form_cell(0, 8, cell, sizeof cell) == 0 && strcmp(cell, "Manual") == 0);
     }
     /* Select All: with a slot highlighted it de-selects all, then selects all [03 s5.4] */
     w = lj_window_find(win, "sbSelect");

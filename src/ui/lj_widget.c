@@ -5,7 +5,7 @@
 
 const char *const lj_wev_names[LJ_WEV_COUNT] = {
     "OnClick", "OnDblClick", "OnChange", "OnEnter", "OnExit",
-    "OnMouseDown", "OnMouseUp", "OnMouseMove", "OnMouseWheel",
+    "OnMouseDown", "OnMouseUp", "OnMouseMove", "OnMouseWheel", "OnMouseWheelDown", "OnMouseWheelUp",
     "OnKeyDown", "OnKeyUp", "OnKeyPress",
     "OnDragOver", "OnDragDrop", "OnStartDrag", "OnEndDrag",
     "OnSelectItem", "OnSelectCell", "OnDrawCell", "OnDrawItem", "OnCustomDrawItem", "OnCustomDrawSubItem",

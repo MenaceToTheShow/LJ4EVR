@@ -80,6 +80,7 @@
     { "name": "dev-mac",        "configurePreset": "dev-mac",        "output": { "outputOnFailure": true } },
     { "name": "ci-linux-asan",  "configurePreset": "ci-linux-asan",  "output": { "outputOnFailure": true } },
     { "name": "ci-linux-clang", "configurePreset": "ci-linux-clang", "output": { "outputOnFailure": true } },
+    { "name": "debug-win",      "configurePreset": "debug-win",      "output": { "outputOnFailure": true } },
     { "name": "release-win",    "configurePreset": "release-win",    "output": { "outputOnFailure": true } },
     { "name": "release-mac",    "configurePreset": "release-mac",    "output": { "outputOnFailure": true } }
   ]

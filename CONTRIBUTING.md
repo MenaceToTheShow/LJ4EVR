@@ -48,9 +48,11 @@ diff is the picture.
 
 ## Commits and pull requests
 
-- `main` is protected; work on a branch, open a pull request. Fork PRs run the
-  hosted jobs only (Windows, macOS) and need maintainer approval; the Linux
-  jobs run on self-hosted runners after merge (`docs/ci.md`).
+- `main` is not branch-protected (`gh api repos/UnbannableGT/LJ4EVR/branches/main/protection`
+  answers 404; the wave integrators push to it directly). Everyone else works
+  on a branch and opens a pull request. Fork PRs run the hosted jobs only
+  (Windows, macOS) and need maintainer approval; the Linux jobs run on
+  self-hosted runners after merge (`docs/ci.md`).
 - Subject line: imperative, under 72 characters, with an area prefix when it
   helps (`engine:`, `ui:`, `ci:`, `golden:`).
 - Do not bump `VERSION` in a feature PR; releases are cut separately

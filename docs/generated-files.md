@@ -10,6 +10,13 @@ the tool, its version and the SHA-256 of every input; nobody edits them by hand.
 | `tools/dfm2c_unknown.txt` | `tools/dfm2c.py` | same | diffed by `--check`; must stay empty (a new line = a property without a slot in `lj_form.h`) |
 | `tools/dfm2c_blobs.txt` | `tools/dfm2c.py` | same | diffed by `--check`; every blob has a disposition |
 | `tests/ui/dfm_census.tsv` | `tools/dfm2c.py` | same | diffed by `--check`; the class counts of design 7.2 |
+| `src/fixlib/lj_profiles_gen.c`, `.h` | `tools/qxf2c.py` | `tools/qxf_map.tsv`, `third_party/qlcplus-fixtures/*.qxf` (QLC+ commit in the banner) | `qxf2c.py --check` in `generate-check`; `qxf2c_selftest` CTest row |
+| `tools/qxf2c_overflow.txt` | `tools/qxf2c.py` | same | diffed by `--check`; the wheels with more than 20 capabilities (ME-26), printed by `generate-check` |
+| `src/fixlib/lj_exe_profiles.c` | `tools/exe_profiles_check.py` | `reference/installer/exe_profile_table.txt` (never committed), `src/fixlib/hand/*.c`, `tools/qxf_map.tsv` | `--check` recomputes the `binding` column; runs nowhere in CI yet (ME-76, W2 gate) |
+| `src/gfx/lj_fonts_gen.c` | `tools/fontpack.py` | `art/fonts/*.txt`, `tests/fonts/advances_*.tsv` | `fontpack.py --check` in `generate-check`; `font_cells`, `font_corpus` |
+| `src/gfx/lj_art_gen.c` | `tools/artpack.py` | `art/glyphs/*.txt`, `art/icons/*.txt` | `artpack.py --check` in `generate-check`; `art_table` |
+| `tests/vectors.h` | `tools/gen_vectors.py` | `tools/ref/08-sacn_ref.py`, `14-macros_mac_decode.py`, `16-gs2_ref.py`, `17-position_ref.py` | `gen_vectors.py --check` in `generate-check` and the `gen_vectors_check` CTest row |
+| `src/engine/lj_trig_gen.c` | `tools/gen_vectors.py` | `tools/ref/17-position_ref.py` | same row |
 
 ## dfm2c.py
 

@@ -589,13 +589,24 @@ static void lj_app_startup_options(lj_ini *ini)
 
 /* ---- --selftest: the W0 pixel compare plus the W1 startup line ---- */
 
+static int lj_app_unknown_events;
+static void lj_app_count_unknown(void *ud, const char *line) { (void)ud; if (strstr(line, "unknown event")) lj_app_unknown_events++; fprintf(stderr, "%s\n", line); }
+
 static int lj_app_selftest(lj_window *seq, int startup_ok)
 {
     lj_surface got, ref_bmp;
     const lj_surface *ref;
+    lj_window *mon;
     int bad = 0, i, n;
     memset(&got, 0, sizeof got); memset(&ref_bmp, 0, sizeof ref_bmp);
     printf("selftest startup: main caption \"%s\" while the library loaded, status window open: %s\n", LJ_STARTUP_PLEASE_WAIT, startup_ok ? "OK" : "FAIL");
+    lj_app_unknown_events = 0;                                /* ME-74 / ME-16: the DMX Output Monitor's DFM names (OnMouseWheelDown/Up) all resolve */
+    lj_log_set_sink(lj_app_count_unknown, NULL);
+    mon = lj_win_open(LJ_WIN_DMX_MONITOR);
+    lj_log_set_sink(NULL, NULL);
+    if (mon) lj_win_close(LJ_WIN_DMX_MONITOR);
+    printf("selftest TDMXOUTFORM: %s, %d unknown event line(s): %s\n", mon ? "opened and closed" : "did not open", lj_app_unknown_events, mon && lj_app_unknown_events == 0 ? "OK" : "FAIL");
+    if (!mon || lj_app_unknown_events) startup_ok = 0;
     if (!seq) { printf("selftest FAIL: TSEQUENCEFORM did not open\n"); return 1; }
     lj_window_set_active(seq, 0);
     lj_platform_present(seq);

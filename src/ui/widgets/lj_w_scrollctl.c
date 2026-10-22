@@ -4,18 +4,18 @@
 #include "gfx/lj_draw.h"
 #include "ui/widgets/lj_widgets_lj.h"
 
-enum { LJ_SC_BTN_W = 23, LJ_SC_BTN_H = 24, LJ_SC_BTN_Y = 5, LJ_SC_WELL_X = 48, LJ_SC_WELL_W = 36, LJ_SC_WELL_Y = 2, LJ_SC_WELL_H = 30 };
-static const int lj_sc_bx[4] = { 2, 25, 84, 107 };
+enum { LJ_SC_BTN_W = 29, LJ_SC_BTN_H = 30, LJ_SC_BTN_Y = 6, LJ_SC_WELL_X = 60, LJ_SC_WELL_W = 45, LJ_SC_WELL_Y = 2, LJ_SC_WELL_H = 37 };   /* goboscroll.gif 132x33: buttons 23x24 at y 5, well (48,2) 36x30, x1.25 (ME-67), rig item */
+static const int lj_sc_bx[4] = { 2, 31, 105, 134 };
 static const int lj_sc_step[4] = { -2, -1, 1, 2 };
 
 static void glyph(lj_surface *s, int bx, int by, int i, uint32_t rgb)   /* ◄  |◄  ►|  ► */
 {
     int cy = by + LJ_SC_BTN_H / 2;
     switch (i) {
-    case 0: lj_w_tri(s, bx + 8, cy, 4, 2, rgb); break;
-    case 1: lj_vline(s, bx + 6, cy - 3, 7, rgb); lj_w_tri(s, bx + 9, cy, 4, 2, rgb); break;
-    case 2: lj_w_tri(s, bx + 13, cy, 4, 3, rgb); lj_vline(s, bx + 16, cy - 3, 7, rgb); break;
-    default: lj_w_tri(s, bx + 14, cy, 4, 3, rgb); break;
+    case 0: lj_w_tri(s, bx + 11, cy, 4, 2, rgb); break;
+    case 1: lj_vline(s, bx + 9, cy - 3, 7, rgb); lj_w_tri(s, bx + 12, cy, 4, 2, rgb); break;
+    case 2: lj_w_tri(s, bx + 16, cy, 4, 3, rgb); lj_vline(s, bx + 19, cy - 3, 7, rgb); break;
+    default: lj_w_tri(s, bx + 17, cy, 4, 3, rgb); break;
     }
 }
 

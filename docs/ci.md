@@ -15,7 +15,7 @@ Three workflows under `.github/workflows/`, design 9.3 and 9.5.
 | `generate-check` | `[self-hosted, lj4evr]`, container | `tools/test_layering.py`; every `tools/{qxf2c,fontpack,artpack,gen_vectors}.py --check` that exists (they land with their waves, design 9.2) | - |
 | `linux-gcc-asan` | same | preset `ci-linux-asan` (gcc, ASan+UBSan, `LJ_SDL=OFF`), `ctest`, `lj4evr_tests dump-frames` | `frames-linux` |
 | `linux-clang` | same | preset `ci-linux-clang`, `ctest` | - |
-| `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, `cpack -G NSIS` | `frames-windows`, `installer-windows` |
+| `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, the static-CRT check; then preset `debug-win`: the whole Debug tree, `ctest` (ME-70: `/RTC1` and the ME-16 asserts only live here) and the Debug `--selftest` (no `no binding for handler`, no `unknown event` line, ME-74); `cpack -G NSIS` | `frames-windows`, `installer-windows` |
 | `macos-clang` | `macos-14` | preset `release-mac`, `ctest`, `--selftest`, `dump-frames`, `cpack -G DragNDrop` | `frames-macos`, `installer-macos` |
 | `determinism` | container, needs the three above | `cmp` the three `frames-*.bin`; one byte differs = red | - |
 
@@ -80,8 +80,14 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
     python -c "import yaml,glob; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]"
     actionlint -no-color                    # rhysd/actionlint; .github/actionlint.yaml declares the lj4evr label
 
-## What is not here yet
+## W1
 
-`lj4evr --selftest` and `lj4evr_tests dump-frames` are called by name; they
-land with the app and engine tracks (W0 acceptance 3 and 5). Until then the
-hosted jobs fail at that step, which is the intended signal, not a workflow bug.
+- `replay_all` runs the 16 scenarios under `tests/engine/replay/` on every
+  job; `replay_dump` writes `replay-frames.bin` (103.8 MB) into the build
+  directory and nothing compares it yet (ME-78, W2): the `determinism` job
+  compares the 400-tick `dump-frames` streams of the three OSes only.
+- `windows-msvc` is the one job that runs a Debug `ctest` (ME-70). The Linux
+  ASan job is Debug too, but gcc has no `/RTC1`.
+- `generate-check` runs `qxf2c`, `fontpack`, `artpack` and `gen_vectors`
+  `--check`; `exe_profiles_check.py --check` is not in the loop yet (ME-76, W2).
+- Green run of the fix pass: see `docs/w1-integration.md` section 10.

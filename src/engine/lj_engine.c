@@ -170,7 +170,7 @@ static void lj_engine_freeze(lj_engine *e, int on, uint64_t now)
         if (!r->seq) continue;
         r->fade_t0_us = r->fade_t0_us < e->frozen_since_us ? r->fade_t0_us + (now - e->frozen_since_us) : now;
     }
-    if (e->gm_fade.mode) e->gm_fade.t0_us += now - e->frozen_since_us;
+    /* the GM Fade runner is not shifted: it kept running while frozen (LJ_GM_FADE_RUNS_FROZEN, ME-71) */
 }
 
 static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)

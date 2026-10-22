@@ -41,9 +41,27 @@ may pull any of them forward before W3; the default is the list above.
 
 ## Docs
 
+- `docs/building.md` - configure, build and test on Windows, macOS and Linux
+- `docs/ci.md` - the three workflows, the runner security model, the CI image
 - `docs/conventions.md` - the coding conventions every file under `src/` follows
-- `docs/w0-contracts.md` - map of the W0 headers and the three rules for tracks
+- `docs/fidelity.md` - every known deviation from LightJockey 2.209 and the decision behind it
+- `docs/file-formats.md` - the user library on disk (text records, INI files, `.lj4b`)
+- `docs/fixtures.md` - the fixture library: exe rows, hand profiles, QLC+ tier 2, `qxf_map.tsv`
+- `docs/fonts.md` - the clean-room bitmap faces and the width corpus
+- `docs/generated-files.md` - every committed generated file, its tool and its check
+- `docs/hotkeys.md` - the hotkey function table and the `.Hot` setups
 - `docs/msvc-sdl-build.md` - why the CMake file carries two MSVC workarounds
+- `docs/releasing.md` - tagging, `release.yml`, the installers
+- `docs/replay-grammar.md` - the `.lj4r` engine replay scenarios
+- `docs/running.md` - running the app, `Main.Ini`, `--selftest` and the other flags
+- `docs/sacn.md` - the sACN sender, `Hardware.Ini [SACN]`, the LAN capture
+- `docs/screenshots/` - the W0 and W1 acceptance captures
+- `docs/ui-script.md` - the `--script` driver behind the acceptance walkthrough
+- `docs/w0-contracts.md` - map of the W0 headers and the three rules for tracks
+- `docs/w0-integration.md` - the W0 integration log
+- `docs/w1-contracts.md` - the W1 seams between tracks
+- `docs/w1-gates.md` - the W1 gate table with the council's status column
+- `docs/w1-integration.md` - the W1 integration log, CI rounds, acceptance walkthrough and fix pass
 
 Licence: MIT (`LICENSE`). Third-party notices: `NOTICE`. LightJockey is a
 trademark of Martin Professional; LJ4EVR is not affiliated.

@@ -4,7 +4,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
 
-enum { LJ_EXT_RADIO_X = 8, LJ_EXT_RADIO_Y = 12, LJ_EXT_RADIO_PITCH = 13, LJ_EXT_RADIO_W = 92, LJ_EXT_FADER_X = 103, LJ_EXT_FADER_Y = 4, LJ_EXT_FADER_H = 73 };   /* measured from extended.gif: radios 5 rows in 81 px, fader x 108-134 inside the box */
+enum { LJ_EXT_RADIO_X = 10, LJ_EXT_RADIO_Y = 15, LJ_EXT_RADIO_PITCH = 16, LJ_EXT_RADIO_W = 115, LJ_EXT_FADER_X = 129, LJ_EXT_FADER_Y = 5, LJ_EXT_FADER_H = 91 };   /* measured from extended.gif: radios 5 rows in 81 px, fader x 108-134 inside the box; reduced x1.25 (ME-67), rig item */
 
 static int is_speed(const lj_ctl_elem *e) { return e->btn && e->btn->lo == e->row->lo && e->btn->hi == e->row->hi; }
 

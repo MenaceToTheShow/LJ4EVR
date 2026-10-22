@@ -4,7 +4,6 @@
 #include <string.h>
 #include "windows/lj_cue_form.h"
 
-#include "core/lj_locale.h"
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
@@ -123,11 +122,9 @@ uint32_t lj_cue_form_row_rgb(int status, int scenes, int chase_manual, int link,
     }
 }
 
-static void fmt_time(char *dst, size_t cap, uint32_t ms, int bpm)
-{
-    if (bpm) snprintf(dst, cap, "%u", ms ? 60000u / ms : 0u);
-    else snprintf(dst, cap, "%u%c%02u", ms / 1000u, lj_locale_decimal(), (ms % 1000u) / 10u);   /* D6: host separator in displayed text only */
-}
+/* the grid's display words (cuecontrol.gif at 8x: Fwd / Auto in every row, ME-75); the record words of model/lj_words.c are unchanged */
+static const char *const lj_dir_disp[]  = { "Fwd", "Rev", "Bounce", "Rnd", NULL };
+static const char *const lj_trig_disp[] = { "Auto", "Manual", "Audio", NULL };
 
 /* one row's text from the cue record + the view [03 s5.1] */
 static void build_row(int i, lj_cue_row *r)
@@ -160,12 +157,15 @@ static void build_row(int i, lj_cue_row *r)
     if (seq && seq->scenes && scene >= 1 && scene <= seq->n) {
         const lj_scene *sc = &seq->scenes[scene - 1];
         uint32_t st = sc->scene_ms * pct / 100u, ft = sc->fade_ms * pct / 100u;    /* 11 F8-F9, capped as the engine caps */
-        fmt_time(r->cell[4], LJ_CUE_CELL, st > LJ_TIME_MAX_MS ? LJ_TIME_MAX_MS : st, s.bpm);
-        fmt_time(r->cell[5], LJ_CUE_CELL, ft > LJ_TIME_MAX_MS ? LJ_TIME_MAX_MS : ft, 0);
+        if (st > LJ_TIME_MAX_MS) st = LJ_TIME_MAX_MS;
+        if (ft > LJ_TIME_MAX_MS) ft = LJ_TIME_MAX_MS;
+        if (s.bpm) snprintf(r->cell[4], LJ_CUE_CELL, "%u", st ? 60000u / st : 0u);
+        else lj_fmt_time(r->cell[4], LJ_CUE_CELL, st);                              /* s:hh with the colon, like the Sequence window (cuecontrol.gif 1:00 / 0:05, ME-75) */
+        lj_fmt_time(r->cell[5], LJ_CUE_CELL, ft);
     }
     lj_str_copy(r->cell[6], LJ_CUE_CELL, status >= 0 && status < LJ_COUNT_OF(lj_cue_status_words) ? lj_cue_status_words[status] : "");
-    lj_str_copy(r->cell[7], LJ_CUE_CELL, lj_word(lj_dir_words, sl->dir));
-    lj_str_copy(r->cell[8], LJ_CUE_CELL, lj_word(lj_trig_words, sl->trig));
+    lj_str_copy(r->cell[7], LJ_CUE_CELL, lj_word(lj_dir_disp, sl->dir));
+    lj_str_copy(r->cell[8], LJ_CUE_CELL, lj_word(lj_trig_disp, sl->trig));
     r->rgb = lj_cue_form_row_rgb(status, scenes, v->slot_chase[i] && sl->trig == LJ_TRIG_MANUAL, sl->end_action == LJ_END_LINK, s.use_colors);
 }
 

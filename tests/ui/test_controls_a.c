@@ -117,8 +117,8 @@ int lj_test_controls_a(int argc, char **argv)
     const lj_surface *s;
     lj_rect cr;
     char text[64];
-    int i, st, st2;
-    uint8_t v;
+    int i;
+    uint8_t v, st, st2;   /* ME-70: lj_prog_get writes a uint8_t; an int written through a cast fails under /RTC1 */
     (void)argc; (void)argv;
     if (!show) lj_fatal("test_controls_a: out of memory");
 
@@ -134,42 +134,42 @@ int lj_test_controls_a(int argc, char **argv)
     memcpy(prof.level_caption[2], "SW", 3);
 
     /* ---- lj_prog_*: the scene seam without a window ---- */
-    CHECK(lj_prog_get(5, &v, (uint8_t *)&st) == 0 && v == 0 && st == LJ_OFF);
+    CHECK(lj_prog_get(5, &v, &st) == 0 && v == 0 && st == LJ_OFF);
     lj_prog_set(5, 77, LJ_FADE);
-    CHECK(lj_prog_get(5, &v, (uint8_t *)&st) == 0 && v == 77 && st == LJ_FADE && seq.modified);
+    CHECK(lj_prog_get(5, &v, &st) == 0 && v == 77 && st == LJ_FADE && seq.modified);
     lj_prog_set(5, 78, LJ_PROG_KEEP);
     CHECK(scene.val[5] == 78 && scene.state[5] == LJ_FADE);
     lj_prog_set16(6, 7, 0x1234, LJ_SNAP);
     CHECK(scene.val[6] == 0x12 && scene.val[7] == 0x34 && scene.state[7] == LJ_SNAP);
-    CHECK(lj_prog_get(LJ_CHANS, &v, (uint8_t *)&st) == -1);
+    CHECK(lj_prog_get(LJ_CHANS, &v, &st) == -1);
     /* D10 + ME-27: left Off -> Snap -> Fade -> Off, right the reverse, mask skips */
     CHECK(lj_prog_cycle_state(9, 1, LJ_STATES_ALL) == LJ_SNAP && lj_prog_cycle_state(9, 1, LJ_STATES_ALL) == LJ_FADE && lj_prog_cycle_state(9, 1, LJ_STATES_ALL) == LJ_OFF);
     CHECK(lj_prog_cycle_state(9, -1, 0) == LJ_FADE && lj_prog_cycle_state(9, -1, 0) == LJ_SNAP && lj_prog_cycle_state(9, -1, 0) == LJ_OFF);
-    for (i = 0, st = 0; i < 6; i++) { st2 = lj_prog_cycle_state(9, i < 3 ? 1 : -1, LJ_STATES_OFF_SNAP); if (st2 == LJ_FADE) st = 1; }
+    for (i = 0, st = 0; i < 6; i++) { st2 = (uint8_t)lj_prog_cycle_state(9, i < 3 ? 1 : -1, LJ_STATES_OFF_SNAP); if (st2 == LJ_FADE) st = 1; }
     CHECK(st == 0 && scene.state[9] != LJ_FADE);
     CHECK(lj_prog_cycle_state(9, 1, 1u << LJ_FADE) == LJ_FADE);   /* the only allowed state wins */
     scene.state[9] = LJ_OFF;
 
-    /* ---- the Intensity window: intensitycontrol.gif 480x98 (measured), rows where the GIF has them ---- */
+    /* ---- the Intensity window: intensitycontrol.gif 480x98 is a 0.8 reduction (ME-67): 600x122 with the normal caption, rows at the 26-px pitch ---- */
     win = lj_ctl_open_table(LJ_CTL_INTENSITY, &windows[0], &prof);
     CHECK(win != NULL);
     if (!win) return 1;
     s = lj_window_surface(win);
     lj_window_client_rect(win, &cr);
-    CHECK(s->w == 480 && s->h == 98);                              /* measured from intensitycontrol.gif */
-    CHECK(cr.w == 474 && cr.h == 58);
+    CHECK(s->w == 600 && s->h == 122);                             /* measured from intensitycontrol.gif, reduced x1.25 */
+    CHECK(cr.w == 594 && cr.h == 78);
     CHECK(lj_window_menu(win) && lj_window_menu(win)->n == 4 && strcmp(lj_window_menu(win)->items[2].caption, "Fades") == 0);
-    CHECK(strcmp(lj_window_caption(win)->text, "Intensity") == 0 && lj_window_caption(win)->caption_h == 15 && lj_window_desc(win)->style == LJ_FS_STAYONTOP);
+    CHECK(strcmp(lj_window_caption(win)->text, "Intensity") == 0 && lj_window_caption(win)->caption_h == 19 && lj_window_desc(win)->style == LJ_FS_STAYONTOP);   /* normal caption (ME-67) */
     c = lj_ctl_of(win);
     CHECK(c && c->kind == LJ_CTL_INTENSITY && lj_ctl_window_get(LJ_CTL_INTENSITY) == win);
     osf = elem(c, LJ_CE_OSF, 0); shutter = elem(c, LJ_CE_SHUTTER, 0); bar = elem(c, LJ_CE_DRAGBAR, 1);
-    CHECK(osf && osf->w->x == 0 && osf->w->y == 0 && osf->w->w == 39 && osf->w->h == 38);              /* Snap spans rows 1-2 (GIF y 33-71) */
-    CHECK(elem(c, LJ_CE_OSF, 1) && elem(c, LJ_CE_OSF, 1)->w->y == 40 && elem(c, LJ_CE_OSF, 1)->w->h == 18);   /* Fade on row 3 (GIF y 75-92) */
-    CHECK(shutter && shutter->w->x == 41 && shutter->w->y == 0 && shutter->w->w == 135 && shutter->lo == 0 && shutter->hi == 20);
-    CHECK(elem(c, LJ_CE_DRAGBAR, 0) && elem(c, LJ_CE_DRAGBAR, 0)->w->y == 20 && elem(c, LJ_CE_DRAGBAR, 0)->reverse);   /* Strobe, reverse */
-    CHECK(bar && bar->w->y == 40 && bar->w->x == 41 && bar->w->w == 135 && bar->row == &mac500_intensity_rows[4]);
-    CHECK(elem(c, LJ_CE_NONE, 0) && elem(c, LJ_CE_NONE, 0)->w->x == 181 && elem(c, LJ_CE_NONE, 0)->special);   /* "Intensity Pulse" label at GIF x 183 */
-    CHECK(elem(c, LJ_CE_BUTTON, 0) && elem(c, LJ_CE_BUTTON, 0)->w->x == 245 && elem(c, LJ_CE_BUTTON, 8) && elem(c, LJ_CE_BUTTON, 8)->btn == &mac500_rstrobe[2]);
+    CHECK(osf && osf->w->x == 0 && osf->w->y == 0 && osf->w->w == 48 && osf->w->h == 50);              /* Snap spans rows 1-2 (GIF y 33-71 x1.25; off.gif 48 wide) */
+    CHECK(elem(c, LJ_CE_OSF, 1) && elem(c, LJ_CE_OSF, 1)->w->y == 52 && elem(c, LJ_CE_OSF, 1)->w->h == 24);   /* Fade on row 3 (GIF y 75-92 x1.25) */
+    CHECK(shutter && shutter->w->x == 51 && shutter->w->y == 0 && shutter->w->w == 169 && shutter->lo == 0 && shutter->hi == 20);
+    CHECK(elem(c, LJ_CE_DRAGBAR, 0) && elem(c, LJ_CE_DRAGBAR, 0)->w->y == 26 && elem(c, LJ_CE_DRAGBAR, 0)->reverse);   /* Strobe, reverse */
+    CHECK(bar && bar->w->y == 52 && bar->w->x == 51 && bar->w->w == 169 && bar->row == &mac500_intensity_rows[4]);
+    CHECK(elem(c, LJ_CE_NONE, 0) && elem(c, LJ_CE_NONE, 0)->w->x == 226 && elem(c, LJ_CE_NONE, 0)->special);   /* "Intensity Pulse" label at GIF x 183 x1.25 */
+    CHECK(elem(c, LJ_CE_BUTTON, 0) && elem(c, LJ_CE_BUTTON, 0)->w->x == 306 && elem(c, LJ_CE_BUTTON, 8) && elem(c, LJ_CE_BUTTON, 8)->btn == &mac500_rstrobe[2]);
     CHECK(elem(c, LJ_CE_DRAGBAR, 2) && elem(c, LJ_CE_DRAGBAR, 2)->special && elem(c, LJ_CE_DRAGBAR, 2)->row == &mac500_intensity_specials[0] && elem(c, LJ_CE_DRAGBAR, 2)->lo == 80);   /* the Pulse speed bar */
     CHECK(osf->dflt_state == LJ_SNAP && bar->dflt_state == LJ_FADE && shutter->dflt_state == LJ_SNAP);
     lj_window_paint(win);
@@ -187,7 +187,7 @@ int lj_test_controls_a(int argc, char **argv)
         lj_w_dragbar_set_value(bar->w, 128);                        /* "Intensity 50,2%" (255 has no exact 50,0 %); the ME-52 screenshot */
         lj_window_paint(win);
         CHECK(lj_bmp_write(s, "controls_a_intensity_comma.bmp") == 0);
-        printf("screenshot: controls_a_intensity_comma.bmp (480x98, comma locale) in the working directory\n");
+        printf("screenshot: controls_a_intensity_comma.bmp (600x122, comma locale) in the working directory\n");
         lj_w_dragbar_set_value(bar->w, 255);
     } else printf("SKIP: no comma locale on this host (setlocale failed), ME-52 comma evidence not produced here\n");
     setlocale(LC_NUMERIC, "C");
@@ -209,20 +209,20 @@ int lj_test_controls_a(int argc, char **argv)
     /* ---- Preferences hides the specials and narrows the window (intensitycontroluser.gif 176x98) ---- */
     lj_ctl_intensity_prefs(c);
     lj_window_client_rect(win, &cr);
-    CHECK(cr.w == 178 && !elem(c, LJ_CE_BUTTON, 0)->w->visible && osf->w->visible);
+    CHECK(cr.w == 222 && !elem(c, LJ_CE_BUTTON, 0)->w->visible && osf->w->visible);
     lj_ctl_intensity_prefs(c);
     lj_window_client_rect(win, &cr);
-    CHECK(cr.w == 474 && elem(c, LJ_CE_BUTTON, 0)->w->visible);
+    CHECK(cr.w == 594 && elem(c, LJ_CE_BUTTON, 0)->w->visible);
 
-    /* ---- Lamp: Off/Snap only (ME-27), lampcontrol.gif 133x100, the note box ---- */
+    /* ---- Lamp: Off/Snap only (ME-27), lampcontrol.gif 133x100 reduced x1.25 = 166x125 (ME-67), the note box ---- */
     lamp = lj_ctl_open_table(LJ_CTL_LAMP, &windows[1], &prof);
     CHECK(lamp != NULL);
     cl = lj_ctl_of(lamp);
-    CHECK(cl && lj_window_surface(lamp)->w == 133 && lj_window_surface(lamp)->h == 100 && lj_window_menu(lamp)->n == 1);
+    CHECK(cl && lj_window_surface(lamp)->w == 166 && lj_window_surface(lamp)->h == 125 && lj_window_menu(lamp)->n == 1);
     e = elem(cl, LJ_CE_OSF, 0);
     CHECK(e && never_fade(lamp, e->w));
-    CHECK(elem(cl, LJ_CE_BUTTON, 0) && elem(cl, LJ_CE_BUTTON, 1) && elem(cl, LJ_CE_BUTTON, 1)->w->x > elem(cl, LJ_CE_BUTTON, 0)->w->x && elem(cl, LJ_CE_BUTTON, 1)->w->x + elem(cl, LJ_CE_BUTTON, 1)->w->w <= 127);
-    CHECK(elem(cl, LJ_CE_NONE, 0) && elem(cl, LJ_CE_NONE, 0)->w->color == 0xFFFFFFu && elem(cl, LJ_CE_NONE, 0)->w->y == 20);   /* the white note panel */
+    CHECK(elem(cl, LJ_CE_BUTTON, 0) && elem(cl, LJ_CE_BUTTON, 1) && elem(cl, LJ_CE_BUTTON, 1)->w->x > elem(cl, LJ_CE_BUTTON, 0)->w->x && elem(cl, LJ_CE_BUTTON, 1)->w->x + elem(cl, LJ_CE_BUTTON, 1)->w->w <= 160 && elem(cl, LJ_CE_BUTTON, 0)->w->w == 49 && elem(cl, LJ_CE_BUTTON, 0)->w->h == 25);   /* lampon.gif 49x25 */
+    CHECK(elem(cl, LJ_CE_NONE, 0) && elem(cl, LJ_CE_NONE, 0)->w->color == 0xFFFFFFu && elem(cl, LJ_CE_NONE, 0)->w->y == 26);   /* the white note panel */
     CHECK(elem(cl, LJ_CE_NONE, 2) && strcmp(lj_w_caption(elem(cl, LJ_CE_NONE, 1)->w), "NOTE !") == 0 && strncmp(lj_w_caption(elem(cl, LJ_CE_NONE, 2)->w), "Lamp Off must be held", 21) == 0);   /* wrapped into lines */
     for (i = 1; elem(cl, LJ_CE_NONE, i); i++) printf("note line %d: %s\n", i, lj_w_caption(elem(cl, LJ_CE_NONE, i)->w));
 
@@ -242,11 +242,11 @@ int lj_test_controls_a(int argc, char **argv)
     {
         lj_window *ex = lj_ctl_open_table(LJ_CTL_EXTENDED, &windows[3], &prof);
         lj_ctl_win *cx = lj_ctl_of(ex);
-        CHECK(ex && cx && lj_window_surface(ex)->w == 283);
+        CHECK(ex && cx && lj_window_surface(ex)->w == 352);                       /* extended.gif 277 reduced x1.25 = 346 client + 2 x 3 frame */
         CHECK(elem(cx, LJ_CE_RADIO, 4) && elem(cx, LJ_CE_RADIO, 5) && elem(cx, LJ_CE_RADIO, 9) && !elem(cx, LJ_CE_RADIO, 10));
-        CHECK(elem(cx, LJ_CE_RADIO, 5)->w->parent != elem(cx, LJ_CE_RADIO, 4)->w->parent && elem(cx, LJ_CE_RADIO, 5)->w->parent->x == 139);
+        CHECK(elem(cx, LJ_CE_RADIO, 5)->w->parent != elem(cx, LJ_CE_RADIO, 4)->w->parent && elem(cx, LJ_CE_RADIO, 5)->w->parent->x == 174);
         CHECK(elem(cx, LJ_CE_FADER, 1) && elem(cx, LJ_CE_FADER, 1)->row == &extended_rows[1] && ((lj_w_fader *)elem(cx, LJ_CE_FADER, 1)->w)->max == 236);
-        CHECK(elem(cx, LJ_CE_BUTTON, 0) && elem(cx, LJ_CE_BUTTON, 0)->w->y == 81 && strcmp(lj_w_caption(elem(cx, LJ_CE_BUTTON, 0)->w), "Fixture Reset") == 0);
+        CHECK(elem(cx, LJ_CE_BUTTON, 0) && elem(cx, LJ_CE_BUTTON, 0)->w->y == 101 && strcmp(lj_w_caption(elem(cx, LJ_CE_BUTTON, 0)->w), "Fixture Reset") == 0);
     }
 
     /* ---- selection-wide writes: need the desktop's selection (a W1 track); the stub leaves no master ---- */

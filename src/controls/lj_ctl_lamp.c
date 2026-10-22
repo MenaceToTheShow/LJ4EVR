@@ -30,10 +30,10 @@ static int build_buttons(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row
 {
     int i, n = row->nbuttons, bw;
     if (n <= 0) return 0;
-    if (x + w > c->desc.client_width) w = c->desc.client_width - x - 1;   /* lampcontrol.gif: two 41-px buttons in a 127-px client */
+    if (x + w > c->desc.client_width) w = c->desc.client_width - x - 6;   /* lampcontrol.gif (reduced): two 41-px buttons in a 127-px client; x1.25 with the 1:1 anchor lampon.gif 49x25: two 49-px buttons in the 160-px client (ME-67) */
     bw = (w - (n - 1) * LJ_CTL_GAP) / n;
     for (i = 0; i < n; i++) {
-        lj_widget *b = lj_ctl_button_new(c, parent, row, &row->buttons[i], LJ_CE_BUTTON, row->buttons[i].caption, x + i * (bw + LJ_CTL_GAP), y, bw, LJ_CTL_ROW_H, 0);
+        lj_widget *b = lj_ctl_button_new(c, parent, row, &row->buttons[i], LJ_CE_BUTTON, row->buttons[i].caption, x + i * (bw + LJ_CTL_GAP), y, bw, LJ_CTL_ROW_H + 1, 0);   /* 25 tall: lampon.gif 49x25 */
         if (b) b->on_event = lamp_event;
         if (b && row->kind == LJ_W_LAMP_BTNS && row->buttons[i].caption && strstr(row->buttons[i].caption, "Lamp O")) {   /* lampcontrol.gif: lit / dark bulb glyphs, the caption becomes the hint (integrator; our art, D2) */
             lj_ctl_desc *d = (lj_ctl_desc *)b->desc;
@@ -44,7 +44,7 @@ static int build_buttons(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row
     return LJ_CTL_ROW_H;
 }
 
-/* the note box: white sunken panel over the rest of the client, the caption word-wrapped into labels (lampcontrol.gif y 56-93) */
+/* the note box: white sunken panel over the rest of the client, the caption word-wrapped into labels (lampcontrol.gif y 56-93, reduced x1.25: 55 px under the button row, rig item) */
 static int build_note(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row, int y)
 {
     int cw = c->desc.client_width, h = c->desc.client_height - y, line = 0, maxw = cw - 8;
@@ -57,7 +57,7 @@ static int build_note(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row, i
     d->color = LJ_CLR(0xFFFFFF); d->bevel_outer = LJ_BV_LOWERED;
     e->w = lj_w_panel_create(parent, d);
     f = lj_w_font_of(e->w);
-    while (*s && (line + 1) * f->height + 1 <= h) {                 /* three 13-px lines in the 40-px box (lampcontrol.gif y 56-93) */                 /* greedy wrap at spaces; a line is a label that points into the caption */
+    while (*s && (line + 1) * f->height + 1 <= h) {                 /* three 13-px lines in the 55-px box (lampcontrol.gif y 56-93, reduced x1.25) */   /* greedy wrap at spaces; a line is a label that points into the caption */
         const char *end = s, *brk = NULL;
         lj_ctl_elem *le;
         char *copy;

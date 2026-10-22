@@ -1,0 +1,23 @@
+LJ4 replay 1
+# gm_fade_under_freeze (ME-71; 11 S9 PROPOSAL, rig row; LJ_GM_FADE_RUNS_FROZEN): the GM Fade runner is a master
+# move (G11), not a scene fade (F20): it keeps stepping while frozen and unfreeze does not shift its t0. A 10 s
+# Fade Out started at tick 0 with a freeze over ticks 100..199 reaches gm 77 at tick 279 (255 - 255 * 6975 / 10000
+# = 77.1), 76 at tick 280 (76.5, truncated) and 0 at tick 400: the same ticks as without the freeze. With the old
+# t0 shift the GM would read 140 at tick 279 and the fade would end at tick 500.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+seq 1 name="one" scene st=1000 ft=50 ch 1:1=255:S
+cue 1
+slot 1 seq=1
+at 0 load_cue 1
+at 0 gm_fade out 10000
+expect_view 0 gm=255
+expect_view 99 gm=192
+at 100 freeze 1
+expect_view 100 freeze=1
+expect_view 150 gm=159
+at 200 freeze 0
+expect_view 200 freeze=0
+expect_view 279 gm=77
+expect_view 280 gm=76
+expect_view 400 gm=0

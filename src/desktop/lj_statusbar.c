@@ -13,7 +13,7 @@
 
 typedef struct { lj_widget base; char text[LJ_SB_COUNT][32]; uint8_t flag[LJ_SB_COUNT]; } lj_sb;
 
-static const struct { int w; const char *caption; } lj_sb_panels[LJ_SB_COUNT] = {   /* widths scaled from statusbar.gif (400 px) onto the 791-px client; rig item */
+static const struct { int w; const char *caption; } lj_sb_panels[LJ_SB_COUNT] = {   /* PROPOSAL rig (ME-87): widths scaled from statusbar.gif (400 px, a ~0.6 reduction) onto the 791-px client, not measured at 1:1 */
     { 72, "" }, { 84, "Running.." }, { 56, "" }, { 96, "Master 100%" }, { 92, "Seq. Modified" }, { 92, "Cue Modified" }, { 108, "CueList Modified" }, { 0, "Trig" },
 };
 static const lj_ctl_desc lj_sb_desc = { LJ_K_STATUSBAR, "sb_status", 0, 0, 791, LJ_SB_H, .align = LJ_AL_BOTTOM, .font = LJ_FONT_ARIAL14 };

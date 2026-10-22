@@ -28,19 +28,21 @@ static const lj_win_host *lj_ctl_host;
 static int (*lj_ctl_confirm_fn)(const char *, const char *, void *);
 static void *lj_ctl_confirm_ud;
 
-/* Window chrome per kind: client sizes from the 1:1 GIFs (note 07 s9, s14); 0 = the
- * built content's bounding box + 2 px. The class name is what lj_formsini_section()
- * turns into the Main.Ini/forms.ini section ([INTENSITY], [LEVELS], ... lj_ctl.h). */
+/* Window chrome per kind: client sizes from the CHM GIFs (note 07 s9, s14); 0 = the
+ * built content's bounding box + 2 px. levelcontrol.gif is 1:1; intensitycontrol,
+ * lampcontrol and extended are 0.8 reductions (ME-67) and are read x1.25 with the
+ * normal 19-px caption LJ2's control windows carry. The class name is what
+ * lj_formsini_section() turns into the Main.Ini/forms.ini section ([INTENSITY], [LEVELS], ... lj_ctl.h). */
 static const struct { const char *name, *cls; lj_border_style border; int cw, ch; } lj_ctl_chrome[LJ_CTL_COUNT] = {
-    { "IntensityControl", "TIntensity", LJ_BS_TOOLWINDOW, 474, 58 },   /* measured from intensitycontrol.gif 480x98: frame 3, caption 15, menu 19 */
+    { "IntensityControl", "TIntensity", LJ_BS_SINGLE,     594, 78 },   /* measured from intensitycontrol.gif 480x98, reduced x1.25 = 600x122, rig item: frame 3, caption 19, menu 19; 3 rows x 26 */
     { "MovementControl",  "TMovement",  LJ_BS_TOOLWINDOW, 0, 0 },
     { "ColorControl",     "TColors",    LJ_BS_TOOLWINDOW, 0, 0 },
     { "GoboControl",      "TGobos",     LJ_BS_TOOLWINDOW, 0, 0 },
     { "BeamControl",      "TBeam",      LJ_BS_TOOLWINDOW, 0, 0 },
     { "EffectsControl",   "TEffects",   LJ_BS_TOOLWINDOW, 0, 0 },
     { "LevelControl",     "TLevels",    LJ_BS_DIALOG,     266, 206 },  /* measured from levelcontrol.gif 272x250: frame 3, caption 19, menu 19 */
-    { "LampControl",      "TLamp",      LJ_BS_TOOLWINDOW, 127, 60 },   /* measured from lampcontrol.gif 133x100 */
-    { "ExtendedControl",  "TExtended",  LJ_BS_TOOLWINDOW, 277, 107 },  /* measured from extended.gif 277x81 (the two groups) + a Fixture Reset row, PROPOSAL (15/01 s10) */
+    { "LampControl",      "TLamp",      LJ_BS_SINGLE,     160, 81 },   /* measured from lampcontrol.gif 133x100, reduced x1.25 = 166x125, rig item */
+    { "ExtendedControl",  "TExtended",  LJ_BS_SINGLE,     346, 134 },  /* measured from extended.gif 277x81 (the two groups), reduced x1.25 = 346x101, rig item; + a Fixture Reset row, PROPOSAL (15/01 s10) */
     { "GenericControl",   "TGeneric",   LJ_BS_TOOLWINDOW, 0, 0 },
     { "RgbControl",       "TRgb",       LJ_BS_TOOLWINDOW, 0, 0 },
 };
@@ -494,7 +496,7 @@ static void build_rows(lj_ctl_win *c)
     }
     start = c->n;
     for (i = 0; i < t->nspecials; i++) {
-        h = lj_ctl_row_build(c->win, root, &t->specials[i], LJ_CTL_SPEC_X, sy, (c->cw_full ? c->cw_full : 474) - LJ_CTL_SPEC_X);
+        h = lj_ctl_row_build(c->win, root, &t->specials[i], LJ_CTL_SPEC_X, sy, (c->cw_full ? c->cw_full : 594) - LJ_CTL_SPEC_X);
         if (h > 0) sy += LJ_CTL_PITCH;
     }
     for (i = start; i < c->n; i++) c->e[i].special = 1;
@@ -513,7 +515,7 @@ lj_window *lj_ctl_open_table(enum lj_ctl_kind kind, const lj_ctl_window *table, 
     if (c->win) { if (c->table == table) { if (lj_ctl_host && lj_ctl_host->show) lj_ctl_host->show(lj_ctl_host->ud, c->win, 1); return c->win; } lj_ctl_close(kind); }
     memset(c, 0, sizeof *c);
     c->kind = kind; c->table = table; c->profile = p; c->specials_shown = 1;
-    c->cw_full = lj_ctl_chrome[kind].cw; c->cw_plain = LJ_CTL_X + LJ_CTL_BAR_W + 2;   /* intensitycontroluser.gif 176x98: the three left rows alone */
+    c->cw_full = lj_ctl_chrome[kind].cw; c->cw_plain = LJ_CTL_X + LJ_CTL_BAR_W + 2;   /* intensitycontroluser.gif 176x98 (reduced): the three left rows alone */
     c->desc.name = lj_ctl_chrome[kind].name; c->desc.class_name = lj_ctl_chrome[kind].cls; c->desc.caption = table->caption;
     c->desc.client_width = c->cw_full ? c->cw_full : 100; c->desc.client_height = lj_ctl_chrome[kind].ch ? lj_ctl_chrome[kind].ch : 100;
     c->desc.text_height = 13; c->desc.color = LJ_CLR(LJ_CLR_BTNFACE); c->desc.font = LJ_FONT_SANS13; c->desc.font_name = "MS Sans Serif"; c->desc.font_height = -11;

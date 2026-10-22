@@ -92,7 +92,7 @@ log "W1 acceptance 4: sequence"
 open seq_form
 open intensity
 click intensity.row1_shutter                      # Shutter Closed -> Shutter Open (ch 1)
-rclick intensity.row2_bar 130 8                   # right-click the right arrow: intensity 100 % (ch 2) [F16]
+rclick intensity.row2_bar 160 8                   # right-click the right arrow (bar 169 wide, ME-67): intensity 100 % (ch 2) [F16]
 click intensity.row2_fade                         # the touched channel armed Fade (hand profile default): Fade -> Off
 click intensity.row2_fade                         # Off -> Snap ("all Snap")
 open movement
@@ -147,8 +147,10 @@ click TSequenceForm.sb11                          # Add Sequence to Current Cue 
 assert_text TCurrentCue.lj_cue_grid.1.0 "0001"    # row 1 = slot 1, col 0 = No
 assert_text TCurrentCue.lj_cue_grid.1.1 "first"
 assert_text TCurrentCue.lj_cue_grid.1.3 "1:2"
-assert_text TCurrentCue.lj_cue_grid.1.7 "fwd"
-assert_text TCurrentCue.lj_cue_grid.1.8 "auto"
+assert_text TCurrentCue.lj_cue_grid.1.4 "1:00"   # ST / FT of the scene the slot is at, s:hh with the colon (cuecontrol.gif at 8x, ME-75)
+assert_text TCurrentCue.lj_cue_grid.1.5 "0:05"
+assert_text TCurrentCue.lj_cue_grid.1.7 "Fwd"    # display words capitalised like the GIF (record words stay fwd / auto)
+assert_text TCurrentCue.lj_cue_grid.1.8 "Auto"
 assert_text main.sb_cuemod "Cue Modified"
 click TSequenceForm.sb8                           # New/Clear the current sequence: it sits above the cue [F23], the cue plays alone
 assert_caption TSequenceForm "SEQUENCE [0000 No Name]"
