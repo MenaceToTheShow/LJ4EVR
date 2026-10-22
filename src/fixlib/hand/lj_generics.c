@@ -72,7 +72,7 @@ static const lj_profile lj_gn_sw32 = LJ_SWITCH(101, 32, "SW-32", "32 Channel");
                           { LJ_W_LEVEL_FADER, o + 2, 1, "B" #u, NULL, 0, 255, 0, LJ_HAND_FADE, NULL, 0, NULL, LJ_STATES_ALL }
 static const lj_ctl_row lj_gn_rgb_rows[30] = { LJ_RGBROWS(1, 0), LJ_RGBROWS(2, 3), LJ_RGBROWS(3, 6), LJ_RGBROWS(4, 9), LJ_RGBROWS(5, 12),
                                                LJ_RGBROWS(6, 15), LJ_RGBROWS(7, 18), LJ_RGBROWS(8, 21), LJ_RGBROWS(9, 24), LJ_RGBROWS(10, 27) };
-#define LJ_RGBWIN(n) static const lj_ctl_window lj_gn_rgbwin_##n[1] = { { LJ_CTL_RGBPACK, "Colors", lj_ctl_menu_std, lj_gn_rgb_rows, n, NULL, 0 } }
+#define LJ_RGBWIN(n) static const lj_ctl_window lj_gn_rgbwin_##n[1] = { { LJ_CTL_RGBPACK, "Colors", lj_ctl_menu_rgb, lj_gn_rgb_rows, n, NULL, 0 } }
 LJ_RGBWIN(12); LJ_RGBWIN(18); LJ_RGBWIN(24); LJ_RGBWIN(30);
 #define LJ_RGBPACK(id_, n, tag_, mode_) { .id = id_, .tag = tag_, .manufacturer = "Generic", .name = "RGB Pack", .mode = mode_, \
     .footprint = n, .channel_class = { LJ_R##n(LJ_CH_LEVEL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 1, .ext_gm = { LJ_R##n(1) }, \

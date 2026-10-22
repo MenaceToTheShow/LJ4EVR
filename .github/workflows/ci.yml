@@ -38,13 +38,15 @@ jobs:
       - name: Generated files are current
         # Each --check tool lands with its wave (design 9.2); run the ones that exist.
         run: |
-          for t in qxf2c fontpack artpack gen_vectors; do
+          for t in qxf2c fontpack artpack gen_vectors exe_profiles_check; do
             if [ -f "tools/$t.py" ]; then echo "== $t"; python3 -I "tools/$t.py" --check; fi
           done
 
   linux-gcc-asan:
     if: github.event_name != 'pull_request'
     runs-on: [self-hosted, lj4evr]
+    outputs:
+      replay_sha: ${{ steps.replay.outputs.sha }}
     container:
       image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
       credentials:
@@ -55,6 +57,8 @@ jobs:
       - run: cmake --preset ci-linux-asan
       - run: cmake --build --preset ci-linux-asan
       - run: ctest --preset ci-linux-asan
+      - id: replay   # ME-78: every replay scenario's frames (ctest replay_dump), compared in determinism by sha
+        run: echo "sha=$(sha256sum build-linux-asan/replay-frames.bin | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - run: build-linux-asan/lj4evr_tests dump-frames frames-linux.bin
       - uses: actions/upload-artifact@v4
         with:
@@ -78,6 +82,8 @@ jobs:
 
   windows-msvc:
     runs-on: windows-latest
+    outputs:
+      replay_sha: ${{ steps.replay.outputs.sha }}
     defaults:
       run:
         shell: bash
@@ -118,6 +124,8 @@ jobs:
           findstr /c:"no binding for handler" selftest-debug.txt && exit /b 1
           findstr /c:"unknown event" selftest-debug.txt && exit /b 1
           cd build-release-win && cpack -G NSIS || exit /b 1
+      - id: replay   # ME-78
+        run: echo "sha=$(sha256sum build-release-win/replay-frames.bin | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: frames-windows
@@ -131,6 +139,8 @@ jobs:
 
   macos-clang:
     runs-on: macos-14
+    outputs:
+      replay_sha: ${{ steps.replay.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
       - run: brew install ninja
@@ -147,6 +157,8 @@ jobs:
       - run: cmake --preset release-mac -DFETCHCONTENT_SOURCE_DIR_SDL3="$RUNNER_TEMP/sdl3-src"
       - run: cmake --build --preset release-mac
       - run: ctest --preset release-mac
+      - id: replay   # ME-78
+        run: echo "sha=$(shasum -a 256 build-release-mac/replay-frames.bin | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - run: build-release-mac/lj4evr.app/Contents/MacOS/lj4evr --selftest
       - run: build-release-mac/lj4evr_tests dump-frames frames-macos.bin
       - run: cd build-release-mac && cpack -G DragNDrop
@@ -181,3 +193,13 @@ jobs:
           cmp frames-linux.bin frames-windows.bin
           cmp frames-linux.bin frames-macos.bin
           sha256sum frames-*.bin
+      - name: Three OSes, one replay-frames.bin (ME-78, every replay scenario)
+        env:
+          L: ${{ needs.linux-gcc-asan.outputs.replay_sha }}
+          W: ${{ needs.windows-msvc.outputs.replay_sha }}
+          M: ${{ needs.macos-clang.outputs.replay_sha }}
+        run: |
+          echo "replay-frames.bin linux   $L"
+          echo "replay-frames.bin windows $W"
+          echo "replay-frames.bin macos   $M"
+          test -n "$L" && test "$L" = "$W" && test "$L" = "$M"

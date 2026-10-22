@@ -84,10 +84,25 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
 
 - `replay_all` runs the 16 scenarios under `tests/engine/replay/` on every
   job; `replay_dump` writes `replay-frames.bin` (103.8 MB) into the build
-  directory and nothing compares it yet (ME-78, W2): the `determinism` job
+  directory and nothing compares it yet (ME-78, W2; done in W2, below): the `determinism` job
   compares the 400-tick `dump-frames` streams of the three OSes only.
 - `windows-msvc` is the one job that runs a Debug `ctest` (ME-70). The Linux
   ASan job is Debug too, but gcc has no `/RTC1`.
 - `generate-check` runs `qxf2c`, `fontpack`, `artpack` and `gen_vectors`
-  `--check`; `exe_profiles_check.py --check` is not in the loop yet (ME-76, W2).
+  `--check` (W1; W2 adds `exe_profiles_check`, below).
 - Green run of the fix pass: see `docs/w1-integration.md` section 10.
+
+## W2
+
+- `generate-check` runs `qxf2c`, `fontpack`, `artpack`, `gen_vectors` and
+  `exe_profiles_check` `--check` (ME-76). Without `reference/` the last one checks the
+  committed `binding` column against `src/fixlib/hand/*.c` and `tools/qxf_map.tsv`.
+- `replay_all` runs the 24 scenarios under `tests/engine/replay/` (W1 15, W2 9);
+  `wire/drift_600s_two_slots_wire.lj4r` is its own row (`replay_wire_drift`), outside the
+  glob. `replay_dump` writes `replay-frames.bin` (116,538,720 bytes) into each build
+  directory. The Linux ASan, Windows Release and macOS jobs each publish its sha256 as a
+  job output (`replay_sha`), and `determinism` prints the three and fails unless they are
+  equal (ME-78). It still compares the 400-tick `dump-frames` files byte for byte too.
+- The desktop, controls and windows libraries call each other, so CMake links them as a
+  static cycle. GNU ld reads archives once, in order; the W2 pre-integration run failed
+  to link `lj4evr_render` on Linux before this.

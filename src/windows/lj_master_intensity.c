@@ -274,7 +274,7 @@ void lj_master_intensity_refresh(void)
 /* ---- hotkeys (io/lj_actions.h intensity rows) ---- */
 static void fn_master(enum lj_fn fn, int edge, uint32_t prog, void *ud)
 {
-    (void)prog; (void)ud;
+    (void)ud;
     if (fn == LJ_FN_BLACKOUT_FLASH) { post3(LJ_CMD_BLACKOUT, 0, (uint32_t)edge, 0); return; }
     if (!edge) return;
     switch (fn) {
@@ -287,6 +287,7 @@ static void fn_master(enum lj_fn fn, int edge, uint32_t prog, void *ud)
     case LJ_FN_MASTER_PLUS10:    lj_master_intensity_set(0, s.level[0] + 10); break;
     case LJ_FN_MASTER_MINUS1:    lj_master_intensity_set(0, s.level[0] - 1); break;
     case LJ_FN_MASTER_MINUS10:   lj_master_intensity_set(0, s.level[0] - 10); break;
+    case LJ_FN_MASTER_LEVEL:     lj_master_intensity_set(0, (int)((prog > 100u ? 100u : prog) * LJ_GM_DOMAIN + 50u) / 100); break;   /* W2 midi CC extension: prog = 0..100 % */
     default: break;
     }
 }
@@ -294,7 +295,7 @@ static void fn_master(enum lj_fn fn, int edge, uint32_t prog, void *ud)
 void lj_master_intensity_bind_fns(void)
 {
     static const enum lj_fn rows[] = { LJ_FN_TOGGLE_MASTER_INTENSITY, LJ_FN_BLACKOUT, LJ_FN_BLACKOUT_RESTORE, LJ_FN_BLACKOUT_FLASH,
-                                       LJ_FN_MASTER_OFF, LJ_FN_MASTER_FULL, LJ_FN_MASTER_PLUS1, LJ_FN_MASTER_PLUS10, LJ_FN_MASTER_MINUS1, LJ_FN_MASTER_MINUS10 };
+                                       LJ_FN_MASTER_OFF, LJ_FN_MASTER_FULL, LJ_FN_MASTER_PLUS1, LJ_FN_MASTER_PLUS10, LJ_FN_MASTER_MINUS1, LJ_FN_MASTER_MINUS10, LJ_FN_MASTER_LEVEL };
     int i;
     for (i = 0; i < LJ_COUNT_OF(rows); i++) lj_fn_bind(rows[i], fn_master, NULL);
     s.level[0] = LJ_GM_DOMAIN;

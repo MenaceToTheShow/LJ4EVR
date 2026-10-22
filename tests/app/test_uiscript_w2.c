@@ -247,6 +247,24 @@ int lj_test_uiscript_w2(int argc, char **argv)
     CHECK(c->view.pending_bg == 99 && strstr(logged, "background cue 0099: load error") != NULL && lj_table_get(&show->bgcues, 99) == NULL);
     lj_lock(); lj_engine_tick(e, lj_clock_us() + 75000u); lj_unlock();   /* no crash on the next tick */
 
+    /* ---- 6. W2 integration: forms.ini [CUE] "Flash Auto Release" = Release Flash on Load [03 s5.10] ---- */
+    CHECK(lj_library_record_path(&lib, LJ_REC_CUE, 7, path, sizeof path) == 0 && lj_cue_save(path, cue) == 0);
+    c->forms_ini = lj_ini_new();
+    {   int pass;
+        for (pass = 0; pass < 2; pass++) {                     /* pass 0: box clear, the latched flash survives the load; pass 1: box set, released */
+            lj_ini_seti(c->forms_ini, "CUE", "Flash Auto Release", pass);
+            memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_FLASH; cmd.b = 1; cmd.c = 1; cmd.seq[0] = lj_table_get(&show->sequences, 3); cmd.at_us = lj_clock_us();
+            lj_lock(); lj_engine_cmd(e, &cmd); lj_engine_tick(e, lj_clock_us() + 100000u); r = lj_engine_runner(e, LJ_RUN_FLASH); lj_unlock();
+            CHECK(r && r->seq_no == 3);
+            CHECK(lj_app_load_cue(7, 0) == 0);
+            lj_lock(); lj_engine_tick(e, lj_clock_us() + 125000u); r = lj_engine_runner(e, LJ_RUN_FLASH); lj_unlock();
+            CHECK(r && (pass ? r->seq == NULL : r->seq_no == 3));
+            memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_FLASH; cmd.at_us = lj_clock_us();
+            lj_lock(); lj_engine_cmd(e, &cmd); lj_engine_tick(e, lj_clock_us() + 150000u); lj_unlock();
+        }
+    }
+    lj_ini_free(c->forms_ini); c->forms_ini = NULL;
+
     /* ---- teardown ---- */
     lj_app_seam_stop();
     lj_fn_unbind_all();

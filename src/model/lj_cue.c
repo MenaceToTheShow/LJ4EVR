@@ -47,8 +47,10 @@ int lj_cue_load(const char *path, lj_cue *out, char *err, size_t cap)
             s->enabled = (uint8_t)lj_kv_range(v, "on", 1, 0, 1, &rbad);
             s->trig = (uint8_t)lj_kv_word(v, "trig", lj_trig_words, LJ_TRIG_AUTO);
             s->dir = (uint8_t)lj_kv_word(v, "dir", lj_dir_words, LJ_DIR_FWD);
-            s->scenes_per_trig = (uint8_t)lj_kv_range(v, "spt", 1, 1, 255, &rbad);          /* ME-77: 257 fails */
-            s->audio_trigs_per_trig = (uint8_t)lj_kv_range(v, "atpt", 1, 1, 255, &rbad);
+            s->scenes_per_trig = (uint8_t)lj_kv_range(v, "spt", 1, 0, 255, &rbad);          /* ME-77: 257 fails; 0 = 1 below (v0.1.0 wrote spt=0 from Add Sequence to Current Cue) */
+            s->audio_trigs_per_trig = (uint8_t)lj_kv_range(v, "atpt", 1, 0, 255, &rbad);
+            if (!s->scenes_per_trig) s->scenes_per_trig = 1;
+            if (!s->audio_trigs_per_trig) s->audio_trigs_per_trig = 1;
             s->trig_on_load = (uint8_t)lj_kv_range(v, "tol", 0, 0, 1, &rbad);
             s->first = (uint16_t)lj_kv_range(v, "first", 0, 0, LJ_SCENES_MAX, &rbad);
             s->last = (uint16_t)lj_kv_range(v, "last", 0, 0, LJ_SCENES_MAX, &rbad);

@@ -14,6 +14,8 @@
 #include "core/lj_str.h"
 #include "core/lj_types.h"
 #include "core/lj_textrec.h"
+#include "model/lj_kv.h"
+#include "model/lj_model.h"
 
 enum { LJ_VK_SHIFT = 0x10, LJ_VK_CONTROL = 0x11, LJ_VK_MENU = 0x12, LJ_VK_ESCAPE = 0x1B, LJ_VK_F1 = 0x70, LJ_VK_F12 = 0x7B };   /* Windows virtual-key codes, the numbers LJ2's tables carry */
 
@@ -106,18 +108,21 @@ int lj_hotkeys_load(const char *path, lj_hotkeys *out, char *err, size_t cap)
         if (strcmp(key, "name") == 0) {
             lj_hk_unquote(out->name, sizeof out->name, val);
         } else if (strcmp(key, "enabled") == 0) {
-            int en = 1, dl = 1;
-            if (sscanf(val, "%d dialogs=%d", &en, &dl) < 1) { lj_hk_err(err, cap, "bad enabled line"); r = -1; break; }
+            int bad = 0;                                       /* ME-77: validated before the cast */
+            long en = lj_kv_range_lead(val, 1, 0, 1, &bad), dl = lj_kv_range(val, "dialogs", 1, 0, 1, &bad);
+            if (bad) { lj_hk_err(err, cap, "bad enabled line"); r = -1; break; }
             out->enabled = en != 0; out->disable_in_dialogs = dl != 0;
         } else if (strcmp(key, "key") == 0) {
-            unsigned vk, sh, ct, sc, num = 0;
+            int bad = 0;                                       /* ME-77: every number range-checked before the cast */
+            long vk = lj_kv_range(val, "vk", -1, 0, 0xFFFF, &bad), sh = lj_kv_range(val, "shift", 0, 0, 1, &bad), ct = lj_kv_range(val, "ctrl", 0, 0, 1, &bad),
+                 sc = lj_kv_range(val, "scrl", 0, 0, 1, &bad), num = lj_kv_range(val, "num", 0, 0, LJ_NUMBER_MAX, &bad);
             lj_hotkey k;
-            if (sscanf(val, "vk=%u shift=%u ctrl=%u scrl=%u fn=%63s num=%u", &vk, &sh, &ct, &sc, fname, &num) < 5 || vk > 0xFFFF || sh > 1 || ct > 1 || sc > 1) {
+            if (bad || vk < 0 || lj_kv_get(val, "fn", fname, sizeof fname) != 1) {
                 lj_hk_err(err, cap, "bad key line: %s", val); r = -1; break;
             }
             if (out->n >= LJ_HOTKEYS_MAX) { lj_hk_err(err, cap, "more than %d hotkeys", LJ_HOTKEYS_MAX); r = -1; break; }
             memset(&k, 0, sizeof k);
-            k.key = (uint16_t)vk; k.shift = (uint8_t)sh; k.ctrl = (uint8_t)ct; k.scroll = (uint8_t)sc; k.prog_num = num;
+            k.key = (uint16_t)vk; k.shift = (uint8_t)sh; k.ctrl = (uint8_t)ct; k.scroll = (uint8_t)sc; k.prog_num = (uint32_t)num;
             k.fn = (uint16_t)lj_fn_by_name(fname);
             if (k.fn == LJ_FN_NONE) { lj_hk_err(err, cap, "unknown function %s", fname); r = -1; break; }
             out->e[out->n++] = k;

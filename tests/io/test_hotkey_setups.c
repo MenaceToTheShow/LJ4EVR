@@ -65,6 +65,19 @@ int lj_test_hotkey_setups(int argc, char **argv)
     { FILE *f = fopen(path, "wb"); if (f) { fputs("LJ4 hot 1\nkey vk=66 shift=0 ctrl=0 scrl=0 fn=LJ_FN_NOPE\n", f); fclose(f); } }
     CHECK(lj_hotkeys_setup_load(dir, 2, &h, err, sizeof err) == -1 && strstr(err, "LJ_FN_NOPE") != NULL && strcmp(h.name, "Setup 2") == 0 && h.n == 0);
     CHECK(lj_hotkeys_setup_load(dir, 0, &h, err, sizeof err) == -1 && lj_hotkeys_setup_load(dir, 9, &h, err, sizeof err) == -1);
+    {   /* ME-77: out-of-range numbers fail the line instead of aliasing (vk 65537, shift 2, num -1 / 2^32+1, enabled 256) */
+        static const char *const bad[] = { "key vk=65537 shift=0 ctrl=0 scrl=0 fn=LJ_FN_BLACKOUT", "key vk=66 shift=2 ctrl=0 scrl=0 fn=LJ_FN_BLACKOUT",
+                                           "key vk=66 shift=0 ctrl=0 scrl=0 fn=LJ_FN_PROG_CUE num=-1", "key vk=66 shift=0 ctrl=0 scrl=0 fn=LJ_FN_PROG_CUE num=4294967297",
+                                           "enabled 256 dialogs=1" };
+        size_t i;
+        for (i = 0; i < sizeof bad / sizeof bad[0]; i++) {
+            FILE *f = fopen(path, "wb");
+            if (f) { fprintf(f, "LJ4 hot 1\n%s\n", bad[i]); fclose(f); }
+            CHECK(lj_hotkeys_load(path, &h, err, sizeof err) == -1 && h.n == 0);
+        }
+        { FILE *f = fopen(path, "wb"); if (f) { fputs("LJ4 hot 1\nenabled 0 dialogs=0\nkey vk=66 shift=1 ctrl=0 scrl=0 fn=LJ_FN_PROG_CUE num=99999999\n", f); fclose(f); } }
+        CHECK(lj_hotkeys_load(path, &h, err, sizeof err) == 0 && h.n == 1 && h.e[0].prog_num == 99999999u && h.e[0].shift == 1 && h.enabled == 0);
+    }
 
     CHECK(lj_hotkeys_setup_of_file("Setup1.Hot") == 1 && lj_hotkeys_setup_of_file("SETUP8.HOT") == 8);
     CHECK(lj_hotkeys_setup_of_file("C:\\LJ\\User\\Default\\Hotkeys\\Setup4.Hot") == 4 && lj_hotkeys_setup_of_file("lib/Hotkeys/setup2.hot") == 2);

@@ -24,6 +24,7 @@ enum { LJ_BG_FILES = 99, LJ_SCENES_MAX = 999, LJ_PRESETS = 99, LJ_USER_GROUPS = 
 #ifndef LJ_STATICS2_SLOTS_PER_PAGE
 #define LJ_STATICS2_SLOTS_PER_PAGE 20   /* 14 sB.8 item 2 PROPOSAL; the same macro as engine/lj_engine_rules.h (the design's rules header is below the model, so both spell it) */
 #endif
+#define LJ_STATICS2_SLOTS_MAX 64        /* ME-30 cap: slots stored per page and the global-index stride; n per page visible, LJ_STATICS2_SLOTS_PER_PAGE (20) default, PROPOSAL rig 14 sB.8 item 2 */
 
 typedef enum { LJ_OFF = 0, LJ_SNAP = 1, LJ_FADE = 2 } lj_fstate;         /* 03 s2; byte values as .seq implies, 18 s4 */
 
@@ -72,7 +73,7 @@ typedef struct { char name[64], type[64]; uint8_t activation /*enum lj_activatio
                  uint8_t replace /*enum lj_replace*/;
                  uint32_t fade_ms; uint8_t level_pct, transparent; uint64_t groups;
                  uint8_t kind /*enum lj_static_kind*/; uint32_t link_seq; uint16_t link_scene; lj_scene *scene; } lj_static_slot;  /* 14 sB */
-typedef struct { char name[64]; uint16_t n; lj_static_slot slot[LJ_STATICS2_SLOTS_PER_PAGE]; } lj_static_page;
+typedef struct { char name[64]; uint16_t n; lj_static_slot slot[LJ_STATICS2_SLOTS_MAX]; } lj_static_page;
 
 typedef struct { uint8_t kind /*enum lj_fixture_kind*/; uint16_t profile_id;   /* BUILTIN: exe row id 0-200 (LJ2's own Config.dat type code) or extra >= 1000, section 6.1 */
                  char gs2_file[64];                         /* GS2: UserFixtureDef\<name>.GS2 */

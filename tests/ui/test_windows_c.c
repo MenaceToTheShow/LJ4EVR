@@ -398,6 +398,7 @@ static void test_w2(void)
     CHECK(lj_intensity_groups_tab(2) == 0 && lj_intensity_groups_assign(0) == 1 && lj_intensity_groups_group_of(0) == 2);
     CHECK(sh->fixture[0].intensity_group == 0);                                         /* a working copy until Save */
     CHECK(lj_intensity_groups_save() == 0 && sh->fixture[0].intensity_group == 2);
+    wc_golden(lj_intensity_groups_window(), "WIN_INTENSITY_GROUPS");                   /* W2 integration: tab 2 with the MAC 500 assigned */
     lj_intensity_groups_close();
 
     /* Global Patch: edit channel 6 (code 5) on the working copy, Apply = ONE GLOBAL_PATCH with show->patch */
@@ -508,6 +509,7 @@ static void test_w2(void)
             sc->val[ch] = 123; sc->state[ch] = LJ_SNAP;
             CHECK(lj_user_palettes_record(-1, "Red", 0) == 0 && lj_user_palettes_count() == 1);
             CHECK(strcmp(lj_w_caption(lj_window_find(lj_user_palettes_window(), "lentries")), "1 Entries") == 0);
+            wc_golden(lj_user_palettes_window(), "WIN_USER_PALETTE");                  /* W2 integration: "User Color Palette" with entry 1 Red */
             sc->val[ch] = 5;
             CHECK(lj_user_palettes_assign(0, 0) >= 1 && sc->val[ch] == 123);
             CHECK(lj_user_palettes_clear(0, 0) >= 1 && sc->state[ch] == LJ_OFF);

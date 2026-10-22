@@ -34,6 +34,10 @@ static void lj_free_bg(void *p) { lj_bgcue_free((lj_bgcue *)p); }
 void lj_show_free(lj_show *s)
 {
     if (!s) return;
+    /* a loaded record is both the table entry and the current one (lj_app_load_cue / _seq): free it once */
+    if (s->current_seq && lj_table_get(&s->sequences, s->current_seq->number) == s->current_seq) s->current_seq = NULL;
+    if (s->current_cue && lj_table_get(&s->cues, s->current_cue->number) == s->current_cue) s->current_cue = NULL;
+    if (s->current_cl && lj_table_get(&s->cuelists, s->current_cl->number) == s->current_cl) s->current_cl = NULL;
     lj_table_free(&s->sequences, lj_free_seq);
     lj_table_free(&s->cues, lj_free_cue);
     lj_table_free(&s->cuelists, lj_free_cl);

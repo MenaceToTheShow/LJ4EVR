@@ -93,7 +93,7 @@ static void panel_fill(void)
 {
     static const char *const rb[5] = { "rbAbs", "rbLTP", "rbHTP", "rb0", "rb255" };
     const lj_patch_ch *p;
-    char t[8];
+    char t[12];
     int k, on = gp->sel >= 0;
     lj_widget *clb = find("clbGroups");
     gp->filling = 1;

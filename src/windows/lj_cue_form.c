@@ -423,15 +423,13 @@ int lj_cue_form_add_sequence(uint32_t seq_no)
     lj_cue *cue = cue_rec();
     int i;
     if (!cue || seq_no == 0) return -1;
-    for (i = 0; i < LJ_CUE_SLOTS && cue->slot[i].seq; i++) { }   /* ponytail: lj_cue_find_free once the model body lands; the scan is three lines */
-    if (i == LJ_CUE_SLOTS) { lj_log("lj_cue_form: Add Sequence to Current Cue: no free slot"); return -1; }
     lj_lock();
-    memset(&cue->slot[i], 0, sizeof cue->slot[i]);
-    cue->slot[i].seq = seq_no; cue->slot[i].enabled = 1;        /* trig auto, dir fwd, time CUE, no limits [03 s5.5 defaults] */
+    i = lj_cue_add_sequence(cue, seq_no, 0);                     /* the model's slot defaults (scenes/trig 1, audio trigs 1) [03 s5.5]; W1 memset them to 0 */
     lj_unlock();
+    if (i < 0) { lj_log("lj_cue_form: Add Sequence to Current Cue: no free slot"); return -1; }
     modified();
     lj_cue_form_refresh();
-    return i + 1;
+    return i;
 }
 
 void lj_cue_form_new_cue(void)

@@ -30,7 +30,7 @@ int lj_statics_load(const char *path, lj_static_page **pages, int *npages, char 
         } else if (strcmp(k, "slot") == 0) {
             long i = strtol(v, &e, 10);
             if (cur < 0) { bad = "slot before the first page"; break; }
-            if (e == v || i < 1 || i > LJ_STATICS2_SLOTS_PER_PAGE) { bad = "slot index not 1..20"; break; }
+            if (e == v || i < 1 || i > LJ_STATICS2_SLOTS_MAX) { bad = "slot index not 1..64"; break; }
             slot = &(*pages)[cur].slot[i - 1];
             if (lj_kv_get(v, "name", q, sizeof q) == 1) lj_str_copy(slot->name, sizeof slot->name, q);
             if (lj_kv_get(v, "type", q, sizeof q) == 1) lj_str_copy(slot->type, sizeof slot->type, q);
@@ -87,7 +87,7 @@ static int lj_statics_write(const char *path, const lj_static_page *pages, int n
         const lj_static_page *pg = &pages[p];
         lj_kv_quote(qn, sizeof qn, pg->name);
         ok = lj_rec_write(rec, "page ", "%d name=%s n=%u", p + 1, qn, pg->n) == 0;
-        for (i = 0; ok && i < LJ_STATICS2_SLOTS_PER_PAGE; i++) {
+        for (i = 0; ok && i < LJ_STATICS2_SLOTS_MAX; i++) {
             const lj_static_slot *s = &pg->slot[i];
             if (s->kind == LJ_STATIC_EMPTY && !s->name[0]) continue;
             lj_kv_quote(qn, sizeof qn, s->name);
@@ -110,7 +110,7 @@ const char *lj_statics_validate(const lj_static_page *pages, int npages)
     for (p = 0; p < npages; p++) {
         if (!memchr(pages[p].name, 0, sizeof pages[p].name)) return "page name not NUL-terminated";
         if (pages[p].n < 1 || pages[p].n > LJ_STATICS2_SLOTS_MAX) return "visible slots not 1..64";   /* ME-30 */
-        for (i = 0; i < LJ_STATICS2_SLOTS_PER_PAGE; i++) {
+        for (i = 0; i < LJ_STATICS2_SLOTS_MAX; i++) {
             const lj_static_slot *s = &pages[p].slot[i];
             if (!memchr(s->name, 0, sizeof s->name) || !memchr(s->type, 0, sizeof s->type)) return "slot name or type not NUL-terminated";
             if (s->activation > LJ_ACT_FLASH) return "activation not toggle/flash";
@@ -131,7 +131,7 @@ void lj_statics_free(lj_static_page *pages, int npages)
 {
     int p, i;
     for (p = 0; p < npages; p++)
-        for (i = 0; i < LJ_STATICS2_SLOTS_PER_PAGE; i++) free(pages[p].slot[i].scene);
+        for (i = 0; i < LJ_STATICS2_SLOTS_MAX; i++) free(pages[p].slot[i].scene);
     free(pages);
 }
 
@@ -212,13 +212,13 @@ int lj_static_slot_link(lj_static_slot *slot, uint32_t seq, uint16_t scene)
 
 int lj_static_global_index(int page, int slot)
 {
-    if (page < 1 || page > LJ_STATIC_PAGES_MAX || slot < 1 || slot > LJ_STATICS2_SLOTS_PER_PAGE) return -1;
-    return (page - 1) * LJ_STATICS2_SLOTS_PER_PAGE + (slot - 1);
+    if (page < 1 || page > LJ_STATIC_PAGES_MAX || slot < 1 || slot > LJ_STATICS2_SLOTS_MAX) return -1;
+    return (page - 1) * LJ_STATICS2_SLOTS_MAX + (slot - 1);
 }
 
 int lj_static_scope_hits(const lj_static_page *pages, int npages, int actor, int other)
 {
-    const int per = LJ_STATICS2_SLOTS_PER_PAGE, all = npages * per;
+    const int per = LJ_STATICS2_SLOTS_MAX, all = npages * per;
     const lj_static_slot *a, *o;
     if (!pages || actor < 0 || other < 0 || actor >= all || other >= all || actor == other) return 0;
     a = &pages[actor / per].slot[actor % per];

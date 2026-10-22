@@ -4,6 +4,10 @@ TABOUTFORM2	Image1	TImage	Picture.Data	dropped:no-glyphmap-row (20 bytes, trunca
 TAUTOADDRESSFORM2	bOk	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TAUTODELAYFORM	bOk	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TBGCUEFORM	LV1	TListView	Items.Data	dropped:truncated stream: 20 of 158 bytes, 5 items
+TBGCUEFORM	sbSave	TSpeedButton	Glyph.Data	glyph:save (row listed, blob absent)
+TBGCUEFORM	sbNew	TSpeedButton	Glyph.Data	glyph:new (row listed, blob absent)
+TBGCUEFORM	sbDelete	TSpeedButton	Glyph.Data	glyph:delete (row listed, blob absent)
+TBGCUEFORM	sbLoad	TSpeedButton	Glyph.Data	glyph:load (row listed, blob absent)
 TCLEDITPANELS	bBrowseDAPlay	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TCLEDITPANELS	bBrowseDACue	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TCLEDITPANELS	bOpenExe	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
@@ -76,9 +80,9 @@ TGENERICMEGAFORM	sbFaderUp	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes,
 TGENERICMEGAFORM	sbFaderDown	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TGETBITMAPFORM	bOk	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TGETUSERLIBNAMEFORM	bOk	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
-TGLOBALPATCHFORM	bOk	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
-TGLOBALPATCHFORM	bLocatePrev	TSpeedButton	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
-TGLOBALPATCHFORM	bLocateNext	TSpeedButton	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
+TGLOBALPATCHFORM	bOk	TBitBtn	Glyph.Data	glyph:check
+TGLOBALPATCHFORM	bLocatePrev	TSpeedButton	Glyph.Data	glyph:up
+TGLOBALPATCHFORM	bLocateNext	TSpeedButton	Glyph.Data	glyph:down
 THARDWARESETUPFORM2	bOk	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 THARDWARESETUPFORM2	bdetectHardware	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 THARDWARESETUPFORM2	bClearhardware	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
@@ -100,6 +104,8 @@ TMCXSETUPFORM	LV1	TListView	Items.Data	dropped:truncated stream: 20 of 232 bytes
 TMCXSETUPFORM	LV2	TListView	Items.Data	dropped:truncated stream: 20 of 36 bytes, 1 items
 TMEMORYVIEWFORM	LV	TListView	Items.Data	dropped:truncated stream: 20 of 659 bytes, 16 items
 TPALETTEVALUETYPEFORM	lvSelection	TListView	Items.Data	dropped:truncated stream: 20 of 133 bytes, 5 items
+TPRESETFORM	bSave	TBitBtn	Glyph.Data	glyph:save (row listed, blob absent)
+TPRESETFORM	bClear	TBitBtn	Glyph.Data	glyph:delete (row listed, blob absent)
 TPRINT2532FORM	bPrint	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TPRINT2532FORM	bClose	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)
 TRENAMEFILEFORM	bOk	TBitBtn	Glyph.Data	dropped:no-glyphmap-row (20 bytes, truncated)

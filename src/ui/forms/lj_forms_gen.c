@@ -916,10 +916,10 @@ static const char *const tbgcueform_panel2_cb1_items[] = {
     "2",
 };
 static const lj_ctl_desc tbgcueform_panel2[] = {
-    { LJ_K_SPEEDBUTTON, "sbSave", 29, 2, 25, 25, .hint = "Save", .allow_all_up = LJ_YES, .group_index = 1, .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
-    { LJ_K_SPEEDBUTTON, "sbNew", 3, 2, 25, 25, .hint = "New/Clear", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbNewClick" } } },
-    { LJ_K_SPEEDBUTTON, "sbDelete", 84, 2, 25, 25, .hint = "Delete", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbDeleteClick" } } },
-    { LJ_K_SPEEDBUTTON, "sbLoad", 56, 2, 25, 25, .allow_all_up = LJ_YES, .group_index = 3, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbSave", 29, 2, 25, 25, .hint = "Save", .allow_all_up = LJ_YES, .group_index = 1, .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .glyph = "save", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_SPEEDBUTTON, "sbNew", 3, 2, 25, 25, .hint = "New/Clear", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .glyph = "new", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbNewClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbDelete", 84, 2, 25, 25, .hint = "Delete", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .glyph = "delete", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbDeleteClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbLoad", 56, 2, 25, 25, .allow_all_up = LJ_YES, .group_index = 3, .num_glyphs = 2, .glyph = "load", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbMouseUp" } } },
     { LJ_K_COMBOBOX, "cb1", 112, 4, 269, 21, .style = "csDropDownList", .drop_down_count = 12, .item_height = 13, .sorted = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .item_index = -1, .items = tbgcueform_panel2_cb1_items, .nitems = LJ_COUNT_OF(tbgcueform_panel2_cb1_items), .events = { { "OnChange", "cb1Change" } } },
 };
 static const lj_ctl_desc tbgcueform_ctls[] = {
@@ -6928,7 +6928,7 @@ static const lj_ctl_desc tglobalpatchform_panel2[] = {
     { LJ_K_BEVEL, "Bevel3", 275, 1, 92, 109, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BEVEL, "Bevel4", 512, 1, 109, 109, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BEVEL, "Bevel5", 368, 1, 143, 109, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bOk", 516, 70, 100, 35, .caption = "&Apply Patch", .modal_result = 1, .tab_order = 13, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 516, 70, 100, 35, .caption = "&Apply Patch", .modal_result = 1, .tab_order = 13, .glyph = "check", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
     { LJ_K_BITBTN, "bSet", 516, 38, 100, 28, .caption = "<- Set Values", .enabled = LJ_NO, .tab_order = 12, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bSetClick" } } },
     { LJ_K_BITBTN, "bClear", 516, 6, 100, 28, .caption = "&Clear", .enabled = LJ_NO, .tab_order = 11, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bClearClick" } } },
     { LJ_K_EDIT, "eSourceOut", 232, 29, 37, 21, .max_length = 4, .tab_order = 3, .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -6951,8 +6951,8 @@ static const lj_ctl_desc tglobalpatchform_panel2[] = {
 static const lj_ctl_desc tglobalpatchform_panel3[] = {
     { LJ_K_LABEL, "lPatchedOut", 8, 4, 81, 13, .caption = "Source Out:8888", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_LABEL, "lPatchedIn", 8, 20, 73, 13, .caption = "Source In:8888", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "bLocatePrev", 464, 5, 75, 29, .hint = "Locate Previous patch", .glyph = "missing", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bLocatePrevClick" } } },
-    { LJ_K_SPEEDBUTTON, "bLocateNext", 543, 5, 75, 29, .hint = "Locate Next patch", .glyph = "missing", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bLocateNextClick" } } },
+    { LJ_K_SPEEDBUTTON, "bLocatePrev", 464, 5, 75, 29, .hint = "Locate Previous patch", .glyph = "up", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bLocatePrevClick" } } },
+    { LJ_K_SPEEDBUTTON, "bLocateNext", 543, 5, 75, 29, .hint = "Locate Next patch", .glyph = "down", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bLocateNextClick" } } },
     { LJ_K_LABEL, "lInverted", 195, 4, 66, 13, .caption = "Inverted:8888", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_LABEL, "lMin", 102, 4, 75, 13, .caption = "Min Count:8888", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_LABEL, "lMax", 102, 20, 78, 13, .caption = "Max Count:8888", .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -9647,9 +9647,9 @@ static const lj_column_desc tpresetform_lv_cols[] = {
     { .caption = "Name", .width = -2, .image_index = -1 },
 };
 static const lj_ctl_desc tpresetform_panel2_panel3[] = {
-    { LJ_K_BITBTN, "bSave", 1, 5, 81, 25, .caption = "Save", .tab_order = 0, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bSaveClick" } } },
+    { LJ_K_BITBTN, "bSave", 1, 5, 81, 25, .caption = "Save", .tab_order = 0, .num_glyphs = 2, .glyph = "save", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bSaveClick" } } },
     { LJ_K_BITBTN, "bAssign", 1, 33, 81, 25, .caption = "Assign", .tab_order = 1, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bAssignClick" } } },
-    { LJ_K_BITBTN, "bClear", 1, 61, 81, 25, .caption = "Clear", .tab_order = 2, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClearClick" } } },
+    { LJ_K_BITBTN, "bClear", 1, 61, 81, 25, .caption = "Clear", .tab_order = 2, .num_glyphs = 2, .glyph = "delete", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClearClick" } } },
 };
 static const char *const tpresetform_panel2_panel1_rgfixtures_items[] = {
     "Master Fixture",

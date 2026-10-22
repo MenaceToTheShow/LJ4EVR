@@ -112,14 +112,14 @@ static void lj_test_statics2(void)
     CHECK(strcmp(gb.name[0], "Strobes") == 0 && strcmp(gb.name[63], lj_e9) == 0 && strcmp(gb.name[5], "Group 6") == 0);
     CHECK(lj_statics_groups_save(P2, back, nb, &gb) == 0 && lj_same_bytes(P1, P2));
 
-    /* scopes (PROPOSAL rig 14 sB.8 item 3): 0 = page1 slot1 (group 1|64), 1 = page1 slot2 (slot), 21 = page2 slot2 (solo page) */
+    /* scopes (PROPOSAL rig 14 sB.8 item 3): 0 = page1 slot1 (group 1|64), 1 = page1 slot2 (slot), 65 = page2 slot2 (solo page); stride 64 (ME-30) */
     CHECK(lj_static_scope_hits(back, nb, 0, 1) == 1);                                 /* shared group bit */
-    CHECK(lj_static_scope_hits(back, nb, 0, 21) == 0);                                /* page2 slot2 has no group */
-    CHECK(lj_static_scope_hits(back, nb, 1, 21) == 1 && lj_static_scope_hits(back, nb, 1, 0) == 0);   /* same slot row on another page */
-    CHECK(lj_static_scope_hits(back, nb, 21, 20) == 1 && lj_static_scope_hits(back, nb, 21, 1) == 0); /* solo page = same page */
+    CHECK(lj_static_scope_hits(back, nb, 0, 65) == 0);                                /* page2 slot2 has no group */
+    CHECK(lj_static_scope_hits(back, nb, 1, 65) == 1 && lj_static_scope_hits(back, nb, 1, 0) == 0);   /* same slot row on another page */
+    CHECK(lj_static_scope_hits(back, nb, 65, 64) == 1 && lj_static_scope_hits(back, nb, 65, 1) == 0); /* solo page = same page */
     CHECK(lj_static_scope_hits(back, nb, 2, 0) == 0);                                 /* Add releases nothing */
-    CHECK(lj_static_scope_hits(back, nb, 0, 0) == 0 && lj_static_scope_hits(back, nb, 0, 40) == 0 && lj_static_scope_hits(back, nb, -1, 0) == 0);
-    back[0].slot[3].replace = LJ_REP_ALL; CHECK(lj_static_scope_hits(back, nb, 3, 39) == 1);
+    CHECK(lj_static_scope_hits(back, nb, 0, 0) == 0 && lj_static_scope_hits(back, nb, 0, 128) == 0 && lj_static_scope_hits(back, nb, -1, 0) == 0);
+    back[0].slot[3].replace = LJ_REP_ALL; CHECK(lj_static_scope_hits(back, nb, 3, 127) == 1);
 
     /* validator: out-of-range slot / page / scope */
     back[0].slot[4].replace = 99;      CHECK(lj_statics_validate(back, nb) != NULL); back[0].slot[4].replace = 0;
@@ -136,7 +136,7 @@ static void lj_test_statics2(void)
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 kind=link link=4294967297,0\n"); CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 kind=link link=4,999\n");        CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 groups=-1\n");                   CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
-    lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 21 name=s\n");                     CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
+    lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 65 name=s\n");                     CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\ngroup 65 name=x\n");                                   CHECK(lj_statics_groups_load(P1, &gb, err, sizeof err) == -1);
     lj_statics_free(pages, n);
 }
@@ -251,6 +251,8 @@ static void lj_test_w1_sites(void)   /* ME-77: the five W1 sites fail the line i
     lj_put(P1, "LJ4 cue 1\nnum=1\ncuetime=65636\n");                CHECK(lj_cue_load(P1, &c, err, sizeof err) == -1 && strstr(err, "out of range"));
     lj_put(P1, "LJ4 cue 1\nnum=1\nslot 1 seq=1 spt=257\n");         CHECK(lj_cue_load(P1, &c, err, sizeof err) == -1);
     lj_put(P1, "LJ4 cue 1\nnum=1\nslot 1 seq=1 chase=60001\n");     CHECK(lj_cue_load(P1, &c, err, sizeof err) == -1);
+    lj_put(P1, "LJ4 cue 1\nnum=1\nslot 1 seq=1 on=1 trig=auto dir=fwd spt=0 atpt=0 tol=0\n");   /* a v0.1.0 cue (Add Sequence to Current Cue wrote 0): loads as 1 */
+    CHECK(lj_cue_load(P1, &c, err, sizeof err) == 0 && c.slot[0].scenes_per_trig == 1 && c.slot[0].audio_trigs_per_trig == 1);
     lj_put(P1, "LJ4 cue 1\nnum=1\ncuetime=250\nslot 1 seq=1 spt=255 link=7\n"); CHECK(lj_cue_load(P1, &c, err, sizeof err) == 0 && c.cue_time_pct == 250 && c.slot[0].scenes_per_trig == 255 && c.slot[0].link_cue == 7);
     lj_put(P1, "LJ4 config 1\nfx 1 kind=builtin id=0 link=257 addr=1\n");   CHECK(lj_config_load(P1, show, err, sizeof err) == -1);
     lj_put(P1, "LJ4 config 1\nfx 1 kind=builtin id=0 link=1 addr=65537\n"); CHECK(lj_config_load(P1, show, err, sizeof err) == -1);

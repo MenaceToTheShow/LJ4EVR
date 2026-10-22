@@ -87,3 +87,12 @@ MAINWINDOW	tb_fixture_22	blackout
 MAINWINDOW	tb_fixture_23	master
 TSEQUENCEFORM	sb11	addtocue
 TSEQUENCEFORM	seqBlind	blind
+TBGCUEFORM	sbNew	new
+TBGCUEFORM	sbSave	save
+TBGCUEFORM	sbLoad	load
+TBGCUEFORM	sbDelete	delete
+TGLOBALPATCHFORM	bOk	check
+TGLOBALPATCHFORM	bLocatePrev	up
+TGLOBALPATCHFORM	bLocateNext	down
+TPRESETFORM	bSave	save
+TPRESETFORM	bClear	delete

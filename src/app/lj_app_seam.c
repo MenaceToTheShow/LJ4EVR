@@ -170,6 +170,12 @@ int lj_app_load_cue(uint32_t number, int edit)
     if (bg) { oldbg = (lj_bgcue *)lj_table_get(&show->bgcues, bg->number); lj_table_put(&show->bgcues, bg->number, bg); }
     if (gm) { oldgm = (lj_genmacro *)lj_table_get(&show->macros, gm->number); lj_table_put(&show->macros, gm->number, gm); }
     lj_app_commit(&fresh, &cmd);
+    if (c->forms_ini && lj_ini_geti(c->forms_ini, "CUE", "Flash Auto Release", 0) && c->engine) {   /* "Release Flash on Load" (windows-a persists the box) [03 s5.10] */
+        lj_cmd fr;
+        memset(&fr, 0, sizeof fr);
+        fr.kind = LJ_CMD_FLASH; fr.at_us = cmd.at_us;            /* b 0 c 0: release, latched or not */
+        lj_engine_cmd(c->engine, &fr);
+    }
     lj_unlock();
     /* freed after the engine was handed the replacement in the same critical section (rule 6); a never-saved current cue is not in the table */
     if (old && old != cue) lj_cue_free(old);
@@ -683,7 +689,7 @@ static void lj_app_w2_action(enum lj_desktop_action a, int arg, void *ud)
     case LJ_ACT_MIDI_SAVE:       lj_app_midi_save(); break;
     case LJ_ACT_MIDI_OPEN_DEVICE: if (lj_app_midi_open(arg) != 0) lj_log("MIDI-IN: device %d did not open", arg); break;
     case LJ_ACT_LOAD_BGCUE:      if (arg > 0) lj_app_load_bgcue((uint32_t)arg); else lj_app_bgcue_clear(); break;   /* 0 = New / Clear BGCue */
-    case LJ_ACT_STATIC_CLEAR:    if (arg >= 0) lj_app_static_clear(arg / LJ_STATICS2_SLOTS_PER_PAGE + 1, arg % LJ_STATICS2_SLOTS_PER_PAGE + 1); break;
+    case LJ_ACT_STATIC_CLEAR:    if (arg >= 0) lj_app_static_clear(arg / LJ_STATICS2_SLOTS_MAX + 1, arg % LJ_STATICS2_SLOTS_MAX + 1); break;
     default: break;
     }
 }

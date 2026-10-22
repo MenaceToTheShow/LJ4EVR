@@ -167,7 +167,7 @@ static const lj_binding lj_up_save_bindings[] = {
 static void save_dialog(void)
 {
     int i = selected_row();
-    char no[8];
+    char no[12];
     save_close();
     up.save = lj_window_create(&lj_form_TSAVEPRESETFORM2, lj_up_save_bindings);
     if (!up.save) return;

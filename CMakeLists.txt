@@ -104,6 +104,11 @@ lj_layer(ui       lj_gfx lj_core)
 lj_layer(desktop  lj_ui lj_model lj_engine lj_fixlib lj_io)
 lj_layer(controls lj_ui lj_model lj_engine lj_fixlib lj_io)
 lj_layer(windows  lj_ui lj_model lj_engine lj_fixlib lj_io)
+# desktop, controls and windows are siblings that call each other (W2: desktop's default actions open windows): a static
+# cycle CMake repeats on the link line, which GNU ld needs (it reads archives once, in order; ld64 and link.exe do not care)
+target_link_libraries(lj_desktop  PUBLIC lj_windows lj_controls)
+target_link_libraries(lj_controls PUBLIC lj_windows lj_desktop)
+target_link_libraries(lj_windows  PUBLIC lj_controls lj_desktop)
 set(LJ_SDL_FREE_LIBS lj_windows lj_controls lj_desktop lj_ui lj_gfx lj_engine lj_io lj_model lj_fixlib lj_core)
 
 if(WIN32)

@@ -8,6 +8,7 @@
 enum { LJ_HAND_OFF = 0, LJ_HAND_SNAP = 1, LJ_HAND_FADE = 2 };   /* = lj_fstate in model/lj_model.h, which fixlib may not include (layer graph) */
 
 extern const char *const lj_ctl_menu_std[];    /* UserPalette Preferences Fades Help [15/00 s2] */
+extern const char *const lj_ctl_menu_rgb[];    /* Palette Preferences Fades Help: the RGB pack window (rgbcolorcontrol.gif, W2 integration) */
 extern const char *const lj_ctl_menu_fx1[];    /* UserPalette Fades Help: Effects window of a single-effect fixture [15/00 s2] */
 extern const char *const lj_ctl_menu_help[];   /* Help: Lamp Control [15/00 s2] */
 extern const char *const lj_ctl_menu_move[];   /* Presets Preferences Fades Macro Options Help [design 6.4] */

@@ -179,7 +179,7 @@ static int rp_pageslot(const char *w, long *pg, long *sl)   /* "p.s" */
 {
     char c;
     if (sscanf(w, "%ld.%ld%c", pg, sl, &c) != 2) return -1;
-    return (*pg < 1 || *pg > LJ_STATIC_PAGES_MAX || *sl < 1 || *sl > LJ_STATICS2_SLOTS_PER_PAGE) ? -1 : 0;
+    return (*pg < 1 || *pg > LJ_STATIC_PAGES_MAX || *sl < 1 || *sl > LJ_STATICS2_SLOTS_MAX) ? -1 : 0;
 }
 
 /* key=value loop helpers: `key`, `val`, `v` and `p` are the enclosing locals */
@@ -831,7 +831,7 @@ static int rp_at(rp *p, char **argv, int argc)
         long pg, sl;
         if (argc != 5 || rp_pageslot(argv[3], &pg, &sl) || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "static: expected `static <page>.<slot> 0|1`");
         if (pg > p->show->npages || p->show->pages[pg - 1].slot[sl - 1].kind == LJ_STATIC_EMPTY) return rp_fail(p, "static %ld.%ld is not defined", pg, sl);
-        c.kind = LJ_CMD_STATIC; c.a = (uint32_t)((pg - 1) * LJ_STATICS2_SLOTS_PER_PAGE + (sl - 1)); c.b = (uint32_t)v;   /* a = global slot index (page-1)*20 + slot-1 */
+        c.kind = LJ_CMD_STATIC; c.a = (uint32_t)((pg - 1) * LJ_STATICS2_SLOTS_MAX + (sl - 1)); c.b = (uint32_t)v;   /* a = global slot index (page-1)*64 + slot-1 */
         c.st = v ? &p->show->pages[pg - 1].slot[sl - 1] : NULL;
     } else if (!strcmp(w, "flash")) {
         if (argc != 5 || rp_num(argv[3], 1, LJ_NUMBER_MAX, &n) || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "flash: expected `flash <seq> 0|1`");

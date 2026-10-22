@@ -3,6 +3,7 @@
 
 const char *const lj_ctl_menu_std[]  = { "UserPalette", "Preferences", "Fades", "Help", NULL };
 const char *const lj_ctl_menu_fx1[]  = { "UserPalette", "Fades", "Help", NULL };
+const char *const lj_ctl_menu_rgb[]  = { "Palette", "Preferences", "Fades", "Help", NULL };
 const char *const lj_ctl_menu_help[] = { "Help", NULL };
 const char *const lj_ctl_menu_move[] = { "Presets", "Preferences", "Fades", "Macro", "Options", "Help", NULL };
 

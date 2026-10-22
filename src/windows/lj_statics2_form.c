@@ -18,7 +18,7 @@
 #define LJ_S2_STAY_ON_TOP 2u            /* = LJ_WF_STAY_ON_TOP (platform/lj_platform.h, not includable here) */
 #define LJ_S2_ON_RGB      0x00FF00u     /* an active slot: green, the old control's LED colour (07 s4.4 LJ_LED_ON_RGB); PROPOSAL rig 14 sB.8 item 12 */
 #define LJ_S2_LEVEL_RGB   0xFFFFFFu     /* the white level cell of staticcontrol.gif */
-#define LJ_S2_N           LJ_STATICS2_SLOTS_PER_PAGE
+#define LJ_S2_N           LJ_STATICS2_SLOTS_MAX   /* ME-30: Visible Slots up to 64 rows */
 
 /* enum lj_replace order: the TAction captions (DFM ActionList1) */
 static const char *const lj_s2_rep_word[] = { "Add", "Replace Slot", "Replace Page", "Replace Group", "Replace All", "Solo Slot", "Solo Page", "Solo Group", "Solo All" };
@@ -30,7 +30,7 @@ static struct {
     lj_window *win;
     lj_widget *num[LJ_S2_N], *btn[LJ_S2_N], *mode[LJ_S2_N], *lvl[LJ_S2_N];
     int idx[LJ_S2_N], n;
-    char numtxt[LJ_S2_N][4], lvltxt[LJ_S2_N][16], tabtxt[LJ_STATIC_PAGES_MAX][12];
+    char numtxt[LJ_S2_N][12], lvltxt[LJ_S2_N][16], tabtxt[LJ_STATIC_PAGES_MAX][16];
     const char *tabs[LJ_STATIC_PAGES_MAX];
     int pop_slot, drag;
     lj_cmd last; int has_last;
@@ -58,7 +58,7 @@ int lj_statics2_visible(void)
     int n = lj_s2_cur_page >= 1 && lj_s2_cur_page <= npages() ? c->show->pages[lj_s2_cur_page - 1].n : 0;
     if (n < 1) n = c->static_visible;
     if (n < 1) n = LJ_S2_N;
-    return n > LJ_S2_N ? LJ_S2_N : n;                         /* ME-30 allows 64; lj_static_page holds LJ_STATICS2_SLOTS_PER_PAGE (model) */
+    return n > LJ_S2_N ? LJ_S2_N : n;                         /* ME-30: 1..64 */
 }
 
 int lj_statics2_slot_active(int slot)

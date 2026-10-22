@@ -275,7 +275,17 @@ extern const char *const lj_fn_group_names[LJ_FNG_COUNT];   /* "System", "Intens
     X(LJ_FN_PROG_BGCUE,              LJ_FNG_PROGRAMS, "BG Cue",                     0, LJ_FNF_ENABLE)     /* W2 appended rows (append-only, 01 s7 group order kept inside the block). The 01 s7 groups were complete in W1; the exe
      * carries `Static 01` .. `Static 20` hotkey names [14 sB.2, EXE 0x3c6cf0-0x3ca27a] where the CHM lists 01-10, so rows 11-20
      * are appended here (Statics 2 pages map onto the 20 numbered functions on the current page, PROPOSAL rig 14 sB.8 item 9).
-     * Snapshot, hotkey setups and MIDI have no hotkey rows in any note; none are invented. */     X(LJ_FN_STATIC_11,               LJ_FNG_STATICS, "Static %02d",                11, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_12,               LJ_FNG_STATICS, "Static %02d",                12, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_13,               LJ_FNG_STATICS, "Static %02d",                13, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_14,               LJ_FNG_STATICS, "Static %02d",                14, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_15,               LJ_FNG_STATICS, "Static %02d",                15, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_16,               LJ_FNG_STATICS, "Static %02d",                16, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_17,               LJ_FNG_STATICS, "Static %02d",                17, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_18,               LJ_FNG_STATICS, "Static %02d",                18, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_19,               LJ_FNG_STATICS, "Static %02d",                19, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_20,               LJ_FNG_STATICS, "Static %02d",                20, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+     * Snapshot, hotkey setups and MIDI have no hotkey rows in any note; none are invented. */ \
+    X(LJ_FN_STATIC_11,               LJ_FNG_STATICS, "Static %02d",                11, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_12,               LJ_FNG_STATICS, "Static %02d",                12, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_13,               LJ_FNG_STATICS, "Static %02d",                13, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_14,               LJ_FNG_STATICS, "Static %02d",                14, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_15,               LJ_FNG_STATICS, "Static %02d",                15, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_16,               LJ_FNG_STATICS, "Static %02d",                16, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_17,               LJ_FNG_STATICS, "Static %02d",                17, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_18,               LJ_FNG_STATICS, "Static %02d",                18, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_19,               LJ_FNG_STATICS, "Static %02d",                19, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
+    X(LJ_FN_STATIC_20,               LJ_FNG_STATICS, "Static %02d",                20, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
     /* W2 midi track (append-only): the MIDI CC extension target (05 s7 clone verdict, marked non-original, off by default). LJ_FNF_EXT = not one of LJ2's hotkey functions: Edit Hotkeys and the MIDI-IN Functions list skip it; prog_num = the level in percent 0..100 (CC value 0..127 scaled by lj_midi_dispatch). */ \
     X(LJ_FN_MASTER_LEVEL,            LJ_FNG_INTENSITY, "Master Intensity level",    0, LJ_FNF_EXT)
 

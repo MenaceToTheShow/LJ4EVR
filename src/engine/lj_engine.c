@@ -233,8 +233,8 @@ static void lj_engine_tap(lj_engine *e, uint64_t t, int lo, int n, int rearm)
 static int lj_engine_static_hits(int scope, uint32_t a, const lj_static_slot *sa, uint32_t o, const lj_static_slot *so)
 {
     switch (scope) {
-    case LJ_REP_SLOT:  case LJ_REP_SOLO_SLOT:  return a % LJ_STATICS2_SLOTS_PER_PAGE == o % LJ_STATICS2_SLOTS_PER_PAGE;   /* same slot row, any page */
-    case LJ_REP_PAGE:  case LJ_REP_SOLO_PAGE:  return a / LJ_STATICS2_SLOTS_PER_PAGE == o / LJ_STATICS2_SLOTS_PER_PAGE;
+    case LJ_REP_SLOT:  case LJ_REP_SOLO_SLOT:  return a % LJ_STATICS2_SLOTS_MAX == o % LJ_STATICS2_SLOTS_MAX;   /* same slot row, any page */
+    case LJ_REP_PAGE:  case LJ_REP_SOLO_PAGE:  return a / LJ_STATICS2_SLOTS_MAX == o / LJ_STATICS2_SLOTS_MAX;
     case LJ_REP_GROUP: case LJ_REP_SOLO_GROUP: return (sa->groups & so->groups) != 0;
     case LJ_REP_ALL:   case LJ_REP_SOLO_ALL:   return 1;
     default:                                   return 0;       /* LJ_REP_ADD (LJ_STATIC_SCOPE_ADD): LTP, no release */
@@ -253,7 +253,7 @@ static void lj_engine_static_on(lj_engine *e, uint32_t a, const lj_static_slot *
 {
     int k, id = -1;
     lj_runner *r;
-    if (!st || a >= (uint32_t)LJ_STATIC_PAGES_MAX * LJ_STATICS2_SLOTS_PER_PAGE) return;
+    if (!st || a >= (uint32_t)LJ_STATIC_PAGES_MAX * LJ_STATICS2_SLOTS_MAX) return;
     if (scope == 0xFF) scope = st->replace;
     if (level == 0xFFFF) level = st->level_pct;
     if (level > 100) level = 100;
@@ -443,7 +443,7 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_STATIC_DEACTIVATE:                             /* one slot; a = LJ_RUN_ALL: Release All (c 0) or Release Page c */
         for (k = 0; k < LJ_STATIC_RUNNERS; k++) {
             uint32_t o = e->st.static_slot_of[k];
-            if (e->static_slot[k] && (c->a == LJ_RUN_ALL ? (!c->c || o / LJ_STATICS2_SLOTS_PER_PAGE == c->c - 1) : o == c->a)) lj_engine_static_off(e, k);
+            if (e->static_slot[k] && (c->a == LJ_RUN_ALL ? (!c->c || o / LJ_STATICS2_SLOTS_MAX == c->c - 1) : o == c->a)) lj_engine_static_off(e, k);
         }
         break;
     case LJ_CMD_SMOKE: lj_engine_smoke_cmd(e, c, t); break;

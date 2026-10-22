@@ -115,6 +115,7 @@ int lj_test_windows_b(int argc, char **argv)
     CHECK(lj_cue_form_add_sequence(7) == 2);
     for (i = 3; i <= 12; i++) CHECK(lj_cue_form_add_sequence(7) == i);
     CHECK(lj_cue_form_add_sequence(7) == -1);
+    CHECK(cue->slot[0].scenes_per_trig == 1 && cue->slot[0].audio_trigs_per_trig == 1 && lj_cue_validate(cue) == NULL);   /* W2 integration: W1 saved spt=0, which ME-77 refuses on load */
     for (i = 1; i < LJ_CUE_SLOTS; i++) memset(&cue->slot[i], 0, sizeof cue->slot[i]);
 
     /* caption rules */
@@ -262,6 +263,10 @@ int lj_test_windows_b(int argc, char **argv)
     CHECK(lj_master_intensity_level(0) == 128);
     lj_master_intensity_set(3, 64);
     CHECK(lj_master_intensity_last_cmd(&cmd) && cmd.kind == LJ_CMD_SET_MASTER && cmd.a == 3 && cmd.b == 64 && cmd.c == LJ_MASTER_PROPORTIONAL);
+    /* W2 integration: the MIDI CC extension row (prog = 0..100 %) drives the Grand Master */
+    lj_master_intensity_bind_fns();
+    lj_fn_run_prog(LJ_FN_MASTER_LEVEL, 50, 1);
+    CHECK(lj_master_intensity_last_cmd(&cmd) && cmd.kind == LJ_CMD_SET_MASTER && cmd.a == 0 && cmd.b == 128);
 
     /* the sub-master mode popup, verbatim exe strings; picking "Master LoTP" on sub 1 */
     items = lj_master_intensity_mode_items(&n);

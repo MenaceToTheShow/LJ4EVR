@@ -64,9 +64,10 @@ int lj_test_statics(int argc, char **argv)
     (void)argc; (void)argv;
     CHECK(lj_static_global_index(1, 1) == 0);
     CHECK(lj_static_global_index(1, LJ_STATICS2_SLOTS_PER_PAGE) == LJ_STATICS2_SLOTS_PER_PAGE - 1);
-    CHECK(lj_static_global_index(2, 1) == LJ_STATICS2_SLOTS_PER_PAGE);
-    CHECK(lj_static_global_index(LJ_STATIC_PAGES_MAX, LJ_STATICS2_SLOTS_PER_PAGE) == LJ_STATIC_PAGES_MAX * LJ_STATICS2_SLOTS_PER_PAGE - 1);
-    CHECK(lj_static_global_index(0, 1) == -1 && lj_static_global_index(1, 0) == -1 && lj_static_global_index(65, 1) == -1 && lj_static_global_index(1, 21) == -1);
+    CHECK(lj_static_global_index(2, 1) == LJ_STATICS2_SLOTS_MAX);
+    CHECK(lj_static_global_index(LJ_STATIC_PAGES_MAX, LJ_STATICS2_SLOTS_MAX) == LJ_STATIC_PAGES_MAX * LJ_STATICS2_SLOTS_MAX - 1);
+    CHECK(lj_static_global_index(1, LJ_STATICS2_SLOTS_MAX + 1) == -1);
+    CHECK(lj_static_global_index(0, 1) == -1 && lj_static_global_index(1, 0) == -1 && lj_static_global_index(65, 1) == -1 && lj_static_global_index(1, 65) == -1);
     if (!show || !e) { printf("FAIL alloc\n"); free(show); lj_engine_destroy(e); return 1; }
 
     memset(&dim, 0, sizeof dim); dim.footprint = 1; dim.channel_class[0] = LJ_CH_INTENSITY; dim.use_gm = 1; dim.intensity.enabled = 1; dim.intensity.max = 255;
@@ -95,25 +96,25 @@ int lj_test_statics(int argc, char **argv)
     lj_t_off(e, LJ_RUN_ALL, 0); f = lj_t_tick(e);              /* Release All: rank 0, snapped (LJ_STATIC_RELEASE_SNAPS) */
     CHECK(f->merged[0] == 0 && f->layer_of[0] == LJ_L_DEFAULT && !lj_t_active(e, 0) && !lj_t_active(e, 1));
 
-    /* scopes (PROPOSAL rig 14 sB.8 item 3): 1.1 = global 0, 1.2 = 1, 2.1 = 20, 2.2 = 21 */
-    lj_t_slot(0, 0, 10); lj_t_slot(1, 1, 11); lj_t_slot(20, 2, 12); lj_t_slot(21, 3, 13);
+    /* scopes (PROPOSAL rig 14 sB.8 item 3): 1.1 = global 0, 1.2 = 1, 2.1 = 64, 2.2 = 65 */
+    lj_t_slot(0, 0, 10); lj_t_slot(1, 1, 11); lj_t_slot(64, 2, 12); lj_t_slot(65, 3, 13);
     lj_t_on(e, 0, 0xFFFF, 0xFF); lj_t_on(e, 1, 0xFFFF, 0xFF);
-    lj_t_on(e, 20, 0xFFFF, LJ_REP_SLOT); f = lj_t_tick(e);    /* Replace Slot: same slot row on any page (1.1 goes, 1.2 stays) */
-    CHECK(!lj_t_active(e, 0) && lj_t_active(e, 1) && lj_t_active(e, 20) && f->merged[0] == 0 && f->merged[1] == 11 && f->merged[2] == 12);
-    lj_t_on(e, 21, 0xFFFF, LJ_REP_PAGE); lj_t_tick(e);         /* Replace Page: 2.1 goes, 1.2 stays */
-    CHECK(!lj_t_active(e, 20) && lj_t_active(e, 1) && lj_t_active(e, 21));
+    lj_t_on(e, 64, 0xFFFF, LJ_REP_SLOT); f = lj_t_tick(e);    /* Replace Slot: same slot row on any page (1.1 goes, 1.2 stays) */
+    CHECK(!lj_t_active(e, 0) && lj_t_active(e, 1) && lj_t_active(e, 64) && f->merged[0] == 0 && f->merged[1] == 11 && f->merged[2] == 12);
+    lj_t_on(e, 65, 0xFFFF, LJ_REP_PAGE); lj_t_tick(e);         /* Replace Page: 2.1 goes, 1.2 stays */
+    CHECK(!lj_t_active(e, 64) && lj_t_active(e, 1) && lj_t_active(e, 65));
     lj_t_on(e, 0, 0xFFFF, LJ_REP_SOLO_ALL); lj_t_tick(e);      /* Solo All = Replace All (LJ_STATIC_SOLO_BLOCKS_LATER 0) */
-    CHECK(lj_t_active(e, 0) && !lj_t_active(e, 1) && !lj_t_active(e, 21));
+    CHECK(lj_t_active(e, 0) && !lj_t_active(e, 1) && !lj_t_active(e, 65));
     lj_t_on(e, 1, 0xFFFF, LJ_REP_ADD); lj_t_tick(e);           /* Add: nothing released */
     CHECK(lj_t_active(e, 0) && lj_t_active(e, 1));
-    s_slot[0].groups = 1; s_slot[1].groups = 2; s_slot[20].groups = 3;   /* group bits */
-    lj_t_on(e, 20, 0xFFFF, LJ_REP_GROUP); lj_t_tick(e);        /* Replace Group: shares a bit with both */
-    CHECK(!lj_t_active(e, 0) && !lj_t_active(e, 1) && lj_t_active(e, 20));
-    s_slot[21].replace = LJ_REP_PAGE;                          /* 0xFF = the slot's own scope */
-    lj_t_on(e, 0, 0xFFFF, 0xFF); lj_t_on(e, 21, 0xFFFF, 0xFF); lj_t_tick(e);
-    CHECK(lj_t_active(e, 0) && !lj_t_active(e, 20) && lj_t_active(e, 21));
+    s_slot[0].groups = 1; s_slot[1].groups = 2; s_slot[64].groups = 3;   /* group bits */
+    lj_t_on(e, 64, 0xFFFF, LJ_REP_GROUP); lj_t_tick(e);        /* Replace Group: shares a bit with both */
+    CHECK(!lj_t_active(e, 0) && !lj_t_active(e, 1) && lj_t_active(e, 64));
+    s_slot[65].replace = LJ_REP_PAGE;                          /* 0xFF = the slot's own scope */
+    lj_t_on(e, 0, 0xFFFF, 0xFF); lj_t_on(e, 65, 0xFFFF, 0xFF); lj_t_tick(e);
+    CHECK(lj_t_active(e, 0) && !lj_t_active(e, 64) && lj_t_active(e, 65));
     lj_t_off(e, LJ_RUN_ALL, 2); lj_t_tick(e);                  /* Release Page 2 */
-    CHECK(lj_t_active(e, 0) && !lj_t_active(e, 21));
+    CHECK(lj_t_active(e, 0) && !lj_t_active(e, 65));
     lj_t_off(e, LJ_RUN_ALL, 0); lj_t_tick(e);
 
     /* the 65th activation releases the oldest (LJ_STATIC_OLDEST_RELEASED, rig 14 sB.8 item 10) */
@@ -126,7 +127,7 @@ int lj_test_statics(int argc, char **argv)
     lj_t_off(e, LJ_RUN_ALL, 0); lj_t_tick(e);
     CHECK(!lj_t_active(e, 64));
     /* bad input is ignored: a slot index past 64 pages, a NULL record */
-    lj_t_cmd(e, LJ_CMD_STATIC_ACTIVATE, LJ_STATIC_PAGES_MAX * LJ_STATICS2_SLOTS_PER_PAGE, 0xFFFF, 0xFF, &s_slot[0]);
+    lj_t_cmd(e, LJ_CMD_STATIC_ACTIVATE, LJ_STATIC_PAGES_MAX * LJ_STATICS2_SLOTS_MAX, 0xFFFF, 0xFF, &s_slot[0]);
     lj_t_cmd(e, LJ_CMD_STATIC_ACTIVATE, 3, 0xFFFF, 0xFF, NULL);
     lj_t_tick(e); lj_engine_view(e, &st);
     CHECK(!st.statics_any);
