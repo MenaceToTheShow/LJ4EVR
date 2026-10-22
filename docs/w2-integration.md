@@ -169,3 +169,6 @@ ME-54 shared scrollbar fitting (five `fit_sb` copies remain), ME-57 the five san
     cycle is now Linux-only (next commit, its run below)
     f76d936 (Linux-only cycle) run 39802625197: green, all six jobs; no ld64 duplicate-library warning;
                                replay-frames.bin sha 776cf859...4a5474 on the three OSes
+    955a229 (ME-51, ME-64)     run 39803758128: green, all six jobs; determinism prints replay-frames.bin
+                               776cf859abfbb8f418003a944ca7261f1fca89f8eb337a817a5af7ed2c4a5474 for linux, windows, macos
+                               https://github.com/UnbannableGT/LJ4EVR/actions/runs/39803758128
