@@ -278,3 +278,52 @@ the walkthrough; nothing in the pass touches the main window size. Recorded for 
 Green run: https://github.com/UnbannableGT/LJ4EVR/actions/runs/39709471199 (main @ 90cf0c7). Not done here: `VERSION` 0.1.0 and the
 `v0.1.0` tag (the tagger's step after one verifier confirms this pass against the verdict), ME-21 (Joey's Mac run), ME-45 (the
 non-admin install from the tagged installer).
+
+## 11. Release v0.1.0 (2026-10-21, this PC)
+
+Ruling: AUTHORIZE WITH GATES after the fix pass r1 (`W1_CODE_MASTER_ELDER_VERDICT.md` section 1, landed in 3fcb05a + 90cf0c7).
+
+    74b5eb5  Release 0.1.0   (VERSION 0.1.0; CHANGELOG 0.1.0 "What v1.0.0 is not" + known gaps = verdict sections 5-6; README status)
+    ci.yml   39711067178 green, six jobs (74b5eb5)
+    git tag -a v0.1.0 -m "LJ4EVR 0.1.0 - W1 first light"; git push origin v0.1.0   -> tag on 74b5eb5
+    release.yml 39711554480 green first run: check, windows, macos, release
+
+Release: https://github.com/UnbannableGT/LJ4EVR/releases/tag/v0.1.0 (prerelease, 0.x)
+
+| Asset | Bytes | sha256 |
+|---|---|---|
+| `LJ4EVR-0.1.0-win64-setup.exe` | 1172939 | c02fcac4c7d3089fa7ac99d7c598c8403c683cc0f6c8ff0a14a6ca04061dc76e |
+| `LJ4EVR-0.1.0-macos.dmg` | 2651846 | de565bad6d74f0c3824086d9984a8f495ea10be8a4e6316b3636af6b44ea13a2 |
+| `SHA256SUMS` | 184 | |
+
+`gh release download v0.1.0` into the scratch area, `sha256sum -c SHA256SUMS`: both OK. Installer VERSIONINFO
+(`ME-45`): ProductName=LJ4EVR ProductVersion=0.1.0 FileVersion=0.1.0.
+
+Windows installer, this PC (Windows 11, unelevated shell, no UAC prompt; the account is still an Administrators-group
+member, so the true standard-user install screenshot stays ME-45, W2):
+
+    LJ4EVR-0.1.0-win64-setup.exe /S                      -> rc 0
+    %LOCALAPPDATA%\Programs\LJ4EVR\                      lj4evr.exe 7355904, Uninstall.exe 111762, THIRD_PARTY_NOTICES.txt 2055
+    HKCU\...\Uninstall\LJ4EVR                            DisplayName "LJ4EVR 0.1.0", DisplayVersion 0.1.0
+    Start Menu\Programs\LJ4EVR 0.1.0\                    (per-user)
+    dumpbin /dependents lj4evr.exe                       KERNEL32 USER32 GDI32 WINMM IMM32 ole32 VERSION ADVAPI32 SETUPAPI SHELL32 WS2_32 IPHLPAPI
+                                                         (WS2_32 + IPHLPAPI new in W1 = the sACN sender; no vcruntime, no api-ms-win-crt)
+    lj4evr.exe --version                                 LJ4EVR 0.1.0                                                   rc 0
+    lj4evr.exe --selftest                                startup OK; TDMXOUTFORM opened and closed, 0 unresolved DFM event name(s): OK;
+                                                         TSEQUENCEFORM screen 360x150 vs surface 360x150, 0 mismatching pixel(s): OK   rc 0
+    (User\Default moved aside first, so the installed copy recreated the Default library [01 s8] and the sequence / cue got 0001)
+    lj4evr.exe --script w1_acceptance.lj4s               rc 0 from a scratch cwd (shots under <scratch>\run\docs\screenshots\w1\, not committed);
+                                                         every assert green, 13 shot lines (3/4/2/2/2/4/5/6/7/8/8/8/8 windows), 67 files
+    PIL over the 67 shots                                0 errors; 13 x -TCurrentCue.png 612x300; 9 x -TIntensity.png 600x122;
+                                                         every -TLJMainForm.png 799x606 (the 2-px shrink of section 10 did not recur)
+    forms.ini [SEQ] 300 300 [CUE] 400 350 [INTENSITY] 100 100 [DMXOUTFORM] 700 200 ; Main.Ini [GLOBALINTENSITY] 500 400
+    lj4evr.exe --script w1_positions.lj4s                rc 0, 7 shots (acceptance10-restart-*); 74 files in all
+                                                         (first attempt without the seed failed at line 16, `1099x621, expected 300x300`:
+                                                         the seed is the script's documented precondition, not a defect)
+    Uninstall.exe /S _?=<instdir>                        -> rc 0; HKCU uninstall key gone, Start Menu folder gone, lj4evr.exe + notices gone
+                                                         (Uninstall.exe itself stays under `_?=`, NSIS documented; removed by hand)
+    User\Default restored from the copy moved aside.
+
+macOS: no Mac on this PC. `LJ4EVR-0.1.0-macos.dmg` checked by size and signature only: 2651846 bytes, first block zlib
+(`78 da`, UDZO) and a `koly` UDIF trailer (version 4) in the last 512 bytes. **ME-21 Mac acceptance is open for Joey**: run the
+.dmg on his Mac (right-click LJ4EVR.app > Open, or `xattr -d com.apple.quarantine`), screenshot the Sequence window and one menu.
