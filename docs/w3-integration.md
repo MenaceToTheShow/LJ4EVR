@@ -397,3 +397,9 @@ Not fixed, recorded in docs/fidelity.md: the Cuelist `Elapsed` label (DFM captio
 reads `Elapsed:` and a time, exe 0x17891C, format not located), the Movement Macro trace density (128 points; the GIF's
 figure is denser), the Tweak row's O/S/F (the W1 model), header and cell text clipped per glyph or dropped where VCL clips
 per pixel.
+
+### CI
+
+    288c4ab (W3: acceptance walkthrough)  run 39857752487: green, all six jobs (windows-msvc, macos-clang, linux-clang
+                                         with the 60 s fuzz step, linux-gcc-asan, generate-check, determinism)
+                                         https://github.com/UnbannableGT/LJ4EVR/actions/runs/39857752487
