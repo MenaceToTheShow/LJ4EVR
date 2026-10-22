@@ -412,3 +412,49 @@ Statics 2 link pin is the design owner's (ME-50 list).
                                    https://github.com/UnbannableGT/LJ4EVR/actions/runs/39828850629
                                    replay-frames.bin linux / windows / macos
                                    4999049952535575a8588d37fa1d1fa34175cd325fb28569995188990b509646 (equal; ME-78, ME-98)
+
+## Release v0.2.0 (2026-10-22, this PC)
+
+Ruling: AUTHORIZE WITH GATES after the fix pass r1 (`W2_CODE_MASTER_ELDER_VERDICT.md` section 4, landed in e0d4353 + da78acf).
+
+    110e568  Release 0.2.0   (VERSION 0.2.0; CHANGELOG 0.2.0 "What v1.0.0 is not" + known gaps = verdict sections 5-6; README status)
+    ci.yml   39830004069 green, six jobs (110e568)
+    git tag -a v0.2.0 -m "LJ4EVR 0.2.0 - W2 playback"; git push origin v0.2.0   -> tag on 110e568
+    release.yml 39831248472 green first run: check, windows, macos, release
+
+Release: https://github.com/UnbannableGT/LJ4EVR/releases/tag/v0.2.0 (prerelease, 0.x)
+
+| Asset | Bytes | sha256 |
+|---|---|---|
+| `LJ4EVR-0.2.0-win64-setup.exe` | 1301129 | 798d7c183eb2d42c5ed5bc0e8a042c361cffb32ba5284d7b9bc8ea537151b16a |
+| `LJ4EVR-0.2.0-macos.dmg` | 2939973 | 6cf5ddc478a8dad6d0f4002c01b94598048fa48c9667badd20f59b038ab84747 |
+| `SHA256SUMS` | 184 | |
+
+`gh release download v0.2.0` into the scratch area, `sha256sum -c SHA256SUMS`: both OK. Installer VERSIONINFO:
+ProductName=LJ4EVR ProductVersion=0.2.0 FileVersion=0.2.0.
+
+Windows installer, this PC (Windows 11, unelevated shell, no UAC prompt; the account is an Administrators-group member,
+so the standard-user install stays ME-45, W3 entry):
+
+    (User\Default and Default.lj4b moved aside first: the script's fresh-library precondition)
+    LJ4EVR-0.2.0-win64-setup.exe /S                      -> rc 0
+    %LOCALAPPDATA%\Programs\LJ4EVR\                      lj4evr.exe 8156672, Uninstall.exe 111740, THIRD_PARTY_NOTICES.txt 2055
+    HKCU\...\Uninstall\LJ4EVR                            DisplayName "LJ4EVR 0.2.0", DisplayVersion 0.2.0
+    Start Menu\Programs\LJ4EVR 0.2.0\                    (per-user)
+    lj4evr.exe --version                                 LJ4EVR 0.2.0                                                   rc 0
+    lj4evr.exe --script <repo>\tests\ui\scripts\w2_acceptance.lj4s
+                                                         rc 0 from a scratch cwd (shots under <scratch>\run\docs\screenshots\w2\,
+                                                         not committed); every assert green, 18 shot lines, 122 files;
+                                                         PIL over the 122: 0 errors, all 18 -TLJMainForm.png 799x606;
+                                                         Configuration.txt written (ME-92)
+    Uninstall.exe /S _?=<instdir> (copy run from scratch) -> rc 0; HKCU uninstall key gone, Start Menu folder gone,
+                                                         install directory gone
+    User\Default and Default.lj4b restored from the copies moved aside; the run's library kept in the scratch area.
+
+Gotcha: launched from Git Bash, the uninstaller ignored `/S` and showed its window (killed); `Start-Process -ArgumentList
+'/S','_?=<instdir>' -Wait` from PowerShell ran silent. Use PowerShell for the NSIS switches.
+
+macOS: no Mac on this PC. `LJ4EVR-0.2.0-macos.dmg` checked by size and signature only: 2939973 bytes, first block zlib
+(`78 da`, UDZO) and a `koly` UDIF trailer (version 4) in the last 512 bytes. **ME-21 Mac acceptance is open for Joey**: run
+the .dmg on his Mac (right-click LJ4EVR.app > Open, or `xattr -d com.apple.quarantine`), screenshot the Sequence window and
+one menu, and latch a cue from a real MIDI device (W2 acceptance item 2's Mac half).
