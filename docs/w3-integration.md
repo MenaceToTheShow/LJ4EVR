@@ -59,6 +59,12 @@ tree: 97 of 98, the one failure `test_uiscript_w3:263` (row 1 below).
 | Delete Macros has no record kind for `.bez` (movement) | kept: `remove()` + `LJ_ACT_BEZ_RELOAD`, which now reloads (row 2). An `LJ_REC_BEZ` kind is not needed for one folder of named files |
 | ME-104 TSelectBGCueForm has no behaviour file (desktop-app) | open, section 7 (windows owner) |
 | ME-45 standard-user install, ME-21 Joey's Mac run (desktop-app) | manual, section 7 |
+| CI 0d131fa / ba6ea46, gcc and clang: `lj_movemacro_editor.c` -Wmissing-field-initializers (`{ "N1", "-" }`, three positional `lj_ctl_desc`), `lj_profile_editor_form.c:871` -Wformat-truncation (`dflt[8]`) | `.on_click = NULL` / `.tag = 0` designators; `dflt[16]`; and, found by reading every small buffer the W3 files print into, `t[12]` in `lj_gdc_form.c:420` and `lj_profile_editor_form.c:467`, `ad.t[3][12]` in `lj_movemacro_editor.c` |
+| CI ba6ea46 linux-gcc-asan: heap-use-after-free in `test_cuelist_form` (THotkeyFunctionDialog Ok destroys its window inside its own click; `lj_window.c:440` then reads it) | root cause in `ui/lj_window.c`: `lj_window_destroy` called while that window is inside `lj_window_event` / `lj_window_popup_event` marks it dead and the outermost event frees it on return. Every Ok, Cancel or close handler that destroys its own window (more than twenty across the W3 windows, found by grep) is covered by the one guard |
+| CI ba6ea46 linux-gcc-asan: LSan 15,360 bytes in `test_profile_editor` (`lj_sfunc_buttons` via `lj_layout_derive`) | `fixlib/lj_layout.c` `lj_window_add`: a window dropped for having no rows now frees its special groups' buttons |
+| CI ba6ea46 linux-clang fuzz step: `libclang_rt.asan*.a` missing in the CI image | the step installs `libclang-rt-19-dev` per run (ponytail comment: bake it into docker.yml) |
+| CI 284c536 fuzz_gs2 reached cov 12 only (inputs capped at 4096 bytes never pass the 20,851-byte size check) | the target zero-pads each input to a whole record and CI passes `-max_len=20851`: cov 708 / ft 1222 in 60 s on Linux; a local MSVC `/fsanitize=fuzzer` run of 60 s: 1,373,080 runs, no finding |
+| CI 284c536 windows-msvc Debug ctest: `test_lock:32/39` (a lock pair preempted on the runner held > 2 ms and logged) | the loop allows up to two such lines and the deliberate 3 ms hold is counted relative to them (`tests/core/test_lock.c`) |
 
 ## 4. Tests
 
@@ -134,7 +140,8 @@ unchanged). The reverted ME-100 attempt is why WIN_STATICS2_FORM is unchanged.
 
 ## 6. Gates touched (docs/w3-gates.md)
 
-ME-31 remainder (Export All / Reload / Import with the 8b script row), LORD_C-17 (CI fuzz step), LORD_FIDELITY-16
+ME-31 remainder (Export All / Reload / Import with the 8b script row), LORD_C-17 (CI fuzz step, both targets 60 s
+green), LORD_FIDELITY-16
 (F8 points at the W3 capture, W2 capture deleted), NIT-26 (popup caption), ME-103 (sha re-recorded; design
 sentence owed), ME-16 (Debug selftest and the open-every-window script), ME-2 / ME-23 greps (section 4).
 
@@ -161,4 +168,18 @@ sentence owed), ME-16 (Debug selftest and the open-every-window script), ME-2 / 
 
 ## 8. CI
 
-    0d131fa (pre-integration)  pushed with the tracks' tree
+    0d131fa (pre-integration)  run 39843823840: windows-msvc red (test_uiscript_w3:263, the gs2 stub), macos-clang,
+                               linux-clang, linux-gcc-asan red (lj_movemacro_editor.c missing-field-initializers,
+                               lj_profile_editor_form.c format-truncation); generate-check green
+    ba6ea46 (integration)      run 39847323314: windows-msvc, macos-clang (CoreMIDI backend compiled:
+                               lj_midi_coremidi.c.o), generate-check green; linux-gcc-asan red (ASan
+                               test_cuelist_form, LSan test_profile_editor); linux-clang red (fuzz: no compiler-rt)
+    284c536 (CI fixes)         run 39848757895: five green; windows-msvc red on test_lock (Debug ctest, runner
+                               preemption)
+    e655c79 (lock, fuzz_gs2)   run 39850233302: green, all six jobs.
+                               fuzz_gs2 1,428,002 runs / cov 708, fuzz_udf 16,273,089 runs / cov 175, 61 s each
+                               determinism: frames-{linux,macos,windows}.bin 1,641,600 bytes, sha256
+                               5b13f41930362b75a7aa6f9c53f77db2d315a4039ea5a18da664ea1263114b50 (equal)
+                               replay-frames.bin linux / windows / macos
+                               977db5f89f81cbb4141213b116b01f866dfb32d101fabbb34951fb46d670e2dd (equal; ME-78, ME-103)
+                               https://github.com/UnbannableGT/LJ4EVR/actions/runs/39850233302
