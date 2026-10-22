@@ -358,3 +358,47 @@ Unchanged. W2 reads `notes.txt` and the per-kind counts back for the Restore dia
 | `Main.Ini` | `[STATICS]` | `Use Fadetime LevelAutoEnable LevelAutoDisable DefaultLevel` (W1 row; now read) | windows |
 | `Main.Ini` | `[LOOPFORM]`, `[CUETIMEFORM]` | `Top` / `Top Expanded` | windows |
 | `Main.Ini` | `[GLOBALINTENSITY]` | `Sub1..Sub8 MasterOnly SyncBump SyncFlags` (the exe's, beside the W1 keys) | windows |
+
+## W2 model track (bodies landed 2026-10-22)
+
+What the bodies do beyond the grammar above; every row has a check in `test_model_w2_records`
+or `test_model_w2_library`.
+
+- **ME-77 everywhere.** Every numeric key of every record kind is read through `lj_kv_range`
+  (`key=value` fields) or `lj_kv_range_lead` (the leading number of a value: `num=12`,
+  `cuetime=250`, `bgcue=3 genmacro=0`, `link=<seq>,<scene>`, the `group` / `htp` / `preset`
+  indices). An out-of-range or non-numeric value fails the file with
+  `<path> item N: number out of range`; nothing aliases into range. The W1 sites changed with it:
+  `.cue` (`cuetime` 1..999, `spt`/`atpt` 1..255, `first`/`last`/`goto` 0..999, `loops` 0..65535,
+  `link`/`seq` 0..99999999, `time` 0..999, `chase` 0..60000, flags 0..1) and `Config.dat` (`link`
+  0..4, `addr` 0..512, `id` 0..65535, `x`/`y` int16, `tab` 0..255, `sub` 0..8). `Config.dat`
+  `link=9` is now a load error, not a validator error.
+- **Statics.dat.** `group n name=` lines are written only for names that differ from `Group n`
+  and come before the pages; `lj_statics_save` (W1) writes no group lines, `lj_statics_groups_save`
+  writes both. `n=` is 1..64 (ME-30); slot indices on disk stay 1..20 (`lj_static_page` holds
+  `LJ_STATICS2_SLOTS_PER_PAGE` slots; ME-30 storage beyond 20 is open). `groups=` is the decimal 64-bit mask, digits only.
+- **GroupInfo.dat.** `htp n name=` lines are written only for names that differ from
+  `HTP group n` (PROPOSAL default) and follow the `group` lines.
+- **The `.GPA` patch.** `htp=` is 0..16777215 (24 bits); `inv` 0..1; `sl` 0..4, `sc` 0..512
+  (0 when `src=none`); the validator also rejects a mask over 24 bits.
+- **CuePageInfo.Dat.** Cue numbers 1..99999999 and at most 255 per page; a missing file is no
+  pages. `lj_cuepages_add_cue` never adds a cue already on the page (03 s5.7, the header contract);
+  duplicates on a page still load from disk.
+- **Notes.txt.** Binary read and write: the bytes as typed, CR LF kept, no conversion; over
+  64 KB - 1 loads truncated with -1.
+- **`.lj4b`.** The backup's own notes are the archive entry `notes.txt` (case-sensitive) and are
+  never extracted; the library's `Notes.txt` travels as an ordinary file. Restore checks every
+  entry before writing the first byte: an absolute name, a `:` (drive or stream), a `..` anywhere,
+  or an uncompressed total over 512 MB (PROPOSAL) refuses the whole archive.
+  `lj_library_restore_new` restores into a new library named after the backup, or `name (2)` ..
+  `name (99)` when taken (collision rule PROPOSAL rig: LJ2 restores over the library, 01 s8), sets
+  `DirInfo.Ini [INFO] Name` to the folder name, keeps `[NEXT]`, and removes the new folder on any
+  failure.
+- **User libraries.** `lj_library_select` writes the installation-wide `Startup.ini
+  [USERDIRECTORY] Start=<name>\` (LJ2's key and value form, 18 s2); deleting the selected library
+  resets it to `Default\`. `lj_library_copy` ("copy files") refuses an existing target and sets
+  the copy's `DirInfo.Ini` Name.
+- **Delete Files.** `lj_library_list_records` enumerates each kind; `lj_library_used_by_cues`
+  marks the sequences (slots), BG cues (`bgcue=`) and generic macros (`genmacro=`) a cue on disk
+  references ("Check Used Sequences / Mark Unused Sequences", 03 s4.4). HouseLight cues (`HCues\`,
+  18 s2) are undecoded and not scanned.

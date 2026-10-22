@@ -1,11 +1,15 @@
 /* test_midi_map.c - `lj4evr_tests test_midi_map`: io/lj_midi.h without a device: LJ2's shipped
  * defaults (lj_midi_init), assign / unassign / match (exact channel before All), the queue the OS
  * thread posts into (lj_midi_inject = the UI script's `midi` verb) and the UI-thread dispatch:
- * note on -> lj_fn_run_prog(LJ_FN_PROG_CUE, num, 1), velocity 0 = note off (Note0), release on
- * note off per kind, channel gates, Learn, drops counted when the queue is full. Load/save of
- * MIDIIn.Ini / MIDIMap.dat are the midi track's rows (stubs return -1 today). */
+ * note on 90 3C 7F -> lj_fn_run_prog(LJ_FN_PROG_CUE, 1, 1); velocity 0 = note off (Note0); note
+ * off ignored by a latched cue, used for the flash release and (LatchOff) the cue clear, only for
+ * the last note on; channel gates; CC 7 -> LJ_FN_MASTER_LEVEL 0..127 -> 0..100 %; Learn binds the
+ * next note only; malformed messages dropped, never dispatched; a full queue drops and counts;
+ * MIDIIn.Ini (LJ2's keys, unknown keys kept) + MIDIMap.dat round trip and the ME-77 refusals. */
+#define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC (as tests/io/test_hotkeys.c) */
 #include <stdio.h>
 #include <string.h>
+#include "core/lj_ini.h"
 #include "io/lj_fn.h"
 #include "io/lj_midi.h"
 
@@ -17,17 +21,85 @@ static void lj_t_handler(enum lj_fn fn, int edge, uint32_t num, void *ud) { (voi
 
 static void lj_t_drain(const lj_midi_map *m) { uint8_t msg[3]; while (lj_midi_poll(msg)) lj_midi_dispatch(m, msg); }
 static void lj_t_send(const lj_midi_map *m, int b0, int b1, int b2) { uint8_t msg[3]; msg[0] = (uint8_t)b0; msg[1] = (uint8_t)b1; msg[2] = (uint8_t)b2; lj_midi_inject(msg); lj_t_drain(m); }
+static void lj_t_write(const char *path, const char *text) { FILE *f = fopen(path, "wb"); if (f) { fputs(text, f); fclose(f); } }
+static lj_midi_map_entry lj_t_entry(int kind, int ch, int note, enum lj_fn fn, uint32_t num)
+{ lj_midi_map_entry e; memset(&e, 0, sizeof e); e.kind = (uint8_t)kind; e.ch = (uint8_t)ch; e.note = (uint8_t)note; e.fn = (uint16_t)fn; e.num = num; return e; }
+
+static const char lj_t_shipped_ini[] =   /* reference/.../User/Default/MIDIIn/MIDIIn.Ini, the shipped file's keys and values */
+    "[FORM]\r\nTop=574\r\nLeft=1207\r\n[OPTIONS]\r\nOnTop=1\r\nStartMinimized=0\r\nAutoSave=1\r\n[SETUP]\r\nDeviceCode=0\r\nNote0=1\r\nFlashOff=1\r\n"
+    "LatchOff=0\r\nListOff=0\r\nBGLatchOff=0\r\nSeqOff=1\r\n[SEQ]\r\nSeqEnable=0\r\nSeqChannel=16\r\n[CUE]\r\nCueEnable=0\r\nCueChannel=16\r\n[BGCUE]\r\n"
+    "BGCueEnable=0\r\nBGCueChannel=16\r\n[CUELIST]\r\nCueListChannel=16\r\nCueListEnable=0\r\n[FUNCTIONS]\r\nFunctionsEnable=0\r\nFunctionsChannel=16\r\n";
+
+static void lj_t_files(void)
+{
+    static lj_midi_map a, b;
+    lj_midi_map_entry e;
+    lj_ini *ini;
+    char err[256];
+    int i;
+
+    lj_t_write("test_midi_MIDIIn.Ini", lj_t_shipped_ini);       /* the shipped file loads to the shipped defaults */
+    CHECK(lj_midi_load("test_midi_MIDIIn.Ini", "test_midi_absent.dat", &a, err, sizeof err) == 0 && err[0] == 0);
+    CHECK(a.device == 0 && a.note0_is_off == 1 && a.release_on_off[LJ_MIDI_SEQ] == 1 && a.release_on_off[LJ_MIDI_CUE] == 0 && a.on_top == 1 && a.auto_save == 1 && a.n == 0);
+    for (i = 0; i < LJ_MIDI_KIND_COUNT; i++) CHECK(a.enabled[i] == 0 && a.channel[i] == 16);
+    CHECK(lj_midi_load("test_midi_absent.Ini", "test_midi_absent.dat", &a, err, sizeof err) == 0 && a.device == -1);   /* both missing: defaults */
+
+    a.enabled[LJ_MIDI_CUE] = 1; a.channel[LJ_MIDI_CUE] = 3; a.release_on_off[LJ_MIDI_BGCUE] = 1; a.start_minimized = 1; a.device = 2;
+    a.enabled[LJ_MIDI_CC] = 1;
+    e = lj_t_entry(LJ_MIDI_CUE, 0, 60, LJ_FN_NONE, 12);              CHECK(lj_midi_assign(&a, &e) == 0);
+    e = lj_t_entry(LJ_MIDI_SEQ, 16, 127, LJ_FN_NONE, 2000000000u);   CHECK(lj_midi_assign(&a, &e) == 0);
+    e = lj_t_entry(LJ_MIDI_FN, 1, 0, LJ_FN_BLACKOUT_RESTORE, 0);      CHECK(lj_midi_assign(&a, &e) == 0);
+    e = lj_t_entry(LJ_MIDI_CC, 0, 7, LJ_FN_MASTER_LEVEL, 0);          CHECK(lj_midi_assign(&a, &e) == 0);
+    CHECK(lj_midi_save("test_midi_MIDIIn.Ini", "test_midi_MIDIMap.dat", &a) == 0);
+    memset(&b, 0x5A, sizeof b);
+    CHECK(lj_midi_load("test_midi_MIDIIn.Ini", "test_midi_MIDIMap.dat", &b, err, sizeof err) == 0 && err[0] == 0);
+    CHECK(b.n == a.n && b.device == 2 && b.start_minimized == 1 && b.enabled[LJ_MIDI_CUE] == 1 && b.channel[LJ_MIDI_CUE] == 3 && b.release_on_off[LJ_MIDI_BGCUE] == 1 && b.enabled[LJ_MIDI_CC] == 1);
+    CHECK(memcmp(b.enabled, a.enabled, sizeof a.enabled) == 0 && memcmp(b.channel, a.channel, sizeof a.channel) == 0 && memcmp(b.release_on_off, a.release_on_off, sizeof a.release_on_off) == 0);
+    for (i = 0; i < a.n && i < b.n; i++)   /* field-wise: the entry has padding */
+        if (a.e[i].kind != b.e[i].kind || a.e[i].ch != b.e[i].ch || a.e[i].note != b.e[i].note || a.e[i].fn != b.e[i].fn || a.e[i].num != b.e[i].num) { fails++; printf("FAIL map round trip row %d\n", i); }
+    ini = lj_ini_load("test_midi_MIDIIn.Ini");                   /* keys we do not own survive the save; LJ2's spellings */
+    CHECK(ini && lj_ini_geti(ini, "FORM", "Left", 0) == 1207 && lj_ini_geti(ini, "SETUP", "SeqOff", 0) == 1 && lj_ini_geti(ini, "CUE", "CueChannel", 0) == 3 && lj_ini_geti(ini, "SETUP", "BGLatchOff", 0) == 1);
+    lj_ini_free(ini);
+
+    /* ME-77: a present bad value refuses the file (defaults out), never aliases into range */
+    lj_t_write("test_midi_bad.Ini", "[CUE]\r\nCueChannel=17\r\n");
+    CHECK(lj_midi_load("test_midi_bad.Ini", NULL, &b, err, sizeof err) == -1 && strstr(err, "CueChannel") != NULL && b.channel[LJ_MIDI_CUE] == 16);
+    lj_t_write("test_midi_bad.Ini", "[SETUP]\r\nNote0=x\r\n");
+    CHECK(lj_midi_load("test_midi_bad.Ini", NULL, &b, err, sizeof err) == -1);
+    lj_t_write("test_midi_bad.dat", "LJ4 midimap 1\nmap kind=cue ch=0 note=128 num=1\n");
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == -1 && b.n == 0);
+    lj_t_write("test_midi_bad.dat", "LJ4 midimap 1\nmap kind=cue ch=17 note=1 num=1\n");
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == -1);
+    lj_t_write("test_midi_bad.dat", "LJ4 midimap 1\nmap kind=cue ch=0 note=1 num=0\n");
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == -1);
+    lj_t_write("test_midi_bad.dat", "LJ4 midimap 1\nmap kind=fn ch=0 note=1 fn=LJ_FN_NOPE\n");
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == -1);
+    lj_t_write("test_midi_bad.dat", "LJ4 midimap 1\nmap kind=organ ch=0 note=1 num=1\n");
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == -1);
+    lj_t_write("test_midi_bad.dat", "LJ4 midimap 1\nmap kind=cue ch=0 num=1\n");   /* note missing */
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == -1);
+    lj_t_write("test_midi_bad.dat", "LJ4 hot 1\n");                 /* wrong kind of file */
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == -1);
+    lj_t_write("test_midi_bad.dat", "LJ4 midimap 1\nfuture=1\nmap kind=cl ch=5 note=9 num=3 extra=7\n");   /* unknown keys skipped (design 5.2) */
+    CHECK(lj_midi_load(NULL, "test_midi_bad.dat", &b, err, sizeof err) == 0 && b.n == 1 && b.e[0].kind == LJ_MIDI_CL && b.e[0].ch == 5 && b.e[0].num == 3);
+    a.channel[LJ_MIDI_FN] = 0;                                    /* an invalid map is never written */
+    CHECK(lj_midi_save("test_midi_MIDIIn.Ini", "test_midi_MIDIMap.dat", &a) == -1);
+    remove("test_midi_MIDIIn.Ini"); remove("test_midi_MIDIMap.dat"); remove("test_midi_bad.Ini"); remove("test_midi_bad.dat");
+}
 
 int lj_test_midi_map(int argc, char **argv);
 int lj_test_midi_map(int argc, char **argv)
 {
-    lj_midi_map m; lj_midi_map_entry e; int i, ch, note; uint8_t msg[3];
+    static lj_midi_map m;
+    lj_midi_map_entry e; int i, ch, note; uint8_t msg[3]; uint32_t d0;
     (void)argc; (void)argv;
     lj_midi_init(&m);
     CHECK(m.note0_is_off == 1 && m.release_on_off[LJ_MIDI_SEQ] == 1 && m.release_on_off[LJ_MIDI_CUE] == 0 && m.on_top == 1 && m.auto_save == 1 && m.device == -1);
     for (i = 0; i < LJ_MIDI_KIND_COUNT; i++) CHECK(m.enabled[i] == 0 && m.channel[i] == 16);
     CHECK(lj_midi_validate(&m) == NULL);
-    CHECK(lj_midi_list(NULL, 0) >= 0);                        /* the null backend: no devices, no error */
+    CHECK(lj_midi_list(NULL, 0) >= 0);                        /* any backend: a count, no error */
+    CHECK(strcmp(lj_midi_kind_words[LJ_MIDI_CC], "cc") == 0 && lj_midi_kind_words[LJ_MIDI_KIND_COUNT] == NULL);
+    CHECK(lj_fn_table[LJ_FN_MASTER_LEVEL].flags == LJ_FNF_EXT);
 
     memset(&e, 0, sizeof e); e.kind = LJ_MIDI_CUE; e.ch = LJ_MIDI_CH_ALL; e.note = 60; e.num = 12;
     CHECK(lj_midi_assign(&m, &e) == 0 && m.n == 1);
@@ -36,12 +108,14 @@ int lj_test_midi_map(int argc, char **argv)
     e.kind = LJ_MIDI_FN; e.fn = LJ_FN_BLACKOUT_RESTORE; e.ch = 2; e.note = 61; CHECK(lj_midi_assign(&m, &e) == 0 && m.n == 3);
     e.fn = LJ_FN_NONE; CHECK(lj_midi_assign(&m, &e) == -1);
     e.kind = LJ_MIDI_SEQ; e.fn = 0; e.num = 0; CHECK(lj_midi_assign(&m, &e) == -1);
+    e.kind = LJ_MIDI_CUE; e.num = 1; e.note = 128; CHECK(lj_midi_assign(&m, &e) == -1);
     CHECK(lj_midi_match(&m, 0, 1, 60)->num == 14);            /* exact channel first */
     CHECK(lj_midi_match(&m, 0, 5, 60)->num == 12);            /* then All */
     CHECK(lj_midi_match(&m, 1 << LJ_MIDI_FN, 1, 60) == NULL); /* kind mask */
     CHECK(lj_midi_match(&m, 0, 1, 62) == NULL);
 
     lj_fn_bind(LJ_FN_PROG_CUE, lj_t_handler, NULL); lj_fn_bind(LJ_FN_BLACKOUT_RESTORE, lj_t_handler, NULL); lj_fn_bind(LJ_FN_PROG_SEQ_FLASH, lj_t_handler, NULL);
+    lj_fn_bind(LJ_FN_NEW_CLEAR_CUE, lj_t_handler, NULL); lj_fn_bind(LJ_FN_MASTER_LEVEL, lj_t_handler, NULL);
     lj_t_calls = 0;
     lj_t_send(&m, 0x90, 60, 100);                             /* every kind disabled: nothing fires */
     CHECK(lj_t_calls == 0);
@@ -50,38 +124,97 @@ int lj_test_midi_map(int argc, char **argv)
     CHECK(lj_t_calls == 1 && lj_t_fn == LJ_FN_PROG_CUE && lj_t_num == 14 && lj_t_edge == 1);
     lj_t_send(&m, 0x90, 60, 0);                               /* velocity 0 = note off; LatchOff 0: a latched cue ignores it */
     CHECK(lj_t_calls == 1);
-    m.release_on_off[LJ_MIDI_CUE] = 1;
-    lj_t_send(&m, 0x80, 60, 0);                               /* note off with LatchOff: dispatch hands edge 0 on, but lj_fn_run_prog drops a
-                                                                 non-flash release (the W1 test_hotkeys row); the LatchOff release path is the
-                                                                 W2 midi + app tracks' (pending, contracts finish 2026-10-22) */
+    lj_t_send(&m, 0x80, 60, 64);                              /* a real note off: ignored too */
     CHECK(lj_t_calls == 1);
+    m.release_on_off[LJ_MIDI_CUE] = 1;
+    lj_t_send(&m, 0x80, 60, 0);                               /* LatchOff: the note off of the last cue note on clears the cue (New/Clear Cue) */
+    CHECK(lj_t_calls == 2 && lj_t_fn == LJ_FN_NEW_CLEAR_CUE && lj_t_edge == 1);
+    lj_t_send(&m, 0x80, 60, 0);                               /* once: nothing latched any more */
+    CHECK(lj_t_calls == 2);
+    m.release_on_off[LJ_MIDI_CUE] = 0;
     m.channel[LJ_MIDI_CUE] = 3;                               /* channel gate: only MIDI channel 3 */
     lj_t_send(&m, 0x90, 60, 100);
-    CHECK(lj_t_calls == 1);
+    CHECK(lj_t_calls == 2);
     lj_t_send(&m, 0x92, 60, 100);                             /* channel 3 note 60 -> the All entry (cue 12) */
-    CHECK(lj_t_calls == 2 && lj_t_num == 12);
+    CHECK(lj_t_calls == 3 && lj_t_num == 12);
     m.enabled[LJ_MIDI_FN] = 1;
     lj_t_send(&m, 0x91, 61, 1);                               /* channel 2 note 61 -> the function, press */
-    CHECK(lj_t_calls == 3 && lj_t_fn == LJ_FN_BLACKOUT_RESTORE && lj_t_edge == 1);
-    lj_t_send(&m, 0xB1, 61, 1);                               /* CC: ignored (extension off) */
-    CHECK(lj_t_calls == 3);
+    CHECK(lj_t_calls == 4 && lj_t_fn == LJ_FN_BLACKOUT_RESTORE && lj_t_edge == 1);
+    lj_t_send(&m, 0xB1, 61, 1);                               /* CC with the extension off: ignored */
+    CHECK(lj_t_calls == 4);
 
-    lj_midi_learn_begin();                                    /* Learn eats the next note on */
+    /* the brief's row: note on 90 3C 7F through inject -> latch cue 1 */
+    m.channel[LJ_MIDI_CUE] = 16;
+    e = lj_t_entry(LJ_MIDI_CUE, LJ_MIDI_CH_ALL, 0x3C, LJ_FN_NONE, 1); CHECK(lj_midi_assign(&m, &e) == 0);
+    CHECK(lj_midi_unassign(&m, LJ_MIDI_CUE, 1, 60) == 0);    /* the channel-1 entry would win otherwise */
+    lj_t_send(&m, 0x90, 0x3C, 0x7F);
+    CHECK(lj_t_calls == 5 && lj_t_fn == LJ_FN_PROG_CUE && lj_t_num == 1 && lj_t_edge == 1);
+    lj_t_send(&m, 0x80, 0x3C, 0x40);                          /* note off: the latch holds */
+    CHECK(lj_t_calls == 5);
+
+    /* flash: the note off releases (Release Seq on Note Off, FlashOff=1 shipped), only for the last flash note */
+    m.enabled[LJ_MIDI_SEQ] = 1;
+    e = lj_t_entry(LJ_MIDI_SEQ, LJ_MIDI_CH_ALL, 40, LJ_FN_NONE, 7); CHECK(lj_midi_assign(&m, &e) == 0);
+    e = lj_t_entry(LJ_MIDI_SEQ, LJ_MIDI_CH_ALL, 41, LJ_FN_NONE, 8); CHECK(lj_midi_assign(&m, &e) == 0);
+    lj_t_send(&m, 0x90, 40, 90);
+    CHECK(lj_t_calls == 6 && lj_t_fn == LJ_FN_PROG_SEQ_FLASH && lj_t_num == 7 && lj_t_edge == 1);
+    lj_t_send(&m, 0x90, 40, 0);                               /* velocity 0 = note off -> release */
+    CHECK(lj_t_calls == 7 && lj_t_fn == LJ_FN_PROG_SEQ_FLASH && lj_t_num == 7 && lj_t_edge == 0);
+    lj_t_send(&m, 0x90, 40, 90); lj_t_send(&m, 0x90, 41, 90); /* 41 is now the flashed one */
+    lj_t_send(&m, 0x80, 40, 0);                               /* not the last note on: ignored */
+    CHECK(lj_t_calls == 9 && lj_t_num == 8 && lj_t_edge == 1);
+    lj_t_send(&m, 0x80, 41, 0);
+    CHECK(lj_t_calls == 10 && lj_t_num == 8 && lj_t_edge == 0);
+    m.note0_is_off = 0;                                       /* Note0 off: velocity 0 is a note on */
+    lj_t_send(&m, 0x90, 40, 0);
+    CHECK(lj_t_calls == 11 && lj_t_edge == 1);
+    m.note0_is_off = 1; lj_t_send(&m, 0x80, 40, 0);
+    CHECK(lj_t_calls == 12 && lj_t_edge == 0);
+
+    /* CC 7 -> the Grand Master, 0..127 -> 0..100 % (the marked extension) */
+    e = lj_t_entry(LJ_MIDI_CC, LJ_MIDI_CH_ALL, 7, LJ_FN_MASTER_LEVEL, 0); CHECK(lj_midi_assign(&m, &e) == 0);
+    lj_t_send(&m, 0xB0, 7, 127);
+    CHECK(lj_t_calls == 12);                                  /* kind cc disabled */
+    m.enabled[LJ_MIDI_CC] = 1;
+    lj_t_send(&m, 0xB0, 7, 127); CHECK(lj_t_calls == 13 && lj_t_fn == LJ_FN_MASTER_LEVEL && lj_t_num == 100 && lj_t_edge == 1);
+    lj_t_send(&m, 0xB4, 7, 0);   CHECK(lj_t_calls == 14 && lj_t_num == 0);
+    lj_t_send(&m, 0xB0, 7, 64);  CHECK(lj_t_calls == 15 && lj_t_num == 50);
+    lj_t_send(&m, 0xB0, 7, 1);   CHECK(lj_t_calls == 16 && lj_t_num == 1);
+    lj_t_send(&m, 0xB0, 8, 64);  CHECK(lj_t_calls == 16);    /* another controller */
+    lj_t_send(&m, 0x90, 7, 64);  CHECK(lj_t_calls == 16);    /* note 7 is not CC 7 */
+
+    /* Learn binds the next note on only */
+    lj_midi_learn_begin();
     CHECK(lj_midi_learn_take(&ch, &note) == 0);
     lj_t_send(&m, 0x80, 10, 0);                               /* a note off does not learn */
     CHECK(lj_midi_learn_take(&ch, &note) == 0);
-    lj_t_send(&m, 0x95, 70, 90);
-    CHECK(lj_midi_learn_take(&ch, &note) == 1 && ch == 6 && note == 70 && lj_t_calls == 3);
+    lj_t_send(&m, 0x95, 70, 90);                              /* the next note on: learned, not dispatched */
+    lj_t_send(&m, 0x90, 0x3C, 0x7F);                          /* the one after it dispatches and does not overwrite */
+    CHECK(lj_t_calls == 17 && lj_t_num == 1);
+    CHECK(lj_midi_learn_take(&ch, &note) == 1 && ch == 6 && note == 70);
     CHECK(lj_midi_learn_take(&ch, &note) == 0);               /* consumed once */
+    lj_midi_learn_begin(); lj_midi_learn_cancel();
+    lj_t_send(&m, 0x90, 0x3C, 0x7F);
+    CHECK(lj_t_calls == 18 && lj_midi_learn_take(&ch, &note) == 0);
+
+    /* malformed: status < 0x80 or a data byte > 0x7F is dropped and counted, never dispatched */
+    d0 = lj_midi_dropped();
+    lj_t_send(&m, 0x3C, 0x3C, 0x7F); lj_t_send(&m, 0x90, 0xBC, 0x7F); lj_t_send(&m, 0x90, 0x3C, 0xFF);
+    CHECK(lj_t_calls == 18 && lj_midi_dropped() == d0 + 3);
+    msg[0] = 0x90; msg[1] = 0x3C; msg[2] = 0x80;
+    CHECK(lj_midi_dispatch(&m, msg) == NULL && lj_t_calls == 18);   /* dispatch refuses it too (the public entry) */
+    lj_t_send(&m, 0xF8, 0, 0); lj_t_send(&m, 0xFE, 0, 0);    /* clock / active sensing: ignored, not counted */
+    CHECK(lj_t_calls == 18 && lj_midi_dropped() == d0 + 3);
 
     msg[0] = 0x90; msg[1] = 1; msg[2] = 1;
     for (i = 0; i < LJ_MIDI_QUEUE + 5; i++) lj_midi_inject(msg);   /* a full queue drops and counts */
-    CHECK(lj_midi_dropped() == 5);
+    CHECK(lj_midi_dropped() == d0 + 8);
     for (i = 0; lj_midi_poll(msg); i++) { }
     CHECK(i == LJ_MIDI_QUEUE);
 
-    CHECK(lj_midi_unassign(&m, LJ_MIDI_CUE, 1, 60) == 0 && m.n == 2 && lj_midi_unassign(&m, LJ_MIDI_CUE, 1, 60) == -1);
+    CHECK(lj_midi_unassign(&m, LJ_MIDI_CUE, 0, 60) == 0 && lj_midi_unassign(&m, LJ_MIDI_CUE, 0, 60) == -1);
     lj_fn_unbind_all();
-    printf("test_midi_map: %d failure(s) (MIDIIn.Ini / MIDIMap.dat round trip: W2 midi track)\n", fails);
+    lj_t_files();
+    printf("test_midi_map: %d failure(s)\n", fails);
     return fails ? 1 : 0;
 }

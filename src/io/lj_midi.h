@@ -28,7 +28,18 @@
  *   map kind=seq ch=0 note=60 num=12
  *   map kind=fn ch=1 note=61 fn=LJ_FN_BLACKOUT_RESTORE
  * kind seq|cue|bgcue|cl|fn, ch 0 = All or 1..16, note 0..127 (lj_kv_range, ME-77),
- * num = the record number (seq/cue/bgcue/cl), fn = the lj_fn_table name. */
+ * num = the record number (seq/cue/bgcue/cl), fn = the lj_fn_table name.
+ *
+ * W2 midi track additions (docs/midi.md): kind cc is the marked extension (05 s7 clone
+ * verdict, off by default: [CC] CCEnable=0 CCChannel=16 in MIDIIn.Ini are ours); its
+ * `note` is the controller number and its fn gets the value scaled 0..127 -> 0..100 as
+ * prog_num (map kind=cc ch=0 note=7 fn=LJ_FN_MASTER_LEVEL = CC 7 drives the Grand
+ * Master). A release (note off) fires only for the note that last fired that kind (05 s7:
+ * "a note off command corresponding to the last ... note on"); Release Cue / BGCue /
+ * Cuelist run LJ_FN_NEW_CLEAR_CUE / LJ_FN_CLEAR_BGCUE / LJ_FN_CUELIST_STOP_AND_CLEAR,
+ * Release Seq is the flash release (edge 0). lj_midi_post drops a malformed message
+ * (status < 0x80 or a data byte > 0x7F, counted in lj_midi_dropped) and ignores system
+ * messages (status >= 0xF0: clock, active sensing; MTC quarter-frame is W3). */
 #ifndef LJ_IO_MIDI_H
 #define LJ_IO_MIDI_H
 
@@ -43,6 +54,7 @@ typedef struct { int idx; char name[LJ_MIDI_NAME_CAP]; } lj_midi_dev;   /* idx =
 
 enum lj_midi_kind { LJ_MIDI_SEQ = 0 /* flash sequence while the note is held (SeqOff: release on note off) */, LJ_MIDI_CUE /* latch cue (LatchOff) */,
                     LJ_MIDI_BGCUE /* latch BG cue (BGLatchOff) */, LJ_MIDI_CL /* load/start cue list (ListOff), W3 */, LJ_MIDI_FN /* hotkey function: note on = edge 1, note off = edge 0 */,
+                    LJ_MIDI_CC /* W2 extension, off by default: control change -> fn with the value in percent as prog_num */,
                     LJ_MIDI_KIND_COUNT };
 typedef struct { uint8_t kind /*enum lj_midi_kind*/, ch /*0 = All, 1..16*/, note /*0..127*/; uint16_t fn /*enum lj_fn, LJ_MIDI_FN*/; uint32_t num /*record number*/; } lj_midi_map_entry;
 typedef struct {
@@ -64,7 +76,7 @@ void lj_midi_close(void);
 void lj_midi_init(lj_midi_map *m);                                                  /* LJ2's shipped defaults: everything disabled, channels 16, Note0 1, FlashOff 1, SeqOff 1, OnTop 1, AutoSave 1 */
 int  lj_midi_load(const char *ini_path, const char *map_path, lj_midi_map *out, char *err, size_t cap);   /* MIDIIn.Ini (missing = defaults) + MIDIMap.dat (missing = empty); -1 only when a present file is bad */
 int  lj_midi_save(const char *ini_path, const char *map_path, const lj_midi_map *in);
-const char *lj_midi_validate(const lj_midi_map *in);                                /* NULL = valid: kinds / channels / notes in range, fn in the table for LJ_MIDI_FN, num != 0 otherwise */
+const char *lj_midi_validate(const lj_midi_map *in);                                /* NULL = valid: kinds / channels / notes in range, fn in the table for LJ_MIDI_FN / LJ_MIDI_CC, num != 0 otherwise */
 int  lj_midi_assign(lj_midi_map *m, const lj_midi_map_entry *e);                   /* replaces an entry with the same kind/ch/note, else appends; -1 when full or invalid */
 int  lj_midi_unassign(lj_midi_map *m, enum lj_midi_kind kind, int ch, int note);
 const lj_midi_map_entry *lj_midi_match(const lj_midi_map *m, int kind_mask, int ch, int note);   /* the entry that fires: exact channel first, then All; kind_mask = bits (1 << kind), 0 = every kind; NULL when none */
@@ -84,6 +96,6 @@ int  lj_midi_learn_take(int *ch, int *note);                                    
  * lj_fn_run(fn, edge) for LJ_MIDI_FN; while learning, the first note on feeds Learn instead. Returns the entry fired or NULL. */
 const lj_midi_map_entry *lj_midi_dispatch(const lj_midi_map *m, const uint8_t msg[3]);
 
-extern const char *const lj_midi_kind_words[];   /* seq cue bgcue cl fn (the map= file words and the MIDI-IN window tabs), NULL-terminated */
+extern const char *const lj_midi_kind_words[];   /* seq cue bgcue cl fn cc (the map= file words and the MIDI-IN window tabs; cc is the extension, no LJ2 tab), NULL-terminated */
 
 #endif /* LJ_IO_MIDI_H */

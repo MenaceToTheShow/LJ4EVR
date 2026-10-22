@@ -4,45 +4,112 @@ design 10 W2 acceptance 5 "every 15/02-15/05 id has a hand file (CI check by id)
 
     python -I tools/check_profiles.py --tier 2 3 4 5     # W2: 15/02 MAC 600, 15/03 MAC 250 family, 15/04 MAC 2000 family, 15/05 Roboscan 518/812/218
     python -I tools/check_profiles.py --tier 1 10        # the W1 families (what exe_profiles_check.py --check already enforces)
+    python -I tools/check_profiles.py --hand DIR --tier 2   # check a copy of src/fixlib/hand (the "renamed file fails" proof)
 
-The id lists are 15-builtin-profiles-index.md (the note's "profiles (exe ids)" column); hand ids come from
-src/fixlib/hand/*.c the way tools/exe_profiles_check.py reads them (imported, so one parser). Exit 1 names
-every missing id; exit 0 prints the per-tier counts. This is the CTest row `profiles_ids`.
+Per id of the tier (15-builtin-profiles-index.md, the note's "profiles (exe ids)" column) a profile initialiser
+under src/fixlib/hand/*.c must exist (`lj_profile x = { .id = N, .footprint = F, ...` or `= LJ_MACRO(N, ...`, the
+regex tools/exe_profiles_check.py uses), carry the exe row's tag, name and mode literals (from the committed
+src/fixlib/lj_exe_profiles.c, so CI needs no reference/), and declare the channel count listed below (the Martin
+DMX table / manual footprint of the note; a macro whose footprint is a parameter is not checked). Exit 1 names
+every finding; exit 0 prints the per-tier counts. This is the CTest row `profiles_ids`.
 """
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import exe_profiles_check  # noqa: E402  (hand_ids, the same regex CI uses)
+import exe_profiles_check  # noqa: E402  (HAND, OUT, W1_IDS)
 
+# id: footprint (None = not checked). Sources: the note named per tier; PROPOSAL marks a footprint no Martin source gives.
 TIERS = {   # 15-builtin-profiles-index.md
-    1:  ("15/01 MAC 500 / Roboscan 918", [12, 31, 24, 30]),
-    2:  ("15/02 MAC 600", [11, 67]),
-    3:  ("15/03 MAC 250 family", [28, 47, 39, 105, 112, 133, 48, 118]),
-    4:  ("15/04 MAC 2000 family", [68, 84, 87, 88, 117, 161, 162, 188, 189, 190, 191]),
-    5:  ("15/05 Roboscan 518 / 812 / 218", [3, 58, 1, 52, 2, 57, 41, 36, 33]),
-    6:  ("15/06 Atomic 3000", [80, 114, 115]),
-    7:  ("15/07 MiniMAC", [54, 65, 53, 66, 69]),
-    8:  ("15/08 RoboColor", [13, 59, 14, 60, 15, 61, 37, 40]),
-    9:  ("15/09 MAC 550 / 575 / 700", [110, 155, 116, 140]),
-    10: ("15/10 generics", exe_profiles_check.W1_IDS[4:]),
+    1:  ("15/01 MAC 500 / Roboscan 918", {12: 16, 31: 16, 24: 16, 30: 16}),                    # 15/01 s2: 16 for all four
+    2:  ("15/02 MAC 600", {11: 14, 67: 15}),                                                   # DMXTAB-MAC600 V3 Mode 4; RN 2.6 NT = 15
+    3:  ("15/03 MAC 250 family", {28: 13, 47: 13, 39: 13, 105: 14, 112: 15, 133: 13, 48: 13,  # UM-MAC250, UM-Kr/En Rev K, UM-Wash Rev G, QLC/OFL
+                                  118: 18}),                                                   # 118: PROPOSAL (no protocol source)
+    4:  ("15/04 MAC 2000 family", {68: 24, 84: 31, 87: 21, 88: 21, 117: 21, 161: 21, 162: 21,  # DMXTAB-MAC2000Profile V1, UM-Perf Rev E, UM-Wash Rev L
+                                   188: 15, 189: 15, 190: 15, 191: 15}),                       # NBD: 21 - 6 barndoor channels (inferred)
+    5:  ("15/05 Roboscan 518 / 812 / 218", {3: 9, 58: 9, 1: 5, 52: 7, 2: 8, 57: 8,             # DMXTAB-518 V4, DMXTAB-812 V1, QLC 218
+                                            41: 5, 36: 5, 33: 14}),                            # via DMX Interface: PROPOSAL
+    6:  ("15/06 Atomic 3000", dict.fromkeys([80, 114, 115])),
+    7:  ("15/07 MiniMAC", dict.fromkeys([54, 65, 53, 66, 69])),
+    8:  ("15/08 RoboColor", dict.fromkeys([13, 59, 14, 60, 15, 61, 37, 40])),
+    9:  ("15/09 MAC 550 / 575 / 700", dict.fromkeys([110, 155, 116, 140])),
+    10: ("15/10 generics", dict.fromkeys(exe_profiles_check.W1_IDS[4:])),
 }
+
+INIT = re.compile(r"lj_profile\s+\w+\s*=\s*(?:\{\s*\.id\s*=\s*(\d+)|(LJ_\w+)\(\s*(\d+))")
+FOOT = re.compile(r"\.footprint\s*=\s*(\d+)\b")
+
+
+def exe_rows():
+    """id -> (tag, name, mode) from the committed generated table."""
+    text = open(exe_profiles_check.OUT, encoding="latin-1").read()
+    rows = {}
+    for m in re.finditer(r'^\s*\{\s*(\d+),\s*"((?:[^"\\]|\\.)*)",\s*"(?:[^"\\]|\\.)*",\s*"((?:[^"\\]|\\.)*)",\s*"((?:[^"\\]|\\.)*)",', text, re.M):
+        rows[int(m.group(1))] = (m.group(2), m.group(3), m.group(4))
+    return rows
+
+
+def hand_profiles(hand_dir):
+    """id -> list of (file, initialiser text incl. the macro body it expands, footprint or None)."""
+    out = {}
+    for fn in sorted(os.listdir(hand_dir)):
+        if not fn.endswith(".c"):
+            continue
+        text = open(os.path.join(hand_dir, fn), encoding="latin-1").read()
+        defs = {d.group(1): d.group(2) for d in re.finditer(r"^#define\s+(\w+)(?:\([^)]*\))?(.*?)(?<!\\)\n", text, re.M | re.S)}
+        for m in INIT.finditer(text):
+            end = text.find(";\n", m.end())
+            body = text[m.start():end if end >= 0 else len(text)]
+            pid = int(m.group(1) or m.group(3))
+            seen = set()
+            for _ in range(4):                       # expand the file's own macros the initialiser names, a few levels deep
+                more = [n for n in re.findall(r"\bLJ_\w+", body) if n in defs and n not in seen]
+                if not more:
+                    break
+                for n in more:
+                    seen.add(n)
+                    body += "\n" + defs[n]
+            f = FOOT.search(body)
+            out.setdefault(pid, []).append((fn, body, int(f.group(1)) if f else None))
+    return out
+
+
+def cstr(s):
+    return '"' + s + '"'
 
 
 def main(argv):
-    if len(argv) < 3 or argv[1] != "--tier":
+    hand_dir = exe_profiles_check.HAND
+    args = argv[1:]
+    if len(args) >= 2 and args[0] == "--hand":
+        hand_dir, args = args[1], args[2:]
+    if len(args) < 2 or args[0] != "--tier":
         print(__doc__)
         return 2
-    tiers = [int(a) for a in argv[2:]]
-    hand = exe_profiles_check.hand_ids()
+    tiers = [int(a) for a in args[1:]]
+    hand, rows = hand_profiles(hand_dir), exe_rows()
     bad = 0
     for t in tiers:
         name, ids = TIERS[t]
-        missing = [i for i in ids if i not in hand]
-        for i in missing:
-            print("%s: exe id %d has no hand file under src/fixlib/hand/" % (name, i))
-        bad += len(missing)
-        print("check_profiles: tier %d %s: %d of %d ids have a hand file" % (t, name, len(ids) - len(missing), len(ids)))
+        ok = 0
+        for i, want in ids.items():
+            found = hand.get(i)
+            if not found:
+                print("%s: exe id %d has no hand file under %s" % (name, i, hand_dir)); bad += 1; continue
+            if len(found) > 1:
+                print("%s: exe id %d has %d hand profiles (%s)" % (name, i, len(found), ", ".join(f for f, _, _ in found))); bad += 1; continue
+            fn, body, foot = found[0]
+            tag, pname, mode = rows.get(i, (None, None, None))
+            miss = [w for w, v in (("tag", tag), ("name", pname), ("mode", mode)) if v is not None and v != "" and cstr(v) not in body]
+            if pname is None:
+                print("%s: exe id %d is not a row of lj_exe_profiles.c" % (name, i)); bad += 1; continue
+            if miss:
+                print("%s: %s id %d does not carry the exe %s (%s)" % (name, fn, i, "/".join(miss), " / ".join((tag, pname, mode)))); bad += 1; continue
+            if want is not None and foot != want:
+                print("%s: %s id %d footprint %s, the note gives %d" % (name, fn, i, foot, want)); bad += 1; continue
+            ok += 1
+        print("check_profiles: tier %d %s: %d of %d ids have a matching hand file" % (t, name, ok, len(ids)))
     return 1 if bad else 0
 
 

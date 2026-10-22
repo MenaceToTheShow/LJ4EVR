@@ -213,7 +213,7 @@ static void lj_test_config(const lj_library *lib)
     lj_library_path(lib, "Config.dat", path, sizeof path);
     lj_write_text(path, "LJ4 config 1\nfx 1 kind=gs2 gs2=x.GS2 link=9 addr=1\n");
     CHECK(lj_show_load(b, lib) == -1);                    /* Config.dat exists and is invalid */
-    CHECK(lj_config_load(path, b, err, sizeof err) == 0 && b->fixture[0].link == 9);   /* the loader reads, the validator judges */
+    CHECK(lj_config_load(path, b, err, sizeof err) == -1 && strstr(err, "out of range"));   /* W2 ME-77: link=9 fails the line at load (it no longer reaches the validator) */
     lj_library_path(lib, "GroupInfo.dat", path, sizeof path);
     lj_write_text(path, "LJ4 groups 1\ngroup 1 name=X members=1,200\n");
     CHECK(lj_groups_load(path, b->user_group, err, sizeof err) == -1 && strstr(err, "item 1"));

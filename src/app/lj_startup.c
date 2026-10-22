@@ -6,6 +6,7 @@
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "ui/forms/lj_forms_gen.h"
+#include "ui/widgets/lj_widgets_lists.h"
 #include "version.h"
 
 int lj_startup_library(const char *userdir, const char *u_arg, lj_library *out)
@@ -54,4 +55,19 @@ lj_window *lj_startup_status_create(void)
     static const lj_binding b[] = { { "FormClose", lj_startup_noop, NULL }, { "FormCreate", lj_startup_noop, NULL },
                                     { "Re1MouseDown", lj_startup_noop, NULL }, { "Timer1Timer", lj_startup_noop, NULL }, { NULL, NULL, NULL } };
     return lj_window_create(&lj_form_TSTARTUPSTATUSWINDOW, b);
+}
+
+/* TStartupStatusWindow "Startup Status" (DFM caption, D2): Re1 read-only, one log line per row while the library loads. */
+void lj_startup_status_line(lj_window *status, const char *line)
+{
+    static char text[LJ_STARTUP_LINES][160];
+    static const char *rows[LJ_STARTUP_LINES];
+    static int n;
+    int i;
+    lj_widget *re = status ? lj_window_find(status, "Re1") : NULL;
+    if (!re || !line) return;
+    if (n == LJ_STARTUP_LINES) { memmove(text[0], text[1], sizeof text - sizeof text[0]); n--; }
+    lj_str_copy(text[n++], sizeof text[0], line);
+    for (i = 0; i < n; i++) rows[i] = text[i];
+    lj_w_memo_set_lines(re, rows, n);
 }

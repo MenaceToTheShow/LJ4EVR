@@ -8,10 +8,20 @@
 #include "fixlib/hand/lj_mac500.h"
 #include "fixlib/hand/lj_rs918.h"
 #include "fixlib/hand/lj_generics.h"
+#include "fixlib/hand/lj_mac600.h"
+#include "fixlib/hand/lj_mac250.h"
+#include "fixlib/hand/lj_mac2000.h"
+#include "fixlib/hand/lj_roboscan.h"
+
+/* W2 tier-1 families 15/02-15/05: one array per hand file. */
+static const struct { const lj_profile *const *p; int n; } lj_hand_w2[] = {
+    { lj_hand_mac600s, LJ_MAC600_COUNT }, { lj_hand_mac250s, LJ_MAC250_COUNT }, { lj_hand_mac2000s, LJ_MAC2000_COUNT }, { lj_hand_roboscans, LJ_ROBOSCAN_COUNT } };
 
 static const lj_profile *lj_hand_by_id(uint16_t id)
 {
-    int i;
+    int i, k;
+    for (k = 0; k < (int)(sizeof lj_hand_w2 / sizeof lj_hand_w2[0]); k++)
+        for (i = 0; i < lj_hand_w2[k].n; i++) if (lj_hand_w2[k].p[i]->id == id) return lj_hand_w2[k].p[i];
     if (id == 12) return &lj_hand_mac500;
     if (id == 31) return &lj_hand_mac500_scrl;
     if (id == 24) return &lj_hand_rs918;

@@ -33,13 +33,21 @@ void lj_runner_set_slot(lj_runner *r, const lj_cue_slot *s, const lj_sequence *s
     lj_runner_clear(r);
     r->seq_no = s->seq; r->seq = seq;
     r->enabled = s->enabled ? 1 : 0;
-    r->trig = s->trig; r->dir = s->dir; r->end_action = s->end_action;
+    r->trig = s->trig;
+    r->time_pct = s->time_pct > LJ_TIME_PCT_MAX ? LJ_TIME_PCT_MAX : s->time_pct; r->chase_us = s->chase_ms * 1000u;
+    r->seq_int = 255; r->level_pct = 100;
+    lj_runner_set_loop(r, s);
+}
+
+void lj_runner_set_loop(lj_runner *r, const lj_cue_slot *s)
+{
+    r->dir = s->dir; r->end_action = s->end_action;
     r->scenes_per_trig = s->scenes_per_trig ? s->scenes_per_trig : 1;
     r->audio_per_trig = s->audio_trigs_per_trig ? s->audio_trigs_per_trig : 1;
     r->first = s->first; r->last = s->last; r->loops_left = s->loops;             /* loops_left = the finite loop count, loop_count = done */
+    if (LJ_LOOP_RANDOM_NO_COUNT && r->dir == LJ_DIR_RANDOM) r->loops_left = 0;     /* 03 s5.5: no loop count in random mode */
     r->goto_scene = s->goto_scene; r->link_cue = s->link_cue;
-    r->time_pct = s->time_pct; r->chase_us = s->chase_ms * 1000u;
-    r->seq_int = 255; r->level_pct = 100;
+    r->loop_count = 0; r->bounce_back = 0; r->spt_left = 0;
     lj_runner_limits(r);
 }
 
@@ -106,6 +114,7 @@ int lj_runner_loop_step(lj_runner *r, int dir, uint32_t *rng, int cue_edit, uint
 {
     int first = r->first - 1, last = r->last - 1, n = last - first + 1, s = r->scene, at_end = 0;
     if (n <= 1) return 1;                                      /* identical first and last scene: nothing to advance, status Stop [03 s5.1] */
+    if (s < first || s > last) { r->scene = (uint16_t)(dir == LJ_DIR_REV ? last : first); return 0; }   /* LJ_LOOP_OUTSIDE_ENTERS_EDGE (limits changed under a running slot) */
     switch (dir) {
     case LJ_DIR_REV:
         if (s > first) s--; else at_end = 1;
@@ -114,9 +123,11 @@ int lj_runner_loop_step(lj_runner *r, int dir, uint32_t *rng, int cue_edit, uint
         if (!r->bounce_back) { if (s < last) s++; else { r->bounce_back = 1; s--; } }
         else { if (s > first) s--; else at_end = 1; }
         break;
-    case LJ_DIR_RANDOM:
-        s = first + (int)(lj_runner_rng(rng) % (uint32_t)n);  /* loop count not available in random mode */
+    case LJ_DIR_RANDOM: {                                      /* loop count not available in random mode (LJ_LOOP_RANDOM_NO_COUNT) */
+        int pick = first + (int)(lj_runner_rng(rng) % (uint32_t)(n - 1));   /* LJ_RANDOM_NO_REPEAT (PROPOSAL): n - 1 candidates, the current one skipped */
+        s = pick >= s ? pick + 1 : pick;
         break;
+    }
     default:
         if (s < last) s++; else at_end = 1;
         break;
@@ -126,9 +137,9 @@ int lj_runner_loop_step(lj_runner *r, int dir, uint32_t *rng, int cue_edit, uint
         if (r->loops_left && r->loop_count >= r->loops_left) {   /* finite loops done: end action */
             switch (r->end_action) {
             case LJ_END_OUT:  r->out = 1; return 1;              /* Sequence out: the slot disables itself */
-            case LJ_END_GOTO: r->scene = (uint16_t)(r->goto_scene ? r->goto_scene - 1 : 0); r->stopped = 1; return 2;   /* Goto scene and stop (the caller enters it) */
-            case LJ_END_LINK: r->stopped = 1; if (!cue_edit) { r->link = 1; *link_out = r->link_cue; } return 1;   /* Link to cue: Stop + pending_link_cue (2.3 rule 3); Edit Cue: links do not fire */
-            default:          r->stopped = 1; return 1;          /* Stop on scene: hold the last scene */
+            case LJ_END_GOTO: r->scene = (uint16_t)(r->goto_scene ? r->goto_scene - 1 : 0); r->stopped = r->ended = 1; return 2;   /* Goto scene and stop (the caller enters it) */
+            case LJ_END_LINK: r->stopped = r->ended = 1; if (!cue_edit) { r->link = 1; *link_out = r->link_cue; } return 1;   /* Link to cue: Stop + pending_link_cue (2.3 rule 3); Edit Cue: links do not fire */
+            default:          r->stopped = r->ended = 1; return 1;          /* Stop on scene: hold the last scene */
             }
         }
         if (dir == LJ_DIR_REV) s = last;
@@ -144,7 +155,7 @@ void lj_runner_start(lj_runner *r, uint64_t t, uint32_t tick_us, const uint8_t m
     uint16_t s;
     if (!r->seq || !r->seq->n) return;
     lj_runner_limits(r);
-    r->loop_count = 0; r->bounce_back = 0; r->spt_left = 0; r->stopped = 0; r->link = 0; r->out = 0;
+    r->loop_count = 0; r->bounce_back = 0; r->spt_left = 0; r->stopped = r->ended = 0; r->link = 0; r->out = 0;
     switch (r->dir) {
     case LJ_DIR_REV:    s = (uint16_t)(r->last - 1); break;
     case LJ_DIR_RANDOM: s = (uint16_t)(r->first - 1 + (int)(lj_runner_rng(rng) % (uint32_t)(r->last - r->first + 1))); break;
@@ -164,7 +175,7 @@ uint32_t lj_runner_trig(lj_runner *r, int dir, int scenes, uint64_t at, uint32_t
     if (rc == 1) return link;
     lj_runner_enter(r, r->scene, at, tick_us, merged, cue_pct);
     if (!scenes) scenes = r->scenes_per_trig;
-    r->spt_left = (uint8_t)(scenes > 1 ? scenes - 1 : 0);
+    r->spt_left = (uint8_t)(scenes > 1 && r->trig != LJ_TRIG_AUTO ? scenes - 1 : 0);   /* F11; LJ_SPT_IGNORED_IN_AUTO */
     return link;
 }
 
@@ -190,12 +201,12 @@ uint32_t lj_runner_schedule(lj_runner *r, uint64_t now, uint32_t tick_us, const 
     return link;
 }
 
-void lj_runner_stop(lj_runner *r) { r->stopped = 1; }           /* F14 + LJ_STOP_HOLDS_FADE: eval is skipped while stopped, so val[]/st[] hold (rig M8) */
+void lj_runner_stop(lj_runner *r) { r->stopped = 1; r->ended = 0; }           /* F14 + LJ_STOP_HOLDS_FADE: eval is skipped while stopped, so val[]/st[] hold (rig M8) */
 
 void lj_runner_go(lj_runner *r, uint64_t now, uint32_t tick_us, const uint8_t merged[LJ_CHANS], uint16_t cue_pct)
 {
     if (!r->seq) return;
-    r->stopped = 0; r->link = 0;
+    r->stopped = r->ended = 0; r->link = 0;
     lj_runner_enter(r, r->scene, now, tick_us, merged, cue_pct);   /* PROPOSAL rig M8: Go restarts the held scene from the live output */
 }
 

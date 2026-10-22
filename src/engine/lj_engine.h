@@ -18,7 +18,10 @@
  *  7. lj_engine_frame() is the live buffer; the UI copies it under the lock.
  * Only the engine thread touches sACN sender state (ME-23): LJ_CMD_SACN_CFG parks
  * the new config in the engine and the engine thread (platform/sdl) collects it
- * with lj_engine_take_sacn_cfg() after the tick, outside the lock. */
+ * with lj_engine_take_sacn_cfg() after the tick, outside the lock.
+ * Two recorded exceptions to "pure given its inputs" (ME-82): lj_engine_tick() reads lj_clock_us() twice to
+ * fill tick_us_last / tick_us_max (measurement only, never fed back into a frame), and lj_log() runs under the
+ * lock on two bounded paths (a full command array, a LJ_CATCHUP_MAX re-base); frames and dumps are unaffected. */
 #ifndef LJ_ENGINE_ENGINE_H
 #define LJ_ENGINE_ENGINE_H
 
@@ -68,7 +71,7 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
  *
  * ---- W2 kinds (design 10 W2; appended, never reordered) ----
  * BG_ON                bg runner id or LJ_RUN_ALL  0/1                      -            BGCue Toggle slot n / All Slots Off/On [03 s7]: enables or disables a loaded bg slot (its pointer stays pinned)
- * STATIC_ACTIVATE      global slot (lj_static_global_index)  level_pct 0..100 (0xFFFF = the slot's)  scope: enum lj_replace (0xFF = the slot's)   st = the pinned lj_static_slot; the engine applies the scope (releases the slots lj_static_scope_hits names), then LTP-tops this one [03 s8, 14 sB.7]
+ * STATIC_ACTIVATE      global slot (lj_static_global_index)  level_pct 0..100 (0xFFFF = the slot's)  scope: enum lj_replace (0xFF = the slot's)   st = the pinned lj_static_slot; the engine applies the scope (the lj_static_scope_hits rule, evaluated on the slots it holds pinned, never show->pages), then LTP-tops this one [03 s8, 14 sB.7]; a LINK slot carries its sequence in seq[0]
  * STATIC_DEACTIVATE    global slot                 -                          -            -        (release: snap back, LJ_STATIC_RELEASE_SNAPS; st not needed); a = LJ_RUN_ALL releases every static ("Release All"), c = page 1..64 releases that page ("Release Page")
  * SMOKE                enum lj_smoke_ctl           value (level 0..255, or 0/1 for the button and the timer)   duration ms (button toggle X seconds; 0 = while held)   rank 7 [11 C12, 04 s12]: button/timer fire SMOKE class channels at the level; haze/fan levels > 0 override HAZE / HAZE_FAN channels
  * TRANSPARENT          -                           enum lj_transparent_mode   -            -        Preferences > Transparent Cues: Use (honour the cue's flag) / Force / Ignore [03 s5.8]; applied at the next LOAD_CUE / LOAD_BG
@@ -139,7 +142,8 @@ typedef struct {
     uint8_t  seq_int;                    /* sequence intensity 0..255 (255 = 100 %) [03 s5.9] */
     uint8_t  level_pct;                  /* statics: per-slot level */
     uint64_t activated_us;               /* statics: LTP order */
-    unsigned enabled:1, stopped:1, edit:1, out:1, link:1, blind:1, running:1, flash:1, disable_fade:1;
+    unsigned enabled:1, stopped:1, edit:1, out:1, link:1, blind:1, running:1, flash:1, disable_fade:1,
+             ended:1;                    /* W2: stopped by an end action (Stop on scene / Goto / Link): no more trigs, but the scene keeps evaluating, so a Goto shows its scene and a fade into it completes (a user STOP holds, F14) */
 } lj_runner;
 
 /* ---- engine -> UI view, copied under lj_lock ---- */
@@ -194,6 +198,7 @@ typedef struct {
     uint8_t  dmx_in[LJ_CHANS]; uint8_t overwrite_enable;   /* S1 DMX-in source (W later: always 0 / enabled) */
     uint8_t  htp_level[LJ_HTP_GROUPS + 1]; uint8_t htp_masters;   /* S5 g_k (1-based) and "Enable HTP group master intensity control" [11 P8] */
     uint8_t  frozen_s0[LJ_CHANS];                 /* S9: the S0 input held while frozen */
+    const lj_patch_ch *patch;                     /* W2: the S1/S5/S6 table (LJ_CHANS entries): show->patch at bind, swapped by LJ_CMD_GLOBAL_PATCH / LJ_CMD_HTP_GROUPS */
 } lj_post_ctx;
 
 /* ---- the function set (design 2.3) ---- */

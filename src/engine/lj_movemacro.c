@@ -57,13 +57,13 @@ static int32_t lj_mm_units(int32_t table, int amp)
 
 void lj_movemacro_offset(const lj_mm_state *s, const lj_movemacro *m, int amp_pct, int32_t *dpan, int32_t *dtilt)
 {
-    int ip, it, delay, step;
+    uint32_t ip, it, delay, step;
     *dpan = *dtilt = 0;
     if (!lj_movemacro_active(m)) return;
-    delay = LJ_MM_N * m->delay / 256;                          /* delay subtracts N * delay_byte / 256 (ASSUMED 3) */
-    ip = (int)(s->idx_pan >> 16) - delay;
-    it = (int)(s->idx_tilt >> 16) - delay + LJ_MM_N * m->tweak / 256;   /* tweak on the tilt index (ASSUMED 4) */
-    if (m->type == 6 && m->step > 1) { step = m->step; ip = ip / step * step; it = it / step * step; }   /* Stepped Ellipse (CHM 3199) */
-    *dpan  = lj_mm_units(lj_mm_shape(m->type, 0, ip & LJ_MM_MASK), lj_movemacro_scale(m->amp_pan, amp_pct));
-    *dtilt = lj_mm_units(lj_mm_shape(m->type, 1, it & LJ_MM_MASK), lj_movemacro_scale(m->amp_tilt, amp_pct));
+    delay = (uint32_t)(LJ_MM_N * m->delay / 256);              /* delay subtracts N * delay_byte / 256 (ASSUMED 3) */
+    ip = ((s->idx_pan >> 16) - delay) & LJ_MM_MASK;            /* ME-83: unsigned, wrapped into 0..N-1 before any quantisation */
+    it = ((s->idx_tilt >> 16) - delay + (uint32_t)(LJ_MM_N * m->tweak / 256)) & LJ_MM_MASK;   /* tweak on the tilt index (ASSUMED 4) */
+    if (m->type == 6 && m->step > 1) { step = m->step; ip = ip / step * step; it = it / step * step; }   /* Stepped Ellipse (CHM 3199): floor in 0..N-1, so idx < delay lands in the last step, not step 0 */
+    *dpan  = lj_mm_units(lj_mm_shape(m->type, 0, (int)ip), lj_movemacro_scale(m->amp_pan, amp_pct));
+    *dtilt = lj_mm_units(lj_mm_shape(m->type, 1, (int)it), lj_movemacro_scale(m->amp_tilt, amp_pct));
 }

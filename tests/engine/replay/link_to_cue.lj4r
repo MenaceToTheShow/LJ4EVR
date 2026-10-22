@@ -1,18 +1,52 @@
 LJ4 replay 1
 # link_to_cue (03 s5.5 end action Link to cue; design 2.3 rule 3, 10 W2; ME-2): cue 1 slot 1 runs seq 1 (2 scenes,
-# 100 ms each) with loops=1 end=link link=2. After one loop the runner stops and the view reports pending_link_cue=2
-# (expect_pending); `at k link` performs the load the way lj_app_service_pending does (LOAD_CUE 2 with its pinned
-# sequences) and the next tick runs cue 2 (1:2=255). Under `load_cue 1 edit` the link never fires (Edit Cue).
+# 100 ms each) with loops=1 end=link link=2; slot 2 runs seq 3 (1:3=99). Cue 2 has only slot 1 (seq 2, 1:2=255).
+# NOTE 03 s5.5 "Link to cue: Load and execute another cue": the loop ends at 200 ms = tick 8 exactly; the runner stops
+#      holding its last scene (1:1 stays 200) and the view reports pending_link_cue = 2 on that tick, not before.
+# NOTE design 2.3 rule 3: the engine never loads; `at 9 link` is the UI-side ack (lj_app_service_pending ->
+#      lj_app_load_cue 2 -> LOAD_CUE with its sequences pinned). Cue 2 is not transparent, so slot 2 is cleared (1:3 -> 0)
+#      and cue 2 runs on the ack tick (1:2=255, view cue=2).
+# NOTE 03 s5.5 "Use Edit Cue rather than Load Cue when editing such a cue so the link does not fire" (`load_cue 1 edit`,
+#      LOAD_CUE b = 1): the slot stops at tick 20 and nothing is pending.
+# NOTE the link path is W1 engine code (lj_runner_loop_step LJ_END_LINK); the W1 engine passes this file.
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 profile 1 class1=intensity use_gm=1
 patch 2 profile=19 link=1 addr=2
 profile 2 class1=intensity use_gm=1
+patch 3 profile=19 link=1 addr=3
+profile 3 class1=intensity use_gm=1
 seq 1 name="linker"
 scene st=100 ft=50 ch 1:1=100:S
 scene st=100 ft=50 ch 1:1=200:S
 seq 2 name="target" scene st=60000 ft=50 ch 1:2=255:S
+seq 3 name="other" scene st=60000 ft=50 ch 1:3=99:S
 cue 1
 slot 1 seq=1 loops=1 end=link link=2
+slot 2 seq=3
 cue 2
 slot 1 seq=2
+at 0 load_cue 1
+expect 0 1:1=100 1:2=0 1:3=99
+expect 4 1:1=200
+expect 7 1:1=200
+expect_pending 7 link_cue 0
+expect_status 7 slot1 running scene=2:2
+expect 8 1:1=200 1:3=99   # loop done: Stop on the last scene
+expect_status 8 slot1 stopped scene=2:2
+expect_pending 8 link_cue 2
+at 9 link
+expect 9 1:1=0 1:2=255 1:3=0
+expect_status 9 slot1 stopped scene=1:1
+expect_status 9 slot2 empty
+expect_view 9 cue=2
+expect_pending 9 link_cue 0
+# Edit Cue: the link does not fire
+at 12 load_cue 1 edit
+expect 12 1:1=100 1:2=0 1:3=99
+expect 16 1:1=200
+expect 20 1:1=200
+expect_status 20 slot1 stopped scene=2:2
+expect_pending 20 link_cue 0
+expect_view 20 cue=1
+expect_pending 21 link_cue 0

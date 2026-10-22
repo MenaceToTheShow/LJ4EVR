@@ -72,8 +72,8 @@ int lj_post_s1_patch_src(const lj_post_ctx *c, int link, int ch, int v)
     const lj_patch_ch *pc;
     int in;
     (void)link;
-    if (!c->show) return v;
-    pc = &c->show->patch[ch];
+    if (!c->patch) return v;
+    pc = &c->patch[ch];
     if (pc->src_kind != LJ_SRC_DMX_IN || !c->overwrite_enable) return v;   /* DMX-in gated by Overwrite Enable [02 s7.1]; the DMX Out source is copied in lj_post_run */
     if (pc->src_link < 1 || pc->src_link > LJ_LINKS || pc->src_ch < 1 || pc->src_ch > LJ_LINK_CH) return v;
     in = c->dmx_in[lj_addr_code(pc->src_link, pc->src_ch)];
@@ -139,8 +139,8 @@ int lj_post_s5_htp(const lj_post_ctx *c, int link, int ch, int v)
     const lj_fixture *fx;
     const lj_profile *p;
     (void)link;
-    if (!c->show) return v;
-    mask = c->show->patch[ch].htp_mask;
+    if (!c->patch) return v;
+    mask = c->patch[ch].htp_mask;
     if (!mask) return v;
     p = lj_post_profile(c, ch, &ofs, &fx);
     if (p && (lj_post_pair_lsb(c, ch) >= 0 || lj_post_is_lsb(c, ch))) return v;   /* ME-22: a bytewise max on a pair is meaningless (PROPOSAL, rig M11) */
@@ -158,8 +158,8 @@ int lj_post_s6_patch_inv_minmax(const lj_post_ctx *c, int link, int ch, int v)
 {
     const lj_patch_ch *pc;
     (void)link;
-    if (!c->show) return v;
-    pc = &c->show->patch[ch];
+    if (!c->patch) return v;
+    pc = &c->patch[ch];
     if (pc->invert) v = 255 - v;                               /* 11 P4: invert before min/max */
     if (pc->max && v > pc->max) v = pc->max;                   /* 11 P5; 0 = no limit */
     if (v < pc->min) v = pc->min;
@@ -239,8 +239,8 @@ void lj_post_run(const lj_post_ctx *c, const uint8_t merged[LJ_CHANS], uint8_t o
     while (s7 < LJ_POST_COUNT && LJ_POST_ORDER[s7] != LJ_POST_S7_PANTILT) s7++;
     for (ch = 0; ch < LJ_CHANS; ch++) {                        /* the per-channel stages before S7 */
         int link = ch / LJ_LINK_CH, v = merged[ch];
-        if (c->show) {
-            const lj_patch_ch *pc = &c->show->patch[ch];        /* S1 output-channel source: the source's S0 value (PROPOSAL, rig M16) */
+        if (c->patch) {
+            const lj_patch_ch *pc = &c->patch[ch];        /* S1 output-channel source: the source's S0 value (PROPOSAL, rig M16) */
             if (pc->src_kind == LJ_SRC_DMX_OUT && pc->src_link >= 1 && pc->src_link <= LJ_LINKS && pc->src_ch >= 1 && pc->src_ch <= LJ_LINK_CH)
                 v = merged[lj_addr_code(pc->src_link, pc->src_ch)];
         }

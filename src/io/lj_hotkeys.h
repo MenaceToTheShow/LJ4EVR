@@ -45,4 +45,13 @@ const lj_hotkey *lj_hotkeys_match(const lj_hotkeys *h, uint16_t key, int shift, 
 int         lj_hotkeys_combo_text(const lj_hotkey *k, char *dst, size_t cap);    /* "[Shift] B", "[Control] F1" (13 s2.3 literals); 0 / -1 */
 void        lj_hotkeys_default(lj_hotkeys *h);                                   /* Edit Hotkeys > Options > "Default Hotkeys", the shipped Setup 1 (PROPOSAL, see lj_hotkeys.c: LJ2's compiled-in set is undecoded) */
 
+/* W2 midi track: the 8 setups (Setup > Hotkeys > Setup 1..8; Edit Hotkeys > Options > Save / Load / Default Hotkeys).
+ * dir = the user library folder with its trailing separator (w2-contracts "Decisions": <library>Hotkeys/SetupN.Hot;
+ * Main.Ini [HOTKEYS] File=SetupN.Hot names the current one). A missing file is not an error and logs nothing: setup 1
+ * reads as lj_hotkeys_default, setups 2..8 as an empty enabled setup named "Setup N". A present bad file gives -1 + err and
+ * the same fallback in *out. Edit Hotkeys edits *out with assign / clear_key / clear_fn and saves it with
+ * lj_hotkeys_setup_path + lj_hotkeys_save. */
+int         lj_hotkeys_setup_load(const char *dir, int setup /* 1..8 */, lj_hotkeys *out, char *err, size_t cap);
+int         lj_hotkeys_setup_of_file(const char *file);                          /* "Setup3.Hot" (any case, any leading folder) -> 3; -1 otherwise */
+
 #endif /* LJ_IO_HOTKEYS_H */

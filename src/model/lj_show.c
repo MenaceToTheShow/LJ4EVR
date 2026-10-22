@@ -67,7 +67,7 @@ int lj_show_free_record(lj_show *show, enum lj_rec_kind kind, uint32_t number)
 int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
 {
     char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP], *e;
-    int fmt, r, item = 0;
+    int fmt, r, item = 0, rbad = 0;
     const char *bad = NULL;
     lj_rec *rec = lj_rec_open_read(path, "config", &fmt);
     if (!rec) { lj_kv_err(err, cap, path, 0, "not an LJ4 config file"); return -1; }
@@ -82,10 +82,10 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
             if (e == v || i < 1 || i > LJ_FIXTURES) { bad = "fixture index not 1..100"; break; }
             f = &show->fixture[i - 1];
             f->kind = (uint8_t)lj_kv_word(v, "kind", lj_fixture_kind_words, LJ_FX_BUILTIN);
-            f->profile_id = (uint16_t)lj_kv_long(v, "id", 0);
+            f->profile_id = (uint16_t)lj_kv_range(v, "id", 0, 0, 65535, &rbad);
             if (lj_kv_get(v, "gs2", q, sizeof q) == 1) lj_str_copy(f->gs2_file, sizeof f->gs2_file, q);
-            f->link = (uint8_t)lj_kv_long(v, "link", 0);
-            f->address = (uint16_t)lj_kv_long(v, "addr", 0);
+            f->link = (uint8_t)lj_kv_range(v, "link", 0, 0, LJ_LINKS, &rbad);              /* ME-77: link=257 fails, never aliases to 1 */
+            f->address = (uint16_t)lj_kv_range(v, "addr", 0, 0, LJ_LINK_CH, &rbad);       /* ME-77: addr=65537 fails */
             f->invert_pan = (uint8_t)(lj_kv_long(v, "ipan", 0) != 0);
             f->invert_tilt = (uint8_t)(lj_kv_long(v, "itilt", 0) != 0);
             f->swap_pt = (uint8_t)(lj_kv_long(v, "swap", 0) != 0);
@@ -94,16 +94,17 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
             f->link_strobe_gm = (uint8_t)(lj_kv_long(v, "lsgm", 0) != 0);
             if (lj_kv_get(v, "user", q, sizeof q) == 1) lj_str_copy(f->user_name, sizeof f->user_name, q);
             f->placed = (uint8_t)(lj_kv_long(v, "placed", 0) != 0);
-            f->icon_x = (int16_t)lj_kv_long(v, "x", 0);
-            f->icon_y = (int16_t)lj_kv_long(v, "y", 0);
-            f->tab = (uint8_t)lj_kv_long(v, "tab", 0);
-            f->intensity_group = (uint8_t)lj_kv_long(v, "sub", 0);
+            f->icon_x = (int16_t)lj_kv_range(v, "x", 0, -32768, 32767, &rbad);
+            f->icon_y = (int16_t)lj_kv_range(v, "y", 0, -32768, 32767, &rbad);
+            f->tab = (uint8_t)lj_kv_range(v, "tab", 0, 0, 255, &rbad);
+            f->intensity_group = (uint8_t)lj_kv_range(v, "sub", 0, 0, LJ_SUBMASTERS, &rbad);
         } else if (strcmp(k, "sub") == 0) {
             long i = strtol(v, &e, 10);
             if (e == v || i < 1 || i > LJ_SUBMASTERS) { bad = "submaster index not 1..8"; break; }
             if (lj_kv_get(v, "name", q, sizeof q) == 1) lj_str_copy(show->submaster_name[i - 1], sizeof show->submaster_name[i - 1], q);
-            show->submaster_mode[i - 1] = (uint8_t)lj_kv_long(v, "mode", 0);
+            show->submaster_mode[i - 1] = (uint8_t)lj_kv_range(v, "mode", 0, 0, 255, &rbad);
         }
+        if (rbad) { bad = "number out of range"; break; }
     }
     lj_rec_close(rec);
     if (!bad && r < 0) bad = "unreadable line";
@@ -216,6 +217,9 @@ int lj_show_load(lj_show *show, const lj_library *lib)
     lj_library_path(lib, "DefaultOut.dat", path, sizeof path);
     memset(show->default_out, 0, sizeof show->default_out);
     if (lj_file_exists(path)) lj_defaultout_load(path, show->default_out, err, sizeof err);
+    lj_library_path(lib, LJ_PATCH_FILE, path, sizeof path);   /* W2: the live global patch (PROPOSAL rig file name) */
+    lj_patch_init(show->patch);
+    if (lj_file_exists(path)) lj_patch_load(path, show->patch, err, sizeof err);
     lj_library_path(lib, "GroupInfo.dat", path, sizeof path);
     memset(show->user_group, 0, sizeof show->user_group);
     if (lj_file_exists(path)) lj_groups_load(path, show->user_group, err, sizeof err);
@@ -236,13 +240,15 @@ int lj_show_load(lj_show *show, const lj_library *lib)
 int lj_show_save_config(const lj_show *show, const lj_library *lib)
 {
     char path[LJ_PATH_CAP];
+    lj_htp_names htp;
     int ok;
     lj_library_path(lib, "Config.dat", path, sizeof path);
     ok = lj_config_save(path, show) == 0;
     lj_library_path(lib, "DefaultOut.dat", path, sizeof path);
     ok = lj_defaultout_save(path, show->default_out) == 0 && ok;
     lj_library_path(lib, "GroupInfo.dat", path, sizeof path);
-    ok = lj_groups_save(path, show->user_group) == 0 && ok;
+    lj_htp_names_load(path, &htp, NULL, 0);                  /* W2: keep the htp lines the HTP Groups window wrote (defaults when absent) */
+    ok = lj_htp_names_save(path, show->user_group, &htp) == 0 && ok;
     return ok ? 0 : -1;
 }
 

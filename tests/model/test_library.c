@@ -111,8 +111,9 @@ int lj_test_model_library(int argc, char **argv)
     lj_library_record_path(&lib, LJ_REC_SEQ, 7, path, sizeof path);
     lj_library_record_path(&rest, LJ_REC_SEQ, 7, path2, sizeof path2);
     CHECK(lj_read_text(path, buf, sizeof buf) > 0 && lj_read_text(path2, buf2, sizeof buf2) > 0 && strcmp(buf, buf2) == 0);
+    CHECK(lj_library_backup_notes("test_model_tmp/Lib.lj4b", buf, sizeof buf) == 0 && strcmp(buf, "my notes") == 0);   /* W2: the backup notes stay in the archive (never extracted over Notes.txt) */
     lj_library_path(&rest, "notes.txt", path, sizeof path);
-    CHECK(lj_read_text(path, buf, sizeof buf) == 8 && strcmp(buf, "my notes") == 0);
+    CHECK(lj_read_text(path, buf, sizeof buf) == -1);
     CHECK(lj_library_restore(&rest, "test_model_tmp/missing.lj4b") == -1);
 
     /* rename, delete */

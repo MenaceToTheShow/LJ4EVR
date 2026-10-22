@@ -1,15 +1,29 @@
 LJ4 replay 1
 # loop_bounce_random_limits (03 s5.5 loop options; lj_runner_loop_step; LJ_BOUNCE_END_AT_FIRST, LJ_LOOP_RANDOM_NO_COUNT,
-# LJ_LOOP_LIMITS_CLAMP, LJ_RNG_SEED; rig 03 Unverified): a 6-scene sequence with distinct values per scene.
-# rev: 6 5 4 3 2 1 6 ...; bounce with first=2 last=5 loops=1 end=stop: 2 3 4 5 4 3 2 then holds (Stop on scene);
-# end=out: the slot disables itself (status out, rank 0 shows through); end=goto goto=4: jumps to scene 4 and stops;
-# random with first=3 last=5: every scene in 3..5, the xorshift32 sequence from LJ_RNG_SEED is asserted verbatim so the
-# frame dump stays deterministic; loops= in random mode is ignored (and rejected by lj_cue_validate when saved).
+# LJ_LOOP_LIMITS_CLAMP, LJ_RNG_SEED; PROPOSAL rig 03 Unverified): a 6-scene sequence, scene k programs 1:1 = 10 k, every
+# scene 100 ms = 4 ticks.
+# NOTE 03 s5.5 Loop Options dialog Ok = `loop` (LJ_CMD_LOOP_OPTS: the running scene is kept, the counters reset): cue 1
+#      runs forward to scene 3, then tick 9 sets bounce first=2 last=5 loops=3 end=out.
+# NOTE 03 s5.5 Bounce "1->2->3->4->3->2->1->2": the turn-arounds show no repeated scene (5 -> 4 at tick 20, 2 -> 3 at
+#      tick 32); LJ_BOUNCE_END_AT_FIRST: one loop ends on reaching first going back (ticks 32, 56, 80), the next starts at
+#      first + 1.
+# NOTE 03 s5.5 end action Sequence out: "Slot disables itself, no longer contributing" (tick 80: status out, rank 0).
+# NOTE 03 s5.5 Limits + Goto scene: "Jump to a scene in the same sequence and stop" (cue 2: scenes 1-3 twice, then scene 4,
+#      status stopped).
+# NOTE 03 s5.5 Random "Random scene each trig" inside first..last; "Loop count (not available in random mode)"
+#      (LJ_LOOP_RANDOM_NO_COUNT; lj_cue_validate rejects loops= with dir=rnd, so cue 3 has none and never ends). The
+#      scenes are xorshift32 from LJ_RNG_SEED (the `seed` line): the start scene is 3 + x % 3, every step after it
+#      LJ_RANDOM_NO_REPEAT (lj_engine_rules.h, PROPOSAL rig 03 Unverified: Martin only says "random scene each trig"):
+#      pick = 3 + x % 2 among the n - 1 other scenes, skipping the current one -> 5 3 4 5 4 5 3 5 4 3 4 3, never the
+#      same scene twice in a row.
+# NOTE W1 fails this file at tick 20 (1:1 expected 40 got 60): LJ_CMD_LOOP_OPTS is a W2 kind, the slot keeps going forward.
+#      W1 also fails tick 108 (1:1 expected 40 got 30): its Goto sets `stopped` before entering scene 4 and a stopped
+#      runner skips evaluation (F14 hold), so the output keeps scene 3 while the status says 4:6 (engine W2 fix), and the
+#      random block from tick 132 (W1 draws among all 3 scenes: 5 3 5 4 4 ...).
+seed 0x9E3779B9
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 profile 1 class1=intensity use_gm=1
-patch 2 profile=19 link=1 addr=2
-profile 2 class1=intensity use_gm=1
 seq 1 name="six"
 scene st=100 ft=50 ch 1:1=10:S
 scene st=100 ft=50 ch 1:1=20:S
@@ -18,12 +32,62 @@ scene st=100 ft=50 ch 1:1=40:S
 scene st=100 ft=50 ch 1:1=50:S
 scene st=100 ft=50 ch 1:1=60:S
 cue 1
-slot 1 seq=1 dir=rev
+slot 1 seq=1
 cue 2
-slot 1 seq=1 dir=bounce first=2 last=5 loops=1 end=stop
-cue 3
-slot 1 seq=1 dir=bounce first=2 last=5 loops=1 end=out
-cue 4
 slot 1 seq=1 dir=fwd first=1 last=3 loops=2 end=goto goto=4
-cue 5
+cue 3
 slot 1 seq=1 dir=rnd first=3 last=5
+at 0 load_cue 1
+expect 0 1:1=10
+expect 4 1:1=20
+expect 8 1:1=30
+at 9 loop slot1 dir=bounce first=2 last=5 loops=3 end=out
+expect 11 1:1=30   # the running scene is kept
+expect 12 1:1=40
+expect 16 1:1=50
+expect 20 1:1=40   # turn-around at last
+expect 24 1:1=30
+expect 28 1:1=20
+expect 32 1:1=30   # loop 1 ends at first; loop 2 starts at first + 1
+expect_status 32 slot1 running scene=3:6
+expect 36 1:1=40
+expect 40 1:1=50
+expect 44 1:1=40
+expect 48 1:1=30
+expect 52 1:1=20
+expect 56 1:1=30   # loop 2 ends
+expect 60 1:1=40
+expect 64 1:1=50
+expect 68 1:1=40
+expect 72 1:1=30
+expect 76 1:1=20
+expect 79 1:1=20
+expect 80 1:1=0 layer=0   # loop 3 ends: Sequence out
+expect_status 80 slot1 out
+expect 83 1:1=0
+# Goto scene 4 after two loops of 1..3
+at 84 load_cue 2
+expect 84 1:1=10
+expect 88 1:1=20
+expect 92 1:1=30
+expect 96 1:1=10   # loop 1
+expect 100 1:1=20
+expect 104 1:1=30
+expect 108 1:1=40  # loop 2 ends: goto scene 4 and stop
+expect_status 108 slot1 stopped scene=4:6
+expect 120 1:1=40
+# Random inside 3..5, no loop count
+at 124 load_cue 3
+expect 124 1:1=50
+expect 128 1:1=30
+expect 132 1:1=40
+expect 136 1:1=50
+expect 140 1:1=40
+expect 144 1:1=50
+expect 148 1:1=30
+expect 152 1:1=50
+expect 156 1:1=40
+expect 160 1:1=30
+expect 164 1:1=40
+expect 168 1:1=30
+expect_status 168 slot1 running

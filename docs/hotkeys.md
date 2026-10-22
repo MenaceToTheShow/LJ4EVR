@@ -104,3 +104,30 @@ Scroll Lock scope and Disable-in-dialogs gates; program rows require a number, f
 rows refuse one; `.Hot` save/load round trip with a quoted name; six refused files and one
 with unknown keys accepted; clear by key and by function; the 512-row ceiling; flash
 press+release reaches the handler, enable press only, unbound logs once.
+
+## The 8 setups (W2, midi track)
+
+`Setup > Hotkeys > Setup 1..8` and Edit Hotkeys `Options > Save / Load / Default Hotkeys`
+work on one file per setup under the user library: `<library>Hotkeys/Setup<N>.Hot`
+(`lj_hotkeys_setup_path(dir, n, ...)`; `docs/w2-contracts.md` "Decisions"). `Main.Ini
+[HOTKEYS] File=Setup<N>.Hot` names the current one; `lj_hotkeys_setup_of_file` turns that
+value (with or without a folder, any case) back into 1..8, -1 for anything else.
+
+`lj_hotkeys_setup_load(dir, n, out, err, cap)` is the setup switch. A missing file is not
+an error and logs nothing (the W1 start-up line `rec: cannot open .../Setup1.Hot` goes
+away once the app calls it): setup 1 reads as `lj_hotkeys_default`, setups 2..8 as an
+empty, enabled setup named `Setup <N>` (PROPOSAL: LJ2's name for a never-saved setup is
+not known). A present bad file returns -1 with the reason in `err` and the same fallback
+in `*out`, so the keyboard keeps working.
+
+The Edit Hotkeys model is the W1 calls on the loaded `lj_hotkeys`: `lj_hotkeys_assign`
+(Key Combo + function, same combo replaces), `lj_hotkeys_clear_key` (Clear Hotkey),
+`lj_hotkeys_clear_fn` (Clear Function(s)), `lj_hotkeys_find_fn` (Find Hotkey),
+`lj_hotkeys_default` (Default Hotkeys), then `lj_hotkeys_save` to the setup path. Rows
+flagged `LJ_FNF_EXT` (today only `LJ_FN_MASTER_LEVEL`, the MIDI CC target) are not LJ2
+functions: the Edit Hotkeys and MIDI-IN function lists skip them.
+
+Check: `lj4evr_tests test_hotkey_setups` writes Setup 1..8 through the model calls, loads
+each back by number (its own F-key and cue, not the neighbour's), the silent fallbacks
+for a missing setup 1 and 5, a bad setup 2 (-1, message, fallback), out-of-range numbers
+refused, and the `File=` parse.

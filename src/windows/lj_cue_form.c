@@ -21,6 +21,7 @@
 #include "ui/widgets/lj_widgets_lj.h"
 #include "ui/widgets/lj_w_cuerow.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_cue_pages.h"      /* W2 windows-a */
 
 #define LJ_CUE_COLS   9
 #define LJ_CUE_BTN_W  30     /* measured from cuecontrol.gif, reduced, rig item: the numbered enable button left of the list */
@@ -340,12 +341,12 @@ void lj_cue_popup_open(lj_window *win, const char *const *items, int n, int x, i
 }
 int lj_cue_popup_is_open(lj_window *win) { lj_widget *w = lj_window_find(win, "lj_cue_popup"); return w && w->visible; }
 
-/* ---- slot options popup [03 s5.5]: what W1 runs; Link to Cue waits for W2 ---- */
+/* ---- slot options popup [03 s5.5]; the full set is the Loop Options dialog (lj_loop_options.c) ---- */
 static const char *const lj_slot_items[] = {
     "Auto Trig", "Manual Trig",
     "Forward", "Reverse", "Bounce", "Random",
     "First Scene +1", "First Scene -1", "Last Scene +1", "Last Scene -1", "Loops +1", "Loops -1",
-    "Stop on scene", "Sequence out", "Goto Scene", "Link to Cue (W2)",
+    "Stop on scene", "Sequence out", "Goto Scene", "Link to Cue",
     "Time: CUE", "Time: 50%", "Time: 200%",
     "Clear Slot(s)" };
 
@@ -376,6 +377,20 @@ static void post_scope(int fallback, int kind, uint32_t b, uint32_t c, int only_
             post3(kind, (uint32_t)(LJ_RUN_SLOT0 + i), b, c);
 }
 static void op_clear(lj_cue_slot *sl, int i, int a) { (void)i; (void)a; memset(sl, 0, sizeof *sl); }
+/* W2 windows-a: a loop option edited from the popup reaches the running slot as LJ_CMD_LOOP_OPTS with the pinned slot */
+static void post_loop_opts(int fallback)
+{
+    lj_cue *cue = cue_rec();
+    lj_cmd c;
+    int i;
+    if (!cue) return;
+    for (i = 0; i < LJ_CUE_SLOTS; i++)
+        if (((s.sel >> i) & 1) || (fallback >= 0 && i == fallback && !s.sel)) {
+            memset(&c, 0, sizeof c);
+            c.kind = LJ_CMD_LOOP_OPTS; c.a = (uint32_t)(LJ_RUN_SLOT0 + i); c.slot = &cue->slot[i];
+            post(&c);
+        }
+}
 
 static void slot_pick(int item, void *ud)
 {
@@ -387,11 +402,12 @@ static void slot_pick(int item, void *ud)
     case 8: case 9:   for_selected(slot, op_last, item == 8 ? 1 : -1); break;
     case 10: case 11: for_selected(slot, op_loops, item == 10 ? 1 : -1); break;
     case 12: case 13: case 14: for_selected(slot, op_end, item == 12 ? LJ_END_STOP : item == 13 ? LJ_END_OUT : LJ_END_GOTO); break;
-    case 15:          lj_log("lj_cue_form: Link to Cue is W2"); break;
+    case 15:          for_selected(slot, op_end, LJ_END_LINK); break;   /* the cue number is set in Loop Options (eLink) */
     case 16: case 17: case 18: for_selected(slot, op_time, item == 16 ? 0 : item == 17 ? 50 : 200); post_scope(slot, LJ_CMD_TIME, item == 16 ? 0u : item == 17 ? 50u : 200u, 0, 0); break;
     case 19:          for_selected(slot, op_clear, 0); break;
     default: break;
     }
+    if (item >= 2 && item <= 15) post_loop_opts(slot);
     lj_cue_form_refresh();
 }
 
@@ -525,8 +541,8 @@ static void sb_up(lj_widget *w, void *ud)
     else if (!strcmp(n, "sbNewCue")) lj_cue_form_new_cue();
     else if (!strcmp(n, "sbSaveCue")) { if (lj_save_cue_get()) lj_save_cue_close(); else lj_save_cue_open(); }
     else if (!strcmp(n, "sbGetCue")) { if (lj_list_cue_get()) lj_list_cue_close(); else lj_list_cue_open(); }
-    else if (!strcmp(n, "sbLoop")) { int i; for (i = 0; i < LJ_CUE_SLOTS && !((s.sel >> i) & 1); i++) { } slot_popup(i < LJ_CUE_SLOTS ? i : 0, w->x, 150); }
-    else if (!strcmp(n, "sbCueTime")) lj_log("lj_cue_form: Cue Time Control window is W2 (lj_cue_form_set_cue_time carries the fader)");
+    else if (!strcmp(n, "sbLoop")) lj_win_toggle(LJ_WIN_LOOP_OPTIONS);      /* W2 windows-a: Cue Loop Control [03 s5.5] */
+    else if (!strcmp(n, "sbCueTime")) lj_win_toggle(LJ_WIN_CUE_TIME);       /* W2 windows-a: Cue Time Control [03 s5.6] */
     else lj_log("lj_cue_form: %s is W2", n);                      /* BGCue / generic macro group [03 s5.4] */
 }
 
@@ -583,7 +599,8 @@ static void prefs_click(lj_widget *w, void *ud)
     (void)w; (void)ud;
     if (!it || !it->name) return;
     for (i = 0; i < LJ_COUNT_OF(lj_cue_prefs); i++) if (!strcmp(it->name, lj_cue_prefs[i].item)) { pref_set(i, !pref_get(i)); break; }
-    for (i = 0; i < 3; i++) if (!strcmp(it->name, lj_cue_trans_items[i])) form_seti("Transparent", i);
+    for (i = 0; i < 3; i++) if (!strcmp(it->name, lj_cue_trans_items[i])) { form_seti("Transparent", i); C()->transparent_mode = (uint8_t)i; post3(LJ_CMD_TRANSPARENT, 0, (uint32_t)i, 0); }   /* Use / Force / Ignore [03 s5.8] */
+    if (!strcmp(it->name, "M_StickyFlashSequences")) C()->flash_latch = (uint8_t)(form_geti("StickyFlash", 0) != 0);   /* FLASH c = latch [03 s5.10] */
     for (i = 0; i < 3; i++) if (!strcmp(it->name, lj_cue_int_items[i])) { form_seti("SeqIntMode", i); post3(LJ_CMD_SEQ_INT, 0, (uint32_t)i, 0); }
     s.use_colors = form_geti("Use Colors", 1);
     s.chase_fade = !main_geti("DisableChaseFade", 0);
@@ -683,6 +700,11 @@ void lj_cue_form_refresh(void)
 }
 
 /* ---- hotkeys (io/lj_actions.h cue-control rows) ---- */
+static void fn_flash_release(enum lj_fn fn, int edge, uint32_t prog, void *ud)   /* "Release latched Flash": FLASH b 0 c 0 seq NULL [03 s5.10] */
+{
+    (void)fn; (void)prog; (void)ud;
+    if (edge) post3(LJ_CMD_FLASH, 0, 0, 0);
+}
 static void fn_cue(enum lj_fn fn, int edge, uint32_t prog, void *ud)
 {
     int i;
@@ -718,6 +740,18 @@ void lj_cue_form_bind_fns(void)
         lj_fn_bind((enum lj_fn)(LJ_FN_TOGGLE_SLOT_ENABLE_1 + i), fn_cue, NULL);
         lj_fn_bind((enum lj_fn)(LJ_FN_TOGGLE_SLOT_SELECTION_1 + i), fn_cue, NULL);
     }
+    lj_fn_bind(LJ_FN_RELEASE_LATCHED_FLASH, fn_flash_release, NULL);   /* W2 windows-a */
+    lj_cue_form_apply_prefs();
+}
+
+/* W2 windows-a: the cue control's Transparent Cues / Latch Flash Sequences preferences into lj_ctx (and the engine) */
+void lj_cue_form_apply_prefs(void)
+{
+    lj_ctx *c = C();
+    int t = form_geti("Transparent", LJ_TRANSPARENT_USE);
+    c->transparent_mode = (uint8_t)(t >= LJ_TRANSPARENT_USE && t <= LJ_TRANSPARENT_IGNORE ? t : LJ_TRANSPARENT_USE);
+    c->flash_latch = (uint8_t)(form_geti("StickyFlash", 0) != 0);
+    post3(LJ_CMD_TRANSPARENT, 0, c->transparent_mode, 0);
 }
 
 /* ======================= Save Cue (TSaveCueForm, TSaveAsCueForm) [03 s5.7] ======================= */
@@ -906,7 +940,9 @@ void lj_list_cue_refresh(void)
     }
     lc.n = n;
     if ((lv = lj_window_find(lc.win, "lvGlobal")) != NULL) lj_w_listview_set_items(lv, (const char *const *)lc.items, n);
+    lj_cue_pages_fill(lc.win);                                            /* W2 windows-a: TC1 tabs + lvPages */
 }
+uint32_t lj_list_cue_selected(void) { uint32_t n; return lc_selected_number(&n) == 0 ? n : 0; }
 
 static void lc_lv_event(lj_widget *w, int ev, void *ud)
 {
@@ -924,6 +960,7 @@ static void lc_pop_click(lj_widget *w, void *ud)
     if (!it || !it->name) return;
     if (!strcmp(it->name, "P_LoadCue")) { if (lc_selected_number(&n) == 0) lc_load(n, 0); }
     else if (!strcmp(it->name, "P_EditCue")) { if (lc_selected_number(&n) == 0) lc_load(n, 1); }
+    else if (!strcmp(it->name, "P_GlobalAdd") || !strcmp(it->name, "P_GlobalInsert")) { if (lc_selected_number(&n) == 0) lj_cue_pages_add_global(n, !strcmp(it->name, "P_GlobalInsert")); }   /* W2 windows-a */
     else lj_log("lj_cue_form: %s: W2", it->name);
 }
 static void lc_num_change(lj_widget *w, void *ud)
@@ -944,15 +981,16 @@ static void lc_go(lj_widget *w, void *ud)
 static void lc_show(lj_widget *w, void *ud) { (void)w; (void)ud; lj_list_cue_refresh(); }
 
 static const lj_binding lc_bindings[] = {
-    { "eGlobalCueNumChange", lc_num_change, NULL }, { "lvGlobalChange", noop, NULL }, { "lvPagesChange", noop, NULL }, { "TC1Change", noop, NULL }, { "TC1Changing", noop, NULL },
+    { "eGlobalCueNumChange", lc_num_change, NULL }, { "lvGlobalChange", noop, NULL }, { "lvPagesChange", noop, NULL }, { "TC1Change", lj_cue_pages_on_tab, NULL }, { "TC1Changing", noop, NULL },
     { "bCueNumGoClick", lc_go, NULL }, { "bGoCueClick", lc_go, NULL }, { "lvGlobalColumnClick", noop, NULL }, { "lvGlobalCompare", noop, NULL },
-    { "lvGlobalDblClick", lc_dblclick, NULL }, { "lvPagesDblClick", w2, NULL }, { "lvPagesDragDrop", w2, NULL }, { "lvPagesDragOver", noop, NULL },
+    { "lvGlobalDblClick", lc_dblclick, NULL }, { "lvPagesDblClick", lj_cue_pages_on_dblclick, NULL }, { "lvPagesDragDrop", lj_cue_pages_on_drop, NULL }, { "lvPagesDragOver", noop, NULL },
     { "lvGlobalExit", noop, NULL }, { "lvPagesExit", noop, NULL },
-    { "sbNextMouseDown", w2, NULL }, { "sbNextPageMouseDown", w2, NULL }, { "sbPageGoMouseDown", w2, NULL }, { "sbPrevMouseDown", w2, NULL }, { "sbPrevPageMouseDown", w2, NULL },
-    { "sbPageButtonsMouseUp", noop, NULL }, { "Splitter1Moved", noop, NULL }, { "GlobalPopClick", lc_pop_click, NULL }, { "PagesPopClick", w2, NULL },
+    { "sbNextMouseDown", lj_cue_pages_on_button, NULL }, { "sbNextPageMouseDown", lj_cue_pages_on_button, NULL }, { "sbPageGoMouseDown", lj_cue_pages_on_button, NULL },
+    { "sbPrevMouseDown", lj_cue_pages_on_button, NULL }, { "sbPrevPageMouseDown", lj_cue_pages_on_button, NULL },
+    { "sbPageButtonsMouseUp", noop, NULL }, { "Splitter1Moved", noop, NULL }, { "GlobalPopClick", lc_pop_click, NULL }, { "PagesPopClick", lj_cue_pages_on_menu, NULL },
     { "GlobalColumnClick", w2, NULL }, { "GlobalSortClick", w2, NULL }, { "Help1Click", noop, NULL }, { "LoadPages1Click", w2, NULL },
-    { "M_GlobalColumnsClick", noop, NULL }, { "M_GlobalColumnsDefaultClick", w2, NULL }, { "M_PagesClick", noop, NULL }, { "PageMenuClick", w2, NULL },
-    { "PrefsClick", w2, NULL }, { "SavePages1Click", w2, NULL }, { "Sort1Click", noop, NULL },
+    { "M_GlobalColumnsClick", noop, NULL }, { "M_GlobalColumnsDefaultClick", w2, NULL }, { "M_PagesClick", noop, NULL }, { "PageMenuClick", lj_cue_pages_on_menu, NULL },
+    { "PrefsClick", lj_cue_pages_on_prefs, NULL }, { "SavePages1Click", w2, NULL }, { "Sort1Click", noop, NULL },
     { "FormActivate", noop, NULL }, { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormDeactivate", noop, NULL },
     { "FormHide", noop, NULL }, { "FormKeyPress", noop, NULL }, { "FormResize", noop, NULL }, { "FormShow", lc_show, NULL },
     { NULL, NULL, NULL } };

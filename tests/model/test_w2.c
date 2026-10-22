@@ -2,7 +2,7 @@
  * test_model_w2_range: lj_kv_range (ME-77) rejects level=356, cue_time_pct=65636, spt=257, link=257,
  * addr=65537 instead of aliasing, returns the default when absent, flags a non-number.
  * test_model_w2_cuepages: the CuePageInfo.Dat layer that exists (lj_cue_pages_load/save) round-trips
- * two pages; the lj_cuepages operations are the model track's rows (stubs return -1 today, recorded). */
+ * two pages; the lj_cuepages operations are covered by test_model_w2_records (tests/model/test_model_w2_records.c). */
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +46,6 @@ int lj_test_model_w2_cuepages(int argc, char **argv)
     CHECK(n == 2 && strcmp(out[0].name, "Page 1") == 0 && out[0].n == 4 && out[0].cue[1] == 5 && out[0].cue[2] == 5 && out[0].cue[3] == 9);
     CHECK(n == 2 && strcmp(out[1].name, "Specials") == 0 && out[1].n == 0);
     remove(path);
-    printf("test_model_w2_cuepages: %d failure(s) (lj_cuepages_* operations: W2 model track)\n", fails);
+    printf("test_model_w2_cuepages: %d failure(s)\n", fails);
     return fails ? 1 : 0;
 }

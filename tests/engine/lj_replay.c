@@ -49,6 +49,7 @@ typedef struct {
     const char *path; char name[64]; int line;
     lj_show *show; lj_engine *e; const lj_frame *f; lj_engine_status view;
     uint32_t tick_us; int built, tick;             /* tick = ticks run so far */
+    long edit_tick;                                /* `at k gpatch|default`: the tick the runtime edit lands before (W2) */
     uint8_t patched[LJ_CHANS];                     /* inside a patched fixture's footprint */
     lj_profile *prof[LJ_FIXTURES];                 /* `profile n` overrides handed to lj_engine_bind_profile */
     rp_rec seqs[RP_RECS], cues[RP_RECS], bgs[RP_RECS], macros[RP_RECS]; int nseq, ncue, nbg, nmacro;
@@ -197,6 +198,8 @@ static int rp_need_patched(rp *p, int code)
     return p->patched[code] ? 0 : rp_fail(p, "%s is not patched", rp_chname(code, b));
 }
 
+static int rp_run_to(rp *p, long k);
+
 /* ---- build lines ---- */
 static void rp_copy_default_dmx(rp *p, int fx)
 {
@@ -291,18 +294,19 @@ static int rp_profile(rp *p, char **argv, int argc)
 static int rp_default(rp *p, char **argv, int argc)
 {
     int i, code; long v;
-    for (i = 1; i < argc; i++) {
+    if (argc < 2) return rp_fail(p, "default: no channels");
+    for (i = 1; i < argc; i++)                      /* grammar first: a bad runtime line never runs ticks */
         if (rp_chval(argv[i], &code, 255, &v, NULL)) return rp_fail(p, "default: expected l:a=v, got \"%s\"", argv[i]);
-        p->show->default_out[code] = (uint8_t)v;
-    }
-    return argc > 1 ? 0 : rp_fail(p, "default: no channels");
+    if (p->built && rp_run_to(p, p->edit_tick - 1)) return -1;   /* `at k default`: the UI edits show->default_out before tick k */
+    for (i = 1; i < argc; i++) { rp_chval(argv[i], &code, 255, &v, NULL); p->show->default_out[code] = (uint8_t)v; }
+    return 0;
 }
 
 static int rp_gpatch(rp *p, char **argv, int argc)
 {
-    int i, code; long v; char key[32]; const char *val; lj_patch_ch *pc;
+    int i, code; long v; char key[32]; const char *val; lj_patch_ch *pc, tmp; const char *msg;
     if (argc < 2 || rp_chan(argv[1], NULL, &code)) return rp_fail(p, "gpatch: expected `gpatch l:a key=value...`");
-    pc = &p->show->patch[code];
+    pc = &tmp; tmp = p->show->patch[code];          /* parsed into a copy: a bad runtime line never runs ticks */
     for (i = 2; i < argc; i++) {
         KV_NEXT(i);
         KV_WORD("src", lj_patch_src_words, pc->src_kind, uint8_t);
@@ -315,6 +319,9 @@ static int rp_gpatch(rp *p, char **argv, int argc)
         KV_NUM("htp", 0, 0xFFFFFF, pc->htp_mask, uint32_t);
         return rp_fail(p, "gpatch: unknown key %s", key);
     }
+    if (p->built && rp_run_to(p, p->edit_tick - 1)) return -1;   /* `at k gpatch`: the UI edits show->patch under the lock before tick k */
+    p->show->patch[code] = tmp;
+    if (p->built && (msg = lj_patch_validate(p->show->patch)) != NULL) return rp_fail(p, "patch invalid: %s", msg);
     return 0;
 }
 
@@ -726,17 +733,27 @@ static int rp_at(rp *p, char **argv, int argc)
         argc--;
     }
     w = argv[2];
+    if (!strcmp(w, "gpatch") || !strcmp(w, "default")) {    /* W2 runtime edits: no command; the htp_groups / global_patch / default_out line hands them over */
+        if (c.at_us != (uint64_t)k * p->tick_us) return rp_fail(p, "%s: at_us= does not apply to an edit", w);
+        p->edit_tick = k;
+        return w[0] == 'g' ? rp_gpatch(p, argv + 2, argc - 2) : rp_default(p, argv + 2, argc - 2);
+    }
     if (!strcmp(w, "load_cue")) {
-        const lj_cue *cue;
+        const lj_cue *cue; int nobg = 0;
         if (argc < 4 || rp_num(argv[3], 1, LJ_NUMBER_MAX, &n)) return rp_fail(p, "load_cue: expected a cue number");
         cue = (const lj_cue *)lj_table_get(&p->show->cues, (uint32_t)n);
         if (!cue) return rp_fail(p, "cue %ld is not defined", n);
         c.kind = LJ_CMD_LOAD_CUE; c.a = (uint32_t)n; c.cue = cue;
-        if (argc > 4) { if (strcmp(argv[4], "edit") || argc > 5) return rp_fail(p, "load_cue: expected [edit]"); c.b = 1; }
+        for (i = 4; i < argc; i++) {                           /* [edit] [nobg]: nobg = the UI had no bg record to pin, so the engine requests it (pending_bg, ack_bg) */
+            if (!strcmp(argv[i], "edit")) c.b = 1;
+            else if (!strcmp(argv[i], "nobg")) nobg = 1;
+            else return rp_fail(p, "load_cue: expected [edit] [nobg], got %s", argv[i]);
+        }
         for (i = 0; i < LJ_CUE_SLOTS; i++) c.seq[i] = cue->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, cue->slot[i].seq) : NULL;
-        c.bg = cue->bg_cue ? (const lj_bgcue *)lj_table_get(&p->show->bgcues, cue->bg_cue) : NULL;
+        c.bg = cue->bg_cue && !nobg ? (const lj_bgcue *)lj_table_get(&p->show->bgcues, cue->bg_cue) : NULL;
         if (c.bg) for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
         c.gm = cue->gen_macro ? (const lj_genmacro *)lj_table_get(&p->show->macros, cue->gen_macro) : NULL;
+        p->cue = (lj_cue *)cue;                                 /* the loaded cue: what a later `loop` line edits */
     } else if (!strcmp(w, "load_bg")) {
         if (argc != 4 || rp_num(argv[3], 0, LJ_BG_FILES, &n)) return rp_fail(p, "load_bg: expected a bg cue number or 0");
         c.kind = LJ_CMD_LOAD_BG; c.a = (uint32_t)n;
@@ -923,6 +940,14 @@ static int rp_at(rp *p, char **argv, int argc)
         if (c.bg) for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
         c.gm = cue->gen_macro ? (const lj_genmacro *)lj_table_get(&p->show->macros, cue->gen_macro) : NULL;
         p->cue = (lj_cue *)cue;
+    } else if (!strcmp(w, "ack_bg")) {                         /* at k ack_bg : the harness services pending_bg the way lj_app_service_pending does (LOAD_BG of that number, slots pinned) */
+        if (argc != 3) return rp_fail(p, "ack_bg takes no arguments");
+        if (rp_run_to(p, k - 1)) return -1;
+        if (!p->view.pending_bg) return rp_fail(p, "ack_bg: no pending bg cue after tick %ld", k - 1);
+        c.bg = (const lj_bgcue *)lj_table_get(&p->show->bgcues, p->view.pending_bg);
+        if (!c.bg) return rp_fail(p, "ack_bg: bg %u is not defined", p->view.pending_bg);
+        c.kind = LJ_CMD_LOAD_BG; c.a = p->view.pending_bg;
+        for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
     } else if (!strcmp(w, "htp_groups")) {                     /* at k htp_groups [masters=0|1] : the HTP table swap after `gpatch` edits (post-build gpatch lines are W2 replay-track grammar) */
         c.kind = LJ_CMD_HTP_GROUPS; c.patch = p->show->patch; c.b = LJ_HTP_MASTERS_DEFAULT;
         if (argc == 4) { if (strncmp(argv[3], "masters=", 8) || rp_num(argv[3] + 8, 0, 1, &v)) return rp_fail(p, "htp_groups: expected [masters=0|1]"); c.b = (uint32_t)v; }
@@ -1110,6 +1135,13 @@ static int rp_line(rp *p, char **argv, int argc)
     /* build lines */
     if (rp_need_build(p, w)) return -1;
     if (!strncmp(w, "tick_us=", 8)) { if (argc != 1 || rp_num(w + 8, 1, 1000000, &v)) return rp_bad(p, "tick_us", w + 8); p->tick_us = (uint32_t)v; return 0; }
+    if (!strcmp(w, "seed")) {                       /* seed <n>: the LJ_RNG_SEED the scenario's random expects were computed with */
+        char *e; unsigned long sd;
+        if (argc != 2) return rp_fail(p, "seed: expected `seed <n>`");
+        sd = strtoul(argv[1], &e, 0);
+        if (e == argv[1] || *e || argv[1][0] == '-') return rp_bad(p, "seed", argv[1]);
+        return sd == LJ_RNG_SEED ? 0 : rp_fail(p, "seed 0x%08lX: the engine's LJ_RNG_SEED is 0x%08lX", sd, (unsigned long)LJ_RNG_SEED);
+    }
     if (!strcmp(w, "patch")) return rp_patch(p, argv, argc);
     if (!strcmp(w, "profile")) return rp_profile(p, argv, argc);
     if (!strcmp(w, "default")) return rp_default(p, argv, argc);

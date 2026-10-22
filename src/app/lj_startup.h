@@ -11,10 +11,12 @@
 #include "model/lj_library.h"
 #include "ui/lj_window.h"
 
+#define LJ_STARTUP_LINES 64                    /* ponytail: the status window keeps the last 64 lines */
 #define LJ_STARTUP_PLEASE_WAIT "Please Wait.."   /* TLJMainForm's design caption until the library is open [13 captions, TLJMAINFORM row]; D2 verbatim */
 
 int        lj_startup_library(const char *userdir, const char *u_arg, lj_library *out);   /* 0 / -1; on -1 out->root = userdir so Main.Ini and forms.ini still resolve (W0 layout) */
 void       lj_startup_last_run(lj_ini *main_ini);                                        /* [OTHER] LastRun=LJ4EVR x.y.z, FirstRun=0 (LJ2's keys [13 s6]) */
 lj_window *lj_startup_status_create(void);                                               /* the generated TStartupStatusWindow with its handlers bound; used when lj_win_open(LJ_WIN_PLEASE_WAIT) has no body */
+void       lj_startup_status_line(lj_window *status, const char *line);                     /* appends one line to the Re1 rich edit (the last LJ_STARTUP_LINES kept); NULL status = no-op */
 
 #endif /* LJ_APP_STARTUP_H */

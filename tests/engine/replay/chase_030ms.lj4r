@@ -1,18 +1,76 @@
 LJ4 replay 1
 # chase_030ms (11 F10, E9; LJ_CHASE_FADE_IS_PERIOD, LJ_CHASE_GLOBAL_RATE, LJ_CHASE_MIN_MS; rig M3, LORD_ENGINE-19):
-# slot 1 is manual; two chase_tap lines 30 ms apart (at_us= carries the 1 ms stamps 100000 and 130000) set the global
-# period to 30 ms; with `chase slot1 1` the slot re-arms every 30 ms exactly to the tick (boundaries at ceil(30 n / 25)
-# ticks), the fade := 30 ms (below LJ_SNAP_MS: snaps, rig M3), and the period is not scaled by `cue_time cue 50`.
-# `pref disable_chase_fade 1` leaves the programmed 2000 ms fade snapped as well (F10). A second cue loaded later keeps
-# the 30 ms period (global chase rate).
+# slot 1 is manual with Chase Man on; two chase_tap lines 30 ms apart (at_us= carries the 1 ms stamps 100000 and
+# 130000; the second is posted at tick 6 because a stamp later than the tick is clamped to the tick) set the global
+# period to 30 ms. The slot re-arms at 130000 + 30000 n us, i.e. on tick ceil((130 + 30 n) / 25): 7 8 9 10 12 13 14 15
+# 16 18 19 20 21 22 (ticks 11 and 17 carry no boundary). The programmed 2000 ms fade becomes the 30 ms period, which
+# snaps (<= LJ_SNAP_MS): the F channel reads 255 on the boundary tick itself.
+# NOTE 11 E9: the chase timer has 1 ms resolution (CHASE_TAP at_us); the period is tap minus previous tap.
+# NOTE 11 F10: "The scene fade time is set to the same value as the chase time unless the Disable Fade Time in Chase Mode
+#      option ... is checked. When fade time is disabled all effects in chased sequences will be snapped. The chase rate is
+#      not affected by the cue time control": tick 19 `cue_time cue 50` leaves the 30 ms boundaries unchanged; ticks 40-56
+#      run a 200 ms chase with `pref disable_chase_fade 1` and the channel snaps (a 200 ms fade would read 255 then 223).
+# NOTE 03 s5.5 / LJ_CHASE_GLOBAL_RATE: the global chase rate carries across cue loads ("follow a beat using chases over
+#      multiple cues"): cue 2 loaded at tick 23 chases at 30 ms as soon as its Chase Man is on (tick 24 -> 26 27 28).
+# NOTE rounding: a 30 ms period over a 25 ms tick advances on the first tick at or after each absolute boundary
+#      (11 E10 timeline), never two scenes in one tick.
+# NOTE W1 fails this file at tick 7 (1:1 expected 255 got 0): LJ_CMD_CHASE_TAP is a W2 kind, so no period exists.
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 profile 1 class1=intensity use_gm=1
-patch 2 profile=19 link=1 addr=2
-profile 2 class1=intensity use_gm=1
-seq 1 name="chase" scene st=60000 ft=2000 ch 1:1=0:S
-scene st=60000 ft=2000 ch 1:1=255:S
+seq 1 name="chase"
+scene st=60000 ft=2000 ch 1:1=0:F
+scene st=60000 ft=2000 ch 1:1=255:F
 cue 1
 slot 1 seq=1 trig=manual
 cue 2
 slot 1 seq=1 trig=manual
+at 0 load_cue 1
+expect 0 1:1=0
+at 1 chase slot1 1
+at 4 chase_tap slot1 at_us=100000
+at 6 chase_tap slot1 at_us=130000
+expect 6 1:1=0
+expect_view 6 chase_tap_us=30000 chase_ms=30
+expect 7 1:1=255   # boundary 1 at 160 ms
+expect 8 1:1=0     # 190 ms
+expect 9 1:1=255   # 220 ms
+expect_status 9 slot1 running scene=2:2
+expect 10 1:1=0    # 250 ms
+expect 11 1:1=0    # no boundary in (250, 275]
+expect 12 1:1=255  # 280 ms
+expect 13 1:1=0    # 310 ms
+expect 14 1:1=255  # 340 ms
+expect 15 1:1=0    # 370 ms
+expect 16 1:1=255  # 400 ms
+expect 17 1:1=255  # no boundary in (400, 425]
+expect 18 1:1=0    # 430 ms
+at 19 cue_time cue 50
+expect 19 1:1=255  # 460 ms: the chase is not scaled by the cue time
+expect 20 1:1=0    # 490 ms
+expect 21 1:1=255  # 520 ms
+expect 22 1:1=0    # 550 ms
+# cue 2: the global rate carries over
+at 23 load_cue 2
+expect 23 1:1=0
+expect_view 23 chase_ms=30
+at 24 chase slot1 1
+expect 25 1:1=0
+expect 26 1:1=255  # 630 ms = 600 + 30
+expect 27 1:1=0    # 660 ms
+expect 28 1:1=255  # 690 ms
+at 29 chase slot1 0
+expect 29 1:1=255  # Chase Man off before the 720 ms boundary: the manual slot holds
+expect 31 1:1=255
+# a 200 ms chase with Disable Fade Time in Chase Mode
+at 32 chase_tap slot1 at_us=800000
+at 40 chase_tap slot1 at_us=1000000
+at 40 pref disable_chase_fade 1
+at 40 chase slot1 1
+expect 40 1:1=255
+expect_view 40 chase_tap_us=200000 chase_ms=200
+expect 47 1:1=255
+expect 48 1:1=0    # 1200 ms, snapped
+expect 49 1:1=0
+expect 55 1:1=0
+expect 56 1:1=255  # 1400 ms

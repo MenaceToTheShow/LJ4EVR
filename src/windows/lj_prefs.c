@@ -117,7 +117,7 @@ void lj_prefs_inert_save(lj_window *prefs, lj_ini *ini)
     for (i = 0; i < 4; i++) lj_ini_seti(ini, "PREFS", lj_inert_key[i], lj_w_checkbox_checked(lj_window_find(prefs, lj_inert_box[i])));
 }
 
-/* ---- W2: lj_sysprefs (lj_prefs.h); the ini bodies are complete, the TSystemPrefsForm bodies are the windows track's ---- */
+/* ---- W2: lj_sysprefs (lj_prefs.h); the ini bodies are complete, the TSystemPrefsForm bodies are in lj_system_prefs.c (windows-d) ---- */
 typedef struct { const char *sec, *key; size_t off; int dflt; } lj_sp_key;
 #define LJ_SP(f, s, k, d) { s, k, offsetof(lj_sysprefs, f), d }
 static const lj_sp_key lj_sp_keys[] = {   /* the shipped User\Default\Main.Ini values are the defaults [13 s6] */
@@ -165,7 +165,3 @@ void lj_sysprefs_save(lj_ini *ini, const lj_sysprefs *p)
     snprintf(file, sizeof file, "Setup%d.Hot", p->hotkey_setup >= 1 && p->hotkey_setup <= 8 ? p->hotkey_setup : 1);
     lj_ini_sets(ini, "HOTKEYS", "File", file);
 }
-lj_window *lj_system_prefs_open(void) { lj_log("lj_system_prefs_open: W2 windows track"); return NULL; }
-void       lj_system_prefs_close(void) { }
-lj_window *lj_system_prefs_window(void) { return NULL; }
-int        lj_system_prefs_apply(void) { return -1; }

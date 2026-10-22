@@ -174,6 +174,7 @@ list(APPEND LJ_TEST_SUBCOMMANDS test_windows_a)
 list(APPEND LJ_TEST_SUBCOMMANDS test_windows_c)   # windows-c
 list(APPEND LJ_TEST_SUBCOMMANDS test_controls_c)   # controls-c
 list(APPEND LJ_TEST_SUBCOMMANDS ui_golden_ctl)     # integrator: control-window goldens
+list(APPEND LJ_TEST_SUBCOMMANDS test_windows_b2)   # windows-b W2: Background Cue, Statics 2, Smoke Control
 foreach(sub ${LJ_TEST_SUBCOMMANDS})
   add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
 endforeach()
@@ -265,11 +266,40 @@ endforeach()
 # profiles_ids: every exe id of the W2 tier-1 families 15/02-15/05 has a hand file (design 10 W2 acceptance 5, ME-76).
 # Red until the W2 profiles track lands the hand files; the message names each missing id.
 if(Python3_FOUND)
-  add_test(NAME profiles_ids COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/check_profiles.py" --tier 2 3 4 5)
+  add_test(NAME profiles_ids COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/check_profiles.py" --tier 1 2 3 4 5)
 endif()
-# Expected-pending (contracts finish 2026-10-22): profiles_ids stays red until the W2 profiles track lands the
-# 15/02-15/05 hand files; DISABLED keeps it listed in every ctest summary ("Not Run (Disabled)") without
-# turning main red. The profiles track deletes this line in the commit that lands the hand files.
+# (the contracts' DISABLED property on profiles_ids is removed: the W2 profiles track landed the 15/02-15/05 hand files)
+
+# W2 midi track (append-only): hotkey setups 1..8 (tests/io/test_hotkey_setups.c)
+add_test(NAME test_hotkey_setups COMMAND lj4evr_tests test_hotkey_setups)
+# W2 desktop track (append-only): F8 order, LED view, ME-29 gates, W2 menu leaves, hotkey setups, memory gauge
+add_test(NAME test_desktop_w2 COMMAND lj4evr_tests test_desktop_w2)
+# W2 replay track (append-only): the W2 replay line forms, and the 10-minute two-slot run headless (design 10 W2 acceptance 3;
+# the acceptance integrator repeats the same file on the wire). The file sits outside the replay_all / replay_dump glob.
+add_test(NAME test_replay_w2 COMMAND lj4evr_tests test_replay_w2)
+add_test(NAME replay_wire_drift COMMAND lj4evr_tests replay "${CMAKE_SOURCE_DIR}/tests/engine/replay/wire/drift_600s_two_slots_wire.lj4r")
+# W2 model track (append-only): the W2 record kinds and the library dialogs (tests/model/test_model_w2_*.c)
+foreach(sub test_model_w2_records test_model_w2_library)
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+
+# W2 windows-a (append-only): Loop Options, Cue Time Control, cue pages, transparent / flash (tests/ui/test_windows_a.c)
+add_test(NAME test_windows_a_w2 COMMAND lj4evr_tests test_windows_a_w2)
+
+# W2 app track (append-only): the SDL-free app seam (pending loads, MIDI dispatch, prefs, snapshot) the tests drive headless
+target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_app_seam.c")
+add_test(NAME test_uiscript_w2 COMMAND lj4evr_tests test_uiscript_w2)
+# W2 engine track (append-only): chase timer, lock hold (ME-81), the W2 kinds through the tick
+foreach(sub test_chase test_lock_hold test_engine_w2)
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+
+# W2 windows-d (append-only): System Preferences, About, Delete Files, User Libraries, Backup/Restore, Notes, Striking Lamps, Edit Hotkeys, MIDI-IN
+add_test(NAME test_windows_d COMMAND lj4evr_tests test_windows_d)
+
+# W2 profiles track (append-only): ME-76 exe_profiles_check beside qxf2c_selftest (binding column vs hand/*.c + qxf_map.tsv);
+# test_profiles_w2 = the 15/02-15/05 hand profiles by id (footprints, 16-bit pairs, palettes, ME-25/27 states)
 if(Python3_FOUND)
-  set_tests_properties(profiles_ids PROPERTIES DISABLED TRUE)
+  add_test(NAME exe_profiles_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/exe_profiles_check.py" --check)
 endif()
+add_test(NAME test_profiles_w2 COMMAND lj4evr_tests test_profiles_w2)

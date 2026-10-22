@@ -1,4 +1,5 @@
-/* lj_groups.c - GroupInfo.dat (lj_groups.h, design 5.2, 18 s8). */
+/* lj_groups.c - GroupInfo.dat (lj_groups.h, design 5.2, 18 s8): the 99 user fixture
+ * groups and (W2) the 24 HTP group names. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,9 +40,11 @@ int lj_groups_load(const char *path, lj_group groups[LJ_USER_GROUPS], char *err,
     return 0;
 }
 
-int lj_groups_save(const char *path, const lj_group groups[LJ_USER_GROUPS])
+static void lj_htp_default(char *out, size_t cap, int i) { snprintf(out, cap, "HTP group %d", i + 1); }   /* PROPOSAL default name (LJ2 keeps them undecoded) */
+
+static int lj_groups_write(const char *path, const lj_group groups[LJ_USER_GROUPS], const lj_htp_names *names)
 {
-    char q[72], list[LJ_FIXTURES * 4 + 1];
+    char q[72], d[LJ_NAME_CAP], list[LJ_FIXTURES * 4 + 1];
     int i, j, ok = 1;
     lj_rec *rec = lj_rec_open_write(path, "groups", 1);
     if (!rec) return -1;
@@ -55,8 +58,16 @@ int lj_groups_save(const char *path, const lj_group groups[LJ_USER_GROUPS])
         lj_kv_quote(q, sizeof q, groups[i].name);
         ok = lj_rec_write(rec, "group ", "%d name=%s members=%s", i + 1, q, list) == 0;
     }
+    for (i = 0; ok && names && i < LJ_HTP_GROUPS; i++) {             /* only names that differ from the default */
+        lj_htp_default(d, sizeof d, i);
+        if (!names->name[i][0] || strcmp(names->name[i], d) == 0) continue;
+        lj_kv_quote(q, sizeof q, names->name[i]);
+        ok = lj_rec_write(rec, "htp ", "%d name=%s", i + 1, q) == 0;
+    }
     return lj_rec_close(rec) == 0 && ok ? 0 : -1;
 }
+
+int lj_groups_save(const char *path, const lj_group groups[LJ_USER_GROUPS]) { return lj_groups_write(path, groups, NULL); }
 
 const char *lj_groups_validate(const lj_group groups[LJ_USER_GROUPS])
 {
@@ -68,7 +79,38 @@ const char *lj_groups_validate(const lj_group groups[LJ_USER_GROUPS])
     return NULL;
 }
 
-/* ---- W2 contract stubs (lj_groups.h additions); the model track replaces the bodies ---- */
-int lj_htp_names_load(const char *path, lj_htp_names *out, char *err, size_t cap) { (void)path; (void)err; (void)cap; memset(out, 0, sizeof *out); return -1; }
-int lj_htp_names_save(const char *path, const lj_group groups[LJ_USER_GROUPS], const lj_htp_names *names) { (void)path; (void)groups; (void)names; return -1; }
-int lj_group_select(const lj_group *g, uint8_t selected[LJ_FIXTURES], int inclusive) { (void)g; (void)selected; (void)inclusive; return -1; }
+/* ---- W2: HTP group names, group selection ---- */
+
+int lj_htp_names_load(const char *path, lj_htp_names *out, char *err, size_t cap)
+{
+    char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP];
+    int fmt, r, item = 0, rbad = 0, i;
+    const char *bad = NULL;
+    lj_rec *rec;
+    for (i = 0; i < LJ_HTP_GROUPS; i++) lj_htp_default(out->name[i], sizeof out->name[i], i);
+    rec = lj_rec_open_read(path, "groups", &fmt);
+    if (!rec) { lj_kv_err(err, cap, path, 0, "not an LJ4 groups file"); return -1; }
+    while ((r = lj_rec_next(rec, k, sizeof k, v, sizeof v)) == 1) {
+        item++;
+        if (strcmp(k, "htp") != 0) continue;
+        i = (int)lj_kv_range_lead(v, 0, 1, LJ_HTP_GROUPS, &rbad);      /* ME-77 */
+        if (rbad) { bad = "htp index not 1..24"; break; }
+        if (lj_kv_get(v, "name", q, sizeof q) < 0) { bad = "bad htp name"; break; }
+        lj_str_copy(out->name[i - 1], sizeof out->name[i - 1], q);
+    }
+    lj_rec_close(rec);
+    if (!bad && r < 0) bad = "unreadable line";
+    if (bad) { lj_kv_err(err, cap, path, item, bad); for (i = 0; i < LJ_HTP_GROUPS; i++) lj_htp_default(out->name[i], sizeof out->name[i], i); return -1; }
+    if (err && cap) err[0] = 0;
+    return 0;
+}
+
+int lj_htp_names_save(const char *path, const lj_group groups[LJ_USER_GROUPS], const lj_htp_names *names) { return lj_groups_write(path, groups, names); }
+
+int lj_group_select(const lj_group *g, uint8_t selected[LJ_FIXTURES], int inclusive)
+{
+    int i, n = 0;
+    if (!inclusive) memset(selected, 0, LJ_FIXTURES);
+    for (i = 0; i < LJ_FIXTURES; i++) if (g->member[i]) { selected[i] = 1; n++; }
+    return n;
+}

@@ -1,9 +1,17 @@
 LJ4 replay 1
-# statics_ltp_reorder (03 s8, 14 sB.7, LJ_STATIC_LTP_PER_CHANNEL, LJ_STATIC_LEVEL_SCALES_ALL; rig 14 sB.8 items 3, 10):
-# two static slots touch channel 1:1 (slot 1.1 = 100, slot 1.2 = 200 at level 50 %). Activate 1.1 then 1.2: the
-# channel reads 100 (200 x 50 %); re-activate 1.1 while both are on: it tops the LTP list again and the channel reads
-# 100 from 1.1; deactivate 1.1: 1.2 shows through (100); deactivate 1.2: rank 0 (0) with LJ_STATIC_RELEASE_SNAPS.
-# Then scope=slot on 1.1 releases 2.1 (same slot row, other page) and leaves 1.2.
+# statics_ltp_reorder (03 s8, 14 sB.7; LJ_STATIC_LTP_PER_CHANNEL, LJ_STATIC_LEVEL_SCALES_ALL; rig 14 sB.8 items 3, 10):
+# slot 1.1 A = 1:1 100; slot 1.2 B = 1:1 240 and 1:2 255 at level 50 % (120 / 128); slot 2.1 C = 1:2 10 with rep=slot.
+# A, B, A again, deactivate A, A back, deactivate B; a command level override; Release All; then C releases A (same
+# slot row, other page) and leaves B; Release Page 2.
+# NOTE 03 s8 / 11 C5 LTP: "the last activated entry has priority ... The LTP evaluation works even if multiple entries
+#      are activated or deactivated"; every enable puts that entry at top priority (tick 2: A re-activated tops B).
+# NOTE 03 s8 levels "scale 0-100% of all values in the entry regardless of channel type" (LJ_STATIC_LEVEL_SCALES_ALL,
+#      (v * level + 50) / 100): 240 x 50 % = 120, 255 x 50 % = 128, 240 x 25 % = 60, 255 x 25 % = 64.
+# NOTE STATIC_ACTIVATE b = level override (tick 6: level=25 over the slot's 50); the scope is the slot's own rep (c 0xFF).
+# NOTE 14 sB.7 Replace Slot (LJ_REP_SLOT; lj_static_scope_hits "the same slot row on every page"; PROPOSAL rig 14 sB.8
+#      item 3): tick 10 activates 2.1 and releases 1.1; tick 11 proves it (1:1 falls to rank 0, not back to A's 100).
+# NOTE 11 F17 / LJ_STATICS_USE_FADETIME 0 and LJ_STATIC_RELEASE_SNAPS (rig M9): every step snaps.
+# NOTE W1 fails this file at tick 0 (1:1 expected 100 got 0): STATIC_ACTIVATE / STATIC_DEACTIVATE are W2 kinds.
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 profile 1 class1=intensity use_gm=1
@@ -12,6 +20,37 @@ profile 2 class1=intensity use_gm=1
 static 1.1 name="A" act=toggle rep=add ft=50 level=100
 ch 1:1=100:S
 static 1.2 name="B" act=toggle rep=add ft=50 level=50
-ch 1:1=200:S 1:2=255:S
+ch 1:1=240:S 1:2=255:S
 static 2.1 name="C" act=toggle rep=slot ft=50 level=100
 ch 1:2=10:S
+at 0 static_act 1.1
+expect 0 1:1=100 layer=4
+expect 0 1:2=0 layer=0
+expect_view 0 statics_any=1
+at 1 static_act 1.2
+expect 1 1:1=120 1:2=128 layer=4
+at 2 static_act 1.1
+expect 2 1:1=100 1:2=128 layer=4
+at 3 static_deact 1.1
+expect 3 1:1=120 1:2=128 layer=4
+at 4 static_act 1.1
+expect 4 1:1=100 1:2=128
+at 5 static_deact 1.2
+expect 5 1:1=100 layer=4
+expect 5 1:2=0 layer=0
+at 6 static_act 1.2 level=25
+expect 6 1:1=60 1:2=64 layer=4
+at 7 static_deact all
+expect 7 1:1=0 1:2=0 layer=0
+expect_view 7 statics_any=0
+at 8 static_act 1.1
+at 9 static_act 1.2
+expect 9 1:1=120 1:2=128
+at 10 static_act 2.1
+expect 10 1:1=120 1:2=10 layer=4
+at 11 static_deact 1.2
+expect 11 1:1=0 layer=0
+expect 11 1:2=10 layer=4
+at 12 static_deact page 2
+expect 12 1:1=0 1:2=0 layer=0
+expect_view 12 statics_any=0

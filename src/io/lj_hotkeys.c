@@ -275,3 +275,36 @@ void lj_hotkeys_default(lj_hotkeys *h)
     lj_str_copy(h->name, sizeof h->name, "Default");   /* the first saved setup in hotkeys2.gif */
     for (i = 0; i < LJ_COUNT_OF(rows); i++) lj_hotkeys_assign(h, &rows[i]);
 }
+
+static void lj_hk_setup_fallback(int setup, lj_hotkeys *out)
+{
+    if (setup == 1) { lj_hotkeys_default(out); return; }
+    lj_hotkeys_init(out);
+    snprintf(out->name, sizeof out->name, "Setup %d", setup);   /* PROPOSAL: LJ2's name for an unsaved setup is unknown */
+}
+
+int lj_hotkeys_setup_load(const char *dir, int setup, lj_hotkeys *out, char *err, size_t cap)
+{
+    char path[512];
+    FILE *f;
+    if (err && cap) err[0] = 0;
+    if (!out) return -1;
+    if (lj_hotkeys_setup_path(dir, setup, path, sizeof path) != 0) { lj_hk_err(err, cap, "hotkey setup %d: bad folder or number", setup); lj_hk_setup_fallback(1, out); return -1; }
+    f = fopen(path, "rb");                                        /* missing = the fallback, silently (no "cannot open .../Setup1.Hot" start-up line) */
+    if (!f) { lj_hk_setup_fallback(setup, out); return 0; }
+    fclose(f);
+    if (lj_hotkeys_load(path, out, err, cap) == 0) return 0;
+    lj_hk_setup_fallback(setup, out);
+    return -1;
+}
+
+int lj_hotkeys_setup_of_file(const char *file)
+{
+    const char *b, *p;
+    if (!file) return -1;
+    for (b = p = file; *p; p++) if (*p == '/' || *p == '\\' || *p == ':') b = p + 1;
+    if ((b[0] | 0x20) != 's' || (b[1] | 0x20) != 'e' || (b[2] | 0x20) != 't' || (b[3] | 0x20) != 'u' || (b[4] | 0x20) != 'p') return -1;
+    if (b[5] < '1' || b[5] > '0' + LJ_HOTKEY_SETUPS_MAX || b[6] != '.') return -1;
+    if ((b[7] | 0x20) != 'h' || (b[8] | 0x20) != 'o' || (b[9] | 0x20) != 't' || b[10]) return -1;
+    return b[5] - '0';
+}

@@ -33,5 +33,8 @@ void lj_kv_err(char *err, size_t cap, const char *path, int item, const char *ms
  * key of the W2 record kinds (cue page, BG cue, statics, groups, presets, palettes, .GPA, default output, hotkey
  * setup) goes through this. */
 long lj_kv_range(const char *fields, const char *key, long dflt, long lo, long hi, int *bad);
+/* W2 (ME-77, model track): the same check for the leading number of a value ("num=12", "slot 3 seq=..",
+ * "bgcue=0 genmacro=0": the token before the first space); dflt + *bad = 1 when missing, not a number or out of lo..hi. */
+long lj_kv_range_lead(const char *v, long dflt, long lo, long hi, int *bad);
 
 #endif /* LJ_MODEL_KV_H */

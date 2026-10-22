@@ -69,4 +69,8 @@ void       lj_list_cue_refresh(void);                        /* re-reads the lib
 void lj_cue_popup_open(lj_window *win, const char *const *items, int n, int x, int y, void (*pick)(int i, void *ud), void *ud);
 int  lj_cue_popup_is_open(lj_window *win);
 
+/* ---- W2 windows-a (appended) ---- */
+void     lj_cue_form_apply_prefs(void);                      /* forms.ini [CUE] Transparent / StickyFlash -> ctx->transparent_mode / flash_latch, posts LJ_CMD_TRANSPARENT */
+uint32_t lj_list_cue_selected(void);                         /* the cue highlighted in the global list, 0 = none */
+
 #endif /* LJ_WINDOWS_CUE_FORM_H */

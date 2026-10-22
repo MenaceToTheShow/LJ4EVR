@@ -37,6 +37,7 @@ int lj_test_desktop(int argc, char **argv);
 int lj_test_controls_c(int argc, char **argv);
 int lj_test_fixlib_profiles(int argc, char **argv);
 int lj_test_windows_b(int argc, char **argv);
+int lj_test_windows_b2(int argc, char **argv);   /* W2 windows-b */
 int lj_test_engine_fade(int argc, char **argv);
 int lj_test_engine_ownership(int argc, char **argv);
 int lj_test_engine_perf(int argc, char **argv);
@@ -56,6 +57,7 @@ int lj_test_hotkeys(int argc, char **argv);
 int lj_test_controls_b(int argc, char **argv);
 int lj_test_windows_c(int argc, char **argv);
 int lj_test_windows_a(int argc, char **argv);
+int lj_test_windows_a_w2(int argc, char **argv);   /* W2 windows-a */
 int lj_test_ui_golden_ctl(int argc, char **argv);
 /* W2 contracts (docs/w2-contracts.md): model / engine / io / ui rows, appended */
 int lj_test_model_w2_range(int argc, char **argv);
@@ -65,6 +67,18 @@ int lj_test_intensity_rule(int argc, char **argv);
 int lj_test_statics(int argc, char **argv);
 int lj_test_midi_map(int argc, char **argv);
 int lj_test_prefs(int argc, char **argv);
+int lj_test_desktop_w2(int argc, char **argv);   /* W2 desktop track */
+int lj_test_hotkey_setups(int argc, char **argv);   /* midi track */
+int lj_test_uiscript_w2(int argc, char **argv);    /* app track */
+int lj_test_replay_w2(int argc, char **argv);   /* W2 replay track */
+int lj_test_model_w2_records(int argc, char **argv);   /* W2 model track */
+int lj_test_model_w2_library(int argc, char **argv);   /* W2 model track */
+
+int lj_test_windows_d(int argc, char **argv);   /* W2 windows-d */
+int lj_test_chase(int argc, char **argv);
+int lj_test_lock_hold(int argc, char **argv);
+int lj_test_engine_w2(int argc, char **argv);
+int lj_test_profiles_w2(int argc, char **argv);   /* W2 profiles track */
 
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
@@ -127,6 +141,19 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_statics", lj_test_statics },                     /* engine/model: Statics 2 indices and caps; scope / LTP rows by the engine track (tests/engine/test_statics.c) */
     { "test_midi_map", lj_test_midi_map },                   /* midi: map, queue, inject, dispatch, Learn, drops (tests/io/test_midi_map.c) */
     { "test_prefs", lj_test_prefs },                         /* app/windows: lj_sysprefs Main.Ini round trip with LJ2's keys (tests/ui/test_prefs.c) */
+    { "test_desktop_w2", lj_test_desktop_w2 },               /* desktop: F8 order, LEDs from the view, ME-29 gates from Main.Ini, every W2 menu leaf reaches its window, hotkey setups, memory gauge (tests/ui/test_desktop_w2.c) */
+    { "test_hotkey_setups", lj_test_hotkey_setups },         /* midi: hotkey setups 1..8 under the library, setup switch, fallbacks (tests/io/test_hotkey_setups.c) */
+    { "test_uiscript_w2", lj_test_uiscript_w2 },             /* app: W2 script verbs parse + run headless, MIDI dispatched on the UI thread, pending_bg round trip (tests/app/test_uiscript_w2.c) */
+    { "test_replay_w2", lj_test_replay_w2 },                 /* replay: W2 line forms (seed, ack_bg, nobg, runtime gpatch/default) rejected with their line number (tests/engine/test_replay_w2.c) */
+    { "test_model_w2_records", lj_test_model_w2_records },   /* model: every W2 record round-trips byte-equal, ME-77 / ME-30 rejections, scopes, CP1252 0xE9 (tests/model/test_model_w2_records.c) */
+    { "test_model_w2_library", lj_test_model_w2_library },   /* model: backup/restore into a new library, traversal refused, [NEXT] Bg= (ME-14), copy, select, used-by-cue (tests/model/test_model_w2_library.c) */
+    { "test_windows_a_w2", lj_test_windows_a_w2 },   /* W2 windows-a: Loop Options, Cue Time Control, cue pages, transparent / flash prefs, W2A_* goldens (tests/ui/test_windows_a.c) */
+    { "test_chase", lj_test_chase },                         /* engine: the global chase timer, 1 ms taps, chase_030ms grid (tests/engine/test_chase.c) */
+    { "test_lock_hold", lj_test_lock_hold },                 /* engine: one tick under lj_lock < tick / 4 with 4 cues, 20 statics, BG (ME-81, tests/engine/test_chase.c) */
+    { "test_engine_w2", lj_test_engine_w2 },                 /* engine: the W2 kinds through the tick: ranks 2-7, transparent, flash latch, smoke, swaps, snapshot, blind, link (tests/engine/test_engine_w2.c) */
+    { "test_windows_b2", lj_test_windows_b2 },             /* windows-b W2: Background Cue, Statics 2 (popup verbatim, STATIC_ACTIVATE, LEDs), Smoke Control, goldens (tests/ui/test_windows_b.c) */
+    { "test_windows_d", lj_test_windows_d },               /* W2 windows-d: System Preferences, About, Delete Files, User Libraries, Backup/Restore, Notes, Striking Lamps, Edit Hotkeys, MIDI-IN, W2D_* goldens (tests/ui/test_windows_d.c) */
+    { "test_profiles_w2", lj_test_profiles_w2 },           /* profiles: every 15/02-15/05 id by lj_fixlib_by_id, footprints, MAC 2000 pan pair, 812 gobo slots, ME-25/27 (tests/fixlib/test_profiles_w2.c) */
 };
 
 int main(int argc, char **argv)

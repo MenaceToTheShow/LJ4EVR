@@ -15,5 +15,9 @@ void        lj_statusbar_refresh(void);                /* the 100 ms hook: clock
 void        lj_statusbar_show(int show);
 int         lj_statusbar_visible(void);
 const char *lj_statusbar_panel_text(enum lj_status_field f);   /* what the panel shows ("" when blank) */
+/* W2: the hotkey-setup indicator, a panel after Trig (not in LJ2's bar: PROPOSAL rig, the W2 brief); "" removes it.
+ * lj_desktop_hotkey_setup_set fills it. Not an lj_status_field: app/lj_uiscript.c sizes its name table by LJ_SB_COUNT. */
+void        lj_statusbar_hotkeys(const char *text);
+const char *lj_statusbar_hotkeys_text(void);
 
 #endif /* LJ_DESKTOP_STATUSBAR_H */

@@ -1,19 +1,69 @@
 LJ4 replay 1
 # cue_time_scaling (03 s5.6, 11 F8 F9; LJ_TIME_PCT_*, LJ_TIME_SCALE_AT_TRIG_ONLY, LJ_SNAP_TEST_AFTER_SCALE; rig M7):
-# the 13 faders: `cue_time cue 50` halves every slot still at CUE (scene 1000 ms -> 500 ms, fade 400 -> 200);
-# `cue_time slot1 200` overrides the cue fader for slot 1 (2000 / 800); `cue_time slot1 0` returns it to CUE; values
-# clamp at min(60000, ms * pct / 100) (a 999 % of 60000 stays 60000); the new scaling applies at the next trig, never
-# mid-scene; a scaled fade <= 50 ms snaps (LJ_SNAP_TEST_AFTER_SCALE).
+# slot 1 saved at 250 % (scene 1000 -> 2500 ms, fade 400 -> 1000 ms: boundaries every 100 ticks), slot 2 saved at 50 %
+# (1000 -> 500 ms: every 20 ticks), slot 3 at 999 % of 30000 ms (clamped to 60000 ms: one boundary at tick 2400).
+# NOTE 03 s5.6 / 11 F9: "scaling ranges from 1% to 999% - 100% represents the original times ... the cue time fader will
+#      only control the sequences that are not already controlled by the individual time faders": `cue_time cue 200` at
+#      tick 150 leaves slot 1 (250 %) alone; `cue_time slot2 0` hands slot 2 to the CUE fader, so its scene entered at the
+#      4000 ms boundary (tick 160) lasts 2000 ms (next boundaries tick 240, 320).
+# NOTE 11 F9 + LJ_TIME_SCALE_AT_TRIG_ONLY (rig M7): a fader move applies at the next trig, never mid-scene: slot 1 at 999 %
+#      from tick 250 changes nothing until the 7500 ms boundary (tick 300); that scene lasts 9990 ms (next boundary
+#      17490 ms = tick 700) and fades over 3996 ms (tick 380: 128, tick 460: 255).
+# NOTE 11 F8: "scaling will not make the sequence exceed the 60 second scene/fade time limit" (min(60000, ms * pct / 100)):
+#      slot 3 = 30000 ms x 999 % -> 60000 ms.
+# NOTE values saved with the cue (03 s5.6 "Values are saved with the cue"): slot time= in the cue record.
+# NOTE the scaling paths are W1 engine code (LJ_CMD_TIME == LJ_CMD_CUE_TIME); the W1 engine passes this file.
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 profile 1 class1=intensity use_gm=1
 patch 2 profile=19 link=1 addr=2
 profile 2 class1=intensity use_gm=1
+patch 3 profile=19 link=1 addr=3
+profile 3 class1=intensity use_gm=1
 seq 1 name="timed"
 scene st=1000 ft=400 ch 1:1=0:F
 scene st=1000 ft=400 ch 1:1=255:F
-seq 2 name="long" scene st=60000 ft=60000 ch 1:2=255:F
-scene st=60000 ft=60000 ch 1:2=0:F
+seq 2 name="half"
+scene st=1000 ft=50 ch 1:2=10:S
+scene st=1000 ft=50 ch 1:2=20:S
+seq 3 name="long"
+scene st=30000 ft=50 ch 1:3=1:S
+scene st=30000 ft=50 ch 1:3=2:S
 cue 1
-slot 1 seq=1
-slot 2 seq=2
+slot 1 seq=1 time=250
+slot 2 seq=2 time=50
+slot 3 seq=3 time=999
+at 0 load_cue 1
+expect 0 1:1=0 1:2=10 1:3=1
+expect 19 1:2=10
+expect 20 1:2=20   # 500 ms
+expect 39 1:2=20
+expect 40 1:2=10   # 1000 ms
+expect 99 1:1=0
+expect 100 1:1=0   # 2500 ms: scene 2 fades 0 -> 255 over 1000 ms
+expect 101 1:1=6
+expect 120 1:1=128
+expect 140 1:1=255
+expect_status 140 slot1 running scene=2:2
+at 150 cue_time cue 200
+at 150 cue_time slot2 0
+expect 159 1:2=20
+expect 160 1:2=10   # 4000 ms, entered at CUE = 200 %: 2000 ms
+expect_status 160 slot2 running scene=1:2
+expect 200 1:1=255  # 5000 ms: slot 1 still 250 %, fades back down
+expect 220 1:1=127
+expect 239 1:2=10
+expect 240 1:2=20   # 6000 ms
+expect 240 1:1=0
+at 250 cue_time slot1 999
+expect 299 1:1=0
+expect 300 1:1=0    # 7500 ms: scene 2 entered at 999 %
+expect 319 1:2=20
+expect 320 1:2=10   # 8000 ms
+expect 380 1:1=128
+expect 460 1:1=255
+expect 699 1:1=255
+expect 700 1:1=254  # 17490 ms: scene 1, fade from 255 over 3996 ms, t0 = the boundary (10 ms before the tick)
+expect 701 1:1=253
+expect 2399 1:3=1
+expect 2400 1:3=2   # 60000 ms: 30000 x 999 % clamped

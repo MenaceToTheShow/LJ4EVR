@@ -1,9 +1,16 @@
 LJ4 replay 1
-# transparent_cue_load (03 s5.8, s11.3; 11 F-transparent; LJ_TRANSPARENT_* of lj_engine_rules.h; rig M-none, documented):
-# cue 1 fills slots 1 and 2; cue 2 is saved transparent with only slot 2. Loading cue 2 under `transparent use` keeps
-# slot 1 from cue 1 and replaces slot 2; under `transparent ignore` slot 1 empties (the W1 behaviour); under
-# `transparent force` a non-transparent cue 3 still keeps slot 1. The on/off state of slot 1 survives (RN 2.2 b4).
-# Build lines below; the `at` / `expect` lines are the W2 replay track's (bodies by the engine track).
+# transparent_cue_load (03 s5.8, s11.3; LJ_TRANSPARENT_* of lj_engine_rules.h; no rig row, documented behaviour):
+# cue 1 fills slots 1 and 2; cue 2 is saved transparent with only slot 2; cue 3 is the same content, not transparent.
+# NOTE 03 s5.8 "When a cue is loaded in transparent mode, only slots containing sequences will overwrite the slots from
+#      the previous cue": tick 1 (Use + cue 2) and tick 6 (Force + cue 3) keep slot 1.
+# NOTE 03 s5.8 Preferences > Transparent Cues: Use (honour the saved flag; LJ_TRANSPARENT_DEFAULT) / Force / Ignore
+#      (TCurrentCue M_UseTransparentCues / M_ForceTransparentCues / M_IgnoreTransparenCues, D13 spelling;
+#      enum lj_transparent_mode 0/1/2). Applied at the next LOAD_CUE: `transparent` + `load_cue` on one tick act in
+#      posting order.
+# NOTE RN 2.2 b4, LJ_TRANSPARENT_KEEPS_ONOFF: "Loading a transparent cue does not reset on/off states of unaffected
+#      slots": slot 1 disabled before the transparent load stays disabled (tick 11).
+# NOTE W1 fails this file at tick 3 (Ignore: 1:1 expected 0 got 200, slot1 expected empty got running), tick 6 (Force:
+#      1:1 expected 200 got 0) and on `expect_view transparent=` 2 / 1: LJ_CMD_TRANSPARENT is a W2 kind.
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 profile 1 class1=intensity use_gm=1
@@ -19,3 +26,44 @@ cue 2 transparent=1
 slot 2 seq=3
 cue 3
 slot 2 seq=3
+at 0 load_cue 1
+expect 0 1:1=200 1:2=100 layer=1
+expect_view 0 transparent=0 cue=1
+# Use (the default): cue 2's flag is honoured, slot 1 stays
+at 1 load_cue 2
+expect 1 1:1=200 1:2=50 layer=1
+expect_status 1 slot1 stopped   # a one-scene sequence shows Stop (03 s5.1)
+expect_view 1 cue=2
+# Use: the non-transparent cue 3 empties slot 1
+at 2 load_cue 1
+at 2 load_cue 3
+expect 2 1:1=0 1:2=50
+expect_status 2 slot1 empty
+# Ignore: cue 2's flag is not honoured, slot 1 empties
+at 3 load_cue 1
+at 3 transparent ignore
+at 3 load_cue 2
+expect 3 1:1=0 1:2=50
+expect_status 3 slot1 empty
+expect_view 3 transparent=2
+# Force: every cue loads transparently, cue 3 too
+at 5 load_cue 1
+expect 5 1:1=200 1:2=100
+at 6 transparent force
+at 6 load_cue 3
+expect 6 1:1=200 1:2=50 layer=1
+expect_status 6 slot1 stopped
+expect_view 6 transparent=1 cue=3
+# back to Use; the on/off state of the kept slot survives a transparent load
+at 9 transparent use
+at 9 load_cue 1
+expect 9 1:1=200 1:2=100
+at 10 enable slot1 0
+expect 10 1:1=0 1:2=100
+expect_status 10 slot1 disabled
+at 11 load_cue 2
+expect 11 1:1=0 1:2=50
+expect_status 11 slot1 disabled
+expect_view 11 transparent=0
+at 12 enable slot1 1
+expect 12 1:1=200 1:2=50

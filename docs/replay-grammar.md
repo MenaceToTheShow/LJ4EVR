@@ -55,7 +55,7 @@ the timestamp (chase-tap resolution). Every `LJ_CMD_*` kind has a form:
 
 | Form | Command |
 |---|---|
-| `at k load_cue <n> [edit]` | `LJ_CMD_LOAD_CUE` with the cue's sequences, bg cue and macro pinned as the UI would (`edit` = Edit Cue, links do not fire) |
+| `at k load_cue <n> [edit] [nobg]` | `LJ_CMD_LOAD_CUE` with the cue's sequences, bg cue and macro pinned as the UI would (`edit` = Edit Cue, links do not fire; `nobg` = the UI had no bg record to pin, so a latched `bgcue=` becomes `pending_bg`, W2) |
 | `at k load_bg <n>` / `at k load_bg 0` | `LJ_CMD_LOAD_BG` (0 = clear) |
 | `at k load_genmacro <n> [restart]` / `at k load_genmacro 0` | `LJ_CMD_LOAD_GENMACRO` |
 | `at k current <seq> <scene> [blind]` / `at k current 0` | `LJ_CMD_CURRENT_SEQ`: pin sequence `seq` (in `cmd.seq[0]`, and `show->current_seq`) as the current sequence at 0-based `scene`; `0` = none |
@@ -159,15 +159,45 @@ cue's slots are the pinned records the W2 forms point at, as the windows do.
 | `at k pref keep_seq_blind\|global_chase_rate\|disable_chase_fade\|statics_fadetime\|hotkey_trig_dir 0\|1` | `LJ_CMD_PREFS` |
 
 `expect_view` gains the fields `bg_any statics_any flash_latched flash_seq transparent smoke haze
-chase_tap_us cue bg snapshot_tick`. Runtime `gpatch` / `default` edits between `at` lines (for
-`htp_groups` / `global_patch` / `default_out` to swap) are the replay track's grammar addition.
+chase_tap_us cue bg snapshot_tick`.
+
+## W2 replay-track lines (2026-10-22)
+
+| Form | Meaning |
+|---|---|
+| `seed <n>` | build line: the `LJ_RNG_SEED` the scenario's random-direction expects were computed with (decimal or `0x`); a different engine seed fails the scenario on this line, so a changed seed never reads as a loop-rule regression |
+| `at k ack_bg` | the harness services `pending_bg` the way `lj_app_service_pending` does: `LJ_CMD_LOAD_BG` of that number with `bgseq[]` pinned (fails when nothing is pending after tick k-1); the twin of `at k link` |
+| `at k gpatch l:a key=value ...` | a runtime Global Patch edit: the `gpatch` build line applied to `show->patch` before tick k (the UI edits under `lj_lock`); posts nothing, so the `htp_groups` / `global_patch` line that follows hands it over; `lj_patch_validate` runs after it |
+| `at k default l:a=v ...` | a runtime Default Output edit of `show->default_out` before tick k; posts nothing (`at k default_out` hands it over) |
+| `# NOTE <rule ids> ...` | a comment by convention: every W2 scenario names the note / rule / rig ids each block of expects asserts, and the first W1-engine failure it records |
+
+A runtime edit's grammar is checked before the clock runs to k-1, so a bad edit runs no tick (`at_us=` on an edit is an
+error). The `loop` form edits the cue the last `load_cue` / `link` loaded (W1 pointed it at the build-time cue only).
+`lj4evr_tests test_replay_w2` is the check: each new form malformed is rejected with its line number, a bad runtime
+edit leaves `ticks == 0`, and a good edit shows on tick k and not on k-1.
 
 ## The nine W2 scenarios (design 10 W2 acceptance 1) and the wire run
 
 `transparent_cue_load`, `statics_ltp_reorder`, `layer_flash_current_statics`,
 `bgcue_over_statics`, `chase_030ms`, `cue_time_scaling`, `loop_bounce_random_limits`,
-`link_to_cue` are committed with their header comment and build lines; `seq_intensities` (the
-03 s5.9 table) exists since W1. Their `at` / `expect` lines are the W2 replay track's, so until
-then `replay_all` runs them as build-only scenarios (0 expects, no evidence: the W2 council ticks
-acceptance 1 only on real rows). `wire/drift_600s_two_slots_wire.lj4r` sits outside the glob: the
-10-minute wire run the acceptance integrator drives beside a live sACN capture (acceptance 3).
+`link_to_cue` and `seq_intensities` (the 03 s5.9 table, W1 bonus row, extended) carry their
+event lines since 2026-10-22 (replay track). Each file's `# NOTE` lines cite the rule ids per
+block. Run against the W1 engine (HEAD `6550a77`, the replay harness of this pass), the first
+failing line of each:
+
+| Scenario | W1 result | First failing line (W1) |
+|---|---|---|
+| `seq_intensities` | pass (10 expects) | - (not a new rule; locks the switch to `lj_seq_intensity_rule`) |
+| `transparent_cue_load` | 6 fails / 21 | `:46 tick 3 1:1 expected 0 got 200` (Ignore) |
+| `statics_ltp_reorder` | 18 fails / 18 | `:27 tick 0 1:1 expected 100 got 0` (STATIC_ACTIVATE) |
+| `layer_flash_current_statics` | 8 fails / 16 | `:33 tick 3 1:1 expected 200 got 100` (STATIC_ACTIVATE); `:46` latched flash |
+| `bgcue_over_statics` | 10 fails / 19 | `:34 tick 0 1:1 expected 200 got 0`; `:39 tick 2 1:1 expected 20 got 250` (BG_ON) |
+| `chase_030ms` | 21 fails / 35 | `:34 tick 6 view chase_tap_us expected 30000 got 0`; `:35 tick 7 1:1 expected 255 got 0` |
+| `cue_time_scaling` | pass (30 expects) | - (W1 scaling code; acceptance evidence) |
+| `loop_bounce_random_limits` | 19 fails / 48 | `:48 tick 20 1:1 expected 40 got 60` (LOOP_OPTS); `:76 tick 108` W1 Goto shows the old scene; `:83 tick 132` random without LJ_RANDOM_NO_REPEAT |
+| `link_to_cue` | pass (20 expects) | - (W1 link path; acceptance evidence) |
+
+`wire/drift_600s_two_slots_wire.lj4r` (4.00 s and 0.333 s scene times, zero cumulative drift at
+600 s: boundaries on ticks 24000, 23990, 24003) sits outside the `replay_all` / `replay_dump` glob;
+CTest runs it headless as `replay_wire_drift`, and the acceptance integrator repeats it beside a
+live sACN capture (acceptance 3). It passes on the W1 engine (11 E10 is W1 code).

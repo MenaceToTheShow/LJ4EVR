@@ -3,12 +3,15 @@
  * per F5, inert leaves, the D12 removal. Every handler name the DFM declares is
  * bound (ME-16); leaves whose window lives elsewhere go through lj_fn_run (io)
  * or lj_desktop_run_action (lj_desktop.h), so desktop/ links nothing above it. */
+#define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC (as gfx/lj_bmp.c) */
 #include "desktop/lj_main_window.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
+#include "core/lj_str.h"
 #include "desktop/lj_desktop.h"
 #include "desktop/lj_desktop_tabs.h"
 #include "desktop/lj_fixture_icons.h"
@@ -20,6 +23,7 @@
 #include "model/lj_show.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/lj_menu.h"
+#include "windows/lj_prefs.h"
 
 #define LJ_NA_HINT "Not available in LJ4EVR"   /* ME-29 */
 
@@ -127,7 +131,7 @@ static void h_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_
 static void h_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_refresh(); }   /* ControlUpdateTimer / DelayedUpdateTimer: the 100 ms hook when the platform drives TTimer rows */
 static void h_inert(lj_widget *w, void *ud) { (void)ud; lj_log("desktop: %s: %s", item_of(w) && item_of(w)->name ? item_of(w)->name : "?", LJ_NA_HINT); }
 static void h_sync(lj_widget *w, void *ud) { (void)ud; lj_main_menu_sync(win_of(w)); }
-static void h_autostrike(lj_widget *w, void *ud) { (void)ud; fn(LJ_FN_AUTOSTRIKE_LAMPS_TOGGLE); lj_main_menu_sync(win_of(w)); }
+static void h_autostrike(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_STRIKING_LAMPS, 1); }   /* W2: "From System->Auto Strike Lamps it runs until cancelled" [01 s6.2] */
 static void h_fixture_config(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_FIXTURE_CONFIG, 0); }
 static void h_default_out(lj_widget *w, void *ud) { (void)ud; lj_desktop_run_action(LJ_ACT_DEFAULT_OUT, item_tag(w)); }   /* CurrentScene1 tag 1, Clear1 tag 0 */
 static void h_delete_files(lj_widget *w, void *ud)
@@ -151,12 +155,26 @@ static void h_fingers(lj_widget *w, void *ud)
 }
 static void h_followspot(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_FOLLOWSPOT_SETTINGS, 0); }
 static void h_generic(lj_widget *w, void *ud) { (void)w; (void)ud; fn(LJ_FN_GENERIC_CONTROLS); }
+static int lj_hk_setup = 1, lj_hk_enabled = 1;   /* W2: the current setup 1..8 and Hotkeys Enabled (mirrors ctx->prefs; lj_desktop_hotkey_setup_set) */
 static void h_hotkeys_enabled(lj_widget *w, void *ud)
 {
     lj_ctx *ctx = lj_ctx_get();
+    int on = ctx->hotkeys ? !ctx->hotkeys->enabled : !lj_hk_enabled;
+    (void)ud; (void)w;
+    if (ctx->hotkeys) ctx->hotkeys->enabled = (uint8_t)on;
+    if (ctx->prefs) ctx->prefs->hotkeys_enabled = (uint8_t)on;
+    lj_desktop_run_action(LJ_ACT_HOTKEYS_ENABLED, on);
+    lj_desktop_hotkey_setup_set(lj_hk_setup, on);
+}
+static void h_hotkey_setup(lj_widget *w, void *ud)   /* Setup > Hotkeys > <setup n> (ours: the items are code-built, LJ2 lists up to 8 saved setups [01 s7]) */
+{
+    lj_ctx *ctx = lj_ctx_get();
+    int n = item_tag(w);
     (void)ud;
-    if (ctx->hotkeys) ctx->hotkeys->enabled = (uint8_t)!ctx->hotkeys->enabled;
-    lj_main_menu_sync(win_of(w));
+    if (n < 1 || n > LJ_HOTKEY_SETUPS_MAX) return;
+    if (ctx->prefs) ctx->prefs->hotkey_setup = n;
+    lj_desktop_run_action(LJ_ACT_HOTKEY_SETUP, n);
+    lj_desktop_hotkey_setup_set(n, ctx->hotkeys ? ctx->hotkeys->enabled : lj_hk_enabled);
 }
 static void h_restart(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_RESTART, 0); }
 static void h_restore(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_RESTORE_DATA, 0); }
@@ -286,6 +304,7 @@ static const lj_binding lj_bindings[] = {
     { "M_GenericClick", h_generic, NULL },
     { "M_HotkeysClick", h_sync, NULL },
     { "M_HotkeysEnabledClick", h_hotkeys_enabled, NULL },
+    { "M_HotkeySetupClick", h_hotkey_setup, NULL },   /* W2: the code-built setup items (not a DFM handler; the patched menu below names it) */
     { "M_ManagerClick", h_inert, NULL },
     { "M_OffLineClick", h_inert, NULL },
     { "M_OfflineDisableClick", h_inert, NULL },
@@ -314,6 +333,42 @@ const lj_binding *lj_main_window_bindings(void) { return lj_bindings; }
 /* ---- the desc and the window ---- */
 static lj_menu_desc lj_main_menus[3];
 
+/* W2: MainMenu1 with Setup > Hotkeys extended by the 8 setup items after M_HotkeySep [01 s2.2, s7]: "up to 8 previously
+ * saved setups will appear below the Edit Hotkeys item". Caption = the .Hot file's name= (fallback "Setup n"), shown
+ * only when <userdir>Hotkeys/SetupN.Hot exists or n is the current setup (lj_main_menu_sync); radio group 1. */
+enum { LJ_MM_MAX = 16, LJ_MM_SETUP_MAX = 16, LJ_MM_HK_MAX = 16 };
+static lj_menu_item_desc lj_mm_bar[LJ_MM_MAX], lj_mm_setup[LJ_MM_SETUP_MAX], lj_mm_hk[LJ_MM_HK_MAX];
+static char lj_mm_hk_caption[LJ_HOTKEY_SETUPS_MAX][64];
+static const char *const lj_mm_hk_names[LJ_HOTKEY_SETUPS_MAX] = { "M_HotkeySetup1", "M_HotkeySetup2", "M_HotkeySetup3", "M_HotkeySetup4", "M_HotkeySetup5", "M_HotkeySetup6", "M_HotkeySetup7", "M_HotkeySetup8" };
+
+static int find_item(const lj_menu_item_desc *items, int n, const char *name) { int i; for (i = 0; i < n; i++) if (items[i].name && strcmp(items[i].name, name) == 0) return i; return -1; }
+
+static lj_menu_desc patched_main_menu(const lj_menu_desc *gen)
+{
+    lj_menu_desc d = *gen;
+    const lj_menu_item_desc *setup, *hk;
+    int s, h, k;
+    if (gen->n > LJ_MM_MAX || (s = find_item(gen->items, gen->n, "M_Setup")) < 0) return d;
+    setup = &gen->items[s];
+    if (setup->nchildren > LJ_MM_SETUP_MAX || (h = find_item(setup->children, setup->nchildren, "M_Hotkeys")) < 0) return d;
+    hk = &setup->children[h];
+    if (hk->nchildren + LJ_HOTKEY_SETUPS_MAX > LJ_MM_HK_MAX) return d;
+    memcpy(lj_mm_bar, gen->items, sizeof *lj_mm_bar * (size_t)gen->n);
+    memcpy(lj_mm_setup, setup->children, sizeof *lj_mm_setup * (size_t)setup->nchildren);
+    memcpy(lj_mm_hk, hk->children, sizeof *lj_mm_hk * (size_t)hk->nchildren);
+    for (k = 0; k < LJ_HOTKEY_SETUPS_MAX; k++) {
+        lj_menu_item_desc *it = &lj_mm_hk[hk->nchildren + k];
+        memset(it, 0, sizeof *it);
+        snprintf(lj_mm_hk_caption[k], sizeof lj_mm_hk_caption[k], "Setup %d", k + 1);
+        it->name = lj_mm_hk_names[k]; it->caption = lj_mm_hk_caption[k]; it->on_click = "M_HotkeySetupClick";
+        it->tag = k + 1; it->group_index = 1; it->radio_item = LJ_YES; it->image_index = -1;
+    }
+    lj_mm_setup[h].children = lj_mm_hk; lj_mm_setup[h].nchildren = hk->nchildren + LJ_HOTKEY_SETUPS_MAX;
+    lj_mm_bar[s].children = lj_mm_setup;
+    d.items = lj_mm_bar;
+    return d;
+}
+
 lj_window *lj_main_window_build(const lj_binding *extra)
 {
     lj_form_desc *d = calloc(1, sizeof *d);
@@ -322,7 +377,7 @@ lj_window *lj_main_window_build(const lj_binding *extra)
     lj_window *win;
     if (!d) lj_fatal("main window: out of memory");
     *d = lj_form_TLJMAINFORM;                                      /* 799x606 outer / 791x560 client, Arial 8 pt, Constraints 300x100, "Please Wait.." [F2, 07 s4.1] */
-    lj_main_menus[0] = *lj_form_find_menu(&lj_form_TLJMAINFORM, "MainMenu1");
+    lj_main_menus[0] = patched_main_menu(lj_form_find_menu(&lj_form_TLJMAINFORM, "MainMenu1"));
     lj_main_menus[1] = lj_main_popup_desktop;
     lj_main_menus[2] = lj_main_popup_icon;
     d->menus = lj_main_menus; d->nmenus = 3;
@@ -382,21 +437,52 @@ void lj_main_menu_apply(lj_window *win)
         lj_menu_set_visible(m, lj_top[i].name, lj_top[i].visible == 2 ? generic_fixture_exists() : lj_top[i].visible);
     for (i = 0; i < LJ_COUNT_OF(lj_inert); i++) lj_menu_set_enabled(m, lj_inert[i].name, 0);
     lj_menu_set_visible(m, lj_removed, 0);
+    lj_menu_set_enabled(m, "M_UserLibraries", 1);   /* W2: the DFM ships it disabled; User Libraries is live [01 s8] */
+    if (lj_ctx_get()->prefs) { lj_hk_setup = lj_ctx_get()->prefs->hotkey_setup; lj_hk_enabled = lj_ctx_get()->prefs->hotkeys_enabled; }
     lj_main_menu_sync(win);
+}
+
+static void hotkey_items_sync(lj_menu *m)
+{
+    static lj_hotkeys scratch;   /* ponytail: each setup file is parsed whole for its name= line; 8 small files per menu sync */
+    const lj_ctx *ctx = lj_ctx_get();
+    char path[LJ_PATH_CAP], err[64];
+    int k;
+    lj_menu_set_checked(m, "M_HotkeysEnabled", ctx->hotkeys ? ctx->hotkeys->enabled : lj_hk_enabled);
+    for (k = 0; k < LJ_HOTKEY_SETUPS_MAX; k++) {
+        FILE *f = ctx->userdir[0] && lj_hotkeys_setup_path(ctx->userdir, k + 1, path, sizeof path) == 0 ? fopen(path, "rb") : NULL;   /* probe first: the loader logs a missing file */
+        int have = f != NULL;
+        if (f) fclose(f);
+        have = have && lj_hotkeys_load(path, &scratch, err, sizeof err) == 0;   /* a setup that does not load is not listed */
+        if (have && scratch.name[0]) lj_str_copy(lj_mm_hk_caption[k], sizeof lj_mm_hk_caption[k], scratch.name);
+        else snprintf(lj_mm_hk_caption[k], sizeof lj_mm_hk_caption[k], "Setup %d", k + 1);
+        lj_menu_set_visible(m, lj_mm_hk_names[k], have || k + 1 == lj_hk_setup);
+        lj_menu_set_checked(m, lj_mm_hk_names[k], k + 1 == lj_hk_setup);
+    }
 }
 
 void lj_main_menu_sync(lj_window *win)
 {
     lj_menu *m = win ? lj_window_menus(win) : NULL;
-    const lj_ctx *ctx = lj_ctx_get();
     if (!m) return;
     lj_menu_set_checked(m, "SequenceandCueToolbar1", lj_desktop_toolbar_visible(LJ_TB_SEQCUE));
     lj_menu_set_checked(m, "CueListToolbar1", lj_desktop_toolbar_visible(LJ_TB_CUELIST));
     lj_menu_set_checked(m, "FixtureToolbar1", lj_desktop_toolbar_visible(LJ_TB_FIXTURE));
     lj_menu_set_checked(m, "StatusBar1", lj_statusbar_visible());
-    lj_menu_set_checked(m, "M_HotkeysEnabled", ctx->hotkeys ? ctx->hotkeys->enabled : 0);
     lj_menu_set_checked(m, "PD_MoveAll", lj_desktop_move_mode_on());
     lj_menu_set_checked(m, "PD_ShowProgrammed", lj_desktop_show_programmed_on());
     lj_menu_set_checked(m, "PI_MoveIcon", lj_desktop_popup_fixture() >= 0 && lj_desktop_icon_move_on(lj_desktop_popup_fixture()));
     lj_menu_set_visible(m, "M_Generic", generic_fixture_exists());
+    hotkey_items_sync(m);
+}
+
+void lj_desktop_hotkey_setup_set(int setup, int enabled)
+{
+    char buf[32];
+    lj_window *win = lj_desktop_window();
+    if (setup >= 1 && setup <= LJ_HOTKEY_SETUPS_MAX) lj_hk_setup = setup;
+    lj_hk_enabled = enabled != 0;
+    if (enabled) snprintf(buf, sizeof buf, "Hotkeys %d", lj_hk_setup); else snprintf(buf, sizeof buf, "Hotkeys Off");   /* PROPOSAL rig: LJ2 has no such panel */
+    lj_statusbar_hotkeys(buf);
+    if (win) lj_main_menu_sync(win);
 }

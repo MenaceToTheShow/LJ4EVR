@@ -28,7 +28,11 @@ W1_IDS = [12, 31, 24, 30,                                    # 15/01 MAC 500, MA
           92, 93, 94, 95, 96, 97, 98, 99, 100, 101,          # DMX Switch Pack 1..32
           78, 135, 77, 76, 75,                               # RGB Pack x4 A/B, x6, x8, x10
           18, 45, 27, 90, 42, 43, 46]                        # Smoke, Hazer, SwitchBox 6, External, GCS 1, GSC 1, USER2
-WAVE_IDS = {1: W1_IDS}
+W2_IDS = [11, 67,                                            # 15/02 MAC 600, 600 NT
+          28, 47, 39, 105, 112, 133, 48, 118,                # 15/03 MAC 250 family
+          68, 84, 87, 88, 117, 161, 162, 188, 189, 190, 191, # 15/04 MAC 2000 family
+          3, 58, 1, 52, 2, 57, 41, 36, 33]                   # 15/05 Roboscan 518 / 812 / 218 + the DMX-interface entries
+WAVE_IDS = {1: W1_IDS, 2: W2_IDS}
 
 
 def hand_ids():

@@ -1,0 +1,266 @@
+# w2_acceptance.lj4s - the W2 "Playback" walkthrough of design 10 W2 as a --script
+# (docs/ui-script.md, W2 verbs). Run from the repo root on a fresh Default library so the
+# records get numbers 0001 / 0002 and the shots land in docs/screenshots/w2/:
+#   build-ninja-msvc\lj4evr.exe --script tests\ui\scripts\w2_acceptance.lj4s
+# Fixtures as W1: MAC 500 Mode 2/4 at 1:001 (ch 2 intensity), Generic DMX Dimmer 1 Channel at 1:017.
+# Widget names: DFM object names (ui/forms/lj_forms_gen.c); code-built widgets as the W2 window
+# files build them. Lines marked RECONCILE name a code-built widget or a drop target whose W2
+# behaviour file had not landed when this script was written (2026-10-22, app track): the
+# integrator checks those names against the landed window before the first run.
+# Coordinates inside TRadioGroups are measured from the DFM rects (REndLoop 351x67, 3 columns;
+# RDirection 351x37, 4 columns), not from a capture.
+
+log "W2 acceptance: two fixtures (as W1 item 2)"
+open fixture_config
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "1"
+key Enter
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbGeneric
+key Right
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "17"
+key Enter
+assert_text TLinkConfigForm3.LFixtures "2 Fixtures configured"
+click TLinkConfigForm3.bSave
+close fixture_config
+wait 300
+close cue_form
+close seq_form
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -300 -120
+wait 300
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -200 -120
+wait 300
+assert_text main.icon1 "(1) MAC500"
+assert_text main.icon2 "(2) DMX1"
+
+# ---- a 3-scene sequence on the dimmer: 50 %, 100 %, 25 % (scene time 1.00 s default) ----
+log "W2 acceptance: 3-scene sequence 0001"
+click main.icon2
+wait 200
+open seq_form
+open levels
+click levels.row1_bar 16 80                       # scene 1: dimmer ~50 %
+click TSequenceForm.sb7                           # Add scene
+click levels.row1_bar 16 16                       # scene 2: 100 %
+click TSequenceForm.sb7
+click levels.row1_bar 16 118                      # scene 3: ~25 %
+assert_text main.sb_seqcounter "3:3"
+click TSequenceForm.sb9                           # Save sequence
+wait 300
+click TSaveSeqForm.ESeqName
+type "three"
+click TSaveSeqForm.BSaveNew
+wait 300
+assert_caption TSequenceForm "SEQUENCE [0001 three]"
+
+# ---- cue 0001 = the link target "two" (transparent), then cue 0002 = the bounce cue ----
+# The brief's cue 2 is the target; numbers follow the save order, so the target is saved first as
+# 0001 and the looping cue is 0002 linking to 0001. Both cues hold sequence 0001 in slot 1.
+log "W2 acceptance: link target cue (transparent)"
+open cue_form
+click TSequenceForm.sb11                          # Add Sequence to Current Cue -> slot 1
+click TCurrentCue.sbSaveCue
+wait 300
+click TSaveCueForm.ECueName
+type "target"
+click TSaveCueForm.cbTransparent                  # a transparent cue [03 s5.8]
+click TSaveCueForm.BSaveNew
+wait 300
+assert_caption TCurrentCue "CUE [0001 target]"
+assert_file_line Cues/00000001.cue "transparent=1"
+
+log "W2 acceptance: Loop Options bounce 1..3 x2, end = Link to Cue 0001"
+click TCurrentCue.sbNewCue
+click TSequenceForm.sb11
+open loop_options
+click TLoopToolsForm.RDirection 188 22            # Bounce (column 3 of 4)
+click TLoopToolsForm.eFirst
+key End
+key BS 3
+type "1"
+click TLoopToolsForm.eLast
+key End
+key BS 3
+type "3"
+click TLoopToolsForm.eLoops
+key End
+key BS 3
+type "2"
+click TLoopToolsForm.REndLoop 12 46               # Link to Cue (row 2, column 1)
+click TLoopToolsForm.eLink
+key End
+key BS 4
+type "1"
+shot docs/screenshots/w2/loop-options.png
+close loop_options
+
+log "W2 acceptance: Cue Time Control slot 1 = 250 %"
+open cue_time
+click TCueTimeForm.lj_cue_time_strip 74 22        # slot 1 up cap: Cue -> 101 % (RECONCILE: strip geometry LJ_CT_* of lj_cue_time.c)
+click TCueTimeForm.lj_cue_time_strip 74 8         # select slot 1 for the keys
+key PgUp 14                                       # +140 -> 241
+key Up 9                                          # -> 250
+shot docs/screenshots/w2/cue-time.png
+close cue_time
+click TCurrentCue.sbSaveCue
+wait 300
+click TSaveCueForm.ECueName
+type "bounce"
+click TSaveCueForm.BSaveNew
+wait 300
+assert_caption TCurrentCue "CUE [0002 bounce]"
+assert_file_line Cues/00000002.cue "slot 1 seq=1 on=1 trig=auto dir=bounce spt=1 atpt=1 tol=0 first=1 last=3 loops=2 end=link goto=0 link=1 time=250 chase=0"
+
+log "W2 acceptance: run, the link loads cue 0001 with Use Transparent Cues"
+click TCurrentCue.M_UseTransparentCues
+assert_view transparent_mode=0
+click TSequenceForm.sb8                           # New/Clear the current sequence: the cue plays alone [F23]
+click TCurrentCue.sbGo
+wait 500
+assert_view cue_number=2
+sleep_until_tick 600                              # 2 bounce loops of 1..3 at 1.00 s x 250 % scene time end well inside 15 s at 40 Hz
+wait 12000
+assert_view cue_number=1                          # end action Link to Cue: pending_link_cue serviced by the app (design 2.3 rule 3)
+shot docs/screenshots/w2/link-to-cue.png
+
+log "W2 acceptance: chase at 30 ms taps"
+click TCurrentCue.sbChaseMan
+click TCurrentCue.sbTrigAll
+wait 30
+click TCurrentCue.sbTrigAll
+wait 30
+click TCurrentCue.sbTrigAll
+wait 100
+log "chase period: see the Cue control; the exact 30 ms is replay chase_030ms (the script's 10 ms pass cannot hold a tap to 1 ms)"
+shot docs/screenshots/w2/chase.png
+click TCurrentCue.sbChaseMan
+
+log "W2 acceptance: cue intensity mode HTP"
+click TCurrentCue.M_CueIntHTP
+
+log "W2 acceptance: background cue loaded and on"
+open bgcue_form
+click TBGCueForm.sbNew
+open list_seq
+drag TSeqListForm.Grid TBGCueForm.LV1             # RECONCILE: LV1DragDrop (windows-a) and the Select Sequence list widget name
+click TBGCueForm.sbSave
+wait 300
+click TSaveBGForm.Bsave                           # RECONCILE: TSaveBGForm button names
+wait 300
+click TBGCueForm.sb1                              # slot 1 on
+wait 300
+assert_led bgcue 1
+assert_view bg_any=1 bg_number=1
+shot docs/screenshots/w2/bgcue.png
+close list_seq
+
+log "W2 acceptance: Statics 2 page 1 slot 1, its popup with Martin's duplicated items"
+click main.icon2
+open levels
+click levels.row1_bar 16 16                       # the current scene's dimmer at 100 %
+open statics2_form
+rclick TStatics2Form.pStatic 40 8                 # slot 1 (row 0 of the code-built cells): popStaticEntry
+assert_text TStatics2Form.ReplacePage1 "Replace Page"
+assert_text TStatics2Form.ReplacePage2 "Replace Page"
+assert_text TStatics2Form.ReplaceSlot1 "Replace Slot"
+assert_text TStatics2Form.ReplaceSlot2 "Replace Slot"
+shot docs/screenshots/w2/statics-popup.png
+key Esc
+click TStatics2Form.M_RecordCurrentScene          # the slot records the current scene
+click TStatics2Form.pStatic 40 8                  # activate
+wait 300
+assert_led statics 1
+assert_view statics_any=1
+assert_frame 1:17=255
+shot docs/screenshots/w2/statics.png
+
+log "W2 acceptance: Smoke on"
+open smoke_control
+click TSmokeForm.dSmoke
+wait 300
+assert_view smoke_active=1
+assert_led smoke 1
+shot docs/screenshots/w2/smoke.png
+click TSmokeForm.dSmoke
+close smoke_control
+
+log "W2 acceptance: HTP group 1 = both intensity channels"
+click main.tb_fixture_12                          # All
+open htp_groups
+click THTPGroupsForm.bAdd                         # RECONCILE: the code-built HTP Groups window (group 1 selected, Add selected)
+shot docs/screenshots/w2/htp-groups.png
+close htp_groups
+click main.tb_fixture_13                          # None
+
+log "W2 acceptance: Global Patch invert 1:017"
+click TStatics2Form.pReleaseAll
+close statics2_form
+open global_patch
+click TGlobalPatchForm.lv1 60 26                  # row 1:001
+key Down 16                                       # 1:017
+click TGlobalPatchForm.cbInverted
+click TGlobalPatchForm.bSet
+click TGlobalPatchForm.bOk                        # Apply Patch: LJ_CMD_GLOBAL_PATCH + GlobalPatch.GPA
+wait 300
+assert_file GlobalPatch.GPA exists
+shot docs/screenshots/w2/global-patch.png
+close global_patch
+
+log "W2 acceptance: MIDI note 0x90 0x3C 0x7F latches cue 0002"
+open midi_in
+click TMidiInForm.tabCue                          # RECONCILE: the code-built MIDI-IN window (05 s7.2 tabs)
+click TMidiInForm.cbEnable
+click TMidiInForm.lvNotes.1.0                     # row of cue 0002
+click TMidiInForm.bLearn
+midi 90 3C 7F
+wait 100
+midi 80 3C 00
+wait 100
+close midi_in
+midi 90 3C 7F
+wait 300
+assert_view cue_number=2
+shot docs/screenshots/w2/midi-latch.png
+
+log "W2 acceptance: backup to a scratch .lj4b and restore"
+open backup
+click TLibraryBackupForm.bCreate                  # <userdir>Default.lj4b (lj_backup_path)
+wait 1000
+close backup
+open restore
+click TLibraryRestoreForm.FileList 40 8           # RECONCILE: the code-built file list over FileList's rect
+click TLibraryRestoreForm.bRestore
+wait 300
+click confirm.BOk                                 # "Please Confirm.." restore
+wait 1000
+shot docs/screenshots/w2/restore.png
+click confirm.BCancel                             # "Re-start LightJockey ?" No: the script goes on
+close restore
+
+log "W2 acceptance: System Preferences, Allow fixture solo selection off, Apply"
+open system_prefs
+click TSystemPrefsForm.cbAllowSolo
+shot docs/screenshots/w2/system-prefs.png
+click TSystemPrefsForm.Bok                        # LJ_ACT_SYSTEM_PREFS_APPLY: Main.Ini saved, the toolbar re-gated (ME-29)
+wait 300
+assert_visible main.tb_fixture_17 0               # Solo hidden
+assert_file_line Main.Ini "Enabled=0"             # [SOLO] Enabled=0 ([HOTKEYS] Enabled stays 1)
+open system_prefs
+click TSystemPrefsForm.cbAllowSolo
+click TSystemPrefsForm.Bok
+wait 300
+assert_visible main.tb_fixture_17 1
+
+shot docs/screenshots/w2/end.png
+quit

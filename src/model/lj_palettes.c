@@ -20,7 +20,7 @@ static int lj_palettes_reserve(lj_palette_list *l, int n)
 
 int lj_palettes_load(const char *path, lj_palette_list *out, char *err, size_t cap)
 {
-    char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP], *e;
+    char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP];
     int fmt, r, item = 0;
     const char *bad = NULL;
     lj_rec *rec = lj_rec_open_read(path, "palette", &fmt);
@@ -30,7 +30,7 @@ int lj_palettes_load(const char *path, lj_palette_list *out, char *err, size_t c
         item++;
         if (strcmp(k, "entry") == 0) {
             lj_user_palette *p;
-            if (strtol(v, &e, 10) != out->n + 1 || e == v) { bad = "entry index out of order"; break; }
+            if (lj_kv_range_lead(v, 0, out->n + 1, out->n + 1, NULL) != out->n + 1) { bad = "entry index out of order"; break; }   /* ME-77 helper */
             lj_palettes_reserve(out, out->n + 1);
             p = &out->e[out->n++];
             memset(p, 0, sizeof *p);

@@ -48,6 +48,7 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "io/lj_midi_winmm.c": {"windows.h", "mmsystem.h"},
     "model/lj_library.c": {"sys/stat.h"},   # POSIX mkdir for lj_library_create (Windows uses <direct.h>/<io.h>)
     "io/lj_midi_coremidi.c": {"CoreMIDI/CoreMIDI.h"},
+    "app/lj_sysmem.c": {"windows.h", "unistd.h", "sys/sysctl.h"},   # W2 app: the memory gauge free-memory query (ME-87)
 }
 NAME_EXEMPT = {"app/main.c"}
 

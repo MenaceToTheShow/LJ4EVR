@@ -70,7 +70,7 @@ int lj_test_fixlib_profiles(int argc, char **argv)
         if (row->binding == LJ_BIND_QXF) nqxf++;
     }
     printf("rows: %d, hand %d, qxf %d, extras %d\n", lj_fixlib_count(), nhand, nqxf, lj_qxf_extra_count);
-    CHECK(nhand == 36 && nqxf >= 30);
+    CHECK(nhand == 66 && nqxf >= 15);   /* W1 36 + the 30 W2 ids of 15/02-15/05 (ME-26: the hand count rises; their qxf rows stay mapped, hand wins) */
 
     /* id 12 = Martin / MAC 500 / Mode 2/4, footprint 16, hand wins over the QLC+ conversion */
     p = lj_fixlib_by_id(12);
@@ -110,9 +110,9 @@ int lj_test_fixlib_profiles(int argc, char **argv)
     CHECK(lj_fixlib_by_id(999) == NULL && lj_fixlib_by_id(32) == NULL);
 
     /* tier 2: a QLC+-bound id gets derived windows at first use; extras resolve too */
-    p = lj_fixlib_by_id(11);                                                 /* MAC 600 from Martin-MAC600E.qxf Mode 4 */
+    p = lj_fixlib_by_id(54);                                                 /* MiniMAC Profile from Martin-MiniMAC-Profile.qxf Mode 4 (id 11 is a W2 hand file) */
     CHECK(p && p->windows && p->nwindows > 0 && lj_profile_window(p, LJ_CTL_INTENSITY) && lj_profile_window(p, LJ_CTL_MOVEMENT) && lj_profile_window(p, LJ_CTL_COLORS));
-    CHECK(p && p == lj_fixlib_by_id(11));                                    /* derived once */
+    CHECK(p && p == lj_fixlib_by_id(54));                                    /* derived once */
     CHECK(lj_fixlib_by_id(1000) && lj_fixlib_by_id(1000)->footprint == 32);
     for (i = 0; i < lj_qxf_count; i++) { q = lj_fixlib_by_id(lj_qxf_profiles[i]->id); if (q) check_tables(q); }
 

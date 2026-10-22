@@ -18,47 +18,48 @@ static void lj_cue_init(lj_cue *c)                 /* every slot empty, spt/atpt
 int lj_cue_load(const char *path, lj_cue *out, char *err, size_t cap)
 {
     char k[32], v[LJ_KV_VAL_CAP], *e;
-    int fmt, r, item = 0;
+    int fmt, r, item = 0, rbad = 0;
     const char *bad = NULL;
     lj_rec *rec = lj_rec_open_read(path, "cue", &fmt);
     if (!rec) { lj_kv_err(err, cap, path, 0, "not an LJ4 cue file"); return -1; }
     lj_cue_init(out);
     while ((r = lj_rec_next(rec, k, sizeof k, v, sizeof v)) == 1) {
         item++;
-        if (strcmp(k, "num") == 0) out->number = (uint32_t)strtoul(v, NULL, 10);
+        if (strcmp(k, "num") == 0) out->number = (uint32_t)lj_kv_range_lead(v, 0, 0, LJ_NUMBER_MAX, &rbad);
         else if (strcmp(k, "name") == 0) lj_kv_unquote(out->name, sizeof out->name, v);
         else if (strcmp(k, "type") == 0) lj_kv_unquote(out->type, sizeof out->type, v);
-        else if (strcmp(k, "cuetime") == 0) out->cue_time_pct = (uint16_t)strtol(v, NULL, 10);
+        else if (strcmp(k, "cuetime") == 0) out->cue_time_pct = (uint16_t)lj_kv_range_lead(v, 100, 1, 999, &rbad);   /* ME-77: 65636 fails, never aliases to 100 */
         else if (strcmp(k, "macro") == 0) {
             uint32_t m[2];
-            if (lj_kv_list(v, m, 2) != 2) { bad = "macro= needs amp,speed"; break; }
+            if (lj_kv_list(v, m, 2) != 2 || m[0] > 100 || m[1] > 100) { bad = "macro= needs amp,speed 0..100"; break; }
             out->macro_amp_pct = (uint8_t)m[0]; out->macro_speed_pct = (uint8_t)m[1];
-            out->save_macro_values = (uint8_t)(lj_kv_long(v, "savemacro", 0) != 0);
-        } else if (strcmp(k, "transparent") == 0) out->transparent = (uint8_t)(strtol(v, NULL, 10) != 0);
+            out->save_macro_values = (uint8_t)lj_kv_range(v, "savemacro", 0, 0, 1, &rbad);
+        } else if (strcmp(k, "transparent") == 0) out->transparent = (uint8_t)lj_kv_range_lead(v, 0, 0, 1, &rbad);
         else if (strcmp(k, "bgcue") == 0) {
-            out->bg_cue = (uint32_t)strtoul(v, NULL, 10);
-            out->gen_macro = (uint32_t)lj_kv_long(v, "genmacro", 0);
+            out->bg_cue = (uint32_t)lj_kv_range_lead(v, 0, 0, LJ_NUMBER_MAX, &rbad);
+            out->gen_macro = (uint32_t)lj_kv_range(v, "genmacro", 0, 0, LJ_MACROS_MAX, &rbad);
         } else if (strcmp(k, "slot") == 0) {
             long i = strtol(v, &e, 10);
             lj_cue_slot *s;
             if (e == v || i < 1 || i > LJ_CUE_SLOTS) { bad = "slot index not 1..12"; break; }
             s = &out->slot[i - 1];
-            s->seq = (uint32_t)lj_kv_long(v, "seq", 0);
-            s->enabled = (uint8_t)(lj_kv_long(v, "on", 1) != 0);
+            s->seq = (uint32_t)lj_kv_range(v, "seq", 0, 0, LJ_NUMBER_MAX, &rbad);
+            s->enabled = (uint8_t)lj_kv_range(v, "on", 1, 0, 1, &rbad);
             s->trig = (uint8_t)lj_kv_word(v, "trig", lj_trig_words, LJ_TRIG_AUTO);
             s->dir = (uint8_t)lj_kv_word(v, "dir", lj_dir_words, LJ_DIR_FWD);
-            s->scenes_per_trig = (uint8_t)lj_kv_long(v, "spt", 1);
-            s->audio_trigs_per_trig = (uint8_t)lj_kv_long(v, "atpt", 1);
-            s->trig_on_load = (uint8_t)(lj_kv_long(v, "tol", 0) != 0);
-            s->first = (uint16_t)lj_kv_long(v, "first", 0);
-            s->last = (uint16_t)lj_kv_long(v, "last", 0);
-            s->loops = (uint16_t)lj_kv_long(v, "loops", 0);
+            s->scenes_per_trig = (uint8_t)lj_kv_range(v, "spt", 1, 1, 255, &rbad);          /* ME-77: 257 fails */
+            s->audio_trigs_per_trig = (uint8_t)lj_kv_range(v, "atpt", 1, 1, 255, &rbad);
+            s->trig_on_load = (uint8_t)lj_kv_range(v, "tol", 0, 0, 1, &rbad);
+            s->first = (uint16_t)lj_kv_range(v, "first", 0, 0, LJ_SCENES_MAX, &rbad);
+            s->last = (uint16_t)lj_kv_range(v, "last", 0, 0, LJ_SCENES_MAX, &rbad);
+            s->loops = (uint16_t)lj_kv_range(v, "loops", 0, 0, 65535, &rbad);
             s->end_action = (uint8_t)lj_kv_word(v, "end", lj_end_words, LJ_END_STOP);
-            s->goto_scene = (uint16_t)lj_kv_long(v, "goto", 0);
-            s->link_cue = (uint32_t)lj_kv_long(v, "link", 0);
-            s->time_pct = (uint16_t)lj_kv_long(v, "time", 0);
-            s->chase_ms = (uint32_t)lj_kv_long(v, "chase", 0);
+            s->goto_scene = (uint16_t)lj_kv_range(v, "goto", 0, 0, LJ_SCENES_MAX, &rbad);
+            s->link_cue = (uint32_t)lj_kv_range(v, "link", 0, 0, LJ_NUMBER_MAX, &rbad);
+            s->time_pct = (uint16_t)lj_kv_range(v, "time", 0, 0, 999, &rbad);
+            s->chase_ms = (uint32_t)lj_kv_range(v, "chase", 0, 0, LJ_TIME_MAX_MS, &rbad);
         }
+        if (rbad) { bad = "number out of range"; break; }
     }
     lj_rec_close(rec);
     if (!bad && r < 0) bad = "unreadable line";
@@ -147,21 +148,23 @@ int lj_cue_add_sequence(lj_cue *cue, uint32_t seq, int slot)
 
 int lj_cue_pages_load(const char *path, lj_cue_page *out, int max)
 {
-    char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP], *e;
-    int fmt, r, n = 0, item = 0;
+    char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP];
+    int fmt, r, n = 0, item = 0, j;
     const char *bad = NULL;
     lj_rec *rec = lj_rec_open_read(path, "cuepages", &fmt);
     if (!rec) return -1;
     while ((r = lj_rec_next(rec, k, sizeof k, v, sizeof v)) == 1) {
         item++;
         if (strcmp(k, "page") != 0) continue;
-        if (strtol(v, &e, 10) != n + 1 || e == v) { bad = "page index out of order"; break; }
+        if (lj_kv_range_lead(v, 0, n + 1, n + 1, NULL) != n + 1) { bad = "page index out of order"; break; }   /* ME-77 helper */
         if (n >= max) { bad = "more pages than the caller holds"; break; }
         memset(&out[n], 0, sizeof out[n]);
         if (lj_kv_get(v, "name", q, sizeof q) == 1) lj_str_copy(out[n].name, sizeof out[n].name, q);
         if (lj_kv_get(v, "cues", q, sizeof q) == 1 && q[0]) {
             out[n].n = lj_kv_list(q, out[n].cue, LJ_CUE_PAGES);
             if (out[n].n < 0) { bad = "bad cues= list"; break; }
+            for (j = 0; j < out[n].n; j++) if (out[n].cue[j] < 1 || out[n].cue[j] > LJ_NUMBER_MAX) break;
+            if (j < out[n].n) { bad = "cue number not 1..99999999"; break; }   /* ME-77: no alias of an over-long number */
         }
         n++;
     }

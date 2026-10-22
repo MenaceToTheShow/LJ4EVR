@@ -146,7 +146,7 @@ int lj_test_desktop(int argc, char **argv)
 
     m = lj_window_menus(win);
     top = lj_main_menu_top_table(&ntop); inert = lj_main_menu_inert_table(&ninert);
-    bar = lj_form_find_menu(&lj_form_TLJMAINFORM, "MainMenu1");
+    bar = lj_form_find_menu(lj_window_desc(win), "MainMenu1");   /* the live tree: W2 adds the Setup > Hotkeys setup items to a copy of the generated one */
     CHECK(bar && bar->n == 12 && ntop == 12);
     for (i = 0; bar && i < bar->n; i++) {   /* every top-level item of F5 has a rule, applied */
         int k, found = 0;

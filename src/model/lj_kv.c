@@ -217,3 +217,11 @@ long lj_kv_range(const char *fields, const char *key, long dflt, long lo, long h
     if (e == v || *e || n < lo || n > hi) { if (bad) *bad = 1; return dflt; }
     return n;
 }
+
+long lj_kv_range_lead(const char *v, long dflt, long lo, long hi, int *bad)
+{
+    char *e;
+    long n = strtol(v, &e, 10);
+    if (e == v || (*e && *e != ' ') || n < lo || n > hi) { if (bad) *bad = 1; return dflt; }
+    return n;
+}

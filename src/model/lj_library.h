@@ -44,4 +44,9 @@ int  lj_library_backup_notes(const char *zip_path, char *notes, size_t cap);    
 int  lj_library_backup_lists(const char *zip_path, int counts[LJ_REC_KIND_COUNT]);    /* per-kind record counts inside the archive (the Restore dialog's summary); 0 / -1 */
 int  lj_library_copy(const char *userdir, const char *from, const char *to);           /* "Create New Library" with "copy files" [01 s8]: creates `to` and copies every file of `from`; 0 / -1 */
 
+/* W2 model track additions (append-only). */
+int  lj_library_restore_new(const char *userdir, const char *name, const char *zip_path, lj_library *out);   /* restore a .lj4b into a NEW library: `name`, or "name (2)" .. "name (99)" when taken (collision rule PROPOSAL rig: LJ2 restores over the library [01 s8]); DirInfo.Ini Name set to the new name; every entry is checked before the first byte is written; 0 / -1 (nothing left behind) */
+int  lj_library_select(const char *userdir, const char *name);                         /* "Select User Library": <userdir>Startup.ini [USERDIRECTORY] Start=<name>\ (LJ2's key, read at the next start, 18 s2); 0 / -1 */
+int  lj_library_used_by_cues(const lj_library *lib, enum lj_rec_kind kind, const uint32_t *numbers, int n, uint8_t *used);   /* Delete Files "Check Used Sequences" [03 s4.4, 06 s4]: used[i] = 1 when a cue on disk references numbers[i] (ascending, as lj_library_list_records returns them): SEQ = a slot, BG = bgcue=, MACRO = genmacro=; count used, -1 on error. Unreadable cues are skipped and logged */
+
 #endif /* LJ_MODEL_LIBRARY_H */

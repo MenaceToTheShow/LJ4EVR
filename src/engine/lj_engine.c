@@ -41,6 +41,14 @@ struct lj_engine {
     uint32_t               chase_us; uint64_t tap_us[2];  /* global chase period from the last two taps [03 s5.5] (W2: per-slot rates, Save Chase Times) */
     uint32_t               rng;
     uint64_t               now_us;
+    /* W2 state (design 10 W2) */
+    const uint8_t         *default_out;                 /* rank 0 source: show->default_out at bind, re-read by LJ_CMD_DEFAULT_OUT */
+    uint8_t                transparent_mode;            /* enum lj_transparent_mode, applied at LOAD_CUE / LOAD_BG [03 s5.8] */
+    uint8_t                flash_latch;                 /* the flash runner was started latched [03 s5.10] */
+    uint32_t               ltp_clock;                   /* LJ_STATIC_LTP_COUNTER: activation order of the statics */
+    lj_frame              *snap_dst; uint8_t snap_src;  /* SNAPSHOT_REQ: UI-owned frame filled at the end of the next tick */
+    uint8_t                blind_val[LJ_CHANS], blind_st[LJ_CHANS];   /* the blind buffer kept across a scene change while blind (LORD_ENGINE-13) */
+    struct { uint8_t held, timer, level, haze, fan, firing; uint64_t until_us, t0_us; uint32_t duration_ms, cycle_ms, elapsed_ms; } smoke;   /* rank 7 [11 C12, 04 s12] */
 };
 
 lj_engine *lj_engine_create(void)
@@ -54,6 +62,12 @@ lj_engine *lj_engine_create(void)
         e->post.solo_fixture = -1;
         e->cue_pct = 100; e->macro_amp_pct = e->macro_speed_pct = 100;
         e->rng = LJ_RNG_SEED;
+        e->transparent_mode = LJ_TRANSPARENT_DEFAULT;
+        memset(e->st.static_slot_of, 0xFF, sizeof e->st.static_slot_of);
+        e->st.prefs[LJ_PREF_KEEP_SEQ_BLIND] = LJ_KEEP_CONTENTS_BLIND;
+        e->st.prefs[LJ_PREF_USE_GLOBAL_CHASE_RATE] = LJ_CHASE_GLOBAL_RATE;
+        e->st.prefs[LJ_PREF_STATICS_USE_FADETIME] = LJ_STATICS_USE_FADETIME;
+        e->smoke.level = LJ_SMOKE_LEVEL_DEFAULT; e->smoke.duration_ms = LJ_SMOKE_DURATION_DEFAULT_MS; e->smoke.cycle_ms = LJ_SMOKE_CYCLE_DEFAULT_MS;
     }
     return e;
 }
@@ -90,8 +104,10 @@ void lj_engine_bind(lj_engine *e, const lj_show *show)
 {
     e->show = show;
     e->post.show = show;
+    e->post.patch = show ? show->patch : NULL;                 /* S1/S5/S6 table until a GLOBAL_PATCH / HTP_GROUPS swap */
+    e->default_out = show ? show->default_out : NULL;          /* rank 0 until a DEFAULT_OUT */
     lj_engine_rebuild(e);
-    if (e->frame.tick_no == 0) memcpy(e->frame.merged, show ? show->default_out : lj_engine_zero, LJ_CHANS);   /* before the first tick the output at rest is DefaultOut: a fade trigged at tick 0 starts from it (F3) */
+    if (e->frame.tick_no == 0) memcpy(e->frame.merged, e->default_out ? e->default_out : lj_engine_zero, LJ_CHANS);   /* before the first tick the output at rest is DefaultOut: a fade trigged at tick 0 starts from it (F3) */
 }
 
 void lj_engine_bind_profile(lj_engine *e, int fixture, const lj_profile *p)
@@ -121,15 +137,24 @@ int lj_engine_cmd(lj_engine *e, const lj_cmd *cmd)
 
 static int lj_engine_slot_id(uint32_t a, int lo, int n) { return (a >= (uint32_t)lo && a < (uint32_t)(lo + n)) ? (int)a - lo : -1; }
 
+static int lj_engine_transparent(const lj_engine *e, int flag)   /* Preferences > Transparent Cues [03 s5.8]: Use honours the saved flag, Force / Ignore override it */
+{
+    return e->transparent_mode == LJ_TRANSPARENT_FORCE || (e->transparent_mode == LJ_TRANSPARENT_USE && flag);
+}
+
 static void lj_engine_load_bg(lj_engine *e, const lj_bgcue *bg, const lj_sequence *const *seqs, uint64_t t)
 {
-    int k;
+    int k, transparent = bg && lj_engine_transparent(e, bg->transparent);
     e->bg = bg;
     for (k = 0; k < LJ_BG_SLOTS; k++) {
         lj_runner *r = &e->run[LJ_RUN_BG0 + k];
-        if (!bg || !bg->slot[k].seq) { if (!bg || !bg->transparent) lj_runner_clear(r); continue; }   /* transparent: empty slots do not overwrite [03 s11.3] */
-        lj_runner_set_seq(r, seqs ? seqs[k] : NULL, bg->slot[k].seq);
-        r->enabled = bg->slot[k].enabled ? 1 : 0;
+        if (!bg || !bg->slot[k].seq) { if (!transparent) lj_runner_clear(r); continue; }   /* transparent: empty slots do not overwrite [03 s11.3] */
+        lj_runner_set_seq(r, seqs ? seqs[k] : NULL, bg->slot[k].seq);   /* LJ_BG_FORWARD_ONLY: set_seq is forward, auto, programmed times */
+#if LJ_BG_RESTORE_ONOFF
+        r->enabled = bg->slot[k].enabled ? 1 : 0;              /* Restore Sequence on/off state */
+#else
+        r->enabled = 1;                                        /* default: every slot loads enabled [03 s7] */
+#endif
         if (bg->slot[k].mode == LJ_BG_NOLOOP) { r->loops_left = 1; r->end_action = LJ_END_STOP; }   /* -L: stops after the last scene [03 s7] */
         if (bg->slot[k].mode == LJ_BG_AUDIO) r->trig = LJ_TRIG_AUDIO;                                 /* W2: audio analyser trigs */
         lj_runner_start(r, t, e->tick_us, e->frame.merged, 100, &e->rng);
@@ -139,17 +164,23 @@ static void lj_engine_load_bg(lj_engine *e, const lj_bgcue *bg, const lj_sequenc
 static void lj_engine_load_cue(lj_engine *e, const lj_cmd *c, uint64_t t)
 {
     const lj_cue *cue = c->cue;
-    int k;
+    int k, transparent;
     e->cue = cue; e->cue_edit = (uint8_t)(c->b != 0);
+#if LJ_FLASH_RELEASE_ON_LOAD
+    lj_runner_clear(&e->run[LJ_RUN_FLASH]); e->flash_latch = 0;   /* Release Flash on Load */
+#endif
     if (!cue) { for (k = 0; k < LJ_CUE_SLOTS; k++) lj_runner_clear(&e->run[k]); e->st.cue_number = 0; return; }   /* New cue: clears the cue control */
-    e->cue_pct = cue->cue_time_pct ? cue->cue_time_pct : 100;
+    e->cue_pct = cue->cue_time_pct ? (cue->cue_time_pct > LJ_TIME_PCT_MAX ? LJ_TIME_PCT_MAX : cue->cue_time_pct) : 100;
+    transparent = lj_engine_transparent(e, cue->transparent);
     if (cue->save_macro_values) { e->macro_amp_pct = cue->macro_amp_pct; e->macro_speed_pct = cue->macro_speed_pct; }   /* W2: Restore Macro Control Values preference */
     for (k = 0; k < LJ_CUE_SLOTS; k++) {
         lj_runner *r = &e->run[k];
         const lj_cue_slot *s = &cue->slot[k];
-        if (!s->seq) { if (!cue->transparent) lj_runner_clear(r); continue; }   /* transparent cue: only slots with a sequence overwrite [03 s5.8] */
+        if (!s->seq) { if (!transparent) lj_runner_clear(r); continue; }   /* transparent load: only slots with a sequence overwrite; the others keep their runner, on/off included (LJ_TRANSPARENT_KEEPS_ONOFF) [03 s5.8] */
         lj_runner_set_slot(r, s, c->seq[k]);                   /* seq NULL = load error [03 s5.1] */
-        if (r->seq) lj_runner_start(r, t, e->tick_us, e->frame.merged, e->cue_pct, &e->rng);
+        if (!r->seq) continue;
+        lj_runner_start(r, t, e->tick_us, e->frame.merged, e->cue_pct, &e->rng);
+        if (s->trig_on_load && r->trig != LJ_TRIG_AUTO && r->scenes_per_trig > 1) r->spt_left = (uint8_t)(r->scenes_per_trig - 1);   /* LJ_TRIG_ON_LOAD_RUNS_SPT */
     }
     e->st.cue_number = cue->number;
     if (cue->bg_cue) { if (c->bg) lj_engine_load_bg(e, c->bg, c->bgseq, t); else e->st.pending_bg = cue->bg_cue; }   /* latched bg cue: pinned here or requested (2.3 rule 3); W2: Disable BG Cue Latch preference, BG latch from the cue list / 2532 */
@@ -167,10 +198,148 @@ static void lj_engine_freeze(lj_engine *e, int on, uint64_t now)
     if (on) { e->frozen_since_us = now; return; }
     for (i = 0; i < LJ_RUN_COUNT; i++) {                       /* F20 / ME-13 unfreeze (LJ_FREEZE_PAUSED_CLOCK, rig M10): a fade from before the freeze keeps its remaining time; one trigged while frozen starts at the unfreeze instant from the frozen merged[] (from[] was captured from it at the trig). The literal max(t0 + frozen, unfreeze) would put a frozen-time trig in the future, which 3.5 forbids. */
         lj_runner *r = &e->run[i];
-        if (!r->seq) continue;
+        if (!lj_runner_active(r)) continue;                    /* ME-80: every active runner, a pinned static with a fade included */
         r->fade_t0_us = r->fade_t0_us < e->frozen_since_us ? r->fade_t0_us + (now - e->frozen_since_us) : now;
     }
     /* the GM Fade runner is not shifted: it kept running while frozen (LJ_GM_FADE_RUNS_FROZEN, ME-71) */
+}
+
+/* ---- W2 helpers ---- */
+
+/* One tap of the global chase timer (LORD_ENGINE-19, 11 F10, E9): the period is the gap between the last two taps
+ * (manual trigs and CHASE_TAP), rounded to 1 ms; every chase-mode slot reads it (UseGlobalChaseRate), or only the
+ * tapped slots without that preference. rearm: CHASE_TAP re-arms the chase slots at t + period (a TRIG enters
+ * its scene, which does it). */
+static void lj_engine_tap(lj_engine *e, uint64_t t, int lo, int n, int rearm)
+{
+    uint64_t gap;
+    int k;
+    e->tap_us[0] = e->tap_us[1]; e->tap_us[1] = t;
+    if (!e->tap_us[0] || t <= e->tap_us[0]) return;
+    gap = (t - e->tap_us[0] + 500u) / 1000u * 1000u;          /* LJ_CHASE_TAP_ROUND_MS */
+    if (gap < (uint64_t)LJ_CHASE_MIN_MS * 1000u || gap > (uint64_t)LJ_CHASE_MAX_MS * 1000u) return;   /* above the max: this tap is a new first tap */
+    e->chase_us = (uint32_t)gap;
+    for (k = 0; k < LJ_CUE_SLOTS; k++) {
+        lj_runner *r = &e->run[k];
+        if (!r->chase_on || (!e->st.prefs[LJ_PREF_USE_GLOBAL_CHASE_RATE] && (k < lo || k >= lo + n))) continue;
+        r->chase_us = e->chase_us;
+        if (rearm) r->scene_due_us = t + r->chase_us;
+    }
+}
+
+/* Statics 2 scopes (14 sB.3 reading, PROPOSAL rig 14 sB.8 item 3; LJ_STATIC_SOLO_BLOCKS_LATER 0 = Solo reads as Replace):
+ * the rule of model lj_static_scope_hits, evaluated on the pinned slots the engine holds rather than show->pages (the
+ * UI may reallocate the pages array with lj_statics_add_page; the engine never follows that pointer). */
+static int lj_engine_static_hits(int scope, uint32_t a, const lj_static_slot *sa, uint32_t o, const lj_static_slot *so)
+{
+    switch (scope) {
+    case LJ_REP_SLOT:  case LJ_REP_SOLO_SLOT:  return a % LJ_STATICS2_SLOTS_PER_PAGE == o % LJ_STATICS2_SLOTS_PER_PAGE;   /* same slot row, any page */
+    case LJ_REP_PAGE:  case LJ_REP_SOLO_PAGE:  return a / LJ_STATICS2_SLOTS_PER_PAGE == o / LJ_STATICS2_SLOTS_PER_PAGE;
+    case LJ_REP_GROUP: case LJ_REP_SOLO_GROUP: return (sa->groups & so->groups) != 0;
+    case LJ_REP_ALL:   case LJ_REP_SOLO_ALL:   return 1;
+    default:                                   return 0;       /* LJ_REP_ADD (LJ_STATIC_SCOPE_ADD): LTP, no release */
+    }
+}
+
+static void lj_engine_static_off(lj_engine *e, int k)          /* release: snap back to the layer below (LJ_STATIC_RELEASE_SNAPS, rig M9); the record stays the UI's */
+{
+    lj_runner_clear(&e->run[LJ_RUN_STATIC0 + k]);
+    e->static_slot[k] = NULL; e->st.static_slot_of[k] = 0xFFFF; e->st.static_level[k] = 0;
+}
+
+/* Activate global slot a (lj_static_global_index) [03 s8, 14 sB.7]: release what the scope names, then put the slot on top
+ * of the LTP list (a re-activation reuses its runner; the 65th releases the oldest, LJ_STATIC_OLDEST_RELEASED). */
+static void lj_engine_static_on(lj_engine *e, uint32_t a, const lj_static_slot *st, const lj_sequence *link_seq, uint32_t level, uint32_t scope, uint64_t t)
+{
+    int k, id = -1;
+    lj_runner *r;
+    if (!st || a >= (uint32_t)LJ_STATIC_PAGES_MAX * LJ_STATICS2_SLOTS_PER_PAGE) return;
+    if (scope == 0xFF) scope = st->replace;
+    if (level == 0xFFFF) level = st->level_pct;
+    if (level > 100) level = 100;
+    for (k = 0; k < LJ_STATIC_RUNNERS; k++)
+        if (e->static_slot[k] && e->st.static_slot_of[k] != a && lj_engine_static_hits((int)scope, a, st, e->st.static_slot_of[k], e->static_slot[k])) lj_engine_static_off(e, k);
+    for (k = 0; k < LJ_STATIC_RUNNERS && id < 0; k++) if (e->static_slot[k] && e->st.static_slot_of[k] == a) id = k;
+    for (k = 0; k < LJ_STATIC_RUNNERS && id < 0; k++) if (!e->static_slot[k]) id = k;
+    if (id < 0) {                                              /* all 64 runners busy: the oldest activation goes */
+        id = 0;
+        for (k = 1; k < LJ_STATIC_RUNNERS; k++) if (e->run[LJ_RUN_STATIC0 + k].activated_us < e->run[LJ_RUN_STATIC0 + id].activated_us) id = k;
+    }
+    r = &e->run[LJ_RUN_STATIC0 + id];
+    lj_runner_set_seq(r, st->kind == LJ_STATIC_LINK ? link_seq : NULL, 1);   /* a linked slot evaluates its sequence's scene (NULL = link error: contributes nothing) */
+    e->static_slot[id] = st; e->st.static_slot_of[id] = (uint16_t)a; e->st.static_level[id] = (uint8_t)level;
+    r->trig = LJ_TRIG_MANUAL; r->running = 1;                  /* running = pinned static */
+    r->activated_us = ++e->ltp_clock;                          /* LJ_STATIC_LTP_COUNTER: every activation tops the list [03 s8] */
+    r->level_pct = (uint8_t)level; r->scene = st->link_scene;  /* LJ_STATIC_LEVEL_SCALES_ALL in lj_runner_eval */
+    memcpy(r->from, e->frame.merged, LJ_CHANS);
+    r->fade_t0_us = t;
+    r->fade_dur_us = 0;                                        /* F17: snap unless [STATICS] Use Fadetime */
+    if (e->st.prefs[LJ_PREF_STATICS_USE_FADETIME] && st->fade_ms > LJ_SNAP_MS) {
+        uint64_t ft = (uint64_t)(st->fade_ms > LJ_TIME_MAX_MS ? LJ_TIME_MAX_MS : st->fade_ms) * 1000u;
+        if (ft > e->tick_us) r->fade_dur_us = ft;              /* F28, LJ_FADE_LE_TICK_IS_SNAP */
+    }
+}
+
+static void lj_engine_flash(lj_engine *e, const lj_cmd *c, uint64_t t)   /* 03 s5.10, C2: one sequence at a time, forward, programmed times */
+{
+    lj_runner *r = &e->run[LJ_RUN_FLASH];
+    if (c->b && c->seq[0]) {
+        if (c->c && e->flash_latch && r->seq == c->seq[0]) { lj_runner_clear(r); e->flash_latch = 0; return; }   /* latched: flashed again releases it */
+        lj_runner_set_seq(r, c->seq[0], c->seq[0]->number);
+        r->flash = 1;
+        lj_runner_start(r, t, e->tick_us, e->frame.merged, 100, &e->rng);
+        e->flash_latch = (uint8_t)(c->c != 0);
+        return;
+    }
+    if (c->c && e->flash_latch) return;                        /* the key release of a latched flash: it stays */
+    lj_runner_clear(r); e->flash_latch = 0;                    /* release, or Release latched Flash (b 0 c 0) */
+}
+
+static uint8_t lj_engine_u8(uint32_t v) { return (uint8_t)(v > 255 ? 255 : v); }
+
+static void lj_engine_smoke_cmd(lj_engine *e, const lj_cmd *c, uint64_t t)   /* 04 s12, 11 C12 */
+{
+    switch (c->a) {
+    case LJ_SMOKE_BUTTON:
+        if (c->b) {
+            e->smoke.held = 1;
+            e->smoke.until_us = c->c ? t + (uint64_t)(c->c > LJ_SMOKE_DURATION_MAX_MS ? LJ_SMOKE_DURATION_MAX_MS : c->c) * 1000u : 0;   /* toggle X seconds, else while held */
+#if LJ_SMOKE_RESET_ON_SMOKE
+            e->smoke.t0_us = t;                                /* Reset cycle on smoke */
+#endif
+        } else if (!e->smoke.until_us) e->smoke.held = 0;      /* LJ_SMOKE_RELEASE_ENDS_HELD */
+        break;
+    case LJ_SMOKE_TIMER:       e->smoke.timer = (uint8_t)(c->b != 0); if (c->b) e->smoke.t0_us = t; break;   /* the cycle starts at the enable (PROPOSAL rig 04 s12) */
+    case LJ_SMOKE_LEVEL:       e->smoke.level = lj_engine_u8(c->b); break;
+    case LJ_SMOKE_DURATION_MS: e->smoke.duration_ms = c->b > LJ_SMOKE_DURATION_MAX_MS ? LJ_SMOKE_DURATION_MAX_MS : c->b; break;
+    case LJ_SMOKE_CYCLE_MS:    e->smoke.cycle_ms = c->b < LJ_SMOKE_CYCLE_MIN_MS ? LJ_SMOKE_CYCLE_MIN_MS : c->b > LJ_SMOKE_CYCLE_MAX_MS ? LJ_SMOKE_CYCLE_MAX_MS : c->b; break;
+    case LJ_SMOKE_RESET:       e->smoke.t0_us = t; break;
+    case LJ_SMOKE_HAZE_LEVEL:  e->smoke.haze = lj_engine_u8(c->b); break;
+    case LJ_SMOKE_FAN_LEVEL:   e->smoke.fan = lj_engine_u8(c->b); break;
+    default: break;
+    }
+}
+
+/* Rank 7 [11 C12, ME-25]: SMOKE channels at the smoke level while the button / timer fires, HAZE / HAZE_FAN at the hazer
+ * levels as soon as they are > 0 (LJ_SMOKE_HAZE_OVERRIDE_GT0); every other class is untouched. */
+static void lj_engine_smoke(lj_engine *e, uint64_t now, uint8_t merged[LJ_CHANS], uint8_t layer_of[LJ_CHANS])
+{
+    int ch;
+    uint8_t smoke_v;
+    if (e->smoke.held && e->smoke.until_us && now >= e->smoke.until_us) e->smoke.held = 0;
+    e->smoke.elapsed_ms = e->smoke.cycle_ms && now > e->smoke.t0_us ? (uint32_t)((now - e->smoke.t0_us) / 1000u % e->smoke.cycle_ms) : 0;
+    e->smoke.firing = (uint8_t)(e->smoke.held || (e->smoke.timer && e->smoke.elapsed_ms < e->smoke.duration_ms));
+#if LJ_SMOKE_BUTTON_USES_LEVEL
+    smoke_v = e->smoke.level;
+#else
+    smoke_v = e->smoke.held ? 255 : e->smoke.level;            /* the button sends 255, the timer the Level fader */
+#endif
+    if (!e->show || !(e->smoke.firing || e->smoke.haze || e->smoke.fan)) return;
+    for (ch = 0; ch < LJ_CHANS; ch++) {
+        int cls = e->post.fixture_of[ch] < 0 ? LJ_CH_NONE : lj_post_class(&e->post, ch);
+        int v = cls == LJ_CH_SMOKE && e->smoke.firing ? smoke_v : cls == LJ_CH_HAZE && e->smoke.haze ? e->smoke.haze : cls == LJ_CH_HAZE_FAN && e->smoke.fan ? e->smoke.fan : -1;
+        if (v >= 0) { merged[ch] = (uint8_t)v; layer_of[ch] = LJ_L_SMOKE; }
+    }
 }
 
 static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
@@ -187,13 +356,15 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
         if (!c->seq[0]) { lj_runner_clear(r); break; }
         if (r->seq != c->seq[0] || r->scene != c->a || !r->seq_no) {
             uint8_t blind = (uint8_t)r->blind;
+            if (blind) { memcpy(e->blind_val, r->val, LJ_CHANS); memcpy(e->blind_st, r->st, LJ_CHANS); }   /* a scene change while blind keeps the buffer */
             lj_runner_set_seq(r, c->seq[0], c->seq[0]->number);
             r->trig = LJ_TRIG_MANUAL;                          /* the editor shows a scene; playback (Go) makes it auto */
             lj_runner_enter(r, (uint16_t)c->a, t, e->tick_us, e->frame.merged, 100);
             r->blind = blind;
+            if (blind) { memcpy(r->val, e->blind_val, LJ_CHANS); memcpy(r->st, e->blind_st, LJ_CHANS); }
         }
         r->blind = (c->b != 0);
-        if (r->blind && !was_blind && !LJ_KEEP_CONTENTS_BLIND) memset(r->st, LJ_OFF, LJ_CHANS);   /* F21, LORD_ENGINE-13: eval is skipped while blind, so val[]/st[] are the buffer */
+        if (r->blind && !was_blind && !e->st.prefs[LJ_PREF_KEEP_SEQ_BLIND]) memset(r->st, LJ_OFF, LJ_CHANS);   /* F21, LORD_ENGINE-13: eval is skipped while blind, so val[]/st[] are the buffer; [PREFS] KeepSeqBlind=0 empties rank 3 */
         break;
     }
     case LJ_CMD_GO: case LJ_CMD_STOP: {
@@ -213,12 +384,9 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_TRIG: {
         int lo = 0, n = LJ_CUE_SLOTS;
         if (c->a != LJ_RUN_ALL) { if (c->a >= LJ_RUN_COUNT) break; lo = (int)c->a; n = 1; }
-        e->tap_us[0] = e->tap_us[1]; e->tap_us[1] = t;         /* F10: chase period = the last two manual trigs (E9: 1 ms) */
-        if (e->tap_us[0] && t > e->tap_us[0] && t - e->tap_us[0] <= (uint64_t)LJ_TIME_MAX_MS * 1000u) {
-            e->chase_us = (uint32_t)(t - e->tap_us[0]);
-            for (k = 0; k < LJ_CUE_SLOTS; k++) if (e->run[k].chase_on) e->run[k].chase_us = e->chase_us;   /* W2: Use global chase rate preference, per-slot rates */
-        }
+        lj_engine_tap(e, t, lo, n, 0);                         /* F10: chase period = the last two manual trigs (E9: 1 ms) */
         for (k = lo; k < lo + n; k++) {
+            if (e->st.prefs[LJ_PREF_HOTKEY_TRIG_CHANGES_DIR] && c->b <= LJ_DIR_RANDOM && k < LJ_CUE_SLOTS) e->run[k].dir = (uint8_t)c->b;   /* [CUE] HotkeyChangeSeqDir: a trig with a direction sets the slot's */
             uint32_t link = lj_runner_trig(&e->run[k], (int)c->b, (int)c->c, t, e->tick_us, e->frame.merged, k < LJ_CUE_SLOTS ? e->cue_pct : 100, &e->rng, e->cue_edit);
             if (link) e->st.pending_link_cue = link;
         }
@@ -229,13 +397,16 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
         e->run[id].enabled = (c->b != 0); e->run[id].edit = (c->c == 1); e->run[id].out = (c->c == 2);
         break;
     case LJ_CMD_TIME:
-        if (c->a == 0) e->cue_pct = (uint16_t)(c->b ? c->b : 100);   /* the cue fader; 0 = CUE */
-        else if (c->a <= LJ_CUE_SLOTS) e->run[c->a - 1].time_pct = (uint16_t)c->b;   /* applied at the next trig (LJ_TIME_SCALE_AT_TRIG_ONLY, rig M7) */
+        if (c->a == 0) e->cue_pct = (uint16_t)(c->b ? (c->b > LJ_TIME_PCT_MAX ? LJ_TIME_PCT_MAX : c->b) : 100);   /* the cue fader; 0 = CUE [03 s5.6] */
+        else if (c->a <= LJ_CUE_SLOTS) e->run[c->a - 1].time_pct = (uint16_t)(c->b > LJ_TIME_PCT_MAX ? LJ_TIME_PCT_MAX : c->b);   /* 0 = CUE: the cue fader drives it */   /* applied at the next trig (LJ_TIME_SCALE_AT_TRIG_ONLY, rig M7) */
         break;
     case LJ_CMD_CHASE:
         if ((id = lj_engine_slot_id(c->a, LJ_RUN_SLOT0, LJ_CUE_SLOTS)) < 0) break;
-        e->run[id].chase_on = (c->b != 0); e->run[id].chase_fade = (c->c != 0);
-        if (e->run[id].chase_on) { if (!e->run[id].chase_us) e->run[id].chase_us = e->chase_us; if (e->run[id].chase_us) e->run[id].scene_due_us = t + e->run[id].chase_us; }
+        e->run[id].chase_on = (c->b != 0); e->run[id].chase_fade = (uint8_t)(c->c != 0 && !e->st.prefs[LJ_PREF_DISABLE_CHASE_FADE]);   /* LJ_CHASE_FADE_IS_PERIOD */
+        if (e->run[id].chase_on) {
+            if (e->chase_us && (e->st.prefs[LJ_PREF_USE_GLOBAL_CHASE_RATE] || !e->run[id].chase_us)) e->run[id].chase_us = e->chase_us;   /* the global rate carries across cue loads [03 s5.5] */
+            if (e->run[id].chase_us) e->run[id].scene_due_us = t + e->run[id].chase_us;
+        }
         break;
     case LJ_CMD_SET_MASTER:
         if (c->a == 0) { e->post.gm = (uint8_t)(c->b > 255 ? 255 : c->b); lj_gm_fade_cancel(&e->gm_fade); }
@@ -246,29 +417,11 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_FREEZE: lj_engine_freeze(e, c->b != 0, t); break;
     case LJ_CMD_OFFLINE: e->post.offline = (uint8_t)(c->b != 0); break;   /* S9: computed, not sent (lj_engine_is_offline) */
     case LJ_CMD_SOLO: e->post.solo = (uint8_t)(c->b != 0); e->post.solo_fixture = (int)c->a; break;   /* W2: solo of a selection set */
-    case LJ_CMD_STATIC: {
-        lj_runner *r;
-        id = (int)c->a;                                        /* the static runner index 0..LJ_STATIC_RUNNERS-1 (not LJ_RUN_STATIC0 + i: 19 + i would be ambiguous) */
-        if (id < 0 || id >= LJ_STATIC_RUNNERS) break;
-        r = &e->run[LJ_RUN_STATIC0 + id];
-        if (!c->b || !c->st) { lj_runner_clear(r); e->static_slot[id] = NULL; break; }   /* release: snap back to the layer below (LJ_STATIC_RELEASE_SNAPS, rig M9) */
-        e->static_slot[id] = c->st;
-        lj_runner_set_seq(r, c->st->kind == LJ_STATIC_LINK ? c->seq[0] : NULL, 1);
-        r->trig = LJ_TRIG_MANUAL; r->activated_us = t; r->running = 1;   /* LTP order: every activation puts the entry on top [03 s8]; running = pinned static */
-        r->level_pct = c->st->level_pct; r->scene = c->st->link_scene;
-        memcpy(r->from, e->frame.merged, LJ_CHANS);
-        r->fade_t0_us = t;
-        r->fade_dur_us = LJ_STATICS_USE_FADETIME && c->st->fade_ms > LJ_SNAP_MS ? (uint64_t)c->st->fade_ms * 1000u : 0;   /* F17: snap unless Statics Use Fadetimes */
-        break;                                                 /* W2: replace modes (14 sB.7), the 65th activation */
-    }
-    case LJ_CMD_FLASH: {
-        lj_runner *r = &e->run[LJ_RUN_FLASH];
-        if (!c->b || !c->seq[0]) { lj_runner_clear(r); break; }
-        lj_runner_set_seq(r, c->seq[0], c->seq[0]->number);    /* C2: forward, programmed times, above the cue */
-        r->flash = 1;
-        lj_runner_start(r, t, e->tick_us, e->frame.merged, 100, &e->rng);
+    case LJ_CMD_STATIC:                                        /* W1 form: a = global slot (page 1 = runner order), scope Add, the slot's level */
+        if (c->b && c->st) lj_engine_static_on(e, c->a, c->st, c->seq[0], 0xFFFF, LJ_REP_ADD, t);
+        else for (k = 0; k < LJ_STATIC_RUNNERS; k++) if (e->static_slot[k] && e->st.static_slot_of[k] == c->a) lj_engine_static_off(e, k);
         break;
-    }
+    case LJ_CMD_FLASH: lj_engine_flash(e, c, t); break;
     case LJ_CMD_OVERWRITE:
         if (c->a == 0xFFFF) { memset(e->post.ovr_on, 0, sizeof e->post.ovr_on); break; }
         if (c->a >= LJ_CHANS) break;
@@ -282,6 +435,35 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_MACRO_CTL: e->macro_amp_pct = (uint8_t)(c->a > 255 ? 255 : c->a); e->macro_speed_pct = (uint8_t)(c->b > 255 ? 255 : c->b); break;
     case LJ_CMD_DISABLE_FADE: e->run[LJ_RUN_CURRENT].disable_fade = (c->b != 0); break;   /* F15 */
     case LJ_CMD_SACN_CFG: e->sacn_cfg = c->sacn; break;       /* ME-23: collected by the engine thread after the tick */
+    /* ---- W2 kinds ---- */
+    case LJ_CMD_BG_ON:
+        for (k = 0; k < LJ_BG_SLOTS; k++) if (c->a == LJ_RUN_ALL || c->a == (uint32_t)(LJ_RUN_BG0 + k)) e->run[LJ_RUN_BG0 + k].enabled = (c->b != 0);
+        break;
+    case LJ_CMD_STATIC_ACTIVATE: lj_engine_static_on(e, c->a, c->st, c->seq[0], c->b, c->c, t); break;
+    case LJ_CMD_STATIC_DEACTIVATE:                             /* one slot; a = LJ_RUN_ALL: Release All (c 0) or Release Page c */
+        for (k = 0; k < LJ_STATIC_RUNNERS; k++) {
+            uint32_t o = e->st.static_slot_of[k];
+            if (e->static_slot[k] && (c->a == LJ_RUN_ALL ? (!c->c || o / LJ_STATICS2_SLOTS_PER_PAGE == c->c - 1) : o == c->a)) lj_engine_static_off(e, k);
+        }
+        break;
+    case LJ_CMD_SMOKE: lj_engine_smoke_cmd(e, c, t); break;
+    case LJ_CMD_TRANSPARENT: if (c->b <= LJ_TRANSPARENT_IGNORE) e->transparent_mode = (uint8_t)c->b; break;
+    case LJ_CMD_CHASE_TAP:
+        if (c->a == LJ_RUN_ALL) lj_engine_tap(e, t, 0, LJ_CUE_SLOTS, 1);
+        else if (c->a < LJ_CUE_SLOTS) lj_engine_tap(e, t, (int)c->a, 1, 1);
+        break;
+    case LJ_CMD_LOOP_OPTS:
+        if ((id = lj_engine_slot_id(c->a, LJ_RUN_SLOT0, LJ_CUE_SLOTS)) >= 0 && c->slot && e->run[id].seq_no) lj_runner_set_loop(&e->run[id], c->slot);
+        break;
+    case LJ_CMD_HTP_GROUPS: if (c->patch) e->post.patch = c->patch; e->post.htp_masters = (uint8_t)(c->b != 0); break;   /* S5 [11 P8] */
+    case LJ_CMD_GLOBAL_PATCH: if (c->patch) e->post.patch = c->patch; break;   /* S1 / S6 */
+    case LJ_CMD_DEFAULT_OUT: e->default_out = c->default_out ? c->default_out : (e->show ? e->show->default_out : NULL); break;   /* rank 0 */
+    case LJ_CMD_SNAPSHOT_REQ: e->snap_dst = c->snapshot; e->snap_src = (uint8_t)c->a; break;
+    case LJ_CMD_PREFS:
+        if (c->a >= LJ_PREF_COUNT) break;
+        e->st.prefs[c->a] = (uint8_t)(c->b != 0);
+        if (c->a == LJ_PREF_DISABLE_CHASE_FADE) for (k = 0; k < LJ_CUE_SLOTS; k++) e->run[k].chase_fade = (uint8_t)(c->b == 0);
+        break;
     default: break;
     }
 }
@@ -354,6 +536,14 @@ static void lj_engine_fill_view(lj_engine *e, uint64_t now)
     s->blackout = e->post.blackout; s->freeze = e->post.freeze; s->offline = e->post.offline; s->solo = e->post.solo;
     s->cue_edit = e->cue_edit;
     s->tick_no = e->frame.tick_no;
+    s->bg_number = e->bg ? e->bg->number : 0;                  /* W2 view fields */
+    for (k = 0; k < LJ_BG_SLOTS; k++) s->bg_enabled[k] = (uint8_t)e->run[LJ_RUN_BG0 + k].enabled;
+    s->chase_tap_us = e->chase_us;
+    s->flash_latched = (uint8_t)(e->flash_latch && lj_runner_active(&e->run[LJ_RUN_FLASH]));
+    s->flash_seq = lj_runner_active(&e->run[LJ_RUN_FLASH]) && e->run[LJ_RUN_FLASH].seq ? e->run[LJ_RUN_FLASH].seq->number : 0;
+    s->transparent_mode = e->transparent_mode;
+    s->smoke_active = e->smoke.firing; s->haze_level = e->smoke.haze; s->fan_level = e->smoke.fan; s->smoke_timer = e->smoke.timer;
+    s->smoke_cycle_elapsed_ms = e->smoke.elapsed_ms;
 }
 
 void lj_engine_tick(lj_engine *e, uint64_t now_us)
@@ -378,13 +568,14 @@ void lj_engine_tick(lj_engine *e, uint64_t now_us)
         for (i = 0; i < LJ_RUN_COUNT; i++) {
             lj_runner *r = &e->run[i];
             if (!lj_runner_active(r)) continue;
-            if (r->stopped && i < LJ_RUN_STATIC0) continue;    /* F14 + LJ_STOP_HOLDS_FADE: val[]/st[] hold (rig M8) */
+            if (r->stopped && !r->ended && i < LJ_RUN_STATIC0) continue;   /* F14 + LJ_STOP_HOLDS_FADE: a user Stop holds val[]/st[] (rig M8); an end-action stop keeps evaluating */
             if (i == LJ_RUN_CURRENT && r->blind) continue;     /* F21: the blind buffer */
             lj_runner_eval(r, lj_engine_scene_of(e, i), now_us, &e->pairs, &e->post, i < LJ_RUN_STATIC0 ? e->mm : NULL, i < LJ_CUE_SLOTS ? e->macro_amp_pct : 100);
         }
-        lj_merge(e->show ? e->show->default_out : lj_engine_zero, e->run, &e->post, e->seq_int_mode, f->merged, f->layer_of);
+        lj_merge(e->default_out ? e->default_out : lj_engine_zero, e->run, &e->post, e->seq_int_mode, f->merged, f->layer_of);
         if (e->gm && e->show) lj_genmacro_apply(e->gm, e->gm_ch, &e->post, f->merged, f->layer_of);   /* rank 6 */
         if (e->gm) lj_genmacro_advance(e->gm, e->gm_ch, e->tick_us);   /* index for the next tick: a (re)started macro shows index 0 first [14 sA.3 (7)] */
+        lj_engine_smoke(e, now_us, f->merged, f->layer_of);    /* rank 7 above rank 6 (LJ_SMOKE_RANK_ABOVE_GENMACRO, rig M15) */
         if (e->show) for (k = 0; k < LJ_FIXTURES; k++) {        /* remember the macro each fixture's output carried, for the next tick's index advance [17 s7.1] */
             int is_cue, w = lj_engine_pan_winner(e, k, &is_cue);
             const lj_scene *sc = w >= 0 ? lj_engine_scene_of(e, w) : NULL;
@@ -394,6 +585,7 @@ void lj_engine_tick(lj_engine *e, uint64_t now_us)
     }
     lj_post_run(&e->post, f->merged, f->out);                  /* step 5: S1-S9 */
     f->tick_no++;                                              /* step 6: publish */
+    if (e->snap_dst) { *e->snap_dst = *f; e->st.snapshot_tick = f->tick_no; e->snap_dst = NULL; }   /* SNAPSHOT_REQ: a copy, no I/O (LJ_SNAPSHOT_WHOLE_FRAME; snap_src is the UI's) */
     lj_engine_fill_view(e, now_us);
     t_end = lj_clock_us();
     e->st.tick_us_last = (uint32_t)(t_end - t_start);

@@ -32,6 +32,9 @@ int  lj_runner_status(const lj_runner *r);                                      
  * ended the run (stopped / out / link set; r->link_cue copied to *link_out for LINK unless cue_edit), 2 = Goto: r->scene is the
  * goto scene and the caller enters it. first/last are 1-based in the runner (0 = none, resolved by lj_runner_set_slot). */
 int  lj_runner_loop_step(lj_runner *r, int dir, uint32_t *rng, int cue_edit, uint32_t *link_out);
+/* Loop Options re-read (LJ_CMD_LOOP_OPTS, also the tail of lj_runner_set_slot): dir / first / last / loops / end / goto / link /
+ * Scenes-Trig / Audio-Trigs; limits resolved, loop counters reset, the running scene kept [03 s5.5]. */
+void lj_runner_set_loop(lj_runner *r, const lj_cue_slot *s);
 /* The sequence-intensity rule of 03 s5.9 for one channel over the 12 cue slots: active[k] = the slot contributes (Snap/Fade on
  * this channel), programmed[k] = the scene's programmed value, faded[k] = this tick's faded value, si[k] = the slot's sequence
  * intensity 0..255 (LJ_SEQINT_UNASSIGNED when none). mode = enum lj_seq_int_mode: DEFAULT picks the highest active slot, HTP the

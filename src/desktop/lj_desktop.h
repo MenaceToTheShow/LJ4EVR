@@ -178,5 +178,9 @@ void lj_desktop_hotkey_setup_set(int setup /* 1..8 */, int enabled);
  *          (allow_freeze), tb_fixture_21 Smoke (LJ_WIN_SMOKE_CONTROL; enabled when a SMOKE/HAZE class channel is patched, ME-25).
  * Visibility of the three rows follows prefs->view_*_bar (the W1 [TOOLBARS] keys retire). */
 void lj_desktop_toolbar_gates(const lj_sysprefs *prefs);   /* re-reads the four gates + the three bar flags; called by the app after prefs load / apply */
+/* W2 desktop track (appended): the memory gauge (ME-87). The app queries the OS (avail / total physical bytes) and hands
+ * the figure here; the desktop formats the panel ("79%" = percent free, PROPOSAL: LJ2's figure is not documented as free or
+ * used) and picks the CHM colour band from the free megabytes (green > 3 MB, yellow 2-3, orange 1-2, red < 1 [01 s2.4]). */
+void lj_desktop_memory_set(uint64_t avail_bytes, uint64_t total_bytes);
 
 #endif /* LJ_DESKTOP_DESKTOP_H */

@@ -7,6 +7,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen/sscanf under /W4 /WX on MSVC (as gfx/lj_bmp.c) */
 #include "app/lj_uiscript.h"
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +26,7 @@
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_cue_form.h"
+#include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 #include "io/lj_midi.h"
 #include "miniz.h"
@@ -49,6 +51,7 @@ static struct {
     int state;                         /* 0 nothing loaded, 1 running, 2 finished ok, -1 failed */
     int line;                          /* for lj_uiscript_line / lj_uiscript_fail */
     uint64_t wait_until;               /* `wait` in progress when != 0 */
+    uint64_t tick_until, tick_deadline;/* `sleep_until_tick` in progress when tick_deadline != 0 */
     lj_window *cur;                    /* the window `type` / `key` go to: the last one opened or clicked */
     lj_uiscript_host host;
 } lj_us;
@@ -124,6 +127,38 @@ static int lj_us_tokens(char *s, char **arg, int cap)
     }
 }
 
+/* assert_view fields: the W1 four + the W2 names of docs/ui-script.md, read from the app's view copy by offset and size */
+#define LJ_US_VF(f) { #f, offsetof(lj_engine_status, f), sizeof(((lj_engine_status *)0)->f) }
+static const struct { const char *name; size_t off, size; } lj_us_vfields[] = {
+    LJ_US_VF(gm), LJ_US_VF(blackout), LJ_US_VF(freeze), LJ_US_VF(offline),
+    LJ_US_VF(bg_any), LJ_US_VF(statics_any), LJ_US_VF(flash_latched), LJ_US_VF(flash_seq), LJ_US_VF(transparent_mode), LJ_US_VF(smoke_active),
+    LJ_US_VF(haze_level), LJ_US_VF(chase_ms), LJ_US_VF(cue_number), LJ_US_VF(bg_number), LJ_US_VF(pending_link_cue), LJ_US_VF(snapshot_tick) };
+static const char *const lj_us_leds[LJ_LED_COUNT] = { "bgcue", "statics", "smoke" };   /* enum lj_desktop_led order */
+
+static int lj_us_vfield(const char *name, size_t len)
+{
+    int i;
+    for (i = 0; i < LJ_COUNT_OF(lj_us_vfields); i++) if (strlen(lj_us_vfields[i].name) == len && strncmp(lj_us_vfields[i].name, name, len) == 0) return i;
+    return -1;
+}
+static int lj_us_u64(const char *s, unsigned long long *out) { char *end; if (!s || !*s || *s == '-') return -1; *out = strtoull(s, &end, 10); return *end ? -1 : 0; }
+static int lj_us_hex(const char *s, int *out) { char *end; long v; if (!s || !*s) return -1; v = strtol(s, &end, 16); if (*end || v < 0 || v > 255) return -1; *out = (int)v; return 0; }
+static int lj_us_led(const char *name) { int i; for (i = 0; i < LJ_LED_COUNT; i++) if (strcmp(lj_us_leds[i], name) == 0) return i; return -1; }
+/* assert_view arguments as (field index, value) pairs: name=value words, or one bare "<field> <value>" pair; -1 = malformed */
+static int lj_us_vpairs(const lj_us_stmt *st, int *field, unsigned long long *val)
+{
+    int i, n = 0;
+    const char *eq;
+    if (st->nargs == 2 && !strchr(st->arg[0], '=') && !strchr(st->arg[1], '=')) {
+        if ((field[0] = lj_us_vfield(st->arg[0], strlen(st->arg[0]))) < 0 || lj_us_u64(st->arg[1], &val[0])) return -1;
+        return 1;
+    }
+    for (i = 0; i < st->nargs; i++, n++) {
+        if (!(eq = strchr(st->arg[i], '=')) || (field[n] = lj_us_vfield(st->arg[i], (size_t)(eq - st->arg[i]))) < 0 || lj_us_u64(eq + 1, &val[n])) return -1;
+    }
+    return n;
+}
+
 /* Static checks a line can fail without a window: numbers, 0|1, key names, l:a=v, exists|missing, Form.widget spelling. */
 static const char *lj_us_check(const lj_us_stmt *st)
 {
@@ -154,13 +189,26 @@ static const char *lj_us_check(const lj_us_stmt *st)
         if (sscanf(st->arg[0], "%d:%d=%d", &a, &b, &c) != 3 || a < 1 || a > LJ_LINKS || b < 1 || b > LJ_LINK_CH || c < 0 || c > 255) return "expected l:a=v (link 1-4, address 1-512, value 0-255)";
         if (st->nargs == 2 && (lj_us_int(st->arg[1], &v) || v < 0)) return "tolerance must be a non-negative integer";
         break;
-    case LJ_US_ASSERT_VIEW:
-        for (a = 0; a < st->nargs; a++) {
-            const char *eq = strchr(st->arg[a], '=');
-            if (!eq || lj_us_int(eq + 1, &v)) return "expected name=value pairs";
-            if (strncmp(st->arg[a], "gm=", 3) && strncmp(st->arg[a], "blackout=", 9) && strncmp(st->arg[a], "freeze=", 7) && strncmp(st->arg[a], "offline=", 8)) return "unknown view field (gm blackout freeze offline)";
-        }
+    case LJ_US_ASSERT_VIEW: {
+        int fld[LJ_US_ARGS]; unsigned long long val[LJ_US_ARGS];
+        if (lj_us_vpairs(st, fld, val) < 0) return "expected name=value pairs of a known view field (docs/ui-script.md)";
+        break; }
+    case LJ_US_MIDI:
+        for (a = 0; a < 3; a++) if (lj_us_hex(st->arg[a], &v)) return "midi takes three hex bytes 00..FF";
+        if (lj_us_hex(st->arg[0], &v) == 0 && v < 0x80) return "the first midi byte must be a status byte (80..FF)";
         break;
+    case LJ_US_HOTKEY:
+        if (lj_us_int(st->arg[0], &v) || v < 1 || v > 8) return "hotkey setup must be 1..8";
+        if (lj_us_vk(st->arg[1], &v, &a, &b, &c)) return "unknown key name";
+        break;
+    case LJ_US_ASSERT_LED:
+        if (lj_us_led(st->arg[0]) < 0) return "unknown led (bgcue statics smoke)";
+        if (strcmp(st->arg[1], "0") != 0 && strcmp(st->arg[1], "1") != 0) return "expected 0 or 1";
+        break;
+    case LJ_US_SLEEP_UNTIL_TICK: {
+        unsigned long long t;
+        if (lj_us_u64(st->arg[0], &t)) return "sleep_until_tick takes a tick number";
+        break; }
     case LJ_US_ASSERT_FILE:
         if (strcmp(st->arg[1], "exists") != 0 && strcmp(st->arg[1], "missing") != 0) return "expected exists or missing";
         break;
@@ -178,7 +226,7 @@ static const char *lj_us_check(const lj_us_stmt *st)
 static void lj_us_reset(void)
 {
     free(lj_us.buf); free(lj_us.st);
-    lj_us.buf = NULL; lj_us.st = NULL; lj_us.n = lj_us.pc = 0; lj_us.state = 0; lj_us.line = 0; lj_us.wait_until = 0; lj_us.cur = NULL;
+    lj_us.buf = NULL; lj_us.st = NULL; lj_us.n = lj_us.pc = 0; lj_us.state = 0; lj_us.line = 0; lj_us.wait_until = 0; lj_us.tick_until = lj_us.tick_deadline = 0; lj_us.cur = NULL;
 }
 
 static int lj_us_load_fail(int line, const char *fmt, const char *a)
@@ -263,6 +311,7 @@ lj_window *lj_uiscript_resolve_default(const char *form)
     int k = lj_us_ctl_kind(form);
     if (strcmp(form, "main") == 0) return lj_desktop_window();
     if (strcmp(form, "TUnassignedForm") == 0 || strcmp(form, "unassigned") == 0) return lj_unassigned_window();
+    if (strcmp(form, "TConfirmForm") == 0 || strcmp(form, "confirm") == 0) return lj_win_message_window();   /* W2: the "Please Confirm.." / message box (Restore, Re-start prompts) */
     if (k >= 0) return lj_ctl_window_get((enum lj_ctl_kind)k);
     return lj_win_find(form);
 }
@@ -387,6 +436,20 @@ static int lj_us_menu_click(char *spec)
     m->firing = NULL;
     lj_us.cur = win;
     return 0;
+}
+
+/* <Form>.<item> names a menu item (main or popup) and no widget: its caption (the TAction's, resolved by dfm2c), for assert_text (W2: the Statics 2 popup's duplicated items). */
+static const char *lj_us_menu_caption(char *spec)
+{
+    char *dot = strchr(spec, '.');
+    lj_window *win;
+    lj_menu *m;
+    lj_menu_rt *rt;
+    *dot = 0; win = lj_us.host.resolve ? lj_us.host.resolve(lj_us.host.ud, spec) : lj_uiscript_resolve_default(spec); *dot = '.';
+    if (!win || strchr(dot + 1, '.') || lj_window_find(win, dot + 1)) return NULL;
+    m = lj_window_menus(win);
+    rt = m ? lj_menu_rt_named(m, dot + 1) : NULL;
+    return rt && rt->item ? rt->item->caption : NULL;
 }
 
 static int lj_us_click(const lj_us_stmt *st, int button, int dbl)
@@ -553,14 +616,21 @@ static const lj_engine_status *lj_us_view(void)
 static int lj_us_assert_view(const lj_us_stmt *st)
 {
     const lj_engine_status *v = lj_us_view();
-    char msg[96];
-    int i, want, got;
+    int fld[LJ_US_ARGS], i, n;
+    unsigned long long want[LJ_US_ARGS], got;
+    char msg[128];
     if (!v) return -1;
-    for (i = 0; i < st->nargs; i++) {
-        const char *eq = strchr(st->arg[i], '=');
-        lj_us_int(eq + 1, &want);
-        got = strncmp(st->arg[i], "gm=", 3) == 0 ? v->gm : strncmp(st->arg[i], "blackout=", 9) == 0 ? v->blackout : strncmp(st->arg[i], "freeze=", 7) == 0 ? v->freeze : v->offline;
-        if (got != want) { snprintf(msg, sizeof msg, "%.*s is %d, expected %d", (int)(eq - st->arg[i]), st->arg[i], got, want); lj_us_failf(lj_us.line, "%s", msg); return -1; }
+    n = lj_us_vpairs(st, fld, want);
+    for (i = 0; i < n; i++) {
+        uint8_t b1; uint16_t b2; uint32_t b4; uint64_t b8;
+        const char *p = (const char *)v + lj_us_vfields[fld[i]].off;
+        switch (lj_us_vfields[fld[i]].size) {
+        case 1: memcpy(&b1, p, 1); got = b1; break;
+        case 2: memcpy(&b2, p, 2); got = b2; break;
+        case 4: memcpy(&b4, p, 4); got = b4; break;
+        default: memcpy(&b8, p, 8); got = b8; break;
+        }
+        if (got != want[i]) { snprintf(msg, sizeof msg, "%s is %llu, expected %llu", lj_us_vfields[fld[i]].name, got, want[i]); lj_us_failf(lj_us.line, "%s", msg); return -1; }
     }
     return 0;
 }
@@ -579,18 +649,64 @@ static int lj_us_assert_pps(const lj_us_stmt *st)
     return -1;
 }
 
-/* ---- W2 verbs (lj_uiscript.h): the app track fills this; until then every W2 line fails with its name ---- */
+/* ---- W2 verbs (lj_uiscript.h, docs/ui-script.md "W2 verbs") ---- */
+
+static FILE *lj_us_open_lib(const char *rel, char *path, size_t cap)   /* the path as given, else under the user library (assert_file's rule) */
+{
+    FILE *f = fopen(rel, "rb");
+    if (!f && lj_ctx_get()->lib && lj_library_path(lj_ctx_get()->lib, rel, path, cap) == 0) f = fopen(path, "rb");
+    return f;
+}
+
+static int lj_us_assert_file_line(const lj_us_stmt *st)
+{
+    char path[LJ_PATH_CAP], line[1024], msg[160];
+    FILE *f = lj_us_open_lib(st->arg[0], path, sizeof path);
+    int hits = 0;
+    size_t n;
+    if (!f) { lj_us_failf(lj_us.line, "%s is missing", st->arg[0]); return -1; }
+    while (fgets(line, sizeof line, f)) {
+        n = strlen(line);
+        while (n && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = 0;
+        if (strcmp(line, st->arg[1]) == 0) hits++;
+    }
+    fclose(f);
+    if (hits == 1) return 0;
+    snprintf(msg, sizeof msg, "%s holds the line %d time(s), expected once", st->arg[0], hits);
+    lj_us_failf(lj_us.line, "%s", msg);
+    return -1;
+}
+
 static int lj_us_exec_w2(lj_us_stmt *st)
 {
+    int i, v, s, c, a, setup;
+    unsigned long long t;
+    uint8_t m[3];
+    lj_key_ev ev;
     switch (st->verb) {
-    case LJ_US_MIDI: {                                        /* the test seam is real already: inject, then one dispatch pass */
-        uint8_t m[3]; int i;
-        for (i = 0; i < 3; i++) { long v = strtol(st->arg[i], NULL, 16); m[i] = (uint8_t)v; }
+    case LJ_US_MIDI:                                          /* the same post path as a device; the next idle pass dispatches it on the UI thread */
+        for (i = 0; i < 3; i++) { lj_us_hex(st->arg[i], &v); m[i] = (uint8_t)v; }
         lj_midi_inject(m);
         return 0;
-    }
+    case LJ_US_HOTKEY:
+        lj_us_int(st->arg[0], &setup);
+        lj_desktop_run_action(LJ_ACT_HOTKEY_SETUP, setup);
+        lj_us_vk(st->arg[1], &v, &s, &c, &a);
+        memset(&ev, 0, sizeof ev);
+        ev.key = v; ev.shift = s ? 1u : 0u; ev.ctrl = c ? 1u : 0u; ev.alt = a ? 1u : 0u;
+        ev.type = LJ_EV_KEY_DOWN; lj_desktop_key(&ev, 0);    /* as with the Sequence window focused: no dialog gate */
+        ev.type = LJ_EV_KEY_UP;   lj_desktop_key(&ev, 0);
+        return 0;
+    case LJ_US_ASSERT_LED:
+        return lj_us_assert_eq(st->arg[0], lj_desktop_led_get((enum lj_desktop_led)lj_us_led(st->arg[0])) ? "1" : "0", st->arg[1]);
+    case LJ_US_ASSERT_FILE_LINE:
+        return lj_us_assert_file_line(st);
+    case LJ_US_SLEEP_UNTIL_TICK:
+        lj_us_u64(st->arg[0], &t);
+        if (!lj_us_view()) return -1;
+        lj_us.tick_until = t; lj_us.tick_deadline = lj_clock_us() + 10000000u;   /* 10 s: a stopped engine fails the line instead of hanging the run */
+        return 0;
     default:
-        lj_us_failf(lj_us.line, "%s: W2 verb not implemented yet (app track)", lj_us_verbs[st->verb].name);
         return -1;
     }
 }
@@ -637,6 +753,7 @@ static int lj_us_exec(lj_us_stmt *st)
         if (strncmp(st->arg[0], "main.sb_", 8) == 0) {
             for (k = 0; k < LJ_SB_COUNT; k++) if (strcmp(st->arg[0] + 5, lj_us_sb_names[k]) == 0) return lj_us_assert_eq(st->arg[0], lj_statusbar_panel_text((enum lj_status_field)k), st->arg[1]);
         }
+        { const char *mc = lj_us_menu_caption(st->arg[0]); if (mc) return lj_us_assert_eq(st->arg[0], mc, st->arg[1]); }
         if (!(w = lj_us_widget(st->arg[0], &win, &row, &col))) return -1;
         return lj_us_assert_eq(st->arg[0], lj_us_text_of(w, row, col), st->arg[1]);
     case LJ_US_ASSERT_ENABLED:
@@ -688,6 +805,12 @@ int lj_uiscript_step(void)
     if (lj_us.wait_until) {
         if (lj_clock_us() < lj_us.wait_until) return 1;
         lj_us.wait_until = 0;
+    }
+    if (lj_us.tick_deadline) {
+        const lj_engine_status *v = lj_us.host.view ? lj_us.host.view(lj_us.host.ud) : NULL;
+        if (v && v->tick_no >= lj_us.tick_until) lj_us.tick_deadline = 0;
+        else if (lj_clock_us() < lj_us.tick_deadline) return 1;
+        else { char msg[96]; snprintf(msg, sizeof msg, "sleep_until_tick: tick_no %llu after 10 s, expected %llu", v ? (unsigned long long)v->tick_no : 0ull, (unsigned long long)lj_us.tick_until); lj_us_failf(lj_us.line, "%s", msg); return -1; }
     }
     if (lj_us.pc >= lj_us.n) { lj_us.state = 2; return 0; }     /* EOF behaves like quit */
     st = &lj_us.st[lj_us.pc++];

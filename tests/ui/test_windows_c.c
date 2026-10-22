@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "core/lj_log.h"
+#include "gfx/lj_bmp.h"
 #include "gfx/lj_draw.h"
 #include "model/lj_show.h"
 #include "ui/forms/lj_forms_gen.h"
@@ -22,6 +23,25 @@
 #include "windows/lj_hardware_setup.h"
 #include "windows/lj_prefs.h"
 #include "windows/lj_warnings.h"
+#include "controls/lj_ctl.h"              /* W2 windows-c rows */
+#include "core/lj_lock.h"
+#include "io/lj_fn.h"
+#include "model/lj_patch.h"
+#include "model/lj_sequence.h"
+#include "ui/widgets/lj_w_checkbox.h"
+#include "ui/widgets/lj_w_edit.h"
+#include "windows/lj_default_output.h"
+#include "windows/lj_fixture_groups.h"
+#include "windows/lj_global_patch.h"
+#include "windows/lj_htp_groups.h"
+#include "windows/lj_intensity_groups.h"
+#include "windows/lj_position_presets.h"
+#include "windows/lj_snapshot.h"
+#include "windows/lj_user_palettes.h"
+
+#ifndef LJ_SOURCE_DIR
+#define LJ_SOURCE_DIR "."
+#endif
 
 static int fails, skips;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
@@ -284,6 +304,226 @@ static void test_prefs(void)
     lj_window_destroy(sp);
 }
 
+/* ---- W2 windows-c (docs/w2-gates.md, the brief's five rows): groups round trip, Global Patch Apply = one swap with the
+ * table, default output = the engine frame, snapshot scene = the frame, preset recall = the selection's pan/tilt; plus
+ * Intensity Groups, HTP Groups and user palettes. A synthetic desktop: MAC 500 x2 + a dimmer, a real engine, headless. */
+static int lj_t_posts; static lj_cmd lj_t_last;
+static void rec_post(const lj_cmd *c) { lj_t_posts++; lj_t_last = *c; }
+static void ok_box(void) { if (lj_win_message_window()) click(lj_window_find(lj_win_message_window(), "BOk")); }
+static void engine_run(uint64_t *t, int ticks)   /* the engine thread's loop, then the app's view copy */
+{
+    lj_ctx *ctx = lj_ctx_get();
+    int i;
+    for (i = 0; i < ticks; i++) { *t += 25000; lj_lock(); lj_engine_tick(ctx->engine, *t); lj_unlock(); }
+    lj_lock(); lj_engine_view(ctx->engine, &ctx->view); lj_unlock();
+}
+static void wc_golden(lj_window *win, const char *name)   /* the windows-b pattern: LJ_GOLDEN_UPDATE=1 writes, else byte compare */
+{
+    char golden[1024], tmp[1024];
+    const char *upd = getenv("LJ_GOLDEN_UPDATE");
+    FILE *fa, *fb;
+    int ca, cb, same = 1;
+    if (!win) { fails++; printf("FAIL golden %s: no window\n", name); return; }
+    snprintf(golden, sizeof golden, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name);
+    snprintf(tmp, sizeof tmp, "lj_test_windows_c_%s.bmp", name);
+    lj_window_paint(win);
+    if (upd && upd[0] == '1') { CHECK(lj_bmp_write(lj_window_surface(win), golden) == 0); printf("  %s: written\n", golden); return; }
+    CHECK(lj_bmp_write(lj_window_surface(win), tmp) == 0);
+    fa = fopen(tmp, "rb"); fb = fopen(golden, "rb");
+    if (!fa || !fb) same = -1;
+    else do { ca = fgetc(fa); cb = fgetc(fb); if (ca != cb) { same = 0; break; } } while (ca != EOF);
+    if (fa) fclose(fa);
+    if (fb) fclose(fb);
+    if (same != 1) { fails++; printf("FAIL golden %s: %s (the render is %s)\n", name, same ? "missing or unreadable" : "differs", tmp); return; }
+    printf("  %s: identical\n", name);
+    remove(tmp);
+}
+static void plant(lj_show *sh, int i, int id, int addr)
+{
+    memset(&sh->fixture[i], 0, sizeof sh->fixture[i]);
+    sh->fixture[i].kind = LJ_FX_BUILTIN; sh->fixture[i].profile_id = (uint16_t)id; sh->fixture[i].link = 1; sh->fixture[i].address = (uint16_t)addr;
+    snprintf(sh->fixture[i].user_name, sizeof sh->fixture[i].user_name, "FX%d", i + 1);
+}
+
+static void test_w2(void)
+{
+    lj_ctx *ctx = lj_ctx_get();
+    lj_show *keep = ctx->show, *sh;
+    lj_sequence *seq;
+    lj_scene *sc;
+    const lj_profile *mac = lj_fixlib_by_id(12), *dim = lj_fixlib_by_id(19);
+    lj_frame fr;
+    uint64_t t = 0;
+    int c, ok, n;
+
+    if (!mac || !dim || !mac->pt16) { SKIP("fixlib: MAC 500 (12) / DMX Dimmer (19) missing, W2 windows-c rows not run"); return; }
+    sh = ctx->show = lj_show_new();
+    plant(sh, 0, 12, 1); plant(sh, 1, 12, 33); plant(sh, 2, 19, 100);
+    seq = lj_sequence_new_rec(); seq->number = 1;
+    sh->current_seq = seq; ctx->current_scene = 0;
+    ctx->engine = lj_engine_create();
+    CHECK(ctx->engine != NULL);
+    if (!ctx->engine) { lj_show_free(sh); ctx->show = keep; return; }
+    lj_lock(); lj_engine_bind(ctx->engine, sh); lj_unlock();
+    lj_win_set_host(NULL);   /* registers the windows' hotkey rows */
+    lj_sel_none();
+
+    /* Fixture Groups: Add Group, assign the selection, select through the window (Exclusive), filter, hotkey, popup delete */
+    CHECK(lj_fixture_groups_open() != NULL && strcmp(lj_window_desc(lj_fixture_groups_window())->caption, "Fixture Groups") == 0);
+    CHECK(lj_fixture_groups_add("Floor") == 1 && strcmp(sh->user_group[0].name, "Floor") == 0);
+    lj_sel_set(0, 1, 1); lj_sel_set(2, 1, 0);
+    CHECK(lj_fixture_groups_assign(1, 1) == 2 && sh->user_group[0].member[0] && !sh->user_group[0].member[1] && sh->user_group[0].member[2]);
+    lj_sel_none(); lj_sel_set(1, 1, 1);
+    lj_sel_mode_set(LJ_SEL_EXCLUSIVE);
+    CHECK(lj_fixture_groups_select(1) == 2 && lj_sel_is_selected(0) && !lj_sel_is_selected(1) && lj_sel_is_selected(2) && lj_sel_master() == 0);
+    lj_fixture_groups_set_filter(2);                                                    /* Filter:Even: fixture numbers 1 and 3 are odd */
+    CHECK(lj_fixture_groups_select(1) == 0 && lj_sel_count() == 0);
+    lj_fixture_groups_set_filter(0);
+    lj_sel_none();
+    lj_fn_run(LJ_FN_FIXTURE_GROUP_1, 1);                                               /* hotkey "Fixture group 1" */
+    CHECK(lj_sel_count() == 2 && lj_sel_is_selected(2));
+    lj_sel_none(); lj_sel_set(2, 1, 1);
+    CHECK(lj_fixture_groups_assign(1, 0) == 1 && !sh->user_group[0].member[2]);       /* round trip: the dimmer leaves again */
+    CHECK(lj_fixture_groups_add("Back") == 2);
+    wc_golden(lj_fixture_groups_window(), "WIN_FIXTURE_GROUPS");
+    CHECK(lj_fixture_groups_popup("P_Delete", 2) == 0 && lj_win_message_window() != NULL);
+    ok_box();
+    CHECK(sh->user_group[1].name[0] == 0 && sh->user_group[0].name[0] != 0);
+    lj_fixture_groups_close();
+    lj_sel_mode_set(LJ_SEL_INCLUSIVE);
+
+    /* Intensity Groups: tab 2 takes the selection, Save writes the show */
+    lj_sel_none(); lj_sel_set(0, 1, 1);
+    CHECK(lj_intensity_groups_open() != NULL);
+    CHECK(lj_intensity_groups_tab(2) == 0 && lj_intensity_groups_assign(0) == 1 && lj_intensity_groups_group_of(0) == 2);
+    CHECK(sh->fixture[0].intensity_group == 0);                                         /* a working copy until Save */
+    CHECK(lj_intensity_groups_save() == 0 && sh->fixture[0].intensity_group == 2);
+    lj_intensity_groups_close();
+
+    /* Global Patch: edit channel 6 (code 5) on the working copy, Apply = ONE GLOBAL_PATCH with show->patch */
+    CHECK(lj_global_patch_open() != NULL && lj_global_patch_select(5) == 0);
+    lj_w_edit_set_text(lj_window_find(lj_global_patch_window(), "eMin"), "300");
+    CHECK(lj_global_patch_set_values() != NULL);                                         /* 300 rejected */
+    ok_box();
+    lj_w_edit_set_text(lj_window_find(lj_global_patch_window(), "eMin"), "10");
+    lj_w_edit_set_text(lj_window_find(lj_global_patch_window(), "eMax"), "200");
+    lj_w_checkbox_set_checked(lj_window_find(lj_global_patch_window(), "cbInverted"), 1);
+    CHECK(lj_global_patch_set_values() == NULL);
+    CHECK(lj_global_patch_work()[5].min == 10 && lj_global_patch_work()[5].max == 200 && lj_global_patch_work()[5].invert == 1);
+    CHECK(sh->patch[5].invert == 0);                                                    /* the live table waits for Apply */
+    wc_golden(lj_global_patch_window(), "WIN_GLOBAL_PATCH");
+    lj_t_posts = 0;
+    lj_global_patch_set_post(rec_post);
+    CHECK(lj_global_patch_apply() == 0);
+    CHECK(lj_t_posts == 1 && lj_t_last.kind == LJ_CMD_GLOBAL_PATCH && lj_t_last.patch == sh->patch);
+    CHECK(sh->patch[5].min == 10 && sh->patch[5].max == 200 && sh->patch[5].invert == 1);
+    CHECK(strcmp(lj_w_caption(lj_window_find(lj_global_patch_window(), "lInverted")), "Inverted:1") == 0);
+    CHECK(lj_global_patch_menu("ClearAll1") == 0 && lj_win_message_window() != NULL);   /* "Clear All Patch Information ?" */
+    ok_box();
+    CHECK(lj_patch_is_default(&lj_global_patch_work()[5]));
+    lj_global_patch_set_post(NULL);
+    lj_global_patch_close();
+    lj_patch_init(sh->patch);
+
+    /* HTP Groups: the dimmer's intensity channel (1:100 = code 99) joins group 3, then the group is cleared */
+    lj_sel_none(); lj_sel_set(2, 1, 1);
+    CHECK(lj_htp_groups_open() != NULL);
+    CHECK(lj_htp_groups_assign(3, 1) == 1 && (sh->patch[99].htp_mask & 4u) && lj_htp_groups_count(3) == 1);
+    wc_golden(lj_htp_groups_window(), "WIN_HTP_GROUPS");
+    CHECK(lj_htp_groups_clear(3) == 0 && lj_htp_groups_count(3) == 0);
+    lj_htp_groups_close();
+
+    /* Default output: Use Current Scene equals the frame the engine made from that scene */
+    sc = &seq->scenes[0];
+    sc->val[0] = 77; sc->state[0] = LJ_SNAP; sc->val[99] = 200; sc->state[99] = LJ_SNAP;
+    lj_ctx_set_scene(0);
+    engine_run(&t, 8);
+    lj_lock(); fr = *lj_engine_frame(ctx->engine); lj_unlock();
+    printf("  engine frame: merged[0]=%u merged[99]=%u out[0]=%u\n", fr.merged[0], fr.merged[99], fr.out[0][0]);
+    CHECK(fr.merged[0] == 77 && fr.merged[99] == 200);
+    CHECK(lj_default_output_run(1) == 0);
+    for (ok = 1, c = 0; c < LJ_CHANS; c++) if (sc->state[c] != LJ_OFF && sh->default_out[c] != fr.merged[c]) ok = 0;
+    CHECK(ok && sh->default_out[0] == 77 && sh->default_out[99] == 200);
+    sc->preset[0] = 1;
+    CHECK(lj_default_output_run(1) == -1 && lj_win_message_window() != NULL);          /* "Default DMX Output cannot contain Presets" */
+    CHECK(lj_win_message_window() && strcmp(lj_w_caption(lj_window_find(lj_win_message_window(), "Label1")), "Default DMX Output cannot contain Presets") == 0);
+    ok_box();
+    sc->preset[0] = 0;
+    CHECK(lj_default_output_run(0) == 0 && sh->default_out[0] == 0);
+
+    /* Snapshot: Static Snapshot with "Auto add scene" adds scene 2 holding the served frame's output */
+    CHECK(lj_snapshot_open() != NULL);
+    wc_golden(lj_snapshot_window(), "WIN_SNAPSHOT");
+    lj_w_checkbox_set_checked(lj_window_find(lj_snapshot_window(), "cbAddScene"), 1);
+    CHECK(lj_snapshot_static() == 0);
+    engine_run(&t, 1);
+    lj_snapshot_tick(0);
+    lj_lock(); fr = *lj_engine_frame(ctx->engine); lj_unlock();
+    CHECK(seq->n == 2 && ctx->current_scene == 1);
+    for (ok = 1, n = 0, c = 0; seq->n == 2 && c < LJ_CHANS; c++) {
+        if (lj_show_fixture_at(sh, c) < 0) { ok &= seq->scenes[1].state[c] == LJ_OFF; continue; }
+        ok &= seq->scenes[1].val[c] == fr.out[c / LJ_LINK_CH][c % LJ_LINK_CH] && seq->scenes[1].state[c] == LJ_SNAP;
+        n += fr.out[c / LJ_LINK_CH][c % LJ_LINK_CH] != 0;
+    }
+    CHECK(ok && n > 0);
+    printf("  snapshot: scene 2 = frame tick %llu, %d non-zero fixture channels\n", (unsigned long long)ctx->view.snapshot_tick, n);
+    /* real-time: 1 scene refused with the exe's text, then 2 scenes recorded and converted */
+    lj_w_edit_set_text(lj_window_find(lj_snapshot_window(), "eScenes"), "1");
+    CHECK(lj_snapshot_realtime() == -1 && lj_win_message_window() != NULL);
+    ok_box();
+    lj_w_edit_set_text(lj_window_find(lj_snapshot_window(), "eScenes"), "2");
+    CHECK(lj_snapshot_realtime() == 0 && lj_snapshot_recording() == 0);
+    CHECK(strcmp(lj_w_caption(lj_window_find(lj_snapshot_window(), "pRecordRealTime")), "Recording (Cancel)") == 0);
+    for (c = 0; c < 20 && lj_snapshot_recording() >= 0 && !lj_win_message_window(); c++) { lj_snapshot_tick(t); engine_run(&t, 1); lj_snapshot_tick(t); }
+    CHECK(lj_win_message_window() != NULL && lj_snapshot_recording() == 2);             /* "Recording finished / Convert to sequence ?" */
+    ok_box();
+    CHECK(seq->n == 2 && lj_snapshot_recording() == -1 && seq->scenes[0].scene_ms == 100);   /* 10 Scenes/sec default = 100 ms per scene */
+    lj_snapshot_close();
+
+    /* Position presets: store 1 from the selection, move pan away, recall puts pan/tilt and the reference back */
+    lj_sel_none(); lj_sel_set(0, 1, 1); lj_sel_set(1, 1, 0);
+    lj_ctx_set_scene(0);
+    sc = &seq->scenes[0];
+    memset(sc->state, LJ_OFF, sizeof sc->state);
+    sc->val[mac->pan_ofs] = 0x40; sc->state[mac->pan_ofs] = LJ_SNAP; sc->val[mac->tilt_ofs] = 0x90; sc->state[mac->tilt_ofs] = LJ_SNAP;
+    sc->val[32 + mac->pan_ofs] = 0x40; sc->state[32 + mac->pan_ofs] = LJ_SNAP; sc->val[32 + mac->tilt_ofs] = 0x90; sc->state[32 + mac->tilt_ofs] = LJ_SNAP;
+    if (lj_position_presets_open() == NULL) SKIP("controls: no Movement control for the MAC 500 master, preset rows not run");
+    else {
+        CHECK(lj_position_presets_store(1, 1) == 0 && sh->preset[0][0].used && sh->preset[1][0].used);
+        sc->val[mac->pan_ofs] = 0x10; sc->val[32 + mac->tilt_ofs] = 0x20;
+        CHECK(lj_position_presets_recall(1) == 0);
+        CHECK(sc->val[mac->pan_ofs] == 0x40 && sc->val[mac->tilt_ofs] == 0x90 && sc->val[32 + mac->tilt_ofs] == 0x90 && sc->preset[0] == 1 && sc->preset[1] == 1);
+        lj_fn_run(LJ_FN_TOGGLE_POSITION_PRESET, 1);
+        CHECK(lj_position_presets_window() == NULL);
+        lj_ctl_close_all();
+    }
+
+    /* User palettes: Color entry from the master, overwrite the scene, Assign brings it back, Clear turns it Off */
+    {
+        const lj_ctl_window *cw = lj_profile_window(mac, LJ_CTL_COLORS);
+        int ch = cw && cw->nrows ? cw->rows[0].ch : -1;
+        if (ch < 0) SKIP("fixlib: the MAC 500 has no Colors rows, palette rows not run");
+        else {
+            CHECK(lj_user_palettes_open_kind(LJ_CTL_COLORS) != NULL && strcmp(lj_window_desc(lj_user_palettes_window())->class_name, "TPresetForm") == 0);
+            sc->val[ch] = 123; sc->state[ch] = LJ_SNAP;
+            CHECK(lj_user_palettes_record(-1, "Red", 0) == 0 && lj_user_palettes_count() == 1);
+            CHECK(strcmp(lj_w_caption(lj_window_find(lj_user_palettes_window(), "lentries")), "1 Entries") == 0);
+            sc->val[ch] = 5;
+            CHECK(lj_user_palettes_assign(0, 0) >= 1 && sc->val[ch] == 123);
+            CHECK(lj_user_palettes_clear(0, 0) >= 1 && sc->state[ch] == LJ_OFF);
+            CHECK(lj_user_palettes_delete(0) == 0 && lj_user_palettes_count() == 0);
+            lj_user_palettes_close();
+        }
+    }
+
+    lj_sel_none();
+    lj_lock(); lj_engine_bind(ctx->engine, NULL); lj_unlock();
+    lj_engine_destroy(ctx->engine); ctx->engine = NULL;
+    memset(&ctx->view, 0, sizeof ctx->view);
+    lj_show_free(sh);
+    ctx->show = keep;
+}
+
 int lj_test_windows_c(int argc, char **argv);
 int lj_test_windows_c(int argc, char **argv)
 {
@@ -297,6 +537,7 @@ int lj_test_windows_c(int argc, char **argv)
     test_monitor();
     test_hardware_setup();
     test_prefs();
+    test_w2();
     lj_warnings_close_all();
     lj_ini_free(ctx->main_ini); lj_ini_free(ctx->forms_ini); ctx->main_ini = ctx->forms_ini = NULL;
     lj_show_free(ctx->show); ctx->show = NULL;

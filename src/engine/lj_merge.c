@@ -1,8 +1,9 @@
 /* lj_merge.c - the layer stack, ranks 0-5 and 7 (design 3.4, 11 s3.4; ranks 2-4,
  * 6-7 PROPOSAL rig M12-M15). Rank 6 (generic macro) is applied by the engine
  * after this call (lj_genmacro_apply) because it needs the macro record; rank 7
- * (smoke/haze control) has no W1 source. A layer writes only where its state
- * is Snap or Fade [11 s3.4]. */
+ * (smoke/haze control, 11 C12) by the engine after that (lj_engine.c, it reads the
+ * smoke state, not a runner). A layer writes only where its state is Snap or Fade
+ * [11 s3.4]. */
 #include <string.h>
 #include "engine/lj_merge.h"
 #include "engine/lj_runner.h"
@@ -17,33 +18,27 @@ static void lj_merge_runner(const lj_runner *r, int rank, uint8_t merged[LJ_CHAN
         if (r->st[ch] != LJ_OFF) { merged[ch] = r->val[ch]; layer_of[ch] = (uint8_t)rank; }
 }
 
-static int lj_merge_si(int v, int si) { return (v * si + 127) / 255; }   /* sequence intensity 0..255 [03 s5.9] */
-
 static void lj_merge_cue(const lj_runner *slots, const lj_post_ctx *ctx, int mode, uint8_t merged[LJ_CHANS], uint8_t layer_of[LJ_CHANS])
 {
     int ch, k;
-    uint8_t act[LJ_CUE_SLOTS];
+    uint8_t act[LJ_CUE_SLOTS], on[LJ_CUE_SLOTS], prog[LJ_CUE_SLOTS], faded[LJ_CUE_SLOTS], si[LJ_CUE_SLOTS];
     int any = 0;
-    for (k = 0; k < LJ_CUE_SLOTS; k++) { act[k] = (uint8_t)lj_runner_active(&slots[k]); any |= act[k]; }
+    for (k = 0; k < LJ_CUE_SLOTS; k++) { act[k] = (uint8_t)lj_runner_active(&slots[k]); any |= act[k]; si[k] = slots[k].seq_int; }
     if (!any) return;
     for (ch = 0; ch < LJ_CHANS; ch++) {
-        int win = -1, intensity;
-        for (k = LJ_CUE_SLOTS - 1; k >= 0; k--)                /* slot 12 down to 1, first Snap/Fade wins [03 s5.3, F23] */
-            if (act[k] && slots[k].st[ch] != LJ_OFF) { win = k; break; }
-        if (win < 0) continue;
-        intensity = lj_post_class(ctx, ch) == LJ_CH_INTENSITY;
-        if (intensity && mode != LJ_SEQINT_DEFAULT) {          /* HTP / LoTP: selection by programmed x SI (F18, LORD_ENGINE-17) */
-            int best = -1, bestkey = 0;
-            for (k = LJ_CUE_SLOTS - 1; k >= 0; k--) {
-                const lj_runner *r = &slots[k];
-                int key;
-                if (!act[k] || r->st[ch] == LJ_OFF) continue;
-                key = lj_merge_si(r->seq->scenes[r->scene].val[ch], r->seq_int);
-                if (best < 0 || (mode == LJ_SEQINT_HTP ? key > bestkey : key < bestkey)) { best = k; bestkey = key; }
-            }
-            win = best;
+        int win, intensity, n = 0;
+        uint8_t v;
+        for (k = 0; k < LJ_CUE_SLOTS; k++) {                   /* the slot contributes this channel (Snap/Fade) [03 s5.3, F23] */
+            const lj_runner *r = &slots[k];
+            on[k] = (uint8_t)(act[k] && r->st[ch] != LJ_OFF);
+            if (!on[k]) continue;
+            n++; faded[k] = r->val[ch];
+            prog[k] = r->seq && r->scene < r->seq->n ? r->seq->scenes[r->scene].val[ch] : r->val[ch];   /* F18: programmed value selects */
         }
-        merged[ch] = intensity ? (uint8_t)lj_merge_si(slots[win].val[ch], slots[win].seq_int) : slots[win].val[ch];   /* output = the winner's faded value x SI */
+        if (!n) continue;
+        intensity = lj_post_class(ctx, ch) == LJ_CH_INTENSITY;  /* 03 s5.9: SI and HTP / LoTP on intensity-class channels only */
+        win = lj_seq_intensity_rule(intensity ? mode : LJ_SEQINT_DEFAULT, on, prog, faded, si, &v);
+        merged[ch] = intensity ? v : faded[win];               /* output = the winner's faded value x SI (LORD_ENGINE-17) */
         layer_of[ch] = LJ_L_CUE;
     }
 }
@@ -74,7 +69,7 @@ void lj_merge(const uint8_t default_out[LJ_CHANS], const lj_runner *runners, con
         case LJ_L_BGCUE:                                       /* C3: slot 5 down to 1, first Snap/Fade wins [03 s7] */
             for (k = 0; k < LJ_BG_SLOTS; k++) if (lj_runner_active(&runners[LJ_RUN_BG0 + k])) lj_merge_runner(&runners[LJ_RUN_BG0 + k], LJ_L_BGCUE, merged, layer_of);
             break;
-        default: break;                                        /* LJ_L_GENMACRO: lj_genmacro_apply in the engine; LJ_L_SMOKE: W2 (smoke control, C12) */
+        default: break;                                        /* LJ_L_GENMACRO: lj_genmacro_apply in the engine; LJ_L_SMOKE: lj_engine.c after rank 6 (C12) */
         }
     }
 }

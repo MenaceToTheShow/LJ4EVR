@@ -1,14 +1,21 @@
 LJ4 replay 1
-# layer_flash_current_statics (design 3.4 ranks 1-4, 11 s3.4; PROPOSAL rig M12):
-# cue slot 1 programs 1:1=50; the current sequence programs 1:1=100 (rank 3 beats rank 1); a flashed sequence
-# programs 1:1=150 (rank 2 sits below the current sequence: PROPOSAL rig M12, so the output stays 100 while the
-# current sequence is not blind, and becomes 150 under `current ... blind`); a static programs 1:1=200 and wins
-# over all three (rank 4). layer= asserts name the rank that won in every state.
+# layer_flash_current_statics (design 3.4 ranks 1-4, 11 s3.4; PROPOSAL rig M12): one channel, four layers.
+# cue slot 1 programs 1:1=50 (rank 1), a flashed sequence 1:1=150 (rank 2), the current sequence 1:1=100 (rank 3),
+# a static 1:1=200 (rank 4). Each layer is added and removed in turn; layer= names the rank that won in every state.
+# NOTE 03 s5.10 / 11 C2: "The output of the flashed sequence has a higher priority than the output sequences in the cue"
+#      (tick 1: flash 150 over cue 50).
+# NOTE design 3.4 / LJ_LAYER_ORDER, PROPOSAL rig M12: the flash sits below the current sequence (tick 2: current 100
+#      over flash 150; tick 5: `current 0` uncovers the flash again).
+# NOTE 03 s8 / 11 C5 + design 3.4 rank 4: statics above the cue, and (PROPOSAL rig M12-M13) above flash and current
+#      sequence (tick 3 over the current sequence, tick 9 over a latched flash).
+# NOTE 03 s5.10 Latch Flash Sequences (TCurrentCue M_StickyFlashSequences; FLASH c = 1, lj_engine.h): the flash stays
+#      after the key is released (tick 8) until Release latched Flash (`flash_latch 0 0`, tick 11);
+#      LJ_FLASH_ONE_AT_A_TIME.
+# NOTE W1 fails this file at tick 3 (STATIC_ACTIVATE: 1:1 expected 200 got 100), tick 8 (the release of a latched flash
+#      clears it: 1:1 expected 150 got 50) and on `expect_view flash_latched=`: W2 kinds and fields.
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 profile 1 class1=intensity use_gm=1
-patch 2 profile=19 link=1 addr=2
-profile 2 class1=intensity use_gm=1
 seq 1 name="cue" scene st=60000 ft=50 ch 1:1=50:S
 seq 2 name="current" scene st=60000 ft=50 ch 1:1=100:S
 seq 3 name="flash" scene st=60000 ft=50 ch 1:1=150:S
@@ -16,3 +23,32 @@ cue 1
 slot 1 seq=1
 static 1.1 name="S" act=toggle rep=add ft=50 level=100
 ch 1:1=200:S
+at 0 load_cue 1
+expect 0 1:1=50 layer=1
+at 1 flash 3 1
+expect 1 1:1=150 layer=2
+at 2 current 2 0
+expect 2 1:1=100 layer=3
+at 3 static_act 1.1
+expect 3 1:1=200 layer=4
+at 4 static_deact 1.1
+expect 4 1:1=100 layer=3
+at 5 current 0
+expect 5 1:1=150 layer=2
+at 6 flash 3 0
+expect 6 1:1=50 layer=1
+expect_view 6 flash_latched=0
+# latched flash
+at 7 flash_latch 3 1
+expect 7 1:1=150 layer=2
+expect_view 7 flash_latched=1 flash_seq=3
+at 8 flash_latch 3 0
+expect 8 1:1=150 layer=2
+expect_view 8 flash_latched=1 flash_seq=3
+at 9 static_act 1.1
+expect 9 1:1=200 layer=4
+at 10 static_deact 1.1
+expect 10 1:1=150 layer=2
+at 11 flash_latch 0 0
+expect 11 1:1=50 layer=1
+expect_view 11 flash_latched=0 flash_seq=0

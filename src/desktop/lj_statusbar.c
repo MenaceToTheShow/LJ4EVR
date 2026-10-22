@@ -10,12 +10,14 @@
 #include "gfx/lj_draw.h"
 #include "io/lj_fn.h"
 #include "ui/widgets/lj_widgets_lists.h"
+#include "windows/lj_prefs.h"
 
-typedef struct { lj_widget base; char text[LJ_SB_COUNT][32]; uint8_t flag[LJ_SB_COUNT]; } lj_sb;
+typedef struct { lj_widget base; char text[LJ_SB_COUNT][32]; uint8_t flag[LJ_SB_COUNT]; char hotkeys[32]; } lj_sb;   /* hotkeys: the W2 setup indicator, "" = no panel */
 
 static const struct { int w; const char *caption; } lj_sb_panels[LJ_SB_COUNT] = {   /* PROPOSAL rig (ME-87): widths scaled from statusbar.gif (400 px, a ~0.6 reduction) onto the 791-px client, not measured at 1:1 */
     { 72, "" }, { 84, "Running.." }, { 56, "" }, { 96, "Master 100%" }, { 92, "Seq. Modified" }, { 92, "Cue Modified" }, { 108, "CueList Modified" }, { 0, "Trig" },
 };
+enum { LJ_SB_TRIG_W = 40, LJ_SB_HOTKEYS_W = 72 };   /* PROPOSAL rig (ME-87): Trig's width once the hotkey panel follows it; LJ2 has no hotkey panel (01 s2.4), the W2 brief asks for one */
 static const lj_ctl_desc lj_sb_desc = { LJ_K_STATUSBAR, "sb_status", 0, 0, 791, LJ_SB_H, .align = LJ_AL_BOTTOM, .font = LJ_FONT_ARIAL14 };
 static lj_sb *lj_the_sb;
 
@@ -35,7 +37,7 @@ static void paint(lj_widget *w, lj_surface *s)
     lj_fill(s, ax, ay, w->w, w->h, w->color);
     x = ax; ty = ay + 2 + (ph - f->height) / 2;
     for (i = 0; i < LJ_SB_COUNT; i++) {
-        int pw = i == LJ_SB_COUNT - 1 ? ax + w->w - x : lj_sb_panels[i].w;
+        int pw = i == LJ_SB_COUNT - 1 ? (b->hotkeys[0] ? LJ_SB_TRIG_W : ax + w->w - x) : lj_sb_panels[i].w;
         const char *t = b->text[i][0] ? b->text[i] : lj_sb_panels[i].caption;
         uint32_t ink = LJ_CLR_3DDKSHADOW;
         if (pw <= 0) break;
@@ -49,6 +51,11 @@ static void paint(lj_widget *w, lj_surface *s)
         if (i >= LJ_SB_SEQ_MOD && i <= LJ_SB_CL_MOD && !b->flag[i]) t = "";   /* the Modified panels are blank until set */
         if (t && *t && lj_text_width(f, t) + 6 <= pw) lj_text(s, f, x + 3, ty, t, ink, 0);
         x += pw + 2;
+    }
+    if (b->hotkeys[0] && x + LJ_SB_HOTKEYS_W <= ax + w->w) {   /* W2: "Hotkeys 3" / "Hotkeys Off" after Trig; PROPOSAL rig, see LJ_SB_HOTKEYS_W */
+        int pw = ax + w->w - x;
+        lj_bevel1(s, x, ay + 2, pw, ph, LJ_CLR_BTNSHADOW, LJ_CLR_BTNHIGHLIGHT);
+        if (lj_text_width(f, b->hotkeys) + 6 <= pw) lj_text(s, f, x + 3, ty, b->hotkeys, LJ_CLR_3DDKSHADOW, 0);
     }
 }
 
@@ -109,6 +116,7 @@ void lj_statusbar_show(int show)
     lj_window *win;
     if (!lj_the_sb) return;
     lj_the_sb->base.visible = show != 0;
+    if (lj_ctx_get()->prefs) lj_ctx_get()->prefs->view_status_bar = (uint8_t)(show != 0);   /* [PREFS] ViewStatusBar, saved by the app */
     win = lj_window_of(&lj_the_sb->base);
     if (win) { lj_widget_layout(lj_window_root(win)); lj_window_invalidate_all(win); }
 }
@@ -120,4 +128,24 @@ const char *lj_statusbar_panel_text(enum lj_status_field f)
     if (!lj_the_sb || (int)f < 0 || f >= LJ_SB_COUNT) return "";
     if (f >= LJ_SB_SEQ_MOD && f <= LJ_SB_CL_MOD && !lj_the_sb->flag[f]) return "";
     return lj_the_sb->text[f][0] ? lj_the_sb->text[f] : lj_sb_panels[f].caption;
+}
+
+/* ---- W2 ---- */
+void lj_statusbar_hotkeys(const char *text)
+{
+    if (!lj_the_sb || strcmp(lj_the_sb->hotkeys, text ? text : "") == 0) return;
+    lj_str_copy(lj_the_sb->hotkeys, sizeof lj_the_sb->hotkeys, text ? text : "");
+    lj_widget_invalidate(&lj_the_sb->base);
+}
+const char *lj_statusbar_hotkeys_text(void) { return lj_the_sb ? lj_the_sb->hotkeys : ""; }
+
+void lj_desktop_memory_set(uint64_t avail_bytes, uint64_t total_bytes)
+{
+    char buf[16];
+    uint64_t mb = avail_bytes >> 20;
+    int pct = total_bytes ? (int)(avail_bytes * 100u / total_bytes) : 0;
+    if (pct > 100) pct = 100;
+    snprintf(buf, sizeof buf, "%d%%", pct);
+    lj_desktop_status_set(LJ_SB_MEMORY, buf);
+    lj_desktop_status_flag(LJ_SB_MEMORY, mb > 3 ? 0 : mb >= 2 ? 1 : mb >= 1 ? 2 : 3);   /* CHM 1661-1669: green > 3 MB free, yellow 2-3, orange 1-2, red < 1 */
 }

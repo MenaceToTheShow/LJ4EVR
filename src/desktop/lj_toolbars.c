@@ -10,10 +10,12 @@
 #include "desktop/lj_desktop.h"
 #include "desktop/lj_main_window.h"
 #include "desktop/lj_selection.h"
+#include "desktop/lj_statusbar.h"
 #include "fixlib/lj_profile.h"
 #include "io/lj_fn.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "windows/lj_prefs.h"
 
 /* ---- button ids: the toolbar + its F9 / [01 s2.3] number ---- */
 enum { B_SEQ_VIEW = 1, B_SEQ_NEW, B_SEQ_SAVE, B_SEQ_LOAD, B_CUE_VIEW, B_CUE_NEW, B_CUE_SAVE, B_CUE_LOAD,
@@ -83,7 +85,8 @@ static const lj_ctl_desc lj_row3[] = {   /* [07 s4.6], F9 order 1-21 (+ OnLine/O
     TB_BTN("tb_fixture_18", B_FX_FOLLOW, 528, 29, NULL, "followspot", "Follow Spot"),            /* followspoticon.gif 29x24 */
     TB_LED("tb_fixture_19", B_FX_ONLINE, 570, 64, 25, "OnLine", "DMX OnLine/OffLine"),            /* onlineicon.gif 64x25 */
     TB_BTN("tb_fixture_20", B_FX_FREEZE, 636, 26, NULL, "freeze", "Freeze Output"),               /* blindicon.gif 26x24 */
-    TB_BTN("tb_fixture_21", B_FX_SMOKE, 664, 36, NULL, "smoke", "Smoke Control"),                 /* smokecontrolicon.gif 36x24 */
+    { LJ_K_SPEEDBUTTON, "tb_fixture_21", 664, LJ_TB_BTN_Y, 36, LJ_TB_BTN, .tag = B_FX_SMOKE, .glyph = "smoke", .hint = "Smoke Control", .show_hint = LJ_YES, .num_glyphs = 2, .spacing = 4,
+      .group_index = 2, .allow_all_up = LJ_YES, .font = LJ_FONT_ARIAL14 },   /* smokecontrolicon.gif 36x24; W2: latches while the smoke timer / button fires (LJ_LED_SMOKE, PROPOSAL rig: smokecontrolicon.gif has two states) */
     TB_BTN("tb_fixture_22", B_FX_BLACKOUT, 704, 36, NULL, "blackout", "Blackout/Restore"),        /* blackouticon.gif 38x25 */
     TB_BTN("tb_fixture_23", B_FX_MASTER, 740, 40, NULL, "master", "Master Intensity"),            /* masterintensityicon.gif 40x25 */
 };
@@ -95,10 +98,14 @@ static const lj_ctl_desc lj_rows[LJ_TB_COUNT] = {
 static const char *const lj_ini_keys[LJ_TB_COUNT] = { "SeqCue", "CueList", "Fixture" };   /* Main.Ini [TOOLBARS] (ours) */
 
 static lj_window *lj_tb_win;
+static uint64_t lj_tb_led_tick;   /* the view tick the LEDs were last set from */
 static lj_widget *lj_tb_row[LJ_TB_COUNT];
 static lj_widget *lj_tb_seqname, *lj_tb_cuename, *lj_tb_clname, *lj_tb_counter;
 static lj_widget_vt lj_tb_sb_vt;   /* the speed-button vt with a right-click aware mouse (W0-last-event: on_event carries no button) */
 static int (*lj_tb_sb_mouse_orig)(lj_widget *, const lj_mouse_ev *);
+
+static uint8_t *bar_flag_ptr(lj_sysprefs *p, int row) { return row == LJ_TB_SEQCUE ? &p->view_seqcue_bar : row == LJ_TB_CUELIST ? &p->view_cuelist_bar : &p->view_fixture_bar; }
+static int bar_flag(const lj_sysprefs *p, int row) { return row == LJ_TB_SEQCUE ? p->view_seqcue_bar : row == LJ_TB_CUELIST ? p->view_cuelist_bar : p->view_fixture_bar; }
 
 static lj_widget *btn(int id)
 {
@@ -228,8 +235,8 @@ void lj_toolbars_build(lj_window *win, lj_widget *root)
     lj_tb_cuename = lj_widget_find(lj_tb_row[0], "tb_cuename");
     lj_tb_counter = lj_widget_find(lj_tb_row[0], "sb_seqcounter");
     lj_tb_clname  = lj_widget_find(lj_tb_row[1], "tb_clname");
-    for (i = 0; i < LJ_TB_COUNT; i++)
-        lj_tb_row[i]->visible = ctx->main_ini ? lj_ini_geti(ctx->main_ini, "TOOLBARS", lj_ini_keys[i], 1) != 0 : 1;
+    for (i = 0; i < LJ_TB_COUNT; i++)   /* W2: Main.Ini [PREFS] ViewSCBar ViewClBar ViewFixBar through ctx->prefs; the W1 [TOOLBARS] keys only without a prefs record */
+        lj_tb_row[i]->visible = ctx->prefs ? bar_flag(ctx->prefs, i) != 0 : ctx->main_ini ? lj_ini_geti(ctx->main_ini, "TOOLBARS", lj_ini_keys[i], 1) != 0 : 1;
     lj_desktop_seqcue_fields(0, NULL, 1, 1, 0, NULL);
 }
 
@@ -238,7 +245,8 @@ void lj_desktop_toolbar_show(enum lj_toolbar tb, int show)
     lj_ctx *ctx = lj_ctx_get();
     if ((int)tb < 0 || tb >= LJ_TB_COUNT || !lj_tb_row[tb]) return;
     lj_tb_row[tb]->visible = show != 0;
-    if (ctx->main_ini) lj_ini_seti(ctx->main_ini, "TOOLBARS", lj_ini_keys[tb], show != 0);
+    if (ctx->prefs) *bar_flag_ptr(ctx->prefs, tb) = (uint8_t)(show != 0);   /* saved with Main.Ini by the app */
+    else if (ctx->main_ini) lj_ini_seti(ctx->main_ini, "TOOLBARS", lj_ini_keys[tb], show != 0);
     if (lj_tb_win) { lj_widget_layout(lj_window_root(lj_tb_win)); lj_window_invalidate_all(lj_tb_win); }
 }
 
@@ -285,8 +293,12 @@ void lj_desktop_toolbar_update(void)
     set_enabled(B_CL_CD, 0); set_enabled(B_CL_MCX, 0); set_enabled(B_CL_2518, 0); set_enabled(B_CL_DMXIN, 0);   /* F8: greyed until their waves (W4 / W5) */
     if ((w = btn(B_FX_INCL)) != NULL) lj_w_set_caption(w, lj_sel_mode() == LJ_SEL_INCLUSIVE ? "Inclusive" : "Exclusive");
     if ((w = btn(B_FX_SOLO)) != NULL) lj_w_speedbutton_set_down(w, lj_sel_solo());
-    if ((w = btn(B_CL_BGCUE)) != NULL) lj_w_led_set(w, viewed && ctx->view.bg_any);
-    if ((w = btn(B_CL_STATICS)) != NULL) lj_w_led_set(w, viewed && ctx->view.statics_any);
+    if (viewed && ctx->view.tick_no != lj_tb_led_tick) {   /* W2: the three LEDs follow each new view copy; a window's direct lj_desktop_led_set holds until the next one */
+        lj_tb_led_tick = ctx->view.tick_no;
+        lj_desktop_led_set(LJ_LED_BGCUE, ctx->view.bg_any);
+        lj_desktop_led_set(LJ_LED_STATICS, ctx->view.statics_any);
+        lj_desktop_led_set(LJ_LED_SMOKE, ctx->view.smoke_active);
+    }
     if ((w = btn(B_FX_ONLINE)) != NULL) {
         int offline = viewed && ctx->view.offline;
         lj_w_led_set(w, !offline);
@@ -315,7 +327,7 @@ void lj_desktop_seqcue_fields(uint32_t seq_no, const char *seq_name, int scene, 
     if (lj_tb_counter) lj_w_set_caption(lj_tb_counter, counter);
 }
 
-/* ---- W2 contract stubs (lj_desktop.h additions); the desktop track replaces them ---- */
+/* ---- W2: LED buttons [07 s4.4, 4.6] and the System Preferences gates (ME-29) ---- */
 static uint8_t lj_tb_led_state[LJ_LED_COUNT];
 void lj_desktop_led_set(enum lj_desktop_led led, int on)
 {
@@ -323,8 +335,20 @@ void lj_desktop_led_set(enum lj_desktop_led led, int on)
     if ((int)led < 0 || led >= LJ_LED_COUNT) return;
     lj_tb_led_state[led] = (uint8_t)(on != 0);
     w = btn(led == LJ_LED_BGCUE ? B_CL_BGCUE : led == LJ_LED_STATICS ? B_CL_STATICS : B_FX_SMOKE);
-    if (w && led != LJ_LED_SMOKE) lj_w_led_set(w, on);
+    if (!w) return;
+    if (led == LJ_LED_SMOKE) { if (lj_w_speedbutton_down(w) != (on != 0)) lj_w_speedbutton_set_down(w, on); }   /* the Smoke TSpeedButton latches */
+    else if (lj_w_led_on(w) != (on != 0)) lj_w_led_set(w, on);   /* green = active, red = none [03 s7, s8] */
 }
 int  lj_desktop_led_get(enum lj_desktop_led led) { return ((int)led >= 0 && led < LJ_LED_COUNT) ? lj_tb_led_state[led] : 0; }
-void lj_desktop_hotkey_setup_set(int setup, int enabled) { (void)setup; (void)enabled; }   /* W2 desktop track: the Setup > Hotkeys radio items */
-void lj_desktop_toolbar_gates(const lj_sysprefs *prefs) { (void)prefs; }                     /* W2 desktop track: ctx->allow_* <- prefs, bar visibility */
+
+void lj_desktop_toolbar_gates(const lj_sysprefs *prefs)
+{
+    lj_ctx *ctx = lj_ctx_get();
+    int i;
+    if (!prefs) return;
+    ctx->allow_freeze = prefs->allow_freeze; ctx->allow_offline = prefs->allow_offline; ctx->allow_solo = prefs->allow_solo;   /* [PREFS] AllowBlind AllowOffline, [SOLO] Enabled */
+    for (i = 0; i < LJ_TB_COUNT; i++) if (lj_tb_row[i]) lj_tb_row[i]->visible = bar_flag(prefs, i) != 0;
+    lj_statusbar_show(prefs->view_status_bar);   /* relayouts and invalidates the window */
+    lj_desktop_toolbar_update();
+    if (lj_tb_win) lj_main_menu_sync(lj_tb_win);
+}

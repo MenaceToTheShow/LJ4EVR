@@ -44,7 +44,7 @@ the default is its centre.
 | `wait <ms>` | lets the loop run (timers, engine, repaints) for at least `ms` |
 | `shot <png path>` | every open window captured from its `lj_window_surface` (what `--selftest` proves is on screen, pixel for pixel), one file per window: `<path without extension>-<Class>.png` (`-TSequenceForm.png`, `-TLJMainForm.png` ...); `.bmp` when the path ends in `.bmp`. A window the app has already closed at the platform (AutoClose, the Cue / Sequence windows while Fixture Configuration is up) has no native handle and is skipped; a 0x0 surface fails the verb (ME-68). The OS frame under `[CHROME] Native=1` is not in it: `tools/shot.ps1` (`PrintWindow`) is the capture for that |
 | `assert_caption <Form> "text"` | the window caption equals the text (`lj_window_caption()->text`) |
-| `assert_text <Form>.<widget> "text"` | the widget's text/caption equals the text (edits, labels, buttons, a TStatusBar's first panel, TStringGrid cells as `Grid.r.c` = Delphi's 0-based `Cells[c, r]`, fixed rows and columns included) |
+| `assert_text <Form>.<widget> "text"` | the widget's text/caption equals the text (edits, labels, buttons, a TStatusBar's first panel, TStringGrid cells as `Grid.r.c` = Delphi's 0-based `Cells[c, r]`, fixed rows and columns included); a `<Form>.<name>` that is no widget but a menu item (main or popup) compares the item's caption, the TAction's when it has one (W2: `TStatics2Form.ReplacePage2`) |
 | `assert_enabled <Form>.<widget> 0\|1` | `widget->enabled` |
 | `assert_visible <Form>.<widget> 0\|1` | `widget->visible` and the window open |
 | `assert_frame l:a=v [tolerance]` | `lj_engine_frame()->out[link-1][addr-1]` (copied under `lj_lock`) equals `v` within `tolerance` (default 0) |
@@ -99,22 +99,26 @@ shot docs/screenshots/w1/cue-running.png
 quit
 ```
 
-## W2 verbs (contracts seat, 2026-10-21; parsed in `lj_uiscript.c`, bodies by the W2 app track except `midi`)
+## W2 verbs (`lj_uiscript.c`, W2 app track 2026-10-22)
 
 Window names gain the W2 ids of `lj_win_id_name()`: `loop_options cue_time cue_page_name
 cue_pages_reorder bgcue_form select_bgcue save_bgcue statics2_form statics2_prefs static_props
 smoke_control position_presets save_preset user_palettes fixture_groups intensity_groups
 htp_groups global_patch default_output snapshot edit_hotkeys hotkey_function midi_in
 system_prefs delete_seq delete_cue delete_cl delete_bg delete_macro user_libraries user_lib_name
-backup restore notes about striking_lamps` (DFM classes in `docs/w2-contracts.md`).
+backup restore notes about striking_lamps` (DFM classes in `docs/w2-contracts.md`), and `confirm` (or
+`TConfirmForm`) = the open "Please Confirm.." / message box (`lj_win_message_window`).
 
 | Line | Effect |
 |---|---|
-| `midi <hex> <hex> <hex>` | `lj_midi_inject` of the 3 bytes (`midi 90 3C 7F` = note 60 on, channel 1, velocity 127); the next idle pass dispatches it on the UI thread through the map (the same path as a device) |
-| `hotkey <setup> <key>` | loads hotkey setup 1..8 (`LJ_ACT_HOTKEY_SETUP`) and presses `<key>` (the `key` grammar) through `lj_desktop_key` with the Sequence window focused |
+| `midi <hex> <hex> <hex>` | `lj_midi_inject` of the 3 bytes (`midi 90 3C 7F` = note 60 on, channel 1, velocity 127); the next idle pass dispatches it on the UI thread (`lj_app_midi_dispatch` -> `lj_midi_dispatch` -> `lj_fn_run_prog`), the same path as a device. Checked at load: three hex bytes 00..FF, the first a status byte 80..FF. Follow it with `wait 50` before asserting the effect |
+| `hotkey <setup> <key>` | runs `LJ_ACT_HOTKEY_SETUP <setup>` (loads `<library>Hotkeys/Setup<setup>.Hot`, 1..8) and presses `<key>` (the `key` grammar: down + up) through `lj_desktop_key` with no dialog gate, as with the Sequence window focused |
 | `assert_led <name> 0\|1` | `lj_desktop_led_get`: `bgcue`, `statics`, `smoke` |
-| `assert_view <field>=<value> ...` | the W1 verb; W2 field names: `bg_any statics_any flash_latched flash_seq transparent_mode smoke_active haze_level chase_ms cue_number bg_number pending_link_cue snapshot_tick` (also accepted as two bare args `assert_view <field> <value>`) |
-| `assert_file_line <path> "text"` | the file (library-relative like `assert_file`) contains the line exactly once |
-| `sleep_until_tick <n>` | lets the loop run until the app's view copy reports `tick_no >= n` |
+| `assert_view <field>=<value> ...` | the W1 verb; fields `gm blackout freeze offline` and the W2 names `bg_any statics_any flash_latched flash_seq transparent_mode smoke_active haze_level chase_ms cue_number bg_number pending_link_cue snapshot_tick`; also accepted as two bare words `assert_view <field> <value>`. Values are unsigned decimal. `pending_link_cue` is the copy of the pass that handed the request out (the engine clears it at that read), so it is visible to exactly the next script line |
+| `assert_file_line <path> "text"` | the file (as given, else library-relative like `assert_file`) contains the line exactly once (CR/LF stripped before the compare) |
+| `sleep_until_tick <n>` | lets the loop run until the app's view copy reports `tick_no >= n`; fails after 10 s (a stopped engine) |
 
-Until the app track lands, every W2 line except `midi` fails with `<verb>: W2 verb not implemented yet`.
+Every W2 line is checked at load like the W1 verbs: unknown view fields, LED names, setups outside
+1..8, unknown key names, non-hex MIDI bytes and non-numeric ticks fail with `SCRIPT FAIL line n` before
+the first line runs (`tests/app/test_uiscript_w2.c`). The W2 walkthrough is
+`tests/ui/scripts/w2_acceptance.lj4s` (design 10 W2 acceptance, shots in `docs/screenshots/w2/`).

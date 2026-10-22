@@ -15,6 +15,28 @@
 #include "windows/lj_hardware_setup.h"
 #include "windows/lj_prefs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_bgcue_form.h"       /* W2 windows-b */
+#include "windows/lj_statics2_form.h"
+#include "windows/lj_smoke_control.h"
+#include "windows/lj_loop_options.h"      /* W2 windows-a */
+#include "windows/lj_cue_time.h"
+#include "windows/lj_cue_pages.h"
+#include "windows/lj_global_patch.h"      /* W2 windows-c */
+#include "windows/lj_htp_groups.h"
+#include "windows/lj_fixture_groups.h"
+#include "windows/lj_intensity_groups.h"
+#include "windows/lj_position_presets.h"
+#include "windows/lj_user_palettes.h"
+#include "windows/lj_snapshot.h"
+#include "windows/lj_delete_files.h"     /* W2 windows-d */
+#include "windows/lj_user_libraries.h"
+#include "windows/lj_backup_restore.h"
+#include "windows/lj_notes_form.h"
+#include "windows/lj_about_form.h"
+#include "windows/lj_striking_lamps.h"
+#include "windows/lj_system_prefs.h"
+#include "windows/lj_edit_hotkeys.h"
+#include "windows/lj_midi_in_form.h"
 
 static const char *const lj_win_classes[LJ_WIN_COUNT] = {
     "TSequenceForm", "TCurrentCue", "TSaveSeqForm", "TSaveCueForm", "TSeqListForm", "TCueListForm", "TLinkConfigForm3" /* windows-c: the DFM class (no TFixtureConfigForm exists) */,
@@ -56,6 +78,39 @@ static const lj_win_ops lj_win_table[LJ_WIN_COUNT] = {
     [LJ_WIN_STARTUP_OPTIONS] = { lj_startup_options_open, lj_startup_options_close, lj_startup_options_window, NULL },
     [LJ_WIN_WARNINGS]        = { NULL /* lj_win_warning(state, 1) */, lj_warnings_close_all, lj_win_warnings_any, NULL },
     [LJ_WIN_CLOSE_PROMPT]    = { NULL /* lj_win_close_prompt(cb) */, lj_warnings_close_all, lj_win_close_prompt_window, NULL },
+    /* W2 windows-b */
+    [LJ_WIN_BGCUE_FORM]      = { lj_bgcue_form_open, lj_bgcue_form_close, lj_bgcue_form_get, lj_bgcue_form_refresh },
+    [LJ_WIN_STATICS2_FORM]   = { lj_statics2_form_open, lj_statics2_form_close, lj_statics2_form_get, lj_statics2_form_refresh },
+    [LJ_WIN_SMOKE_CONTROL]   = { lj_smoke_control_open, lj_smoke_control_close, lj_smoke_control_get, lj_smoke_control_refresh },
+    /* W2 windows-a */
+    [LJ_WIN_LOOP_OPTIONS]      = { lj_loop_options_open, lj_loop_options_close, lj_loop_options_get, lj_loop_options_refresh },
+    [LJ_WIN_CUE_TIME]          = { lj_cue_time_open, lj_cue_time_close, lj_cue_time_get, lj_cue_time_refresh },
+    [LJ_WIN_CUE_PAGE_NAME]     = { lj_cue_page_name_open, lj_cue_page_name_close, lj_cue_page_name_get, NULL },
+    [LJ_WIN_CUE_PAGES_REORDER] = { lj_cue_pages_reorder_open, lj_cue_pages_reorder_close, lj_cue_pages_reorder_get, NULL },
+    /* W2 windows-c (LJ_WIN_DEFAULT_OUTPUT has no window: windows/lj_default_output.h; LJ_WIN_SAVE_PRESET unused: lj_position_presets.h) */
+    [LJ_WIN_POSITION_PRESETS]  = { lj_position_presets_open, lj_position_presets_close, lj_position_presets_window, lj_position_presets_refresh },
+    [LJ_WIN_USER_PALETTES]     = { lj_user_palettes_open, lj_user_palettes_close, lj_user_palettes_window, lj_user_palettes_refresh },
+    [LJ_WIN_FIXTURE_GROUPS]    = { lj_fixture_groups_open, lj_fixture_groups_close, lj_fixture_groups_window, lj_fixture_groups_refresh },
+    [LJ_WIN_INTENSITY_GROUPS]  = { lj_intensity_groups_open, lj_intensity_groups_close, lj_intensity_groups_window, lj_intensity_groups_refresh },
+    [LJ_WIN_HTP_GROUPS]        = { lj_htp_groups_open, lj_htp_groups_close, lj_htp_groups_window, lj_htp_groups_refresh },
+    [LJ_WIN_GLOBAL_PATCH]      = { lj_global_patch_open, lj_global_patch_close, lj_global_patch_window, lj_global_patch_refresh },
+    [LJ_WIN_SNAPSHOT]          = { lj_snapshot_open, lj_snapshot_close, lj_snapshot_window, lj_snapshot_refresh },
+    /* W2 windows-d */
+    [LJ_WIN_DELETE_SEQ]      = { lj_delete_seq_open, lj_delete_seq_close, lj_delete_seq_get, lj_delete_seq_refresh },
+    [LJ_WIN_DELETE_CUE]      = { lj_delete_cue_open, lj_delete_cue_close, lj_delete_cue_get, lj_delete_cue_refresh },
+    [LJ_WIN_DELETE_CL]       = { lj_delete_cl_open, lj_delete_cl_close, lj_delete_cl_get, lj_delete_cl_refresh },
+    [LJ_WIN_DELETE_BG]       = { lj_delete_bg_open, lj_delete_bg_close, lj_delete_bg_get, lj_delete_bg_refresh },
+    [LJ_WIN_DELETE_MACRO]    = { lj_delete_macro_open, lj_delete_macro_close, lj_delete_macro_get, lj_delete_macro_refresh },
+    [LJ_WIN_USER_LIBRARIES]  = { lj_user_libraries_open, lj_user_libraries_close, lj_user_libraries_window, lj_user_libraries_refresh },
+    [LJ_WIN_USER_LIB_NAME]   = { lj_user_lib_name_open, lj_user_lib_name_close, lj_user_lib_name_window, NULL /* closed through lj_user_libraries_refresh */ },
+    [LJ_WIN_BACKUP]          = { lj_backup_open, lj_backup_close, lj_backup_window, lj_backup_refresh },
+    [LJ_WIN_RESTORE]         = { lj_restore_open, lj_restore_close, lj_restore_window, lj_restore_refresh },
+    [LJ_WIN_NOTES]           = { lj_notes_form_open, lj_notes_form_close, lj_notes_form_window, lj_notes_form_refresh },
+    [LJ_WIN_ABOUT]           = { lj_about_form_open, lj_about_form_close, lj_about_form_window, lj_about_form_refresh },
+    [LJ_WIN_STRIKING_LAMPS]  = { lj_striking_lamps_open, lj_striking_lamps_close, lj_striking_lamps_window, lj_striking_lamps_refresh },
+    [LJ_WIN_SYSTEM_PREFS]    = { lj_system_prefs_open, lj_system_prefs_close, lj_system_prefs_window, lj_system_prefs_refresh },
+    [LJ_WIN_EDIT_HOTKEYS]    = { lj_edit_hotkeys_open, lj_edit_hotkeys_close, lj_edit_hotkeys_window, lj_edit_hotkeys_refresh },
+    [LJ_WIN_MIDI_IN]         = { lj_midi_in_form_open, lj_midi_in_form_close, lj_midi_in_form_window, lj_midi_in_form_refresh },
 };
 static const lj_win_ops *lj_win_ops_of(enum lj_win id) { return (int)id >= 0 && id < LJ_WIN_COUNT ? &lj_win_table[id] : NULL; }
 
@@ -81,7 +136,9 @@ lj_window *lj_win_find(const char *form)
 }
 const char *lj_win_class(enum lj_win id) { return ((int)id >= 0 && id < LJ_WIN_COUNT) ? lj_win_classes[id] : ""; }
 static const lj_win_host *lj_win_the_host;   /* windows-c: stored so the behaviour files can reach the screen */
-void lj_win_set_host(const lj_win_host *host) { lj_win_the_host = host; lj_seq_form_bind_fns(); lj_cue_form_bind_fns(); lj_master_intensity_bind_fns(); }
+void lj_win_set_host(const lj_win_host *host) { lj_win_the_host = host; lj_seq_form_bind_fns(); lj_cue_form_bind_fns(); lj_master_intensity_bind_fns(); lj_bgcue_form_bind_fns(); lj_statics2_form_bind_fns(); lj_smoke_control_bind_fns() /* W2 windows-b */;
+    lj_loop_options_bind_fns(); lj_cue_time_bind_fns(); lj_cue_pages_bind_fns(); /* W2 windows-a */
+    lj_htp_groups_bind_fns(); lj_fixture_groups_bind_fns(); lj_position_presets_bind_fns(); lj_user_palettes_bind_fns(); /* W2 windows-c */ }
 
 static int lj_caption(char *dst, size_t cap, const char *prefix, uint32_t number, const char *name, const char *suffix)
 {
@@ -120,4 +177,4 @@ int  lj_win_is_dialog(enum lj_win id)
     default: return 0;
     }
 }
-void lj_win_about_text(char *dst, size_t cap) { if (dst && cap) snprintf(dst, cap, "LJ4EVR (the About text is the W2 windows track: VERSION + THIRD_PARTY_NOTICES.txt)"); }
+/* lj_win_about_text: windows-d body in lj_about_form.c */

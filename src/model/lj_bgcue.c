@@ -1,4 +1,6 @@
-/* lj_bgcue.c - BGCues\NNNNNNNN.bgc (lj_bgcue.h, design 5.2, 03 s7). */
+/* lj_bgcue.c - BGCues\NNNNNNNN.bgc (lj_bgcue.h, design 5.2, 03 s7). The .bgc extension
+ * is ours: LJ2's is unknown (PROPOSAL rig 18 s2, design 13 item 6). Numbers go through
+ * lj_kv_range (ME-77). */
 #include <stdlib.h>
 #include <string.h>
 #include "model/lj_bgcue.h"
@@ -8,23 +10,24 @@
 int lj_bgcue_load(const char *path, lj_bgcue *out, char *err, size_t cap)
 {
     char k[32], v[LJ_KV_VAL_CAP], *e;
-    int fmt, r, item = 0;
+    int fmt, r, item = 0, rbad = 0;
     const char *bad = NULL;
     lj_rec *rec = lj_rec_open_read(path, "bgc", &fmt);
     if (!rec) { lj_kv_err(err, cap, path, 0, "not an LJ4 bgc file"); return -1; }
     memset(out, 0, sizeof *out);
     while ((r = lj_rec_next(rec, k, sizeof k, v, sizeof v)) == 1) {
         item++;
-        if (strcmp(k, "num") == 0) out->number = (uint32_t)strtoul(v, NULL, 10);
+        if (strcmp(k, "num") == 0) out->number = (uint32_t)lj_kv_range_lead(v, 0, 0, LJ_NUMBER_MAX, &rbad);
         else if (strcmp(k, "name") == 0) lj_kv_unquote(out->name, sizeof out->name, v);
-        else if (strcmp(k, "transparent") == 0) out->transparent = (uint8_t)(strtol(v, NULL, 10) != 0);
+        else if (strcmp(k, "transparent") == 0) out->transparent = (uint8_t)lj_kv_range_lead(v, 0, 0, 1, &rbad);
         else if (strcmp(k, "slot") == 0) {
             long i = strtol(v, &e, 10);
             if (e == v || i < 1 || i > LJ_BG_SLOTS) { bad = "slot index not 1..5"; break; }
-            out->slot[i - 1].seq = (uint32_t)lj_kv_long(v, "seq", 0);
+            out->slot[i - 1].seq = (uint32_t)lj_kv_range(v, "seq", 0, 0, LJ_NUMBER_MAX, &rbad);
             out->slot[i - 1].mode = (uint8_t)lj_kv_word(v, "mode", lj_bg_mode_words, LJ_BG_AUTO);
-            out->slot[i - 1].enabled = (uint8_t)(lj_kv_long(v, "on", 1) != 0);
+            out->slot[i - 1].enabled = (uint8_t)lj_kv_range(v, "on", 1, 0, 1, &rbad);
         }
+        if (rbad) { bad = "number out of range"; break; }
     }
     lj_rec_close(rec);
     if (!bad && r < 0) bad = "unreadable line";
@@ -53,9 +56,11 @@ const char *lj_bgcue_validate(const lj_bgcue *in)
 {
     int i;
     if (!memchr(in->name, 0, sizeof in->name)) return "name not NUL-terminated";
+    if (in->number > LJ_NUMBER_MAX || in->transparent > 1) return "number or transparent flag out of range";
     for (i = 0; i < LJ_BG_SLOTS; i++) {
         if (!in->slot[i].seq && in->slot[i].enabled) return "slot enabled without a sequence";
         if (in->slot[i].mode > LJ_BG_NOLOOP) return "mode not auto/audio/noloop";
+        if (in->slot[i].seq > LJ_NUMBER_MAX || in->slot[i].enabled > 1) return "slot sequence or on flag out of range";
     }
     return NULL;
 }

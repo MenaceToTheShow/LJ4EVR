@@ -84,6 +84,20 @@
 #define LJ_SNAPSHOT_RATE_MAX_HZ      20   /* 03 s4.7; E13: the sampler tops out at 20 Hz, so a snapshot is one SNAPSHOT_REQ per sample tick */
 #define LJ_SNAPSHOT_SCENES_MAX      999   /* 03 s4.7 */
 #define LJ_HTP_MASTERS_DEFAULT        0   /* TGlobalPatchForm M_HTPgroupsaffectedgyGM "Enable HTP group master intensity control" default OFF [11 P8] */
+/* ---- W2 engine track (appended) ---- */
+#define LJ_RANDOM_NO_REPEAT           1   /* 03 s5.5 random: never the same scene twice in a row when the limits hold > 1 scene; PROPOSAL rig 03 Unverified (Martin only says "random scene each trig") */
+#define LJ_LOOP_OUTSIDE_ENTERS_EDGE   1   /* a running scene outside new limits (Loop Options Ok, LOOP_OPTS) steps to first (last when reverse) instead of counting a loop; PROPOSAL rig */
+#define LJ_LINK_STOPS_SLOT            1   /* 03 s5.5 Link to cue + design 2.3 rule 3: the slot stops on its scene and pending_link_cue carries the cue; the linked LOAD_CUE replaces the slot */
+#define LJ_TRIG_ON_LOAD_RUNS_SPT      1   /* 03 s5.5 Trig on Load (RN 2.6 b4): the load counts as the trig, so Scenes/Trig - 1 extra scenes run auto-timed; PROPOSAL rig */
+#define LJ_SPT_IGNORED_IN_AUTO        1   /* 03 s5.5: Scenes / Trig "No effect in auto mode" */
+#define LJ_CHASE_TAP_ROUND_MS         1   /* E9: the tap period is rounded to the 1 ms timer resolution (LORD_ENGINE-19: one global period, read by every chase slot) */
+#define LJ_STATIC_LTP_COUNTER         1   /* 03 s8 LTP order is an activation counter, not a timestamp: two activations in one tick keep their command order */
+#define LJ_SMOKE_LEVEL_DEFAULT      255   /* measured from smokecontrol.gif ("FF"), rig 04 s12 */
+#define LJ_SMOKE_DURATION_DEFAULT_MS 10000 /* measured from smokecontrol.gif ("10s"), rig 04 s12 */
+#define LJ_SMOKE_CYCLE_DEFAULT_MS 35000   /* measured from smokecontrol.gif ("35s"), rig 04 s12 */
+#define LJ_SMOKE_RELEASE_ENDS_HELD    1   /* 04 s12: "smoke while held"; a timed press (c = toggle ms) ignores the release; PROPOSAL rig */
+#define LJ_SNAPSHOT_WHOLE_FRAME       1   /* 03 s4.7: SNAPSHOT_REQ copies the whole post-S9 lj_frame (out[], merged[], layer_of[], tick_no); a = enum lj_snapshot_src tells the UI which half to map back */
+#define LJ_LOCK_HOLD_TEST_US (LJ_TICK_US_DEFAULT / 4)   /* ME-81: test_lock_hold asserts one tick under lj_lock stays below a quarter tick (4 cues, 20 statics, BG loaded) */
 
 /* Layer ranks (design 3.4, 11 s3.4; 2-4, 6-7 PROPOSAL rig M12-M15). layer_of[ch] carries the rank that won. */
 enum lj_layer { LJ_L_DEFAULT = 0, LJ_L_CUE, LJ_L_FLASH, LJ_L_CURRENT, LJ_L_STATICS, LJ_L_BGCUE, LJ_L_GENMACRO, LJ_L_SMOKE, LJ_L_COUNT };
