@@ -25,4 +25,19 @@ void lj_runner_go(lj_runner *r, uint64_t now, uint32_t tick_us, const uint8_t me
 void lj_runner_eval(lj_runner *r, const lj_scene *sc, uint64_t now, const lj_pairs *pairs, const lj_post_ctx *c, const lj_mm_state *mm /* LJ_FIXTURES or NULL */, int amp_pct);   /* val[]/st[] for this tick */
 int  lj_runner_status(const lj_runner *r);                                                 /* LJ_SLOT_* for the view */
 
+/* ---- W2: the two pure rules replay and unit tests hit directly (design 10 W2 loop_bounce_random_limits, seq_intensities) ---- */
+/* One scene step in `dir` with the loop rules of 03 s5.5 and the end-action table (Stop on scene / Sequence out / Goto scene / Link
+ * to cue), on the runner's scene / first / last / loops_left / loop_count / bounce_back / end_action / goto_scene / link_cue; rng
+ * is the xorshift32 state for LJ_DIR_RANDOM (LJ_RNG_SEED). Returns 0 = advanced (r->scene is the new scene), 1 = an end action
+ * ended the run (stopped / out / link set; r->link_cue copied to *link_out for LINK unless cue_edit), 2 = Goto: r->scene is the
+ * goto scene and the caller enters it. first/last are 1-based in the runner (0 = none, resolved by lj_runner_set_slot). */
+int  lj_runner_loop_step(lj_runner *r, int dir, uint32_t *rng, int cue_edit, uint32_t *link_out);
+/* The sequence-intensity rule of 03 s5.9 for one channel over the 12 cue slots: active[k] = the slot contributes (Snap/Fade on
+ * this channel), programmed[k] = the scene's programmed value, faded[k] = this tick's faded value, si[k] = the slot's sequence
+ * intensity 0..255 (LJ_SEQINT_UNASSIGNED when none). mode = enum lj_seq_int_mode: DEFAULT picks the highest active slot, HTP the
+ * highest programmed x si, LOTP the lowest. Returns the winning slot index 0..11 or -1 when no slot is active; *out = the
+ * winner's faded value x si with nearest rounding (the value for a non-intensity channel is faded[winner] unscaled: the caller
+ * decides by channel class). */
+int  lj_seq_intensity_rule(int mode, const uint8_t active[LJ_CUE_SLOTS], const uint8_t programmed[LJ_CUE_SLOTS], const uint8_t faded[LJ_CUE_SLOTS], const uint8_t si[LJ_CUE_SLOTS], uint8_t *out);
+
 #endif /* LJ_ENGINE_RUNNER_H */

@@ -1,0 +1,19 @@
+LJ4 replay 1
+# cue_time_scaling (03 s5.6, 11 F8 F9; LJ_TIME_PCT_*, LJ_TIME_SCALE_AT_TRIG_ONLY, LJ_SNAP_TEST_AFTER_SCALE; rig M7):
+# the 13 faders: `cue_time cue 50` halves every slot still at CUE (scene 1000 ms -> 500 ms, fade 400 -> 200);
+# `cue_time slot1 200` overrides the cue fader for slot 1 (2000 / 800); `cue_time slot1 0` returns it to CUE; values
+# clamp at min(60000, ms * pct / 100) (a 999 % of 60000 stays 60000); the new scaling applies at the next trig, never
+# mid-scene; a scaled fade <= 50 ms snaps (LJ_SNAP_TEST_AFTER_SCALE).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="timed"
+scene st=1000 ft=400 ch 1:1=0:F
+scene st=1000 ft=400 ch 1:1=255:F
+seq 2 name="long" scene st=60000 ft=60000 ch 1:2=255:F
+scene st=60000 ft=60000 ch 1:2=0:F
+cue 1
+slot 1 seq=1
+slot 2 seq=2

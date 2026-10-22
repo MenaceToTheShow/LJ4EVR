@@ -1,0 +1,18 @@
+LJ4 replay 1
+# link_to_cue (03 s5.5 end action Link to cue; design 2.3 rule 3, 10 W2; ME-2): cue 1 slot 1 runs seq 1 (2 scenes,
+# 100 ms each) with loops=1 end=link link=2. After one loop the runner stops and the view reports pending_link_cue=2
+# (expect_pending); `at k link` performs the load the way lj_app_service_pending does (LOAD_CUE 2 with its pinned
+# sequences) and the next tick runs cue 2 (1:2=255). Under `load_cue 1 edit` the link never fires (Edit Cue).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="linker"
+scene st=100 ft=50 ch 1:1=100:S
+scene st=100 ft=50 ch 1:1=200:S
+seq 2 name="target" scene st=60000 ft=50 ch 1:2=255:S
+cue 1
+slot 1 seq=1 loops=1 end=link link=2
+cue 2
+slot 1 seq=2

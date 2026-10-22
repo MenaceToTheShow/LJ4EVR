@@ -27,4 +27,11 @@ int  lj_kv_scene_field(lj_scene *s, const char *key, const char *fields);       
 
 void lj_kv_err(char *err, size_t cap, const char *path, int item, const char *msg);     /* "<path> item N: msg" into err (NULL ok) and the log; item = the Nth key/value after the header */
 
+/* W2 (ME-77): range-checked integer field. Returns the value when present and inside lo..hi, dflt when absent;
+ * a present value outside lo..hi (or not a number) returns dflt and sets *bad = 1 so the loader rejects the line
+ * instead of aliasing into range (level=356, cue_time_pct=65636, spt=257, link=257, addr=65537). Every numeric
+ * key of the W2 record kinds (cue page, BG cue, statics, groups, presets, palettes, .GPA, default output, hotkey
+ * setup) goes through this. */
+long lj_kv_range(const char *fields, const char *key, long dflt, long lo, long hi, int *bad);
+
 #endif /* LJ_MODEL_KV_H */

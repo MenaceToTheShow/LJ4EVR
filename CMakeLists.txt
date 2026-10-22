@@ -244,3 +244,32 @@ set_tests_properties(test_sacn_rate test_sacn_loopback PROPERTIES RESOURCE_LOCK 
 
 # app track: the SDL-free app files tests/ui/test_uiscript.c drives headless (docs/w1-contracts.md, append-only section)
 target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_uiscript.c" "${CMAKE_SOURCE_DIR}/src/app/lj_startup.c")
+
+# ---- W2 contracts (docs/w2-contracts.md), append-only ----
+# MIDI backend: io/ is globbed, so the two backends that do not belong to this OS are compiled out (HEADER_FILE_ONLY)
+# and the OS libraries linked (design 8.3; tools/test_layering.py OS_ALLOW names the two files). lj_midi_null.c is
+# always in the tree and is the backend everywhere else (Linux CI, the tests on every OS run through lj_midi_inject).
+if(WIN32)
+  set(LJ_MIDI_SKIP "${CMAKE_SOURCE_DIR}/src/io/lj_midi_null.c" "${CMAKE_SOURCE_DIR}/src/io/lj_midi_coremidi.c")
+  target_link_libraries(lj_io PUBLIC winmm)
+elseif(APPLE)
+  set(LJ_MIDI_SKIP "${CMAKE_SOURCE_DIR}/src/io/lj_midi_null.c" "${CMAKE_SOURCE_DIR}/src/io/lj_midi_winmm.c")
+  target_link_libraries(lj_io PUBLIC "-framework CoreMIDI" "-framework CoreFoundation")
+else()
+  set(LJ_MIDI_SKIP "${CMAKE_SOURCE_DIR}/src/io/lj_midi_winmm.c" "${CMAKE_SOURCE_DIR}/src/io/lj_midi_coremidi.c")
+endif()
+set_source_files_properties(${LJ_MIDI_SKIP} PROPERTIES HEADER_FILE_ONLY TRUE)
+foreach(sub test_model_w2_range test_model_w2_cuepages test_runner_loop test_intensity_rule test_statics test_midi_map test_prefs)
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+# profiles_ids: every exe id of the W2 tier-1 families 15/02-15/05 has a hand file (design 10 W2 acceptance 5, ME-76).
+# Red until the W2 profiles track lands the hand files; the message names each missing id.
+if(Python3_FOUND)
+  add_test(NAME profiles_ids COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/check_profiles.py" --tier 2 3 4 5)
+endif()
+# Expected-pending (contracts finish 2026-10-22): profiles_ids stays red until the W2 profiles track lands the
+# 15/02-15/05 hand files; DISABLED keeps it listed in every ctest summary ("Not Run (Disabled)") without
+# turning main red. The profiles track deletes this line in the commit that lands the hand files.
+if(Python3_FOUND)
+  set_tests_properties(profiles_ids PROPERTIES DISABLED TRUE)
+endif()

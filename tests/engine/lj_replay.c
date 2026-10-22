@@ -65,6 +65,10 @@ static const char *const rp_class_words[]  = { "none", "intensity", "shutter", "
                                                "level", "speed", "lamp", "special", "switch", "smoke", "haze", "haze_fan", NULL };   /* enum lj_ch_class order */
 static const char *const rp_master_words[] = { "prop", "lotp", "htp", "none", NULL };       /* enum lj_master_mode */
 static const char *const rp_seqint_words[] = { "default", "htp", "lotp", NULL };            /* enum lj_seq_int_mode */
+/* W2 (replay track fills the bodies that need more than a post): */
+static const char *const rp_transp_words[] = { "use", "force", "ignore", NULL };            /* enum lj_transparent_mode */
+static const char *const rp_smoke_words[]  = { "button", "timer", "level", "duration", "cycle", "reset", "haze", "fan", NULL };   /* enum lj_smoke_ctl */
+static const char *const rp_pref_words[]   = { "keep_seq_blind", "global_chase_rate", "disable_chase_fade", "statics_fadetime", "hotkey_trig_dir", NULL };   /* enum lj_engine_pref */
 static const char *const rp_status_words[] = { "empty", "running", "stopped", "load_error", "disabled", "edit", "out", NULL };   /* LJ_SLOT_* */
 static const char *const rp_pending_words[] = { "link_cue", "bg", "genmacro", NULL };
 
@@ -840,6 +844,99 @@ static int rp_at(rp *p, char **argv, int argc)
         if (argc != 3) return rp_fail(p, "sacn_cfg takes no arguments");
         lj_sacn_cfg_default(&p->sacn, "replay");
         c.kind = LJ_CMD_SACN_CFG; c.sacn = &p->sacn;
+    /* ---- W2 forms (docs/replay-grammar.md "W2 command lines"); parse + post here, the engine track makes them act ---- */
+    } else if (!strcmp(w, "bg_on")) {                          /* at k bg_on bg<1..5>|all 0|1 */
+        if (argc != 5 || rp_runner(argv[3], &id) || (id != LJ_RUN_ALL && (id < LJ_RUN_BG0 || id >= LJ_RUN_BG0 + LJ_BG_SLOTS)) || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "bg_on: expected `bg_on bg<k>|all 0|1`");
+        c.kind = LJ_CMD_BG_ON; c.a = id; c.b = (uint32_t)v;
+    } else if (!strcmp(w, "static_act")) {                     /* at k static_act p.s [level=<0..100>] [scope=add|slot|page|group|all|solo_slot|solo_page|solo_group|solo_all] */
+        long pg, sl;
+        if (argc < 4 || rp_pageslot(argv[3], &pg, &sl)) return rp_fail(p, "static_act: expected `static_act <page>.<slot> [level=] [scope=]`");
+        if (pg > p->show->npages || p->show->pages[pg - 1].slot[sl - 1].kind == LJ_STATIC_EMPTY) return rp_fail(p, "static %ld.%ld is not defined", pg, sl);
+        c.kind = LJ_CMD_STATIC_ACTIVATE; c.a = (uint32_t)lj_static_global_index((int)pg, (int)sl); c.b = 0xFFFF; c.c = 0xFF;
+        c.st = &p->show->pages[pg - 1].slot[sl - 1];
+        for (i = 4; i < argc; i++) {
+            if (!strncmp(argv[i], "level=", 6)) { if (rp_num(argv[i] + 6, 0, 100, &v)) return rp_bad(p, "level", argv[i] + 6); c.b = (uint32_t)v; }
+            else if (!strncmp(argv[i], "scope=", 6)) { int s = lj_word_index(lj_replace_words, argv[i] + 6); if (s < 0) return rp_bad(p, "scope", argv[i] + 6); c.c = (uint32_t)s; }
+            else return rp_fail(p, "static_act: unknown argument %s", argv[i]);
+        }
+    } else if (!strcmp(w, "static_deact")) {                   /* at k static_deact p.s | all | page <p> */
+        long pg, sl;
+        c.kind = LJ_CMD_STATIC_DEACTIVATE;
+        if (argc == 4 && !strcmp(argv[3], "all")) c.a = LJ_RUN_ALL;
+        else if (argc == 5 && !strcmp(argv[3], "page") && !rp_num(argv[4], 1, LJ_STATIC_PAGES_MAX, &v)) { c.a = LJ_RUN_ALL; c.c = (uint32_t)v; }
+        else if (argc == 4 && !rp_pageslot(argv[3], &pg, &sl)) c.a = (uint32_t)lj_static_global_index((int)pg, (int)sl);
+        else return rp_fail(p, "static_deact: expected `static_deact <page>.<slot>` | `all` | `page <p>`");
+    } else if (!strcmp(w, "smoke")) {                          /* at k smoke button|timer 0|1 [ms] | level|duration|cycle|haze|fan <v> | reset */
+        int s;
+        if (argc < 4 || (s = lj_word_index(rp_smoke_words, argv[3])) < 0) return rp_fail(p, "smoke: expected button|timer|level|duration|cycle|reset|haze|fan");
+        c.kind = LJ_CMD_SMOKE; c.a = (uint32_t)s;
+        if (s == LJ_SMOKE_RESET) { if (argc != 4) return rp_fail(p, "smoke reset takes no value"); }
+        else if (argc < 5 || rp_num(argv[4], 0, s == LJ_SMOKE_DURATION_MS || s == LJ_SMOKE_CYCLE_MS ? LJ_SMOKE_CYCLE_MAX_MS : (s == LJ_SMOKE_BUTTON || s == LJ_SMOKE_TIMER) ? 1 : 255, &v)) return rp_fail(p, "smoke: bad value");
+        else { c.b = (uint32_t)v; if (argc == 6) { if (s != LJ_SMOKE_BUTTON || rp_num(argv[5], 0, LJ_SMOKE_DURATION_MAX_MS, &v)) return rp_fail(p, "smoke: [ms] only after button"); c.c = (uint32_t)v; } else if (argc > 6) return rp_fail(p, "smoke: too many arguments"); }
+    } else if (!strcmp(w, "flash_latch")) {                    /* at k flash_latch <seq> 0|1 : FLASH with c = 1 (Latch Flash Sequences); `flash_latch 0 0` = Release latched Flash */
+        if (argc != 5 || rp_num(argv[3], 0, LJ_NUMBER_MAX, &n) || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "flash_latch: expected `flash_latch <seq> 0|1`");
+        c.kind = LJ_CMD_FLASH; c.b = (uint32_t)v; c.c = (uint32_t)(n != 0);
+        if (n && !(c.seq[0] = (const lj_sequence *)lj_table_get(&p->show->sequences, (uint32_t)n))) return rp_fail(p, "seq %ld is not defined", n);
+    } else if (!strcmp(w, "transparent")) {                    /* at k transparent use|force|ignore */
+        int m;
+        if (argc != 4 || (m = lj_word_index(rp_transp_words, argv[3])) < 0) return rp_fail(p, "transparent: expected use|force|ignore");
+        c.kind = LJ_CMD_TRANSPARENT; c.b = (uint32_t)m;
+    } else if (!strcmp(w, "chase_tap")) {                      /* at k chase_tap slot<k>|all [at_us=<us>] : the 1 ms tap timer */
+        if (argc != 4 || rp_runner(argv[3], &id) || (id != LJ_RUN_ALL && id >= LJ_CUE_SLOTS)) return rp_fail(p, "chase_tap: expected `chase_tap slot<k>|all [at_us=]`");
+        c.kind = LJ_CMD_CHASE_TAP; c.a = id;
+    } else if (!strcmp(w, "cue_time")) {                       /* at k cue_time cue|slot<k> <0..999> : == time (the 13 faders) */
+        if (argc != 5 || rp_num(argv[4], LJ_TIME_PCT_CUE, LJ_TIME_PCT_MAX, &v)) return rp_fail(p, "cue_time: expected `cue_time cue|slot<k> <0..999>`");
+        if (!strcmp(argv[3], "cue")) n = 0; else if (rp_slotword(argv[3], &n)) return rp_fail(p, "cue_time: expected cue|slot<k>");
+        c.kind = LJ_CMD_CUE_TIME; c.a = (uint32_t)n; c.b = (uint32_t)v;
+    } else if (!strcmp(w, "loop")) {                           /* at k loop slot<k> [dir=] [first=] [last=] [loops=] [end=] [goto=] [link=] [spt=] [atpt=] [tol=] : the Loop Options dialog on the loaded cue's slot */
+        lj_cue_slot *s;
+        if (argc < 4 || rp_slotword(argv[3], &n)) return rp_fail(p, "loop: expected `loop slot<k> key=value ...`");
+        if (!p->cue) return rp_fail(p, "loop: no cue loaded in the scenario");
+        s = &p->cue->slot[n - 1];                               /* the harness edits the pinned record the way the dialog does (under lj_lock in the app) */
+        for (i = 4; i < argc; i++) {
+            char key[32]; const char *val; int d;
+            if (rp_key(argv[i], key, sizeof key, &val)) return rp_fail(p, "loop: bad field %s", argv[i]);
+            if (!strcmp(key, "dir")) { if ((d = lj_word_index(lj_dir_words, val)) < 0) return rp_bad(p, key, val); s->dir = (uint8_t)d; }
+            else if (!strcmp(key, "end")) { if ((d = lj_word_index(lj_end_words, val)) < 0) return rp_bad(p, key, val); s->end_action = (uint8_t)d; }
+            else if (!strcmp(key, "first")) { if (rp_num(val, 0, LJ_SCENES_MAX, &v)) return rp_bad(p, key, val); s->first = (uint16_t)v; }
+            else if (!strcmp(key, "last")) { if (rp_num(val, 0, LJ_SCENES_MAX, &v)) return rp_bad(p, key, val); s->last = (uint16_t)v; }
+            else if (!strcmp(key, "loops")) { if (rp_num(val, 0, 65535, &v)) return rp_bad(p, key, val); s->loops = (uint16_t)v; }
+            else if (!strcmp(key, "goto")) { if (rp_num(val, 0, LJ_SCENES_MAX, &v)) return rp_bad(p, key, val); s->goto_scene = (uint16_t)v; }
+            else if (!strcmp(key, "link")) { if (rp_num(val, 0, LJ_NUMBER_MAX, &v)) return rp_bad(p, key, val); s->link_cue = (uint32_t)v; }
+            else if (!strcmp(key, "spt")) { if (rp_num(val, 1, 255, &v)) return rp_bad(p, key, val); s->scenes_per_trig = (uint8_t)v; }
+            else if (!strcmp(key, "atpt")) { if (rp_num(val, 1, 255, &v)) return rp_bad(p, key, val); s->audio_trigs_per_trig = (uint8_t)v; }
+            else if (!strcmp(key, "tol")) { if (rp_num(val, 0, 1, &v)) return rp_bad(p, key, val); s->trig_on_load = (uint8_t)v; }
+            else return rp_fail(p, "loop: unknown field %s", key);
+        }
+        if (lj_cue_validate(p->cue)) return rp_fail(p, "loop: %s", lj_cue_validate(p->cue));
+        c.kind = LJ_CMD_LOOP_OPTS; c.a = (uint32_t)(LJ_RUN_SLOT0 + n - 1); c.slot = s;
+    } else if (!strcmp(w, "link")) {                           /* at k link : the harness services pending_link_cue the way lj_app_service_pending does (LOAD_CUE of that number) */
+        const lj_cue *cue;
+        if (argc != 3) return rp_fail(p, "link takes no arguments");
+        if (rp_run_to(p, k - 1)) return -1;
+        if (!p->view.pending_link_cue) return rp_fail(p, "link: no pending link cue after tick %ld", k - 1);
+        cue = (const lj_cue *)lj_table_get(&p->show->cues, p->view.pending_link_cue);
+        if (!cue) return rp_fail(p, "link: cue %u is not defined", p->view.pending_link_cue);
+        c.kind = LJ_CMD_LOAD_CUE; c.a = p->view.pending_link_cue; c.cue = cue;
+        for (i = 0; i < LJ_CUE_SLOTS; i++) c.seq[i] = cue->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, cue->slot[i].seq) : NULL;
+        c.bg = cue->bg_cue ? (const lj_bgcue *)lj_table_get(&p->show->bgcues, cue->bg_cue) : NULL;
+        if (c.bg) for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
+        c.gm = cue->gen_macro ? (const lj_genmacro *)lj_table_get(&p->show->macros, cue->gen_macro) : NULL;
+        p->cue = (lj_cue *)cue;
+    } else if (!strcmp(w, "htp_groups")) {                     /* at k htp_groups [masters=0|1] : the HTP table swap after `gpatch` edits (post-build gpatch lines are W2 replay-track grammar) */
+        c.kind = LJ_CMD_HTP_GROUPS; c.patch = p->show->patch; c.b = LJ_HTP_MASTERS_DEFAULT;
+        if (argc == 4) { if (strncmp(argv[3], "masters=", 8) || rp_num(argv[3] + 8, 0, 1, &v)) return rp_fail(p, "htp_groups: expected [masters=0|1]"); c.b = (uint32_t)v; }
+        else if (argc != 3) return rp_fail(p, "htp_groups: too many arguments");
+    } else if (!strcmp(w, "global_patch")) {                   /* at k global_patch : the patch swap */
+        if (argc != 3) return rp_fail(p, "global_patch takes no arguments");
+        c.kind = LJ_CMD_GLOBAL_PATCH; c.patch = p->show->patch;
+    } else if (!strcmp(w, "default_out")) {                    /* at k default_out : rank 0 re-read after a runtime `default` edit */
+        if (argc != 3) return rp_fail(p, "default_out takes no arguments");
+        c.kind = LJ_CMD_DEFAULT_OUT; c.default_out = p->show->default_out;
+    } else if (!strcmp(w, "pref")) {                           /* at k pref keep_seq_blind|global_chase_rate|disable_chase_fade|statics_fadetime|hotkey_trig_dir 0|1 */
+        int m;
+        if (argc != 5 || (m = lj_word_index(rp_pref_words, argv[3])) < 0 || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "pref: expected `pref <name> 0|1`");
+        c.kind = LJ_CMD_PREFS; c.a = (uint32_t)m; c.b = (uint32_t)v;
     } else return rp_fail(p, "unknown command %s", w);
     if (rp_run_to(p, k - 1)) return -1;
     if (lj_engine_cmd(p->e, &c)) return rp_fail(p, "lj_engine_cmd: command array full");
@@ -952,6 +1049,18 @@ static int rp_expect_view(rp *p, char **argv, int argc)
         else if (!strcmp(key, "freeze")) got = p->view.freeze;
         else if (!strcmp(key, "offline")) got = p->view.offline;
         else if (!strcmp(key, "chase_ms")) got = p->view.chase_ms;
+        /* W2 fields */
+        else if (!strcmp(key, "bg_any")) got = p->view.bg_any;
+        else if (!strcmp(key, "statics_any")) got = p->view.statics_any;
+        else if (!strcmp(key, "flash_latched")) got = p->view.flash_latched;
+        else if (!strcmp(key, "flash_seq")) got = p->view.flash_seq;
+        else if (!strcmp(key, "transparent")) got = p->view.transparent_mode;
+        else if (!strcmp(key, "smoke")) got = p->view.smoke_active;
+        else if (!strcmp(key, "haze")) got = p->view.haze_level;
+        else if (!strcmp(key, "chase_tap_us")) got = (long)p->view.chase_tap_us;
+        else if (!strcmp(key, "cue")) got = (long)p->view.cue_number;
+        else if (!strcmp(key, "bg")) got = (long)p->view.bg_number;
+        else if (!strcmp(key, "snapshot_tick")) got = (long)p->view.snapshot_tick;
         else return rp_fail(p, "expect_view: unknown field %s", key);
         if (got != v) rp_fail(p, "tick %ld view %s expected %ld got %ld", k, key, v, got);
     }

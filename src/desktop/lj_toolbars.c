@@ -314,3 +314,17 @@ void lj_desktop_seqcue_fields(uint32_t seq_no, const char *seq_name, int scene, 
     snprintf(counter, sizeof counter, "%d:%d", scene, scenes);   /* X:Y = current : last [01 s2.3.1] */
     if (lj_tb_counter) lj_w_set_caption(lj_tb_counter, counter);
 }
+
+/* ---- W2 contract stubs (lj_desktop.h additions); the desktop track replaces them ---- */
+static uint8_t lj_tb_led_state[LJ_LED_COUNT];
+void lj_desktop_led_set(enum lj_desktop_led led, int on)
+{
+    lj_widget *w;
+    if ((int)led < 0 || led >= LJ_LED_COUNT) return;
+    lj_tb_led_state[led] = (uint8_t)(on != 0);
+    w = btn(led == LJ_LED_BGCUE ? B_CL_BGCUE : led == LJ_LED_STATICS ? B_CL_STATICS : B_FX_SMOKE);
+    if (w && led != LJ_LED_SMOKE) lj_w_led_set(w, on);
+}
+int  lj_desktop_led_get(enum lj_desktop_led led) { return ((int)led >= 0 && led < LJ_LED_COUNT) ? lj_tb_led_state[led] : 0; }
+void lj_desktop_hotkey_setup_set(int setup, int enabled) { (void)setup; (void)enabled; }   /* W2 desktop track: the Setup > Hotkeys radio items */
+void lj_desktop_toolbar_gates(const lj_sysprefs *prefs) { (void)prefs; }                     /* W2 desktop track: ctx->allow_* <- prefs, bar visibility */

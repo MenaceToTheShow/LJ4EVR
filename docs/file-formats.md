@@ -260,3 +260,101 @@ separator.
 | `Hardware.Ini` | `[MIDI]` | device (W5) | - |
 
 Sources for the LJ2 names: 07 s2, 01 s8, 11 E27, 18 s2 (design 5.1).
+
+## W2 additions (contracts seat, 2026-10-21; bodies by the W2 model track)
+
+Rules unchanged. Every numeric key of the kinds below is read through `lj_kv_range` (ME-77):
+a value outside its range rejects the line instead of aliasing into range.
+
+### `Cues\CuePageInfo.Dat` (`lj_cuepage.h` over the W1 `lj_cue_pages_load/save`, kind `cuepages`)
+
+Unchanged grammar (`page n name= cues=`); `lj_cuepages` is the in-memory set with the current
+tab and cursor. Ranges: `n` 1..255, cue numbers 1..99999999, at most 255 cues per page.
+
+### `GroupInfo.dat` (`lj_groups.h`, kind `groups`) gains HTP group names
+
+```
+LJ4 groups 1
+group 1 name=Front members=1,2
+htp 3 name="House warm"
+```
+
+`htp n name=` for n in 1..24 (absent = `HTP group n`, PROPOSAL); the W1 reader skips the key.
+Membership stays in the patch (`htp=` mask of the patch file).
+
+### `Statics.dat` (`lj_statics.h`, kind `statics`) gains groups and the visible-slot count
+
+```
+LJ4 statics 1
+group 1 name=Strobes
+page 1 name="Page 1" n=20
+slot 1 name="Strobe A" ... groups=1 kind=recorded link=0,0
+```
+
+`group n name=` for n in 1..64 (the bit of `groups=`; absent = `Group n` [14 sB.3]); `n=` on the
+page line is the Statics 2 "Visible Slots" 1..64 (ME-30, default 20 PROPOSAL rig 14 sB.8 item 2).
+Ranges: `level` 0..100, `ft` 0..60000, link scene 0..998.
+
+### The global patch file `.GPA` (`lj_patch.h`, kind `patch`)
+
+The W1 `LJ4 patch 1` grammar in a file the user names from the Global Patch dialog's File menu
+(LJ2's `.GPA` extension; its binary layout is undecoded, D5). The live patch is written at show
+save as `<library>\GlobalPatch.GPA` (PROPOSAL rig). Ranges: `sl` 1..4, `sc` 1..512, `min`/`max`
+0..255, `htp` 0..16777215.
+
+### `DefaultOut.dat` (`lj_defaultout.h` over the W1 `lj_defaultout_load/save`, kind `defaultout`)
+
+Unchanged grammar. "Use Current Scene" merges every Snap/Fade channel of the current scene over
+it; a scene with a preset reference or an active movement macro is refused [01 s6.3].
+
+### `Notes.txt` (`lj_notes.h`)
+
+Plain CP1252 text, no header, at most 64 KB (PROPOSAL rig: LJ2's own notes file is undecoded;
+`System\Notes\*.rtf` are Martin's profile notes, never read).
+
+### `Hotkeys\SetupN.Hot` (`io/lj_hotkeys.h`, kind `hot`; W1 grammar)
+
+N = 1..8; the current setup is `Main.Ini [HOTKEYS] File=SetupN.Hot` (ours; the shipped `File=` is
+empty), `Enabled` / `DialogDisable` as shipped. W2 moves the folder under the user library
+(`<library>\Hotkeys\`, created by `lj_library_create` since W1) so backups carry the setups (F51).
+
+### `MIDIIn\MIDIIn.Ini` and `MIDIIn\MIDIMap.dat` (`io/lj_midi.h`)
+
+`MIDIIn.Ini` keeps LJ2's shipped keys verbatim (`[SETUP] DeviceCode Note0 FlashOff LatchOff
+ListOff BGLatchOff SeqOff`, `[SEQ] SeqEnable SeqChannel`, `[CUE] CueEnable CueChannel`,
+`[BGCUE] BGCueEnable BGCueChannel`, `[CUELIST] CueListEnable CueListChannel`, `[FUNCTIONS]
+FunctionsEnable FunctionsChannel`, `[OPTIONS] OnTop StartMinimized AutoSave`; channel 16 = All
+as shipped). The note tables are ours (kind `midimap`):
+
+```
+LJ4 midimap 1
+map kind=seq ch=0 note=60 num=12
+map kind=fn ch=1 note=61 fn=LJ_FN_BLACKOUT_RESTORE
+```
+
+`kind` seq|cue|bgcue|cl|fn, `ch` 0 (All) or 1..16, `note` 0..127, `num` the record number
+(seq/cue/bgcue/cl), `fn` the `lj_fn_table` name. Validator: `num` != 0 unless `kind=fn`, `fn`
+known.
+
+### Backups `.lj4b` (`lj_library.h`, W1 format)
+
+Unchanged. W2 reads `notes.txt` and the per-kind counts back for the Restore dialog
+(`lj_library_backup_notes`, `lj_library_backup_lists`).
+
+### Ini keys added in W2
+
+| File | Section | Keys | Owner |
+|---|---|---|---|
+| `Main.Ini` | `[PREFS]` | `BitmapCache WarnSeq WarnCue WarnCueList WarnOWSeq WarnOWCue WarnOWCueList WarnBO WarnBlind AllowBlind AllowBlindSeq KeepSeqBlind AllowOffline WarnOffline CloseConfirm ViewSCBar ViewClBar ViewFixBar ViewStatusBar ExtMem ExtMem10 Primary Secondary QuickSeq QuickCue QuickCl QuickMacro MoveId MarkActiveFixtures ConfineToDesktop ConfineToWindowsDesktop SecondaryMonitor` (LJ2's shipped keys; `AllowBlind` = Allow freeze output and `WarnBlind` = Show Freeze Warning are a PROPOSAL mapping) | app (`lj_sysprefs`, `windows/lj_prefs.h`) |
+| `Main.Ini` | `[SOLO]` | `Enabled` (Allow fixture solo selection) | app |
+| `Main.Ini` | `[DESKTOP]` | `Restore Maximized Left Top Width Height` | app |
+| `Main.Ini` | `[HOTKEYS]` | `Enabled DialogDisable File` | app |
+| `Main.Ini` | `[MISC]` | `ShowHotkeyWarning ShowNoHardwareWarning SNAPSHOTSETTINGS RTSNAPSHOTPARAM RTSNAPSHOTSCENES SNAPSHOTINSETTINGSIN SANDNET` | app / windows (Snapshot) |
+| `Main.Ini` | `[OFFLINE]`, `[CAPTURE]` | `Enable43`, `Enable` (inert External Links boxes, ME-31) | app |
+| `Main.Ini` | `[RESTORE]` | `Password AtStartup PassOnRestore` (ours, PROPOSAL) | app |
+| `Main.Ini` | `[CUE]` | `DisableChaseFade CueMacroLinked MacroScaleRange MacroFadeIndex HotkeyChangeSeqDir` (the exe's; `DisableChaseFade` moves here from `forms.ini [CUE]`) | windows (Cue control) |
+| `Main.Ini` | `[SMOKE]` | `UseLevel TimerOnStart Level Duration Cycle HazerLevel HazerFan Reset Top` | windows (Smoke Control) |
+| `Main.Ini` | `[STATICS2]` | `Width Height LvlVisible ModeVisible SlotsVisible TabWidth TabHeight Multiline PRWidth` (the exe's Statics 2 keys, ME-30) | windows (Statics 2) |
+| `Main.Ini` | `[STATICS]` | `Use Fadetime LevelAutoEnable LevelAutoDisable DefaultLevel` (W1 row; now read) | windows |
+| `Main.Ini` | `[LOOPFORM]`, `[CUETIMEFORM]` | `Top` / `Top Expanded` | windows |
+| `Main.Ini` | `[GLOBALINTENSITY]` | `Sub1..Sub8 MasterOnly SyncBump SyncFlags` (the exe's, beside the W1 keys) | windows |

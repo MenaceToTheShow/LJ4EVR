@@ -100,8 +100,9 @@ void lj_runner_enter(lj_runner *r, uint16_t scene, uint64_t t, uint32_t tick_us,
 }
 
 /* Advance one scene in `dir` with the loop rules of 03 s5.5; returns 1 when an end action
- * ended the run (the runner is stopped / out / linked), 0 otherwise. */
-static int lj_runner_advance(lj_runner *r, int dir, uint32_t *rng, int cue_edit, uint32_t *link_out)
+ * ended the run (the runner is stopped / out / linked), 2 = Goto (the caller enters r->scene), 0 otherwise.
+ * W2: public as lj_runner_loop_step (lj_runner.h) so tests/engine/test_runner_loop.c and the replay hit it directly. */
+int lj_runner_loop_step(lj_runner *r, int dir, uint32_t *rng, int cue_edit, uint32_t *link_out)
 {
     int first = r->first - 1, last = r->last - 1, n = last - first + 1, s = r->scene, at_end = 0;
     if (n <= 1) return 1;                                      /* identical first and last scene: nothing to advance, status Stop [03 s5.1] */
@@ -159,7 +160,7 @@ uint32_t lj_runner_trig(lj_runner *r, int dir, int scenes, uint64_t at, uint32_t
     if (!lj_runner_active(r) || r->stopped || r->seq->n <= 1) return 0;   /* F14: stopped slots ignore every trig source */
     if (r->spt_left) return 0;                                 /* F11: no re-trig until the extra scenes are done */
     if (dir == 0xFF) dir = r->dir;
-    rc = lj_runner_advance(r, dir, rng, cue_edit, &link);
+    rc = lj_runner_loop_step(r, dir, rng, cue_edit, &link);
     if (rc == 1) return link;
     lj_runner_enter(r, r->scene, at, tick_us, merged, cue_pct);
     if (!scenes) scenes = r->scenes_per_trig;
@@ -175,8 +176,8 @@ uint32_t lj_runner_schedule(lj_runner *r, uint64_t now, uint32_t tick_us, const 
     if (!(r->trig == LJ_TRIG_AUTO || r->chase_on || r->spt_left)) return 0;   /* F13: auto; F10: chase; F11: extra scenes auto-timed */
     while (now >= r->scene_due_us && n < LJ_CATCHUP_MAX) {    /* E10: scene_due += scaled time, drift-free */
         uint64_t t = r->scene_due_us;
-        if (r->spt_left) { rc = lj_runner_advance(r, LJ_DIR_FWD, rng, cue_edit, &link); r->spt_left--; }   /* F11: extra scenes forward */
-        else rc = lj_runner_advance(r, r->dir, rng, cue_edit, &link);
+        if (r->spt_left) { rc = lj_runner_loop_step(r, LJ_DIR_FWD, rng, cue_edit, &link); r->spt_left--; }   /* F11: extra scenes forward */
+        else rc = lj_runner_loop_step(r, r->dir, rng, cue_edit, &link);
         if (rc == 1) break;
         lj_runner_enter(r, r->scene, t, tick_us, merged, cue_pct);
         if (rc == 2) break;                                    /* Goto scene: entered, then stopped */
@@ -254,4 +255,20 @@ int lj_runner_status(const lj_runner *r)
     if (r->out) return LJ_SLOT_OUT;
     if (r->stopped || r->seq->n <= 1 || r->first == r->last) return LJ_SLOT_STOPPED;   /* Stop: by the user, a static sequence, identical limits, or the end action (Link shows Stop + the runner's link flag; no LJ_SLOT_LINK in the contract) */
     return LJ_SLOT_RUNNING;
+}
+
+/* ---- W2: the 03 s5.9 rule as a pure function (lj_runner.h); lj_merge.c's cue merge is its caller once the engine track lands ---- */
+int lj_seq_intensity_rule(int mode, const uint8_t active[LJ_CUE_SLOTS], const uint8_t programmed[LJ_CUE_SLOTS], const uint8_t faded[LJ_CUE_SLOTS], const uint8_t si[LJ_CUE_SLOTS], uint8_t *out)
+{
+    int k, win = -1, bestkey = 0;
+    for (k = LJ_CUE_SLOTS - 1; k >= 0; k--) {                   /* slot 12 down to 1 [03 s5.3, F23] */
+        int key;
+        if (!active[k]) continue;
+        if (mode == LJ_SEQINT_DEFAULT) { win = k; break; }        /* the highest active slot wins, then its SI scales it */
+        key = (programmed[k] * si[k] + 127) / 255;                /* HTP / LoTP: programmed x SI selects (LORD_ENGINE-17) */
+        if (win < 0 || (mode == LJ_SEQINT_HTP ? key > bestkey : key < bestkey)) { win = k; bestkey = key; }
+    }
+    if (win < 0) return -1;
+    if (out) *out = (uint8_t)((faded[win] * si[win] + 127) / 255);   /* output = the winner's faded value x SI, nearest */
+    return win;
 }

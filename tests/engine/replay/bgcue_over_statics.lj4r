@@ -1,0 +1,20 @@
+LJ4 replay 1
+# bgcue_over_statics (03 s7, s8: "higher priority than the current cue, but lower priority than the current background
+# cue"; design 3.4 rank 4 < 5; BG slot 5 over slot 1, LJ_BG_SLOT5_OVER_1; forward only, NOLOOP stops after the last scene):
+# a static programs 1:1=200; bg cue 1 slot 1 programs 1:1=20 and slot 5 programs 1:1=250 -> output 250 (layer 5);
+# `bg_on bg5 0` -> 20 (slot 1); `load_bg 0` -> 200 (the static). A transparent bg cue 2 with only slot 3 keeps slots 1 and 5.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="bg1" scene st=60000 ft=50 ch 1:1=20:S
+seq 5 name="bg5" scene st=60000 ft=50 ch 1:1=250:S
+seq 3 name="bg3" scene st=60000 ft=50 ch 1:2=77:S
+bg 1 name="BG"
+bgslot 1 seq=1
+bgslot 5 seq=5
+bg 2 name="BGT" transparent=1
+bgslot 3 seq=3 mode=noloop
+static 1.1 name="S" act=toggle rep=add ft=50 level=100
+ch 1:1=200:S

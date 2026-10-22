@@ -1,0 +1,18 @@
+LJ4 replay 1
+# chase_030ms (11 F10, E9; LJ_CHASE_FADE_IS_PERIOD, LJ_CHASE_GLOBAL_RATE, LJ_CHASE_MIN_MS; rig M3, LORD_ENGINE-19):
+# slot 1 is manual; two chase_tap lines 30 ms apart (at_us= carries the 1 ms stamps 100000 and 130000) set the global
+# period to 30 ms; with `chase slot1 1` the slot re-arms every 30 ms exactly to the tick (boundaries at ceil(30 n / 25)
+# ticks), the fade := 30 ms (below LJ_SNAP_MS: snaps, rig M3), and the period is not scaled by `cue_time cue 50`.
+# `pref disable_chase_fade 1` leaves the programmed 2000 ms fade snapped as well (F10). A second cue loaded later keeps
+# the 30 ms period (global chase rate).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="chase" scene st=60000 ft=2000 ch 1:1=0:S
+scene st=60000 ft=2000 ch 1:1=255:S
+cue 1
+slot 1 seq=1 trig=manual
+cue 2
+slot 1 seq=1 trig=manual

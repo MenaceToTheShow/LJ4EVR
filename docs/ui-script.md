@@ -98,3 +98,23 @@ assert_frame 1:2=255
 shot docs/screenshots/w1/cue-running.png
 quit
 ```
+
+## W2 verbs (contracts seat, 2026-10-21; parsed in `lj_uiscript.c`, bodies by the W2 app track except `midi`)
+
+Window names gain the W2 ids of `lj_win_id_name()`: `loop_options cue_time cue_page_name
+cue_pages_reorder bgcue_form select_bgcue save_bgcue statics2_form statics2_prefs static_props
+smoke_control position_presets save_preset user_palettes fixture_groups intensity_groups
+htp_groups global_patch default_output snapshot edit_hotkeys hotkey_function midi_in
+system_prefs delete_seq delete_cue delete_cl delete_bg delete_macro user_libraries user_lib_name
+backup restore notes about striking_lamps` (DFM classes in `docs/w2-contracts.md`).
+
+| Line | Effect |
+|---|---|
+| `midi <hex> <hex> <hex>` | `lj_midi_inject` of the 3 bytes (`midi 90 3C 7F` = note 60 on, channel 1, velocity 127); the next idle pass dispatches it on the UI thread through the map (the same path as a device) |
+| `hotkey <setup> <key>` | loads hotkey setup 1..8 (`LJ_ACT_HOTKEY_SETUP`) and presses `<key>` (the `key` grammar) through `lj_desktop_key` with the Sequence window focused |
+| `assert_led <name> 0\|1` | `lj_desktop_led_get`: `bgcue`, `statics`, `smoke` |
+| `assert_view <field>=<value> ...` | the W1 verb; W2 field names: `bg_any statics_any flash_latched flash_seq transparent_mode smoke_active haze_level chase_ms cue_number bg_number pending_link_cue snapshot_tick` (also accepted as two bare args `assert_view <field> <value>`) |
+| `assert_file_line <path> "text"` | the file (library-relative like `assert_file`) contains the line exactly once |
+| `sleep_until_tick <n>` | lets the loop run until the app's view copy reports `tick_no >= n` |
+
+Until the app track lands, every W2 line except `midi` fails with `<verb>: W2 verb not implemented yet`.

@@ -26,16 +26,20 @@
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_cue_form.h"
 #include "windows/lj_windows.h"
+#include "io/lj_midi.h"
 #include "miniz.h"
 
 enum { LJ_US_ARGS = 6 };
 enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLCLICK, LJ_US_DRAG, LJ_US_TYPE, LJ_US_KEY, LJ_US_WAIT, LJ_US_SHOT,
                   LJ_US_ASSERT_CAPTION, LJ_US_ASSERT_TEXT, LJ_US_ASSERT_ENABLED, LJ_US_ASSERT_VISIBLE, LJ_US_ASSERT_FRAME, LJ_US_ASSERT_VIEW,
-                  LJ_US_ASSERT_FILE, LJ_US_ASSERT_PPS, LJ_US_ASSERT_CLIENT, LJ_US_ASSERT_POS, LJ_US_LOG, LJ_US_QUIT, LJ_US_VERBS };
+                  LJ_US_ASSERT_FILE, LJ_US_ASSERT_PPS, LJ_US_ASSERT_CLIENT, LJ_US_ASSERT_POS, LJ_US_LOG, LJ_US_QUIT,
+                  /* W2 (appended) */ LJ_US_MIDI, LJ_US_HOTKEY, LJ_US_ASSERT_LED, LJ_US_ASSERT_FILE_LINE, LJ_US_SLEEP_UNTIL_TICK, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
     { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
-    { "assert_frame", 1, 2 }, { "assert_view", 1, 4 }, { "assert_file", 2, 2 }, { "assert_pps", 3, 3 }, { "assert_client", 3, 3 }, { "assert_pos", 3, 3 }, { "log", 1, 1 }, { "quit", 0, 0 } };
+    { "assert_frame", 1, 2 }, { "assert_view", 1, 4 }, { "assert_file", 2, 2 }, { "assert_pps", 3, 3 }, { "assert_client", 3, 3 }, { "assert_pos", 3, 3 }, { "log", 1, 1 }, { "quit", 0, 0 },
+    /* W2 (appended; docs/ui-script.md "W2 verbs"): parsed and type-checked here, executed by the app track (lj_us_exec_w2) */
+    { "midi", 3, 3 }, { "hotkey", 2, 2 }, { "assert_led", 2, 2 }, { "assert_file_line", 2, 2 }, { "sleep_until_tick", 1, 1 } };   /* assert_view gains W2 field names inside its W1 row */
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -575,6 +579,22 @@ static int lj_us_assert_pps(const lj_us_stmt *st)
     return -1;
 }
 
+/* ---- W2 verbs (lj_uiscript.h): the app track fills this; until then every W2 line fails with its name ---- */
+static int lj_us_exec_w2(lj_us_stmt *st)
+{
+    switch (st->verb) {
+    case LJ_US_MIDI: {                                        /* the test seam is real already: inject, then one dispatch pass */
+        uint8_t m[3]; int i;
+        for (i = 0; i < 3; i++) { long v = strtol(st->arg[i], NULL, 16); m[i] = (uint8_t)v; }
+        lj_midi_inject(m);
+        return 0;
+    }
+    default:
+        lj_us_failf(lj_us.line, "%s: W2 verb not implemented yet (app track)", lj_us_verbs[st->verb].name);
+        return -1;
+    }
+}
+
 /* ---- step ------------------------------------------------------------------------- */
 
 static int lj_us_exec(lj_us_stmt *st)
@@ -653,6 +673,8 @@ static int lj_us_exec(lj_us_stmt *st)
     case LJ_US_QUIT:
         lj_us.state = 2;
         return 0;
+    case LJ_US_MIDI: case LJ_US_HOTKEY: case LJ_US_ASSERT_LED: case LJ_US_ASSERT_FILE_LINE: case LJ_US_SLEEP_UNTIL_TICK:
+        return lj_us_exec_w2(st);
     default:
         return -1;
     }

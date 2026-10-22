@@ -1,0 +1,18 @@
+LJ4 replay 1
+# layer_flash_current_statics (design 3.4 ranks 1-4, 11 s3.4; PROPOSAL rig M12):
+# cue slot 1 programs 1:1=50; the current sequence programs 1:1=100 (rank 3 beats rank 1); a flashed sequence
+# programs 1:1=150 (rank 2 sits below the current sequence: PROPOSAL rig M12, so the output stays 100 while the
+# current sequence is not blind, and becomes 150 under `current ... blind`); a static programs 1:1=200 and wins
+# over all three (rank 4). layer= asserts name the rank that won in every state.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="cue" scene st=60000 ft=50 ch 1:1=50:S
+seq 2 name="current" scene st=60000 ft=50 ch 1:1=100:S
+seq 3 name="flash" scene st=60000 ft=50 ch 1:1=150:S
+cue 1
+slot 1 seq=1
+static 1.1 name="S" act=toggle rep=add ft=50 level=100
+ch 1:1=200:S

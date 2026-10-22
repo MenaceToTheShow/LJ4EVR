@@ -1,0 +1,21 @@
+LJ4 replay 1
+# drift_600s_two_slots_wire (design 10 W2 acceptance 3, 11 E10, ME-24; rig M23): the 10-minute two-slot run on the wire.
+# NOT a CTest row (it lives under replay/wire/, outside the replay_all glob): the acceptance integrator runs it through
+# `lj4evr_tests replay tests/engine/replay/wire/drift_600s_two_slots_wire.lj4r` beside a live sACN capture of the same
+# show (the W1 two-fixture library, slot 1 flipping every 1000 ms, slot 2 every 333 ms) and compares the scene-boundary
+# ticks of the capture with the `expect` rows of tests/engine/replay/drift_600s_two_slots.lj4r (zero cumulative drift,
+# jitter <= 1 tick; per-second packet counts never above ~40, ME-24). The build lines mirror the CTest scenario; the run
+# line below ticks 600 s without assertions so the harness's perf line reports the longest tick.
+tick_us=25000
+patch 1 profile=70 link=1 addr=1
+seq 1 name="flip"
+scene st=1000 ft=50 ch 1:1=0:S
+scene st=1000 ft=50 ch 1:1=255:S
+seq 2 name="third"
+scene st=333 ft=50 ch 1:2=10:S
+scene st=333 ft=50 ch 1:2=20:S
+cue 1
+slot 1 seq=1
+slot 2 seq=2
+at 0 load_cue 1
+run 24000

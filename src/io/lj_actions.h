@@ -271,7 +271,10 @@ extern const char *const lj_fn_group_names[LJ_FNG_COUNT];   /* "System", "Intens
     X(LJ_FN_PROG_SEQ_FLASH,          LJ_FNG_PROGRAMS, "Sequence (Flash)",           0, LJ_FNF_FLASH) \
     X(LJ_FN_PROG_CUE,                LJ_FNG_PROGRAMS, "Cue",                        0, LJ_FNF_ENABLE) \
     X(LJ_FN_PROG_CUELIST,            LJ_FNG_PROGRAMS, "Cuelist",                    0, LJ_FNF_ENABLE) \
-    X(LJ_FN_PROG_BGCUE,              LJ_FNG_PROGRAMS, "BG Cue",                     0, LJ_FNF_ENABLE)
+    X(LJ_FN_PROG_BGCUE,              LJ_FNG_PROGRAMS, "BG Cue",                     0, LJ_FNF_ENABLE)     /* W2 appended rows (append-only, 01 s7 group order kept inside the block). The 01 s7 groups were complete in W1; the exe
+     * carries `Static 01` .. `Static 20` hotkey names [14 sB.2, EXE 0x3c6cf0-0x3ca27a] where the CHM lists 01-10, so rows 11-20
+     * are appended here (Statics 2 pages map onto the 20 numbered functions on the current page, PROPOSAL rig 14 sB.8 item 9).
+     * Snapshot, hotkey setups and MIDI have no hotkey rows in any note; none are invented. */     X(LJ_FN_STATIC_11,               LJ_FNG_STATICS, "Static %02d",                11, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_12,               LJ_FNG_STATICS, "Static %02d",                12, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_13,               LJ_FNG_STATICS, "Static %02d",                13, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_14,               LJ_FNG_STATICS, "Static %02d",                14, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_15,               LJ_FNG_STATICS, "Static %02d",                15, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_16,               LJ_FNG_STATICS, "Static %02d",                16, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_17,               LJ_FNG_STATICS, "Static %02d",                17, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_18,               LJ_FNG_STATICS, "Static %02d",                18, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_19,               LJ_FNG_STATICS, "Static %02d",                19, LJ_FNF_TOGGLE | LJ_FNF_FLASH)     X(LJ_FN_STATIC_20,               LJ_FNG_STATICS, "Static %02d",                20, LJ_FNF_TOGGLE | LJ_FNF_FLASH)
 
 #define LJ_FN_ENUM(id, g, c, n, f) id,
 enum lj_fn { LJ_FN_NONE = 0, LJ_FN_LIST(LJ_FN_ENUM) LJ_FN_COUNT };

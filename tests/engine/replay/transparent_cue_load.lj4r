@@ -1,0 +1,21 @@
+LJ4 replay 1
+# transparent_cue_load (03 s5.8, s11.3; 11 F-transparent; LJ_TRANSPARENT_* of lj_engine_rules.h; rig M-none, documented):
+# cue 1 fills slots 1 and 2; cue 2 is saved transparent with only slot 2. Loading cue 2 under `transparent use` keeps
+# slot 1 from cue 1 and replaces slot 2; under `transparent ignore` slot 1 empties (the W1 behaviour); under
+# `transparent force` a non-transparent cue 3 still keeps slot 1. The on/off state of slot 1 survives (RN 2.2 b4).
+# Build lines below; the `at` / `expect` lines are the W2 replay track's (bodies by the engine track).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="one" scene st=60000 ft=50 ch 1:1=200:S
+seq 2 name="two" scene st=60000 ft=50 ch 1:2=100:S
+seq 3 name="two-b" scene st=60000 ft=50 ch 1:2=50:S
+cue 1
+slot 1 seq=1
+slot 2 seq=2
+cue 2 transparent=1
+slot 2 seq=3
+cue 3
+slot 2 seq=3

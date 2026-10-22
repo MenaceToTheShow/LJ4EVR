@@ -37,4 +37,11 @@ int  lj_library_restore(const lj_library *lib, const char *zip_path);           
 int  lj_library_tick_hz(lj_ini *main_ini);                                                        /* Main.Ini [ENGINE] TickHz, default 40, clamped to 10..200 (ME-24; engine/lj_engine_rules.h spells the same limits) */
 int  lj_number_text(uint32_t number, char *out, size_t cap);                                      /* "0012": the 4-digit display form of a record number [F28]; -1 truncated */
 
+
+/* ---- W2 additions: the Backup / Restore / User Libraries dialogs ---- */
+#define LJ_LIBRARY_BACKUP_EXT ".lj4b"
+int  lj_library_backup_notes(const char *zip_path, char *notes, size_t cap);          /* notes.txt out of a .lj4b for the Restore dialog's notes box; 0 / -1 (not a .lj4b, no notes.txt) */
+int  lj_library_backup_lists(const char *zip_path, int counts[LJ_REC_KIND_COUNT]);    /* per-kind record counts inside the archive (the Restore dialog's summary); 0 / -1 */
+int  lj_library_copy(const char *userdir, const char *from, const char *to);           /* "Create New Library" with "copy files" [01 s8]: creates `to` and copies every file of `from`; 0 / -1 */
+
 #endif /* LJ_MODEL_LIBRARY_H */

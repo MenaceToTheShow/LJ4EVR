@@ -76,3 +76,7 @@ const char *lj_patch_validate(const lj_patch_ch patch[LJ_CHANS])
     }
     return NULL;
 }
+
+/* ---- W2 contract stubs (lj_patch.h additions); the model track replaces the bodies ---- */
+int lj_patch_clear(lj_patch_ch patch[LJ_CHANS]) { lj_patch_init(patch); return 0; }
+int lj_patch_htp_set(lj_patch_ch patch[LJ_CHANS], int ch, int group, int on) { (void)patch; (void)ch; (void)group; (void)on; return -1; }

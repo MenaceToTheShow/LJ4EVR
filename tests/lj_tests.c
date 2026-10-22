@@ -57,6 +57,14 @@ int lj_test_controls_b(int argc, char **argv);
 int lj_test_windows_c(int argc, char **argv);
 int lj_test_windows_a(int argc, char **argv);
 int lj_test_ui_golden_ctl(int argc, char **argv);
+/* W2 contracts (docs/w2-contracts.md): model / engine / io / ui rows, appended */
+int lj_test_model_w2_range(int argc, char **argv);
+int lj_test_model_w2_cuepages(int argc, char **argv);
+int lj_test_runner_loop(int argc, char **argv);
+int lj_test_intensity_rule(int argc, char **argv);
+int lj_test_statics(int argc, char **argv);
+int lj_test_midi_map(int argc, char **argv);
+int lj_test_prefs(int argc, char **argv);
 
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
@@ -111,6 +119,14 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_fixlib_profiles", lj_test_fixlib_profiles },   /* fixlib: 201 rows, hand > qxf, window tables, ME-25/27, lj_layout_derive */
     { "test_controls_c", lj_test_controls_c },     /* controls-c: Colors / Gobos / Beam / Effects windows (tests/ui/test_controls_c.c) */
     { "ui_golden_ctl", lj_test_ui_golden_ctl },     /* integrator: the code-built control-window goldens, MAC 500 + dimmer (tests/ui/test_golden_ctl.c) */
+    /* W2 (appended) */
+    { "test_model_w2_range", lj_test_model_w2_range },       /* model: lj_kv_range (ME-77) rejects out-of-range numbers (tests/model/test_w2.c) */
+    { "test_model_w2_cuepages", lj_test_model_w2_cuepages }, /* model: CuePageInfo.Dat round trip; lj_cuepages_* rows by the model track */
+    { "test_runner_loop", lj_test_runner_loop },             /* engine: lj_runner_loop_step, the 03 s5.5 loop / end-action table (tests/engine/test_runner_loop.c) */
+    { "test_intensity_rule", lj_test_intensity_rule },       /* engine: lj_seq_intensity_rule, Martin's 12-cell table (tests/engine/test_intensity_rule.c) */
+    { "test_statics", lj_test_statics },                     /* engine/model: Statics 2 indices and caps; scope / LTP rows by the engine track (tests/engine/test_statics.c) */
+    { "test_midi_map", lj_test_midi_map },                   /* midi: map, queue, inject, dispatch, Learn, drops (tests/io/test_midi_map.c) */
+    { "test_prefs", lj_test_prefs },                         /* app/windows: lj_sysprefs Main.Ini round trip with LJ2's keys (tests/ui/test_prefs.c) */
 };
 
 int main(int argc, char **argv)

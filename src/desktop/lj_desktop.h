@@ -19,12 +19,17 @@
 #include "core/lj_ini.h"
 #include "engine/lj_engine.h"
 #include "io/lj_hotkeys.h"
+#include "io/lj_midi.h"
 #include "io/lj_sacn.h"
+#include "model/lj_cuepage.h"
+#include "model/lj_groups.h"
 #include "model/lj_library.h"
 #include "model/lj_model.h"
+#include "model/lj_statics.h"
 #include "ui/lj_window.h"
 
 /* ---- the process context ---- */
+typedef struct lj_sysprefs lj_sysprefs;        /* W2: windows/lj_prefs.h (desktop cannot include windows/ here: lj_windows.h includes this header) */
 enum lj_modified { LJ_MOD_SEQ = 0, LJ_MOD_CUE, LJ_MOD_CL };                     /* the status bar flags Seq. Modified / Cue Modified / CueList Modified */
 typedef struct {
     lj_show    *show;                  /* owned by the app; current_seq is never NULL once startup is done */
@@ -41,6 +46,15 @@ typedef struct {
     uint8_t     allow_freeze, allow_offline, allow_solo;   /* System Preferences gates (W2 flags; LJ2 defaults are all ON [01 s6.1], LORD_FIDELITY-11) */
     uint8_t     show_nextprev;         /* "Enable next/previous buttons" of the Previous/Next dialog [01 s3.3]; LJ2 default on */
     lj_engine_status view;             /* the app's last lj_engine_view copy (w1-contracts seam 3: the app alone calls lj_engine_view); tick_no 0 = none yet */
+    /* ---- W2 (appended) ---- */
+    lj_sysprefs    *prefs;             /* System Preferences record (windows/lj_prefs.h; the type is forward-declared above the struct); the app owns the file */
+    lj_midi_map    *midi;              /* the MIDI-IN map (io/lj_midi.h); the MIDI-IN window edits it, the app polls the queue and saves */
+    lj_cuepages    *cue_pages;         /* Cues\CuePageInfo.Dat in memory (model/lj_cuepage.h) */
+    lj_static_groups *static_groups;   /* Statics 2 group names (model/lj_statics.h) */
+    lj_htp_names   *htp_names;         /* the 24 HTP group names (model/lj_groups.h) */
+    uint8_t         transparent_mode;  /* enum lj_transparent_mode the cue control's Preferences hold (mirrors LJ_CMD_TRANSPARENT) */
+    uint8_t         flash_latch;       /* "Latch Flash Sequences" (mirrors FLASH c) */
+    int             static_visible;    /* Statics 2 "Visible Slots" 1..LJ_STATICS2_SLOTS_MAX (ME-30; Main.Ini [STATICS2] SlotsVisible) */
 } lj_ctx;
 lj_ctx *lj_ctx_get(void);                                   /* the one context; zeroed until the app fills it */
 void    lj_ctx_set_modified(enum lj_modified which, int on); /* also repaints the status bar flag */
@@ -76,6 +90,16 @@ enum lj_desktop_action {
     LJ_ACT_SAVE_SEQUENCE, LJ_ACT_SAVE_CUE, LJ_ACT_SAVE_CUELIST, LJ_ACT_NEW_CUELIST,   /* toolbar Save = the save dialogs (windows/), New cue list (W3) */
     LJ_ACT_MIDI_IN, LJ_ACT_FOLLOWSPOT /* arg 0 = re-activate last setting (left click), 1 = selection dialog (right click) */,
     LJ_ACT_CTL_OPEN_ONLY /* arg = enum lj_ctl_kind: right-click on a fixture-control button [F9] */,
+    /* W2 (appended): menu / toolbar leaves and the windows' requests to the app */
+    LJ_ACT_SYSTEM_PREFS_APPLY /* System Preferences OK: the app saves Main.Ini, re-gates the toolbar, posts LJ_CMD_PREFS */,
+    LJ_ACT_BGCUE_FORM, LJ_ACT_STATICS2_FORM, LJ_ACT_SMOKE_CONTROL, LJ_ACT_NOTES, LJ_ACT_STRIKING_LAMPS /* arg 0 = startup cycle, 1 = System > Auto Strike Lamps */,
+    LJ_ACT_BACKUP, LJ_ACT_RESTORE_LIBRARY, LJ_ACT_SELECT_LIBRARY /* arg = index in the User Libraries list; the app restarts [01 s8] */,
+    LJ_ACT_HOTKEY_SETUP /* arg = 1..8: Setup > Hotkeys > Setup n (loads <userdir>Hotkeys\SetupN.Hot) */, LJ_ACT_HOTKEYS_ENABLED /* arg 0/1 */,
+    LJ_ACT_SNAPSHOT /* arg 0 = static snapshot into the current scene, 1 = real-time recording start, 2 = stop */,
+    LJ_ACT_DEFAULT_OUT_APPLY /* after Use Current Scene / Clear: post LJ_CMD_DEFAULT_OUT and save DefaultOut.dat */,
+    LJ_ACT_GLOBAL_PATCH_APPLY /* arg 0 = patch changed (LJ_CMD_GLOBAL_PATCH), 1 = HTP groups changed (LJ_CMD_HTP_GROUPS) */,
+    LJ_ACT_MIDI_SAVE /* the MIDI-IN window's Auto Save / Save */, LJ_ACT_MIDI_OPEN_DEVICE /* arg = device index, -1 close */,
+    LJ_ACT_LOAD_BGCUE /* arg = number: Select Background Cue / startup / hotkey */, LJ_ACT_STATIC_CLEAR /* arg = global slot: Clear Slot (engine handed NULL first) */,
     LJ_ACT_COUNT
 };
 typedef void (*lj_desktop_action_fn)(enum lj_desktop_action a, int arg, void *ud);
@@ -132,5 +156,27 @@ int        lj_unassigned_count(void);
 /* popups [01 s3.5 desktop, s3.6 icon]: verbatim trees from the generated TLJMainForm popup menus */
 enum lj_desktop_popup { LJ_POP_DESKTOP = 0, LJ_POP_ICON };
 void lj_desktop_popup(enum lj_desktop_popup which, int x, int y, int fixture);
+
+
+/* ---- W2 (appended): LED buttons, the hotkey-setup indicator, the F8 toolbar rows W2 brings alive ----
+ * LED buttons [07 s4.4-4.6]: Background Cue and Statics on the cue-list row (green when any slot / entry is active,
+ * red otherwise [03 s7, s8]), OnLine (W1). The Smoke button (fixture row 21) is a TSpeedButton that latches while the
+ * timer runs (PROPOSAL rig: smokecontrolicon.gif has two states). lj_desktop_refresh reads ctx->view.bg_any /
+ * statics_any / smoke_active and calls lj_desktop_led_set; a window may call it directly after posting a command so
+ * the LED does not wait for the next view copy. */
+enum lj_desktop_led { LJ_LED_BGCUE = 0, LJ_LED_STATICS, LJ_LED_SMOKE, LJ_LED_COUNT };
+void lj_desktop_led_set(enum lj_desktop_led led, int on);
+int  lj_desktop_led_get(enum lj_desktop_led led);
+/* Setup > Hotkeys > Setup 1..8 radio items and the "Hotkeys Enabled" check: the menu reflects ctx->prefs->hotkey_setup /
+ * hotkeys_enabled (lj_desktop_hotkey_setup_set repaints the items; the app calls it after LJ_ACT_HOTKEY_SETUP). */
+void lj_desktop_hotkey_setup_set(int setup /* 1..8 */, int enabled);
+/* F8 rows W2 brings alive (lj_desktop_toolbar_update, append-only to the W1 table in lj_toolbars.c):
+ *   row 2: tb_cuelist_5 Background Cue (LED, opens LJ_WIN_BGCUE_FORM), tb_cuelist_6 Statics (LED, opens LJ_WIN_STATICS2_FORM),
+ *          tb_cuelist_11 MIDI-IN (enabled when a device is configured, opens LJ_WIN_MIDI_IN);
+ *   row 3: tb_fixture_11 Groups (LJ_WIN_FIXTURE_GROUPS), tb_fixture_17 Solo (gated by prefs->allow_solo, ME-29),
+ *          tb_fixture_18 Follow spot (W3, stays greyed), tb_fixture_19 OnLine/OffLine (allow_offline), tb_fixture_20 Freeze
+ *          (allow_freeze), tb_fixture_21 Smoke (LJ_WIN_SMOKE_CONTROL; enabled when a SMOKE/HAZE class channel is patched, ME-25).
+ * Visibility of the three rows follows prefs->view_*_bar (the W1 [TOOLBARS] keys retire). */
+void lj_desktop_toolbar_gates(const lj_sysprefs *prefs);   /* re-reads the four gates + the three bar flags; called by the app after prefs load / apply */
 
 #endif /* LJ_DESKTOP_DESKTOP_H */

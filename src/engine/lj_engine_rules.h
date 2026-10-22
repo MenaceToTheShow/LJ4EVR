@@ -41,6 +41,50 @@
 #define LJ_MOVEMACRO_CYCLE_UNIT_US 100000 /* 17 s7.3 ASSUMED (2): the cycle byte 0..127 in deciseconds; PROPOSAL, rig 17 s8 item 2 */
 #define LJ_RNG_SEED          0x9E3779B9u  /* random direction [03 s5.5]: xorshift32 with a fixed seed so frame dumps stay deterministic */
 
+/* ---- W2 constants (design 10 W2; appended) ---- */
+#define LJ_TIME_PCT_MIN               1   /* 03 s5.6: the 13 cue time faders 1..999 %, 0 = CUE (slots) / 100 = as programmed */
+#define LJ_TIME_PCT_MAX             999   /* 03 s5.6 */
+#define LJ_TIME_PCT_CUE               0   /* the slot fader value that defers to the CUE fader */
+#define LJ_CHASE_MIN_MS               1   /* E9: the tap timer resolution since 2.3; a chase period below the tick still re-arms per tick (PROPOSAL, rig M3) */
+#define LJ_CHASE_MAX_MS           60000   /* LJ_TIME_MAX_MS: a tap gap above this is a new first tap, not a period (PROPOSAL, rig M3) */
+#define LJ_CHASE_FADE_IS_PERIOD       1   /* 11 F10: fade := chase period unless [CUE] DisableChaseFade=1; not scaled by the cue time */
+#define LJ_CHASE_GLOBAL_RATE          1   /* 03 s5.5 / 11 F10: one global chase rate carried across cue loads (TCurrentCue M_UseGlobalChaseRate default ON, PROPOSAL rig M3) */
+#define LJ_CHASE_KEEPS_DIR            1   /* RN 2.6 b6: a chased slot keeps its saved loop direction */
+#define LJ_LOOP_RANDOM_NO_COUNT       1   /* 03 s5.5: loop count not available in random mode (a loops= value is ignored, the validator rejects it) */
+#define LJ_BOUNCE_END_AT_FIRST        1   /* 03 s5.5: 1->2->3->4->3->2->1->2; one loop = first .. last .. first (the end action fires on reaching first going back); PROPOSAL rig 03 Unverified */
+#define LJ_LOOP_LIMITS_CLAMP          1   /* first/last outside 1..n clamp to the sequence (a cue referencing a shortened sequence); PROPOSAL rig */
+#define LJ_SPT_FORWARD_AUTO           1   /* 11 F11: Scenes/Trig extras run forward with programmed times, trigs ignored until done */
+#define LJ_TRANSPARENT_DEFAULT        0   /* enum lj_transparent_mode LJ_TRANSPARENT_USE: honour the cue's saved flag [03 s5.8] */
+#define LJ_TRANSPARENT_KEEPS_ONOFF    1   /* RN 2.2 b4: loading a transparent cue does not reset on/off states of unaffected slots */
+#define LJ_FLASH_LATCH_DEFAULT        0   /* TCurrentCue M_StickyFlashSequences "Latch Flash Sequences" default OFF (PROPOSAL rig) */
+#define LJ_FLASH_RELEASE_ON_LOAD      0   /* TCurrentCue M_FlashAutoRelease "Release Flash on Load" default OFF (PROPOSAL rig) */
+#define LJ_FLASH_ONE_AT_A_TIME        1   /* 03 s5.10: only one sequence may be flashed at any given time */
+#define LJ_BG_FORWARD_ONLY            1   /* 03 s7: background slots always run forward; NOLOOP stops after the last scene */
+#define LJ_BG_SLOT5_OVER_1            1   /* 03 s7: inside the BG cue, the higher slot number wins */
+#define LJ_BG_RESTORE_ONOFF           0   /* TBGCueForm M_RestoreState "Restore Sequence on/off state" default OFF: every slot loads enabled [03 s7] */
+#define LJ_STATIC_LTP_PER_CHANNEL     1   /* 03 s8: latest activated entry wins per channel; every activation (incl. level-driven) tops the list */
+#define LJ_STATIC_LEVEL_SCALES_ALL    1   /* 03 s8: the per-entry level scales every value of the entry regardless of channel class */
+#define LJ_STATIC_LEVEL_DEFAULT_PCT 100   /* [STATICS] DefaultLevel=255 -> 100 % (Default Levels at 100 %) */
+#define LJ_STATIC_SOLO_BLOCKS_LATER   0   /* 14 sB.3 reading: Solo scopes = Replace scopes in W2; 1 would suppress later activations until released; PROPOSAL rig 14 sB.8 item 3 */
+#define LJ_STATIC_SCOPE_ADD           0   /* enum lj_replace LJ_REP_ADD = the old Merge mode: LTP, no release; PROPOSAL rig 14 sB.8 item 3 */
+#define LJ_STATIC_OLDEST_RELEASED     1   /* the 65th activation releases the oldest active static (LJ_STATIC_RUNNERS); PROPOSAL rig 14 sB.8 item 10 */
+#define LJ_STATIC_TRANSPARENT_IS_ADD  1   /* a Transparent slot type (14 sB.4) contributes only its programmed channels, which every static already does: no engine effect in W2; PROPOSAL rig 14 sB.8 item 6 */
+#define LJ_SMOKE_RANK_ABOVE_BG        1   /* 11 C12 pair 3: smoke > BG cue, rig M15 */
+#define LJ_SMOKE_RANK_ABOVE_GENMACRO  1   /* 11 C12: PROPOSAL smoke > generic macro, rig M15 */
+#define LJ_SMOKE_HAZE_OVERRIDE_GT0    1   /* 11 C12: haze / fan override scenes as soon as the level is > 0; the smoke button overrides only while firing */
+#define LJ_SMOKE_BUTTON_USES_LEVEL    0   /* [SMOKE] UseLevel=0: the Smoke button sends 255, 1 = the Level fader (04 s12 "Smoke Button Use Level") */
+#define LJ_SMOKE_CYCLE_MIN_MS      5000   /* 04 s12 / 11 E30: cycle fader 5 s .. 60 min in 32 steps */
+#define LJ_SMOKE_CYCLE_MAX_MS   3600000   /* 04 s12 */
+#define LJ_SMOKE_CYCLE_STEPS         32   /* 04 s12; the step table is the Smoke Control window's (PROPOSAL: linear in log time, rig) */
+#define LJ_SMOKE_DURATION_MAX_MS  60000   /* PROPOSAL: the Duration fader's ceiling (the cycle minus nothing is a continuous fire); rig */
+#define LJ_SMOKE_RESET_ON_SMOKE       0   /* [SMOKE] Reset=1 shipped means the preference "Reset cycle on smoke"; the engine restarts the cycle on a button press when set */
+#define LJ_SEQINT_UNASSIGNED        255   /* 03 s5.9: a slot without a sequence-intensity fader counts as 100 % = 255 of LJ_GM_DOMAIN */
+#define LJ_SEQINT_ON_PROGRAMMED       1   /* 03 s5.9: HTP / LoTP compare programmed scene values x SI, output = the winner's faded value x SI (LORD_ENGINE-17) */
+#define LJ_SNAPSHOT_RATE_MIN_HZ       1   /* 03 s4.7: real-time recording 1..20 scenes/s, 2..999 scenes */
+#define LJ_SNAPSHOT_RATE_MAX_HZ      20   /* 03 s4.7; E13: the sampler tops out at 20 Hz, so a snapshot is one SNAPSHOT_REQ per sample tick */
+#define LJ_SNAPSHOT_SCENES_MAX      999   /* 03 s4.7 */
+#define LJ_HTP_MASTERS_DEFAULT        0   /* TGlobalPatchForm M_HTPgroupsaffectedgyGM "Enable HTP group master intensity control" default OFF [11 P8] */
+
 /* Layer ranks (design 3.4, 11 s3.4; 2-4, 6-7 PROPOSAL rig M12-M15). layer_of[ch] carries the rank that won. */
 enum lj_layer { LJ_L_DEFAULT = 0, LJ_L_CUE, LJ_L_FLASH, LJ_L_CURRENT, LJ_L_STATICS, LJ_L_BGCUE, LJ_L_GENMACRO, LJ_L_SMOKE, LJ_L_COUNT };
 extern const uint8_t LJ_LAYER_ORDER[LJ_L_COUNT];   /* lowest to highest; defined in lj_merge.c */

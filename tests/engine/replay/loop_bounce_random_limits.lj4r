@@ -1,0 +1,29 @@
+LJ4 replay 1
+# loop_bounce_random_limits (03 s5.5 loop options; lj_runner_loop_step; LJ_BOUNCE_END_AT_FIRST, LJ_LOOP_RANDOM_NO_COUNT,
+# LJ_LOOP_LIMITS_CLAMP, LJ_RNG_SEED; rig 03 Unverified): a 6-scene sequence with distinct values per scene.
+# rev: 6 5 4 3 2 1 6 ...; bounce with first=2 last=5 loops=1 end=stop: 2 3 4 5 4 3 2 then holds (Stop on scene);
+# end=out: the slot disables itself (status out, rank 0 shows through); end=goto goto=4: jumps to scene 4 and stops;
+# random with first=3 last=5: every scene in 3..5, the xorshift32 sequence from LJ_RNG_SEED is asserted verbatim so the
+# frame dump stays deterministic; loops= in random mode is ignored (and rejected by lj_cue_validate when saved).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="six"
+scene st=100 ft=50 ch 1:1=10:S
+scene st=100 ft=50 ch 1:1=20:S
+scene st=100 ft=50 ch 1:1=30:S
+scene st=100 ft=50 ch 1:1=40:S
+scene st=100 ft=50 ch 1:1=50:S
+scene st=100 ft=50 ch 1:1=60:S
+cue 1
+slot 1 seq=1 dir=rev
+cue 2
+slot 1 seq=1 dir=bounce first=2 last=5 loops=1 end=stop
+cue 3
+slot 1 seq=1 dir=bounce first=2 last=5 loops=1 end=out
+cue 4
+slot 1 seq=1 dir=fwd first=1 last=3 loops=2 end=goto goto=4
+cue 5
+slot 1 seq=1 dir=rnd first=3 last=5

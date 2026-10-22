@@ -206,3 +206,14 @@ void lj_kv_err(char *err, size_t cap, const char *path, int item, const char *ms
     lj_log("%s", line);
     if (err && cap) lj_str_copy(err, cap, line);
 }
+
+long lj_kv_range(const char *fields, const char *key, long dflt, long lo, long hi, int *bad)
+{
+    char v[64], *e;
+    long n;
+    int r = lj_kv_get(fields, key, v, sizeof v);
+    if (r <= 0) { if (r < 0 && bad) *bad = 1; return dflt; }
+    n = strtol(v, &e, 10);
+    if (e == v || *e || n < lo || n > hi) { if (bad) *bad = 1; return dflt; }
+    return n;
+}

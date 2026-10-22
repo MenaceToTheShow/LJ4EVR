@@ -29,4 +29,13 @@ int  lj_uiscript_active(void);               /* a script is loaded and not finis
 int  lj_uiscript_line(void);                 /* the current 1-based line, for log lines */
 void lj_uiscript_fail(const char *reason);   /* "SCRIPT FAIL line n: reason" and mark finished with -1; windows may call it from an assert hook */
 
+
+/* ---- W2 verbs (docs/ui-script.md "W2 verbs"; parsed here, bodies by the app track) ----
+ *   midi <hex> <hex> <hex>          lj_midi_inject of the 3 bytes, then one lj_app_midi_dispatch pass ("midi 90 3C 7F")
+ *   hotkey <setup> <key>            loads hotkey setup 1..8 (LJ_ACT_HOTKEY_SETUP) and presses <key> (the `key` grammar) through lj_desktop_key
+ *   assert_led <name> 0|1           lj_desktop_led_get: bgcue | statics | smoke
+ *   assert_view <field>=<value> ... the W1 verb; W2 adds the field names bg_any statics_any flash_latched transparent_mode smoke_active chase_ms cue_number bg_number pending_link_cue snapshot_tick (and accepts `assert_view <field> <value>` as two bare args)
+ *   assert_file_line <path> "text"  the file (library-relative like assert_file) contains the line exactly once
+ *   sleep_until_tick <n>            lets the loop run until the app's view copy reports tick_no >= n */
+
 #endif /* LJ_APP_UISCRIPT_H */

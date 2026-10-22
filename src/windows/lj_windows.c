@@ -18,10 +18,24 @@
 
 static const char *const lj_win_classes[LJ_WIN_COUNT] = {
     "TSequenceForm", "TCurrentCue", "TSaveSeqForm", "TSaveCueForm", "TSeqListForm", "TCueListForm", "TLinkConfigForm3" /* windows-c: the DFM class (no TFixtureConfigForm exists) */,
-    "TMasterIntensityForm", "THardwareSetupForm2" /* windows-c: the DFM class */, "TDMXOutForm", "TStartupForm", "TStatusWarningForm", "TCloseOrSaveForm" /* windows-c: "Close Lightjockey ?" is this form; TConfirmForm is "Please Confirm.." */, "TStatusForm" };
+    "TMasterIntensityForm", "THardwareSetupForm2" /* windows-c: the DFM class */, "TDMXOutForm", "TStartupForm", "TStatusWarningForm", "TCloseOrSaveForm" /* windows-c: "Close Lightjockey ?" is this form; TConfirmForm is "Please Confirm.." */, "TStatusForm",
+    /* W2 (docs/w2-contracts.md section 4; "code-built" windows carry the class the builder gives their lj_window) */
+    "TLoopToolsForm", "TCueTimeForm", "TGetPageInfoForm", "TReorderCuePagesForm", "TBGCueForm", "TSelectBGCueForm2", "TSaveBGForm",
+    "TStatics2Form", "TStatics2PrefsForm", "TStaticEntryPropertiesForm", "TSmokeForm", "TPresetForm", "TSavePresetForm",
+    "TUserPaletteForm" /* code-built */, "TGroupForm" /* code-built [01 s4] */, "TIntensityGroupForm", "THTPGroupsForm" /* code-built */,
+    "TGlobalPatchForm", "TDefault2Form", "TSnapshotSceneForm", "TFunctionsForm", "THotkeyFunctionDialog", "TMidiInForm" /* code-built */,
+    "TSystemPrefsForm", "TDeleteSequencesForm", "TDeleteCuesForm", "TDeleteCuelistsForm", "TDeleteBGCuesForm", "TDeleteGenericMacrosForm",
+    "TUserLibForm", "TGetUserLibNameForm", "TLibraryBackupForm", "TLibraryRestoreForm", "TNoteForm", "TAboutForm2", "TAutoLampForm" };
 static const char *const lj_win_ids[LJ_WIN_COUNT] = {
     "seq_form", "cue_form", "save_seq", "save_cue", "list_seq", "list_cue", "fixture_config",
-    "master_intensity", "hardware_setup", "dmx_monitor", "startup_options", "warnings", "close_prompt", "please_wait" };
+    "master_intensity", "hardware_setup", "dmx_monitor", "startup_options", "warnings", "close_prompt", "please_wait",
+    /* W2 */
+    "loop_options", "cue_time", "cue_page_name", "cue_pages_reorder", "bgcue_form", "select_bgcue", "save_bgcue",
+    "statics2_form", "statics2_prefs", "static_props", "smoke_control", "position_presets", "save_preset",
+    "user_palettes", "fixture_groups", "intensity_groups", "htp_groups",
+    "global_patch", "default_output", "snapshot", "edit_hotkeys", "hotkey_function", "midi_in",
+    "system_prefs", "delete_seq", "delete_cue", "delete_cl", "delete_bg", "delete_macro",
+    "user_libraries", "user_lib_name", "backup", "restore", "notes", "about", "striking_lamps" };
 
 /* windows-a: the dispatch, one row per window id naming its behaviour file; windows-b/c add their rows by index
  * (a row left empty = that track has not landed: open logs and returns NULL). */
@@ -94,3 +108,16 @@ const char *lj_win_id_name(enum lj_win id) { return ((int)id >= 0 && id < LJ_WIN
 const lj_win_host *lj_win_host_get(void) { return lj_win_the_host; }
 int  lj_win_show(lj_window *w, unsigned flags) { return (w && lj_win_the_host && lj_win_the_host->open) ? lj_win_the_host->open(lj_win_the_host->ud, w, flags) : 0; }
 void lj_win_hide(lj_window *w) { if (w && lj_win_the_host && lj_win_the_host->close) lj_win_the_host->close(lj_win_the_host->ud, w); }
+
+/* ---- W2 contract stubs (lj_windows.h additions); the windows tracks replace them and fill their lj_win_table rows ---- */
+int  lj_win_is_dialog(enum lj_win id)
+{
+    switch (id) {
+    case LJ_WIN_SAVE_SEQ: case LJ_WIN_SAVE_CUE: case LJ_WIN_CUE_PAGE_NAME: case LJ_WIN_SAVE_BGCUE: case LJ_WIN_STATIC_PROPS: case LJ_WIN_SAVE_PRESET:
+    case LJ_WIN_SYSTEM_PREFS: case LJ_WIN_USER_LIB_NAME: case LJ_WIN_BACKUP: case LJ_WIN_RESTORE: case LJ_WIN_NOTES: case LJ_WIN_EDIT_HOTKEYS:
+    case LJ_WIN_STATICS2_PREFS: case LJ_WIN_SNAPSHOT: case LJ_WIN_MIDI_IN:
+        return 1;
+    default: return 0;
+    }
+}
+void lj_win_about_text(char *dst, size_t cap) { if (dst && cap) snprintf(dst, cap, "LJ4EVR (the About text is the W2 windows track: VERSION + THIRD_PARTY_NOTICES.txt)"); }

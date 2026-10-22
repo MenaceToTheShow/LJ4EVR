@@ -1,0 +1,17 @@
+LJ4 replay 1
+# statics_ltp_reorder (03 s8, 14 sB.7, LJ_STATIC_LTP_PER_CHANNEL, LJ_STATIC_LEVEL_SCALES_ALL; rig 14 sB.8 items 3, 10):
+# two static slots touch channel 1:1 (slot 1.1 = 100, slot 1.2 = 200 at level 50 %). Activate 1.1 then 1.2: the
+# channel reads 100 (200 x 50 %); re-activate 1.1 while both are on: it tops the LTP list again and the channel reads
+# 100 from 1.1; deactivate 1.1: 1.2 shows through (100); deactivate 1.2: rank 0 (0) with LJ_STATIC_RELEASE_SNAPS.
+# Then scope=slot on 1.1 releases 2.1 (same slot row, other page) and leaves 1.2.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+static 1.1 name="A" act=toggle rep=add ft=50 level=100
+ch 1:1=100:S
+static 1.2 name="B" act=toggle rep=add ft=50 level=50
+ch 1:1=200:S 1:2=255:S
+static 2.1 name="C" act=toggle rep=slot ft=50 level=100
+ch 1:2=10:S

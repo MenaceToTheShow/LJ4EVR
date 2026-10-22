@@ -147,3 +147,14 @@ void lj_static_slot_clear(lj_static_slot *slot)
     slot->kind = LJ_STATIC_EMPTY;
     slot->link_seq = 0; slot->link_scene = 0;
 }
+
+/* ---- W2 contract stubs (lj_statics.h additions); the model track replaces the bodies ---- */
+int lj_statics_groups_load(const char *path, lj_static_groups *out, char *err, size_t cap) { (void)path; (void)err; (void)cap; memset(out, 0, sizeof *out); return -1; }
+int lj_statics_groups_save(const char *path, const lj_static_page *pages, int npages, const lj_static_groups *groups) { (void)path; (void)pages; (void)npages; (void)groups; return -1; }
+int lj_static_slot_link(lj_static_slot *slot, uint32_t seq, uint16_t scene) { (void)slot; (void)seq; (void)scene; return -1; }
+int lj_static_global_index(int page, int slot)
+{
+    if (page < 1 || page > LJ_STATIC_PAGES_MAX || slot < 1 || slot > LJ_STATICS2_SLOTS_PER_PAGE) return -1;
+    return (page - 1) * LJ_STATICS2_SLOTS_PER_PAGE + (slot - 1);
+}
+int lj_static_scope_hits(const lj_static_page *pages, int npages, int actor, int other) { (void)pages; (void)npages; (void)actor; (void)other; return 0; }

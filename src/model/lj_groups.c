@@ -67,3 +67,8 @@ const char *lj_groups_validate(const lj_group groups[LJ_USER_GROUPS])
     }
     return NULL;
 }
+
+/* ---- W2 contract stubs (lj_groups.h additions); the model track replaces the bodies ---- */
+int lj_htp_names_load(const char *path, lj_htp_names *out, char *err, size_t cap) { (void)path; (void)err; (void)cap; memset(out, 0, sizeof *out); return -1; }
+int lj_htp_names_save(const char *path, const lj_group groups[LJ_USER_GROUPS], const lj_htp_names *names) { (void)path; (void)groups; (void)names; return -1; }
+int lj_group_select(const lj_group *g, uint8_t selected[LJ_FIXTURES], int inclusive) { (void)g; (void)selected; (void)inclusive; return -1; }

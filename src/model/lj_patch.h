@@ -15,4 +15,16 @@ const char *lj_patch_validate(const lj_patch_ch patch[LJ_CHANS]);        /* NULL
 void        lj_patch_init(lj_patch_ch patch[LJ_CHANS]);                  /* src none, in_mode abs, invert 0, min 0, max 255, htp_mask 0 */
 int         lj_patch_is_default(const lj_patch_ch *p);
 
+
+/* ---- W2 additions: the Global Patch dialog's File menu (New / Load / Save Global Patch) ----
+ * .GPA = the patch record above in a file the user names (LJ2's extension, 13 strings; its binary layout is
+ * undecoded, so the content is our "LJ4 patch 1" grammar, D5). The live patch is show->patch[], written at show
+ * save as <library>\GlobalPatch.GPA (PROPOSAL rig: LJ2 keeps InternalPatch.Dat, 18 s2, not imported). After a
+ * load or an edit the app posts LJ_CMD_GLOBAL_PATCH / LJ_CMD_HTP_GROUPS so the engine re-reads the table it
+ * already points at (seam: written under lj_lock). */
+#define LJ_PATCH_EXT  ".GPA"
+#define LJ_PATCH_FILE "GlobalPatch.GPA"   /* PROPOSAL rig */
+int lj_patch_clear(lj_patch_ch patch[LJ_CHANS]);                              /* "New Global Patch" / "Clear All Patch Information" = lj_patch_init; 0 */
+int lj_patch_htp_set(lj_patch_ch patch[LJ_CHANS], int ch, int group, int on);  /* HTP Groups column: bit group-1 (1..24) of htp_mask; -1 out of range */
+
 #endif /* LJ_MODEL_PATCH_H */

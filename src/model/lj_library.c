@@ -406,3 +406,8 @@ int lj_number_text(uint32_t number, char *out, size_t cap)
 {
     return snprintf(out, cap, "%04u", (unsigned)number) < (int)cap ? 0 : -1;
 }
+
+/* ---- W2 contract stubs (lj_library.h additions); the model track replaces the bodies ---- */
+int lj_library_backup_notes(const char *zip_path, char *notes, size_t cap) { (void)zip_path; if (notes && cap) notes[0] = 0; return -1; }
+int lj_library_backup_lists(const char *zip_path, int counts[LJ_REC_KIND_COUNT]) { (void)zip_path; memset(counts, 0, sizeof(int) * LJ_REC_KIND_COUNT); return -1; }
+int lj_library_copy(const char *userdir, const char *from, const char *to) { (void)userdir; (void)from; (void)to; return -1; }

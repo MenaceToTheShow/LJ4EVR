@@ -64,7 +64,22 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
  * SEQ_INT              slot 1..12 (0 = mode)     level 0..255 (a = 0: enum lj_seq_int_mode)  -   -        (03 s5.9)
  * MACRO_CTL            amp pct 0..100            speed pct 0..100           -            -        (cue macro control, cue-slot runners only [03 s5.11])
  * DISABLE_FADE         -                         0/1                        -            -        (sequence-control Disable Fade: current-sequence runner snaps [11 F15])
- * SACN_CFG             -                         -                          -            sacn = the new lj_sacn_cfg (opaque here; io/lj_sacn.h), owned by the UI, applied by the engine thread (ME-23) */
+ * SACN_CFG             -                         -                          -            sacn = the new lj_sacn_cfg (opaque here; io/lj_sacn.h), owned by the UI, applied by the engine thread (ME-23)
+ *
+ * ---- W2 kinds (design 10 W2; appended, never reordered) ----
+ * BG_ON                bg runner id or LJ_RUN_ALL  0/1                      -            BGCue Toggle slot n / All Slots Off/On [03 s7]: enables or disables a loaded bg slot (its pointer stays pinned)
+ * STATIC_ACTIVATE      global slot (lj_static_global_index)  level_pct 0..100 (0xFFFF = the slot's)  scope: enum lj_replace (0xFF = the slot's)   st = the pinned lj_static_slot; the engine applies the scope (releases the slots lj_static_scope_hits names), then LTP-tops this one [03 s8, 14 sB.7]
+ * STATIC_DEACTIVATE    global slot                 -                          -            -        (release: snap back, LJ_STATIC_RELEASE_SNAPS; st not needed); a = LJ_RUN_ALL releases every static ("Release All"), c = page 1..64 releases that page ("Release Page")
+ * SMOKE                enum lj_smoke_ctl           value (level 0..255, or 0/1 for the button and the timer)   duration ms (button toggle X seconds; 0 = while held)   rank 7 [11 C12, 04 s12]: button/timer fire SMOKE class channels at the level; haze/fan levels > 0 override HAZE / HAZE_FAN channels
+ * TRANSPARENT          -                           enum lj_transparent_mode   -            -        Preferences > Transparent Cues: Use (honour the cue's flag) / Force / Ignore [03 s5.8]; applied at the next LOAD_CUE / LOAD_BG
+ * CUE_TIME             == TIME (0 = the CUE fader, 1..12 slot; b = pct 0 (CUE) .. 999): the 13 faders of Cue Time Control [03 s5.6]; scaled at the next trig (LJ_TIME_SCALE_AT_TRIG_ONLY)
+ * CHASE_TAP            slot runner id or LJ_RUN_ALL  -                        -            at_us = the UI tap timestamp (1 ms, E9): one tap of the global chase timer; the period = this tap minus the previous; chase slots re-arm at at_us + period; no scene advance by itself (a TRIG does that)
+ * LOOP_OPTS            slot runner id              -                          -            slot = the pinned lj_cue_slot of the working cue (Loop Options dialog Ok): dir / first / last / loops / end / goto / link / spt / atpt / trig-on-load re-read; the running scene is kept, counters reset [03 s5.5]
+ * HTP_GROUPS           -                           htp_masters 0/1            -            patch = show->patch (pinned; the UI edited htp_mask under lj_lock): the engine rebuilds its S5 membership; b = "Enable HTP group master intensity control" [11 P8]
+ * GLOBAL_PATCH         -                           -                          -            patch = show->patch: S1/S6 source, DMX-in mode, invert, min/max re-read (Global Patch Ok / Load Global Patch)
+ * DEFAULT_OUT          -                           -                          -            default_out = show->default_out (pinned): rank 0 re-read (Use Current Scene / Clear Default Output / Fixture Configuration save)
+ * SNAPSHOT_REQ         enum lj_snapshot_src        -                          -            snapshot = a UI-owned lj_frame the engine fills at the end of the next tick (out[] and merged[] of that tick, tick_no set); the view's snapshot_tick echoes tick_no when done; no I/O, no allocation [03 s4.7]
+ * PREFS                enum lj_engine_pref         value                      -            -        the engine-facing System / cue / statics preferences (seam 3 of docs/w2-contracts.md): KeepSeqBlind, UseGlobalChaseRate, DisableChaseFade, StaticsUseFadetime, HotkeyTrigChangesDir */
 enum lj_cmd_kind {
     LJ_CMD_NONE = 0,
     LJ_CMD_LOAD_CUE, LJ_CMD_LOAD_BG, LJ_CMD_LOAD_GENMACRO, LJ_CMD_CURRENT_SEQ,
@@ -72,8 +87,22 @@ enum lj_cmd_kind {
     LJ_CMD_SET_MASTER, LJ_CMD_GM_FADE, LJ_CMD_BLACKOUT, LJ_CMD_FREEZE, LJ_CMD_OFFLINE, LJ_CMD_SOLO,
     LJ_CMD_STATIC, LJ_CMD_FLASH, LJ_CMD_OVERWRITE, LJ_CMD_HTP_GROUP, LJ_CMD_SEQ_INT, LJ_CMD_MACRO_CTL, LJ_CMD_DISABLE_FADE,
     LJ_CMD_SACN_CFG,
-    LJ_CMD_COUNT
+    /* W2 (appended) */
+    LJ_CMD_BG_ON, LJ_CMD_STATIC_ACTIVATE, LJ_CMD_STATIC_DEACTIVATE, LJ_CMD_SMOKE, LJ_CMD_TRANSPARENT, LJ_CMD_CHASE_TAP,
+    LJ_CMD_LOOP_OPTS, LJ_CMD_HTP_GROUPS, LJ_CMD_GLOBAL_PATCH, LJ_CMD_DEFAULT_OUT, LJ_CMD_SNAPSHOT_REQ, LJ_CMD_PREFS,
+    LJ_CMD_COUNT,
+    LJ_CMD_CUE_TIME = LJ_CMD_TIME        /* the 13 faders are the W1 TIME command (design 10 W2 "cue time control") */
 };
+/* FLASH (W2 latch options, 03 s5.10): b = 1 held / 0 released, c = 1 latch ("Latch Flash Sequences": the flash stays after
+ * release until flashed again or Release latched Flash = FLASH b 0 c 0 seq NULL); only one sequence flashes at a time. */
+enum lj_smoke_ctl { LJ_SMOKE_BUTTON = 0 /* b 0/1 (held), c = toggle seconds * 1000 or 0 */, LJ_SMOKE_TIMER /* b 0/1 */, LJ_SMOKE_LEVEL /* b 0..255 */,
+                    LJ_SMOKE_DURATION_MS /* b ms */, LJ_SMOKE_CYCLE_MS /* b ms (5 s .. 60 min, 32 steps, 04 s12) */, LJ_SMOKE_RESET /* restart the cycle */,
+                    LJ_SMOKE_HAZE_LEVEL /* b 0..255 */, LJ_SMOKE_FAN_LEVEL /* b 0..255 */ };
+enum lj_transparent_mode { LJ_TRANSPARENT_USE = 0, LJ_TRANSPARENT_FORCE, LJ_TRANSPARENT_IGNORE };   /* TCurrentCue M_UseTransparentCues / M_ForceTransparentCues / M_IgnoreTransparenCues [D13 spelling] */
+enum lj_snapshot_src { LJ_SNAPSHOT_OUT = 0 /* out[] mapped back by address code: "Snapshot from DMX Out" */, LJ_SNAPSHOT_MERGED /* merged[] (before post-processing) */ };
+enum lj_engine_pref { LJ_PREF_KEEP_SEQ_BLIND = 0 /* [PREFS] KeepSeqBlind, LORD_ENGINE-13 */, LJ_PREF_USE_GLOBAL_CHASE_RATE /* TCurrentCue M_UseGlobalChaseRate */,
+                      LJ_PREF_DISABLE_CHASE_FADE /* [CUE] DisableChaseFade */, LJ_PREF_STATICS_USE_FADETIME /* [STATICS] Use Fadetime */,
+                      LJ_PREF_HOTKEY_TRIG_CHANGES_DIR /* [CUE] HotkeyChangeSeqDir */, LJ_PREF_COUNT };
 typedef struct {
     uint8_t  kind;                       /* enum lj_cmd_kind */
     uint64_t at_us;                      /* UI-thread timestamp (lj_clock_us) so chase taps resolve to 1 ms, design 3.1; 0 = "now" */
@@ -81,8 +110,13 @@ typedef struct {
     const lj_cue *cue; const lj_sequence *seq[LJ_CUE_SLOTS];               /* LOAD_CUE: pinned by the UI thread; seq[i] == NULL = "load error" */
     const lj_bgcue *bg; const lj_sequence *bgseq[LJ_BG_SLOTS];             /* LOAD_CUE / LOAD_BG */
     const lj_genmacro *gm;                                                 /* LOAD_CUE / LOAD_GENMACRO */
-    const lj_static_slot *st;                                              /* STATIC */
+    const lj_static_slot *st;                                              /* STATIC / STATIC_ACTIVATE */
     const void *sacn;                                                      /* SACN_CFG: const lj_sacn_cfg* (io/, not includable here) */
+    /* W2 (appended): every pointer is UI-owned and pinned until the engine was handed a replacement (design 2.3 rule 6) */
+    const lj_cue_slot *slot;                                               /* LOOP_OPTS */
+    const lj_patch_ch *patch;                                              /* HTP_GROUPS / GLOBAL_PATCH: show->patch (LJ_CHANS entries) */
+    const uint8_t *default_out;                                            /* DEFAULT_OUT: show->default_out (LJ_CHANS bytes) */
+    lj_frame *snapshot;                                                    /* SNAPSHOT_REQ: filled by the engine, read by the UI after snapshot_tick == its tick_no */
 } lj_cmd;
 
 /* ---- runner state (design 3.2) ---- */
@@ -134,6 +168,19 @@ typedef struct {
     uint32_t pending_link_cue, pending_bg, pending_genmacro;        /* engine -> UI requests, 0 = none; cleared once handed out */
     uint32_t sacn_pps[LJ_LINKS];         /* packets/s per link's universe (filled by the engine thread through lj_engine_set_sacn_stats) */
     int      sacn_last_err;              /* last sendto errno / WSAGetLastError, 0 = none */
+    /* ---- W2 (appended) ---- */
+    uint16_t static_slot_of[LJ_STATIC_RUNNERS];   /* per static runner: the global slot index (lj_static_global_index) it holds, 0xFFFF = free; with static_active[] this is the Statics 2 LED state per page/slot */
+    uint8_t  static_level[LJ_STATIC_RUNNERS];     /* the level_pct the runner was activated with */
+    uint32_t bg_number;                  /* the loaded background cue, 0 = none (the BG LED is bg_any; the combo shows this) */
+    uint8_t  bg_enabled[LJ_BG_SLOTS];    /* BG_ON state per slot */
+    uint32_t chase_tap_us;               /* the global chase period in microseconds (chase_ms rounds it; the tap timer is 1 ms, E9) */
+    uint8_t  flash_latched;              /* a latched flash sequence is on (Release latched Flash clears it) */
+    uint32_t flash_seq;                  /* its sequence number, 0 = none */
+    uint8_t  transparent_mode;           /* enum lj_transparent_mode in force */
+    uint8_t  smoke_active, haze_level, fan_level, smoke_timer;   /* rank 7 state: the Smoke button / timer firing, haze and fan levels (toolbar LED and the Smoke Control window) */
+    uint32_t smoke_cycle_elapsed_ms;     /* the Smoke Control progress bar (04 s12) */
+    uint64_t snapshot_tick;              /* the tick_no of the last SNAPSHOT_REQ served (the UI compares with its lj_frame.tick_no) */
+    uint8_t  prefs[LJ_PREF_COUNT];       /* the LJ_CMD_PREFS values in force */
 } lj_engine_status;   /* design 2.3 names this struct lj_engine_view; C puts typedef and function names in one namespace, so the TYPE is lj_engine_status and the FUNCTION keeps the design name */
 
 /* ---- post-processing context (design 3.5): what S1-S9 read, rebuilt at bind and by commands ---- */

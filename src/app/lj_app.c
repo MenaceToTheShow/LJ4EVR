@@ -780,3 +780,15 @@ out:
     lj_net_cleanup();
     return lj_a.rc;
 }
+
+/* ---- W2 contract stubs (lj_app.h additions); the app track replaces them ---- */
+int  lj_app_prefs_load(void) { return -1; }
+int  lj_app_prefs_save(void) { return -1; }
+void lj_app_prefs_apply(void) { }
+void lj_app_midi_dispatch(void) { uint8_t m[3]; while (lj_midi_poll(m)) if (lj_ctx_get()->midi) lj_midi_dispatch(lj_ctx_get()->midi, m); }
+int  lj_app_midi_open(int device) { (void)device; return -1; }
+int  lj_app_static_clear(int page, int slot) { (void)page; (void)slot; return -1; }
+int  lj_app_bgcue_clear(void) { return -1; }
+int  lj_app_snapshot_request(void) { return -1; }
+int  lj_app_snapshot_take(const uint8_t *filters, int add_scene) { (void)filters; (void)add_scene; return -1; }
+int  lj_app_strike_lamps(int from_startup) { (void)from_startup; return -1; }

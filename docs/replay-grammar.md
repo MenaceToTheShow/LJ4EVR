@@ -135,3 +135,39 @@ evidence) and `expect_merged` in six scenarios (LORD_ENGINE-21). Bonus rows:
 the files follow the notes (11 F3 `lj_fade_value` with nearest rounding, 11 G1-G5 with
 LORD_ENGINE-18's one factor per mode, 11 s5.2 (d)); GM 50 % is level 127 of
 `LJ_GM_DOMAIN` 255.
+
+## W2 command lines (contracts seat, 2026-10-21; parsed in `lj_replay.c`, acted on by the W2 engine track)
+
+Every W2 `LJ_CMD_*` kind has a form. Build lines are unchanged; `static` slots, `bg` cues and the
+cue's slots are the pinned records the W2 forms point at, as the windows do.
+
+| Form | Command |
+|---|---|
+| `at k bg_on bg<1..5>\|all 0\|1` | `LJ_CMD_BG_ON` (BGCue Toggle slot n / All Slots Off/On) |
+| `at k static_act p.s [level=<0..100>] [scope=add\|slot\|page\|group\|all\|solo_slot\|solo_page\|solo_group\|solo_all]` | `LJ_CMD_STATIC_ACTIVATE` with `st` = the pinned slot; `level` / `scope` default to the slot's own (b 0xFFFF / c 0xFF) |
+| `at k static_deact p.s` / `at k static_deact all` / `at k static_deact page <p>` | `LJ_CMD_STATIC_DEACTIVATE` (release one, Release All, Release Page) |
+| `at k smoke button 0\|1 [ms]` / `smoke timer 0\|1` / `smoke level\|duration\|cycle\|haze\|fan <v>` / `smoke reset` | `LJ_CMD_SMOKE` with `a` = `enum lj_smoke_ctl`; `[ms]` after `button` = the toggle-for-X-seconds preference |
+| `at k flash_latch <seq> 0\|1` | `LJ_CMD_FLASH` with `c` = 1 (Latch Flash Sequences); `flash_latch 0 0` = Release latched Flash |
+| `at k transparent use\|force\|ignore` | `LJ_CMD_TRANSPARENT` |
+| `at k chase_tap slot<k>\|all [at_us=<us>]` | `LJ_CMD_CHASE_TAP`: one tap of the 1 ms chase timer |
+| `at k cue_time cue\|slot<k> <0..999>` | `LJ_CMD_CUE_TIME` (== `time`): the 13 faders |
+| `at k loop slot<k> [dir=] [first=] [last=] [loops=] [end=] [goto=] [link=] [spt=] [atpt=] [tol=]` | edits the loaded cue's slot record the way the Loop Options dialog does (validated), then `LJ_CMD_LOOP_OPTS` with `slot` pinned |
+| `at k link` | the harness services `pending_link_cue` the way `lj_app_service_pending` does: `LJ_CMD_LOAD_CUE` of that number with its sequences pinned (fails when nothing is pending after tick k-1) |
+| `at k htp_groups [masters=0\|1]` | `LJ_CMD_HTP_GROUPS` with `patch` = the show's table |
+| `at k global_patch` | `LJ_CMD_GLOBAL_PATCH` |
+| `at k default_out` | `LJ_CMD_DEFAULT_OUT` |
+| `at k pref keep_seq_blind\|global_chase_rate\|disable_chase_fade\|statics_fadetime\|hotkey_trig_dir 0\|1` | `LJ_CMD_PREFS` |
+
+`expect_view` gains the fields `bg_any statics_any flash_latched flash_seq transparent smoke haze
+chase_tap_us cue bg snapshot_tick`. Runtime `gpatch` / `default` edits between `at` lines (for
+`htp_groups` / `global_patch` / `default_out` to swap) are the replay track's grammar addition.
+
+## The nine W2 scenarios (design 10 W2 acceptance 1) and the wire run
+
+`transparent_cue_load`, `statics_ltp_reorder`, `layer_flash_current_statics`,
+`bgcue_over_statics`, `chase_030ms`, `cue_time_scaling`, `loop_bounce_random_limits`,
+`link_to_cue` are committed with their header comment and build lines; `seq_intensities` (the
+03 s5.9 table) exists since W1. Their `at` / `expect` lines are the W2 replay track's, so until
+then `replay_all` runs them as build-only scenarios (0 expects, no evidence: the W2 council ticks
+acceptance 1 only on real rows). `wire/drift_600s_two_slots_wire.lj4r` sits outside the glob: the
+10-minute wire run the acceptance integrator drives beside a live sACN capture (acceptance 3).
