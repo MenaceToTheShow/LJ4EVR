@@ -173,6 +173,7 @@ int lj_test_menu(int argc, char **argv)
     CHECK(lj_menu_shortcut_text(0x2000 | 0x4000 | 0x73, sc, sizeof sc) == 0 && strcmp(sc, "Shift+Ctrl+F4") == 0);
     CHECK(lj_menu_shortcut_text(0x8000 | 0x7B, sc, sizeof sc) == 0 && strcmp(sc, "Alt+F12") == 0);
     CHECK(lj_menu_shortcut_text(0x2E, sc, sizeof sc) == 0 && strcmp(sc, "Del") == 0);
+    CHECK(lj_menu_shortcut_text(0x83, sc, sizeof sc) == 0 && strcmp(sc, "F20") == 0);   /* ME-64: VK_F20 */
     CHECK(lj_menu_shortcut_text(0, sc, sizeof sc) == -1);
     {
         lj_key_ev k; memset(&k, 0, sizeof k); k.type = LJ_EV_KEY_DOWN; k.key = 0x73; k.alt = 1;

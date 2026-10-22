@@ -132,7 +132,13 @@ Not taken, on purpose: About (the version label changes every release; `test_win
 ME-30 (storage + Main.Ini key; Statics Preferences form still open), ME-76, ME-77 (`.Hot`; v0.1.0 cue compat),
 ME-78 (CI half; the three-OS sha is in the first green run below), ME-2 / ME-23 greps (section 4),
 ME-16 (Debug selftest and the open-every-window script), LORD_FIDELITY-18 (menu caption), w1-int s7 hotkeys
-(no Setup1.Hot line).
+(no Setup1.Hot line), ME-51 (`font_corpus` fails above 34 skipped rows; `docs/fonts.md` names the 34 rows'
+faces and forms), ME-64 (`test_menu` VK 0x83 -> `F20`; the row found F20..F24 printed as "F1:".."F1>", fixed in
+`lj_menu_shortcut_text`).
+
+Integrator gate rows not in this pass (brief: build + tests): ME-43 full align, ME-44 pairing / identifier
+checks, ME-46 dfm2c `OnFoo` selftest row, ME-47 Items.Data decode (113 truncated rows in `tools/dfm2c_blobs.txt`),
+ME-54 shared scrollbar fitting (five `fit_sb` copies remain), ME-57 the five sans13 glyphs, ME-84 sACN name cut.
 
 ## 7. Left open (recorded, not blocking)
 
@@ -161,3 +167,5 @@ ME-16 (Debug selftest and the open-every-window script), LORD_FIDELITY-18 (menu 
                                776cf859abfbb8f418003a944ca7261f1fca89f8eb337a817a5af7ed2c4a5474 (equal; ME-78)
     the macOS log of 39799818715 showed "ld: warning: ignoring duplicate libraries" (the link cycle); the
     cycle is now Linux-only (next commit, its run below)
+    f76d936 (Linux-only cycle) run 39802625197: green, all six jobs; no ld64 duplicate-library warning;
+                               replay-frames.bin sha 776cf859...4a5474 on the three OSes

@@ -123,7 +123,7 @@ int lj_menu_shortcut_text(int shortcut, char *out, size_t cap)
     if (vk == 0) return -1;
     for (i = 0; i < LJ_COUNT_OF(names); i++) if (names[i].vk == vk) kn = names[i].name;
     if (!kn) {
-        if (vk >= 0x70 && vk <= 0x87) { key[0] = 'F'; if (vk - 0x6F >= 10) { key[1] = '1'; key[2] = (char)('0' + vk - 0x6F - 10); key[3] = 0; } else { key[1] = (char)('0' + vk - 0x6F); key[2] = 0; } }
+        if (vk >= 0x70 && vk <= 0x87) { int f = vk - 0x6F; key[0] = 'F'; key[1] = (char)(f >= 10 ? '0' + f / 10 : '0' + f); key[2] = (char)(f >= 10 ? '0' + f % 10 : 0); key[3] = 0; }   /* F1..F24 (ME-64: F20..F24 were "F1:".."F1>") */
         else if (vk >= 0x60 && vk <= 0x69) { lj_str_copy(key, sizeof key, "Num "); key[4] = (char)('0' + vk - 0x60); key[5] = 0; }
         else { key[0] = (char)vk; key[1] = 0; }
         kn = key;

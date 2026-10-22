@@ -52,6 +52,16 @@ cover 792 of the 826 label rows; the other 34 rows (and 56 non-label controls) n
 remaining twelve files, each a `--skeleton` away. `arialblack16` in the design was a
 guess: the harvested cell of `Arial Black -13` is 18 px, so the face is `arialblack18`.
 
+The 34 skipped corpus rows and the forms that use their faces (ME-51; `font_corpus` fails
+above 34): `MS Sans Serif -13` bold in TCloseOrSaveForm, TConfigPrintPreviewForm,
+TDeleteSceneForm, TShowHardwareWarningForm, TShowHotKeyWarningForm, TStatusWarningForm,
+TUpdateCl2Form; `MS Sans Serif -16` bold in TFreezeWarnForm, TUSBWarningForm; `MS Sans Serif -19`
+bold in TLaserWarningForm, TOfflineWarningForm, TUnblockLasersForm; `Arial -12` bold in
+TAboutForm2; `Arial -13` bold in TLogTimeCodeForm, TMCICDForm2; `Arial -15` bold italic and
+`Arial -16` bold in TInitForm1; `Courier -11` bold in TDebugForm. Until a sheet lands these draw
+in the nearest packed face. (TAboutForm2's bold+underline `MS Sans Serif -11` row resolves to
+`sans13b` and is not skipped.)
+
 ## The bold rule
 
 A bold `MS Sans Serif` or `Courier` label is GDI-synthesized bold (there is no bold

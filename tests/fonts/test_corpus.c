@@ -51,6 +51,7 @@ int lj_test_font_corpus(int argc, char **argv)
     }
     fclose(f);
     printf("font_corpus: %d rows, %d skipped (face not packed), %d mismatches\n", rows, skipped, bad);
+    if (skipped > 34) { printf("font_corpus: %d skipped rows exceed the ceiling of 34 (ME-51, docs/fonts.md)\n", skipped); bad++; }
     for (int i = 0; i < LJ_NFACES; i++) if (per_face[i]) printf("  %s: %d mismatches\n", lj_faces[i].name, per_face[i]);
     return bad ? 1 : 0;
 }
