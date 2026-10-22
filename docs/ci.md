@@ -103,6 +103,7 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
   directory. The Linux ASan, Windows Release and macOS jobs each publish its sha256 as a
   job output (`replay_sha`), and `determinism` prints the three and fails unless they are
   equal (ME-78). It still compares the 400-tick `dump-frames` files byte for byte too.
-- The desktop, controls and windows libraries call each other, so CMake links them as a
-  static cycle. GNU ld reads archives once, in order; the W2 pre-integration run failed
-  to link `lj4evr_render` on Linux before this.
+- The desktop, controls and windows libraries call each other, so on Linux CMake links
+  them as a static cycle. GNU ld reads archives once, in order; the W2 pre-integration
+  run failed to link `lj4evr_render` on Linux before this. macOS and Windows get no
+  cycle: their linkers resolve across archives, and ld64 warns about repeated libraries.

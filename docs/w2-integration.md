@@ -148,4 +148,16 @@ ME-16 (Debug selftest and the open-every-window script), LORD_FIDELITY-18 (menu 
 
 ## 8. CI
 
-(filled in after the push)
+    f66d76c (pre-integration)  run 39795267241: linux-clang red (lj4evr_render link), linux-gcc-asan red
+                               (format-truncation), macos-clang green, generate-check green
+    f8e3909 (integration)      run 39799818715: linux-gcc-asan red, gcc 14 only (lj_ctl_rgbpack.c:142
+                               "output may be truncated before the last format character": "Unit %d" needs
+                               5 + 11 + 1 bytes, gcc 13 had accepted 16); linux-clang, macos-clang (CoreMIDI
+                               backend compiled: lj_midi_coremidi.c.o), windows-msvc (lj_midi_winmm.c.obj;
+                               Release + Debug ctest 78/78, selftests) green
+    96c3471 (gcc 14 buffers)   run 39801602850: green, all six jobs. determinism:
+                               frames-{linux,macos,windows}.bin 1641600 bytes, sha256 5e61478e...c6ee7 (equal)
+                               replay-frames.bin linux / windows / macos
+                               776cf859abfbb8f418003a944ca7261f1fca89f8eb337a817a5af7ed2c4a5474 (equal; ME-78)
+    the macOS log of 39799818715 showed "ld: warning: ignoring duplicate libraries" (the link cycle); the
+    cycle is now Linux-only (next commit, its run below)
