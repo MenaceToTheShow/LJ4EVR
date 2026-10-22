@@ -53,7 +53,7 @@ typedef struct {
     uint8_t lo, hi, reverse;         /* value range of a bar / fader (row lo..hi, or the shutter's closed/open pair) */
     unsigned special:1;              /* part of the Intensity specials block (Preferences shows/hides it) */
     char text[12];                   /* a generated caption ("CH8") the widget's desc points at */
-    char name[16];                   /* the name the --script driver addresses the widget by: row<ch+1>_<bar|fade|shutter|btn<i>|radio<i>|pal<i>|scroll> (docs/ui-script.md) */
+    char name[32];                   /* the name the --script driver addresses the widget by: row<ch+1>_<bar|fade|shutter|btn<i>|radio<i>|pal<i>|scroll> (docs/ui-script.md) */
 } lj_ctl_elem;
 
 typedef struct lj_ctl_win {

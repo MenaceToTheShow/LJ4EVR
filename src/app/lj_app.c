@@ -605,7 +605,7 @@ static int lj_app_selftest(lj_window *seq, int startup_ok)
     mon = lj_win_open(LJ_WIN_DMX_MONITOR);
     lj_log_set_sink(NULL, NULL);
     if (mon) lj_win_close(LJ_WIN_DMX_MONITOR);
-    printf("selftest TDMXOUTFORM: %s, %d unknown event line(s): %s\n", mon ? "opened and closed" : "did not open", lj_app_unknown_events, mon && lj_app_unknown_events == 0 ? "OK" : "FAIL");
+    printf("selftest TDMXOUTFORM: %s, %d unresolved DFM event name(s): %s\n", mon ? "opened and closed" : "did not open", lj_app_unknown_events, mon && lj_app_unknown_events == 0 ? "OK" : "FAIL");
     if (!mon || lj_app_unknown_events) startup_ok = 0;
     if (!seq) { printf("selftest FAIL: TSEQUENCEFORM did not open\n"); return 1; }
     lj_window_set_active(seq, 0);

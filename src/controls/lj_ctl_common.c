@@ -82,8 +82,8 @@ lj_ctl_elem *lj_ctl_elem_add(lj_ctl_win *c, lj_widget *w, const lj_ctl_row *row,
     if (row) { e->lo = row->lo; e->hi = row->hi; e->reverse = row->reverse; e->dflt_state = lj_ctl_dflt_state(c, row->ch); }
     if (row && role != LJ_CE_NONE) {                        /* code-built widgets carry no DFM name; the --script driver resolves these through lj_ctl_elem_find */
         static const char *const suffix[] = { "", "fade", "bar", "shutter", "btn", "bar", "radio", "pal", "scroll" };
-        if (btn && row->buttons && role != LJ_CE_SHUTTER) snprintf(e->name, sizeof e->name, "row%d_%s%d", row->ch + 1, suffix[role], (int)(btn - row->buttons) + 1);
-        else snprintf(e->name, sizeof e->name, "row%d_%s", row->ch + 1, suffix[role]);
+        if (btn && row->buttons && role != LJ_CE_SHUTTER) snprintf(e->name, sizeof e->name, "row%u_%s%u", (unsigned)row->ch + 1u, suffix[role], (unsigned)(btn - row->buttons) + 1u);   /* 3 + 10 + 1 + 7 + 10 + NUL = 32: gcc -Wformat-truncation */
+        else snprintf(e->name, sizeof e->name, "row%u_%s", (unsigned)row->ch + 1u, suffix[role]);
     }
     return e;
 }
