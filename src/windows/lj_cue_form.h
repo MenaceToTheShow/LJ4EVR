@@ -37,6 +37,7 @@ lj_window *lj_cue_form_open(void);                           /* builds the windo
 void       lj_cue_form_close(void);
 lj_window *lj_cue_form_get(void);
 void       lj_cue_form_refresh(void);                        /* the 100 ms hook: rows from the view + the cue record, caption, button states */
+void       lj_cue_form_repin(void);                          /* the host's repin (a sequence record was saved into the tables); no-op headless */
 int        lj_cue_form_add_sequence(uint32_t seq_no);        /* "Add Sequence to Current Cue": first free slot; returns 1..12 or -1 when full */
 void       lj_cue_form_new_cue(void);                        /* clears every slot of the current cue record (number 0, no name) */
 int        lj_cue_form_save(int mode /* 0 Save, 1 Save New, 2 Save as number */, uint32_t number);   /* writes Cues\NNNNNNNN.cue, copies into show->cues, clears Cue Modified; 0 / -1 */

@@ -368,6 +368,7 @@ lj_window *lj_dmx_monitor_open(void)
     g = (lj_w_grid *)dm.grid;
     g->cells = NULL;                                                         /* DefaultDrawing = False: every cell through sg1DrawCell */
     g->rows = 1 + LJ_DM_ROWS; g->cols = 1 + LJ_DM_COLS;
+    g->def_cw = 24;                                                          /* all ten columns fit the 297-px grid beside the scrollbar, as dmxout.gif shows (the DFM's 32 showed seven); measured from dmxout.gif (reduced), rig item */
     g->row_select = 0;
     dm.prefs = LJ_DM_PREF_CHANGES | LJ_DM_PREF_USED | LJ_DM_PREF_MASTER | LJ_DM_PREF_AUTOSCROLL;   /* the DFM's Checked = True items */
     dm.sel = -1; dm.last_master = -1;

@@ -1,0 +1,39 @@
+# w1_positions.lj4s - design 10 W1 item 10, the second run after w1_acceptance.lj4s:
+# every window reopens at its last position (forms.ini with LJ2's section names, Master
+# Intensity under Main.Ini [GLOBALINTENSITY]) and the client sizes match the DFMs;
+# Config.dat reloaded the two fixtures (item 2). Before this run the operator edits the
+# saved files so the restored positions are not the centred defaults:
+#   forms.ini  [SEQ] Left=300 Top=300   [CUE] Left=400 Top=350   [INTENSITY] Left=100 Top=100
+#              [DMXOUTFORM] Left=700 Top=200
+#   Main.Ini   [GLOBALINTENSITY] Left=500 Top=400
+#   build-ninja-msvc\lj4evr.exe --script tests\ui\scripts\w1_positions.lj4s
+
+log "W1 acceptance 10: windows reopen at their last positions, Config.dat reloaded"
+wait 300                                          # the first 100 ms refresh builds the icon tiles from Config.dat
+assert_caption main "Martin LightJockey (User lib: Default)"
+assert_text main.icon1 "(1) MAC500"                # Config.dat (text) reloaded on restart
+assert_text main.icon2 "(2) DMX1"
+assert_pos TSequenceForm 300 300
+assert_client TSequenceForm 354 106               # LJ_SEQFORM_SHRINK_TO_PANEL1 (466x163 unshrunk)
+assert_pos TCurrentCue 400 350
+assert_client TCurrentCue 604 254                 # 612x300 outer
+open master_intensity
+wait 300
+assert_pos TMasterIntensityForm 500 400
+assert_client TMasterIntensityForm 664 297
+open dmx_monitor
+wait 300
+assert_pos TDMXOutForm 700 200
+assert_client TDMXOutForm 348 218                 # 356x264 outer
+click main.tb_fixture_13
+click main.icon1
+wait 200
+open intensity
+wait 300
+assert_pos intensity 100 100                      # control kinds resolve by their id (docs/ui-script.md)
+open fixture_config
+wait 300
+assert_client TLinkConfigForm3 782 544            # DFM 790x590 outer = 782x544 client; poMainFormCenter: not persisted, like LJ2
+shot docs/screenshots/w1/acceptance10-restart.png
+close fixture_config
+quit

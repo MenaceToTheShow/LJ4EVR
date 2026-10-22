@@ -36,6 +36,7 @@
 #include "ui/lj_formsini.h"
 #include "ui/lj_menu.h"
 #include "ui/lj_window.h"
+#include "windows/lj_cue_form.h"
 #include "windows/lj_windows.h"
 #include "version.h"
 
@@ -127,6 +128,8 @@ static void lj_app_host_show(void *ud, lj_window *w, int show) { (void)ud; lj_pl
 static void lj_app_host_move(void *ud, lj_window *w, int x, int y) { (void)ud; lj_platform_move_window(w, x, y); }
 static int  lj_app_host_pos(void *ud, const lj_window *w, int *x, int *y) { (void)ud; return lj_platform_window_pos(w, x, y); }
 static const lj_win_host lj_app_host = { NULL, lj_app_host_open, lj_app_host_close, lj_app_host_show, lj_app_host_move, lj_app_host_pos };   /* move/pos: the warning boxes centre on the main window (LORD_FIDELITY-12) */
+static int  lj_app_desktop_open(void *ud, lj_window *w, int stay_on_top) { return lj_app_host_open(ud, w, stay_on_top ? LJ_WF_STAY_ON_TOP : 0u); }
+static const lj_desktop_host lj_app_desktop_host = { NULL, lj_app_desktop_open, lj_app_host_close };   /* the Unassigned Fixtures list (W1 acceptance 2: it was built headless without this) */
 
 /* W0 fallback for a generated form while lj_win_open has no body (ponytail: deleted with the windows track). */
 static lj_window *lj_app_open_form(const lj_form_desc *d)
@@ -306,6 +309,15 @@ static void lj_app_repin_cue(uint32_t exclude)
     cmd.at_us = lj_clock_us();
     if (lj_ctx_get()->engine) lj_engine_cmd(lj_ctx_get()->engine, &cmd);
 }
+
+static int  lj_app_cue_load_hook(void *ud, uint32_t number, int edit) { (void)ud; return lj_app_load_cue(number, edit); }
+static void lj_app_cue_repin_hook(void *ud) { (void)ud; lj_lock(); lj_app_repin_cue(0); lj_unlock(); }   /* a slot of the working cue changed: the engine re-pins from the tables */
+static void lj_app_cue_show_hook(void *ud, lj_window *w, int open)   /* Cue control, Save Cue, List of Cues, Master Intensity reach the screen through this (fsStayOnTop from the DFM) */
+{
+    const lj_form_desc *d = lj_window_desc(w);
+    if (open) lj_app_host_open(ud, w, d && d->style == LJ_FS_STAYONTOP ? LJ_WF_STAY_ON_TOP : 0u); else lj_app_host_close(ud, w);
+}
+static const lj_cue_form_host lj_app_cue_host = { NULL, lj_app_cue_load_hook, lj_app_cue_repin_hook, lj_app_cue_show_hook };   /* W1 acceptance 5: without it "Add Sequence to Current Cue" never reached the engine and the windows-b forms stayed off screen */
 
 int lj_app_load_cue(uint32_t number, int edit)
 {
@@ -683,6 +695,8 @@ int lj_app_main(int argc, char **argv)
     lj_window_set_caption(lj_a.main, LJ_STARTUP_PLEASE_WAIT);
     lj_platform_present(lj_a.main);
     lj_win_set_host(&lj_app_host);
+    lj_desktop_set_host(&lj_app_desktop_host);
+    lj_cue_form_set_host(&lj_app_cue_host);
     status = lj_win_open(LJ_WIN_PLEASE_WAIT);
     if (!status && (lj_a.status_own = lj_startup_status_create()) != NULL && lj_app_host_open(NULL, lj_a.status_own, LJ_WF_STAY_ON_TOP) != 0) { lj_window_destroy(lj_a.status_own); lj_a.status_own = NULL; }
     startup_ok = strcmp(lj_window_caption(lj_a.main)->text, LJ_STARTUP_PLEASE_WAIT) == 0 && (status || lj_a.status_own);

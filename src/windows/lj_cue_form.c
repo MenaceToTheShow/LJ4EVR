@@ -72,10 +72,11 @@ static void post3(int kind, uint32_t a, uint32_t b, uint32_t c)
     post(&cmd);
 }
 static void host_show(lj_window *w, int open) { if (w && s.has_host && s.host.show) s.host.show(s.host.ud, w, open); }
+void lj_cue_form_repin(void) { if (s.has_host && s.host.repin) s.host.repin(s.host.ud); }
 static void modified(void)
 {
     lj_ctx_set_modified(LJ_MOD_CUE, 1);
-    if (s.has_host && s.host.repin) s.host.repin(s.host.ud);
+    lj_cue_form_repin();
 }
 static int form_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->forms_ini ? lj_ini_geti(c->forms_ini, "CUE", key, dflt) : dflt; }
 static void form_seti(const char *key, int v) { lj_ctx *c = C(); if (c->forms_ini) lj_ini_seti(c->forms_ini, "CUE", key, v); }
@@ -739,7 +740,7 @@ static void sv_fill(void)
     if (!sv.win) return;
     snprintf(num, sizeof num, "%04u", cue ? (unsigned)cue->number : 0u);
     if ((w = lj_window_find(sv.win, "CueNo")) != NULL) lj_w_edit_set_text(w, cue && cue->number ? num : "");   /* blank until the first save */
-    if ((w = lj_window_find(sv.win, "ECueName")) != NULL) lj_w_edit_set_text(w, cue ? cue->name : "");
+    if ((w = lj_window_find(sv.win, "ECueName")) != NULL && !w->focused) lj_w_edit_set_text(w, cue ? cue->name : "");   /* FormActivate re-runs this: a name being typed is not overwritten */
     if ((w = lj_window_find(sv.win, "Bsave")) != NULL) { w->enabled = cue && cue->number; lj_widget_invalidate(w); }
     if ((w = lj_window_find(sv.win, "cbTransparent")) != NULL) lj_w_checkbox_set_checked(w, cue ? cue->transparent : sv_geti("SaveTransparent", 0));
     if ((w = lj_window_find(sv.win, "cbSaveMacro")) != NULL) lj_w_checkbox_set_checked(w, sv_geti("SaveMacro", 0));

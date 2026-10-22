@@ -133,3 +133,98 @@ Green run: https://github.com/UnbannableGT/LJ4EVR/actions/runs/39695729252 (main
                     sha256 5e61478e89c1ccfd4936ce7110a366e4f497c5ac0684493bc29ef189342c6ee7 on all three (= this PC; ME-60's new reference sha)
 
 The container image digest did not change (no Dockerfile edit, ME-20).
+
+## 9. Acceptance (integrator 2, this PC, 2026-10-21)
+
+Design 10 W1, item by item. Items 1-5, 7, 8 and 10 are `tests/ui/scripts/w1_acceptance.lj4s` run on a fresh
+`Default` library (`rmdir User\Default`, the app recreates it) with `build-ninja-msvc\lj4evr.exe --script`; item 10's
+restart is `tests/ui/scripts/w1_positions.lj4s`; item 6 is the LAN capture below. Both scripts exit 0 on the Release
+and the Debug (asserts, debug heap) build; every assert is in the scripts. Screenshots: `docs/screenshots/w1/acceptance*-<Class>.png`
+(one file per open window, from the window surfaces, which `--selftest` proves equal the screen pixel for pixel).
+
+| # | Item | Result | Evidence |
+|---|---|---|---|
+| 1 | Launch, `Martin LightJockey (User lib: Default)`, three toolbars, status bar, classic chrome | tick (Windows 11); macOS = CI build + `--selftest` only, the ME-21 line stays open for Joey | `assert_caption main`, `assert_visible main.tb_row_seqcue/cuelist/fixture`, `main.sb_status`; `acceptance1-main-TLJMainForm.png` 799x606 |
+| 2 | Fixture Configuration adds MAC 500 Mode 2/4 at 1:001 and Generic DMX Dimmer 1 Channel at 1:017; both in the Unassigned list; dragged onto the desktop as `(1) MAC500` / `(2) DMX1`; `Config.dat` text, reloads on restart | tick | tree walked by keyboard (`sbMartin`, `Right`, `Down 60`, `Right`, `Right`; `sbGeneric` ...), `LFixtures` = `2 Fixtures configured`, `lAddresses` = `17 DMX Addresses Used`; `assert_file Config.dat exists`; `LV_Unassigned.0.1` = `MAC 500`; two `drag` lines; `main.icon1` = `(1) MAC500`, `main.icon2` = `(2) DMX1`; restart: `w1_positions.lj4s` asserts both tiles again. `Config.dat` of the run: `fx 1 kind=builtin id=12 gs2= link=1 addr=1 ... user=MAC500 placed=1 x=60 y=65 tab=0 sub=0` / `fx 2 kind=builtin id=19 ... addr=17 ... user=DMX1 placed=1 x=160 y=65`. Shots `acceptance2-config-TLinkConfigForm3.png` (790x590), `acceptance2-unassigned-TUnassignedForm.png`, `acceptance2-desktop-TLJMainForm.png` |
+| 3 | MAC 500 master: Intensity, Movement, Colors, Gobos, Beam, Effects, Levels (7 = Extended), Lamp, Reset, Blackout enabled; dimmer master: only Levels | tick | `assert_enabled main.tb_fixture_1..9 1`, `tb_fixture_22 1`; dimmer: `tb_fixture_1 0`, `tb_fixture_2 0`, `tb_fixture_7 1`, `tb_fixture_8 0`; `acceptance3-toolbar-TLJMainForm.png` |
+| 4 | Scene 1 shutter open, intensity 100 %, dimmer 50 %, pan/tilt home, all Snap; Add scene; scene 2 intensity 0 %, pan/tilt -16256 : 17120, dimmer 100 %, intensity + pan/tilt Fade, fade 3.00 s, scene 4.00 s; counter `2:2`; Save -> 0001, toolbar field yellow | tick (pan/tilt -16212 : 17245: the Goto Position click lands on the 191-px grid's nearest pixel; -16256 : 17120 is not a pixel) | `sb_seqcounter` `1:1` -> `2:2`; `ESeqNo` `0001`, caption `SEQUENCE [0001 first]`, `tb_seqname` `first` (yellow in `acceptance4-sequence-TLJMainForm.png`); the record `Sequences/00000001.seq`: `scene st=1000 ft=50` / `ch 1:1=20:S 1:2=255:S 1:11=128:S 1:12=0:S 1:13=128:S 1:14=0:S 1:17=128:S` / `scene st=4000 ft=3000` / `ch 1:1=20:S 1:2=0:F 1:11=64:F 1:12=172:F 1:13=195:F 1:14=94:F 1:17=255:F`; shots `acceptance4-sequence-TSequenceForm.png` (360x150 = 354x106 client, the shrink PROPOSAL), `-TIntensity.png`, `-TMovement.png`, `acceptance4-levels-TLevels.png`, `-TSaveSeqForm.png` |
+| 5 | Cue window: Add Sequence to Current Cue -> slot 1; row `0001 | first | | 1:2 | 1.00 | 0.05 | | fwd | auto`; Save Cue -> 0001, caption `CUE [0001 first cue]`; Go/Stop work; `Cue Modified` clears on save | tick (ST/FT show the scene the slot is at: `1.00` / `0.05` before Go, the design's `4.00 | 3.00` are scene 2's) | `lj_cue_grid.1.0` `0001`, `.1.1` `first`, `.1.3` `1:2`, `.1.7` `fwd`, `.1.8` `auto`; `sb_cuemod` `Cue Modified` -> `""`; after `sbGo`: 0.5 s `1:1=20 1:2=255 1:11=128 1:12=0 1:13=128 1:14=0 1:17=128`, 4.5 s `1:2=0 1:17=255 1:11=64 1:12=172 1:13=195 1:14=94`, 5.5 s (scene boundary) `1:2=255 1:17=128 1:11=128`; `sbStop` holds; `acceptance5-cue-running-TCurrentCue.png` (612x300 outer) |
+| 6 | The wire: source `LJ4EVR <host>` on universe 1, priority 100, 0 sequence errors, ~40/s while fading never 80, ~1/s idle; ch 2 255 -> 0 and dimmer 128 -> 255 over 3.0 s +/- 25 ms, hold 1 s, snap back; 16-bit pan LSB non-zero and monotonic; Offline ~1/s with held values, source visible; Online resumes | tick (receiver on atlas-ci2, see below) | capture analysis below |
+| 7 | GM 50 % halves ch 2 and the dimmer only; Blackout closes the shutter, leaves the dimmer; Freeze holds, counter advances; Offline -> ~1/s within 1 s, values held, 0 errors; Online resumes | tick | `assert_view gm=128`, `1:2=128`, `1:17=64` (128 * 128 / 255), `1:1=20`; Blackout `1:1=0`, `1:17=64`; Restore; `tb_fixture_20` `freeze=1` / `0`; `tb_fixture_19` `offline=1`, `assert_pps 1 0 2`, `offline=0`; `bAll100` `gm=255`, `1:17=128`; shots `acceptance7-blackout-TMasterIntensityForm.png` (670x341 = 664x297 client), `acceptance7-freeze-TFreezeWarnForm.png`, `acceptance7-offline-TOfflineWarningForm.png`, the wire lines below |
+| 8 | DMX Output Monitor: same numbers, grey/green cells, red changed text; overwrite 1:017 = 200 green and on the wire | tick | `M_EnableOverwrite`, cell click at `sg1 177 41`, `sevalue` `200`; `assert_frame 1:17=200`; on the wire `seq 170 ... 200`; `sbClear` -> `1:17=128`; `acceptance8-monitor-TDMXOutForm.png` (the master's 16 channels green, 1:017 selected, status `1:017 (2) DMX1 - Level`) |
+| 9 | ctest on all three OSes, replay scenarios, determinism | integrator 1's item; locally after this session's fixes: `ctest --test-dir build-nosdl -j 6` -> `100% tests passed, 0 tests failed out of 55`; `build-ninja-msvc` -> `100% tests passed, 0 tests failed out of 55`; `test_layering: 285 file(s) checked, 135 header(s) compiled alone, 0 finding(s)`; CI: see section 10 | |
+| 10 | Every window reopens at its last position (`forms.ini`, LJ2's section names); Sequence 354x106 (shrink PROPOSAL), Cue 612x300, Fixture Configuration 790x590, Master Intensity 664x297 | tick | after the walkthrough `forms.ini` = `[CUE] Left=973 Top=546 Width=612 Height=300 [SEQ] Left=1099 Top=621 [INTENSITY] ... [MOVEMENT] ... [LEVELS] ... [SAVESEQFORM] ... [SAVECUEFORM] ClearSave=0 Left=1111 Top=610 [STATUSWARNINGFORM] ... [FREEZEWARNFORM] ... [DMXOUTFORM] Left=1101 Top=564 Width=356 Height=264`, `Main.Ini [GLOBALINTENSITY] Left=944 Top=525`; the files edited to `[SEQ] 300 300`, `[CUE] 400 350`, `[INTENSITY] 100 100`, `[DMXOUTFORM] 700 200`, `[GLOBALINTENSITY] 500 400`; restart `w1_positions.lj4s`: `assert_pos TSequenceForm 300 300`, `assert_client TSequenceForm 354 106`, `assert_pos TCurrentCue 400 350`, `assert_client TCurrentCue 604 254` (612x300 outer), `assert_pos TMasterIntensityForm 500 400`, `assert_client 664 297`, `assert_pos TDMXOutForm 700 200`, `assert_client 348 218`, `assert_pos intensity 100 100`, `assert_client TLinkConfigForm3 782 544` (790x590 outer, poMainFormCenter: not persisted, as LJ2); `acceptance10-restart-*.png` |
+| 11 | `release.yml` on `v0.1.0` | waits for the tag | |
+
+### Item 6: the LAN capture
+
+Receiver: `ssh <runner-host>`, `tools/ref/08-sacn_ref.py` copied to `/tmp/sacn_ref.py` with its DATA line widened
+to `slots[1..20]` and prefixed with `time.monotonic()` (the only edits), `python3 -u /tmp/sacn_ref.py monitor <lan-ip> 1`
+(<nic>, same LAN as this PC's <lan-ip>). `Hardware.Ini [SACN] Nic=<lan-ip>` for the run (with `Nic=0.0.0.0`
+Windows put the multicast on the Hyper-V vEthernet and atlas-ci2 saw nothing; recorded in docs/sacn.md's terms as the NIC
+pick a user makes in Hardware Setup). The walkthrough's packets, 18.9 s from the first programming edit to the overwrite clear:
+
+    packets 176, source "LJ4EVR <dev-pc>" (the 16 chars the monitor prints of "LJ4EVR <dev-pc>"), priority 100,
+    start code 0x00, sequence steps != +1: 0 (one duplicated seq 0 at stream start, see docs/fidelity.md)
+    packets per second: [4, 1, 15, 3, 1, 22, 40, 40, 21, 4, 1, 1, 8, 2, 1, 1, 1, 1, 9]
+    GO on the wire at 3.774 s; fade first step 5.474 s, last step 8.474 s: 3.000 s, 121 change packets (25 ms tick)
+    pan16 monotonic down 32768 -> 16556, tilt16 monotonic up 32768 -> 50014, pan LSB non-zero on 120 of 120 intermediate ticks
+    intensity monotonic down 255 -> 0, dimmer monotonic up 128 -> 255
+    hold after the fade 1.000 s, then (20, 255, 128, 0, 128, 0, 128) = scene 1 snapped back
+    seconds at 1 packet/s (idle and the Offline span): 1, 4, 10, 11, 14, 15, 16, 17
+
+The monitor's lines (first packet; GO; fade start, +1 tick, middle, end; the snap back; GM 50 %; Blackout; Restore; GM 100 %;
+overwrite 200; clear; the three terminations on close):
+
+    209560.115 DATA  <lan-ip> u1     pri 100 seq   0 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    209563.889 DATA  <lan-ip> u1     pri 100 seq  20 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 255, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 128, 0, 0, 0]
+    209565.589 DATA  <lan-ip> u1     pri 100 seq  24 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 254, 0, 0, 0, 0, 0, 0, 0, 0, 127, 174, 128, 87, 0, 0, 129, 0, 0, 0]
+    209565.614 DATA  <lan-ip> u1     pri 100 seq  25 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 252, 0, 0, 0, 0, 0, 0, 0, 0, 127, 39, 128, 231, 0, 0, 130, 0, 0, 0]
+    209567.089 DATA  <lan-ip> u1     pri 100 seq  84 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 126, 0, 0, 0, 0, 0, 0, 0, 0, 96, 4, 162, 6, 0, 0, 192, 0, 0, 0]
+    209568.564 DATA  <lan-ip> u1     pri 100 seq 143 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 1, 0, 0, 0, 0, 0, 0, 0, 0, 64, 225, 195, 37, 0, 0, 255, 0, 0, 0]
+    209568.589 DATA  <lan-ip> u1     pri 100 seq 144 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 172, 195, 94, 0, 0, 255, 0, 0, 0]
+    209569.589 DATA  <lan-ip> u1     pri 100 seq 148 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 255, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 128, 0, 0, 0]
+    209572.315 DATA  <lan-ip> u1     pri 100 seq 153 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 128, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 64, 0, 0, 0]
+    209572.664 DATA  <lan-ip> u1     pri 100 seq 156 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[0, 128, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 64, 0, 0, 0]
+    209573.065 DATA  <lan-ip> u1     pri 100 seq 159 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 128, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 64, 0, 0, 0]
+    209578.140 DATA  <lan-ip> u1     pri 100 seq 167 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 255, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 128, 0, 0, 0]
+    209578.615 DATA  <lan-ip> u1     pri 100 seq 170 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 255, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 200, 0, 0, 0]
+    209578.940 DATA  <lan-ip> u1     pri 100 seq 173 sc 0x00 LJ4EVR <dev-pc> slots[1..20]=[20, 255, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 128, 0, 0, 0, 128, 0, 0, 0]
+    TERM  ('edabfa60', 1)
+    TERM  ('edabfa60', 1)
+    TERM  ('edabfa60', 1)
+
+Between seq 159 (Restore, 209573.065) and seq 167 (GM 100 %, 209578.140) the walkthrough froze, unfroze, went Offline for
+2 s and Online for 2 s: the capture shows one packet per second with the values held and no termination or gap, the app's
+own counter read `assert_pps 1 0 2` while offline. Rates: 40/s during the fade (seconds 6-7), 1/s whenever nothing moved,
+80 never.
+
+### Bugs fixed on the way (app, not scripted around)
+
+| Where | What the walkthrough hit | Fix |
+|---|---|---|
+| `src/app/lj_app.c` | the Unassigned Fixtures list was built headless (`lj_desktop_set_host` never called): "desktop: Unassigned Fixtures list built headless" | `lj_app_desktop_host` installed after `lj_win_set_host` |
+| `src/app/lj_app.c` | the windows-b forms (Cue control, Save Cue, List of Cues, Master Intensity) never reached the screen and "Add Sequence to Current Cue" never reached the engine: `lj_cue_form_set_host` was never called, so `host.show` / `repin` / `load_cue` were NULL | `lj_app_cue_host` { `lj_app_load_cue`, lock + `lj_app_repin_cue(0)`, show/close through `lj_app_host_open` with `fsStayOnTop` from the DFM } |
+| `src/windows/lj_save_dialogs.c` | a first Save Sequence left the record out of `show->sequences`, so the cue slot read "load error" | `lj_ss_sync_table` puts a copy of a new number into the table and calls the new `lj_cue_form_repin()` |
+| `src/windows/lj_save_dialogs.c`, `lj_cue_form.c` | `FormActivate` (the OS focus event, which arrives late when another app holds the foreground) reloaded the name field after the script had typed into it: `SEQUENCE [0001 No Name]` | the name edit is not reloaded while it has the focus |
+| `src/platform/sdl/lj_sdl.c` | `SDL_SetWindowMinimumSize` got `min_width + frame`: TCurrentCue opened 620 wide (client 612) against the DFM's 612x300 / 604x254 | the constraints are outer sizes already; the frame extra dropped |
+| `src/windows/lj_dmx_monitor.c` | seven of the ten columns fitted the 297-px grid (DefaultColWidth 32) | `def_cw = 24`, measured from `dmxout.gif` (reduced), rig item |
+| `src/windows/lj_fixture_config.c` | the notes page opened on `O/V Profile Notes` (DFM ActivePage) with the LJ notes on one unwrapped line | `LJ Profile Notes` in front at open; `notes_show` wraps at blanks to the memo width |
+| `src/app/lj_uiscript.c` | `shot` captured the window `type`/`key` last targeted even after it had destroyed itself (Save Sequence AutoClose): a use-after-free that crashed the Release build on two runs | `lj_us_cur()` re-validates the pointer against the window lists |
+| `src/app/lj_uiscript.c`, `lj_ctl_common.c`, `lj_master_intensity.c`, `lj_unassigned.c` | the script's widget names for code-built widgets did not exist | `row<ch>_<role>` names resolved through `lj_ctl_elem_find`, `fader_master`/`fader_<n>`, `TUnassignedForm` resolution, `main.sb_*` panels, fixture tiles, cue-grid cells, list-view cells, menu items by name, `key <name> <count>`, `drag` with a source point, `assert_client`, `assert_pos`, `assert_file` under the library (docs/ui-script.md) |
+
+Things the script had wrong and the app had right: `Bsave` is disabled until a record has a number (`BSaveNew` / `Save New Cue`
+are the first saves); a click on a selected icon de-selects it in Inclusive mode (the script uses `None` first); the control
+windows follow the master (a dimmer master closes Intensity / Movement); the current sequence sits above the cue, so `New/Clear`
+before `Go`; MAC 500 Mode 2/4 pan/tilt are channels 11-14, not 3-6; the sequence-form time fields commit on the Save / Add
+clicks, and `cbSync` is not a way to commit them (it copies the scene time into the fade time).
+
+### Left open after the walkthrough
+
+- Mac (item 1): CI's `macos-clang` build + `--selftest` only; the ME-21 line (native chrome default) stays open for Joey.
+- Item 11 waits for the `v0.1.0` tag.
+- `lj_window: TDMXOutForm: unknown event OnMouseWheelDown/Up` is logged at every monitor open: two DFM events the ui layer
+  does not dispatch (bindings exist as no-ops); cosmetic, ui owner.
+- docs/fidelity.md rows added this session: time-field separator, Loop/Trig capitalisation, monitor column width, notes page,
+  the blank Martin button, the Cue window size, the save dialogs' name field, the MAC 500 Fade default, design item 4 vs 6,
+  the duplicated seq 0, the Unassigned FixtureType column, the time-field caret.

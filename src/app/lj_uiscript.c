@@ -11,26 +11,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include "controls/lj_ctl.h"
+#include "controls/lj_ctl_common.h"
 #include "core/lj_clock.h"
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "desktop/lj_desktop.h"
+#include "desktop/lj_statusbar.h"
+#include "desktop/lj_unassigned.h"
 #include "gfx/lj_bmp.h"
 #include "ui/lj_menu.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
+#include "ui/widgets/lj_widgets_lj.h"
+#include "windows/lj_cue_form.h"
 #include "windows/lj_windows.h"
 #include "miniz.h"
 
 enum { LJ_US_ARGS = 6 };
 enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLCLICK, LJ_US_DRAG, LJ_US_TYPE, LJ_US_KEY, LJ_US_WAIT, LJ_US_SHOT,
                   LJ_US_ASSERT_CAPTION, LJ_US_ASSERT_TEXT, LJ_US_ASSERT_ENABLED, LJ_US_ASSERT_VISIBLE, LJ_US_ASSERT_FRAME, LJ_US_ASSERT_VIEW,
-                  LJ_US_ASSERT_FILE, LJ_US_ASSERT_PPS, LJ_US_LOG, LJ_US_QUIT, LJ_US_VERBS };
+                  LJ_US_ASSERT_FILE, LJ_US_ASSERT_PPS, LJ_US_ASSERT_CLIENT, LJ_US_ASSERT_POS, LJ_US_LOG, LJ_US_QUIT, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
-    { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 4 }, { "type", 1, 1 }, { "key", 1, 1 },
+    { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
-    { "assert_frame", 1, 2 }, { "assert_view", 1, 4 }, { "assert_file", 2, 2 }, { "assert_pps", 3, 3 }, { "log", 1, 1 }, { "quit", 0, 0 } };
+    { "assert_frame", 1, 2 }, { "assert_view", 1, 4 }, { "assert_file", 2, 2 }, { "assert_pps", 3, 3 }, { "assert_client", 3, 3 }, { "assert_pos", 3, 3 }, { "log", 1, 1 }, { "quit", 0, 0 } };
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -127,11 +132,12 @@ static const char *lj_us_check(const lj_us_stmt *st)
         break;
     case LJ_US_DRAG:
         if (!strchr(st->arg[0], '.') || !strchr(st->arg[1], '.')) return "expected <Form>.<widget> <Form>.<widget>";
-        if (st->nargs == 3) return "expected both dx and dy";
-        if (st->nargs == 4 && (lj_us_int(st->arg[2], &a) || lj_us_int(st->arg[3], &b))) return "dx dy must be integers";
+        if (st->nargs == 3 || st->nargs == 5) return "expected [sx sy] dx dy";
+        for (a = 2; a < st->nargs; a++) if (lj_us_int(st->arg[a], &b)) return "sx sy dx dy must be integers";
         break;
     case LJ_US_KEY:
         if (lj_us_vk(st->arg[0], &v, &a, &b, &c)) return "unknown key name";
+        if (st->nargs == 2 && (lj_us_int(st->arg[1], &v) || v < 1)) return "key count must be a positive integer";
         break;
     case LJ_US_WAIT:
         if (lj_us_int(st->arg[0], &v) || v < 0) return "wait takes milliseconds";
@@ -156,6 +162,9 @@ static const char *lj_us_check(const lj_us_stmt *st)
         break;
     case LJ_US_ASSERT_PPS:
         if (lj_us_int(st->arg[0], &a) || a < 1 || a > LJ_LINKS || lj_us_int(st->arg[1], &b) || lj_us_int(st->arg[2], &c)) return "expected <link 1-4> <min> <max>";
+        break;
+    case LJ_US_ASSERT_CLIENT: case LJ_US_ASSERT_POS:
+        if (lj_us_int(st->arg[1], &a) || lj_us_int(st->arg[2], &b)) return "expected <Form> <x> <y>";
         break;
     default: break;
     }
@@ -249,8 +258,23 @@ lj_window *lj_uiscript_resolve_default(const char *form)
 {
     int k = lj_us_ctl_kind(form);
     if (strcmp(form, "main") == 0) return lj_desktop_window();
+    if (strcmp(form, "TUnassignedForm") == 0 || strcmp(form, "unassigned") == 0) return lj_unassigned_window();
     if (k >= 0) return lj_ctl_window_get((enum lj_ctl_kind)k);
     return lj_win_find(form);
+}
+
+/* The window `type` / `key` go to, re-validated: a dialog may have closed itself (AutoClose) since it was clicked. */
+static lj_window *lj_us_cur(void)
+{
+    int id;
+    if (!lj_us.cur) return NULL;
+    if (lj_us.cur == lj_desktop_window() || lj_us.cur == lj_unassigned_window()) return lj_us.cur;
+    for (id = 0; id < LJ_WIN_COUNT; id++) if (lj_win_get((enum lj_win)id) == lj_us.cur) return lj_us.cur;
+    for (id = 0; id < LJ_CTL_COUNT; id++) if (lj_ctl_window_get((enum lj_ctl_kind)id) == lj_us.cur) return lj_us.cur;
+    if (lj_us.host.resolve && lj_us.host.resolve(lj_us.host.ud, "TSequenceForm") == lj_us.cur) return lj_us.cur;   /* the app's W0 fallback forms */
+    if (lj_us.host.resolve && lj_us.host.resolve(lj_us.host.ud, "TCurrentCue") == lj_us.cur) return lj_us.cur;
+    lj_us.cur = NULL;
+    return NULL;
 }
 
 static lj_window *lj_us_window(const char *form)
@@ -272,22 +296,43 @@ static lj_widget *lj_us_widget(char *spec, lj_window **win, int *row, int *col)
     rc = strchr(name, '.');
     if (rc) *rc = 0;
     w = lj_window_find(*win, name);
+    if (!w) w = lj_ctl_elem_find(*win, name);          /* control rows: row<ch>_bar, row<ch>_fade ... (lj_ctl_common.h) */
     if (rc) *rc = '.';
     if (!w) { lj_us_failf(lj_us.line, "no widget %s", spec); return NULL; }
     if (row) { *row = *col = -1; if (rc && sscanf(rc + 1, "%d.%d", row, col) != 2) { lj_us_failf(lj_us.line, "expected %s", "<Form>.<grid>.<row>.<col>"); return NULL; } }
     return w;
 }
 
+static const char *const lj_us_sb_names[LJ_SB_COUNT] = { "sb_clock", "sb_running", "sb_memory", "sb_master", "sb_seqmod", "sb_cuemod", "sb_clmod", "sb_trig" };   /* docs/ui-script.md: the desktop's panels are not widgets */
+
 static const char *lj_us_text_of(lj_widget *w, int row, int col)
 {
+    static char buf[96];
     const char *t;
     if (row >= 0) {
         lj_w_grid *g = (lj_w_grid *)w;
+        if (w->name && strcmp(w->name, "lj_cue_grid") == 0) return lj_cue_form_cell(row - 1, col, buf, sizeof buf) == 0 ? buf : "";   /* the cue grid: row = slot 1..12, col = 0 No .. 8 Trig */
+        if (w->kind == LJ_K_LISTVIEW) {                   /* a TListView row: 0-based row, '	'-separated sub-item col */
+            lj_w_listview *v = (lj_w_listview *)w;
+            const char *p = row < v->n && v->items ? v->items[row] : "", *e;
+            int c;
+            for (c = 0; c < col && p; c++) p = (e = strchr(p, '	')) ? e + 1 : NULL;
+            if (!p) return "";
+            e = strchr(p, '	');
+            snprintf(buf, sizeof buf, "%.*s", e ? (int)(e - p) : (int)strlen(p), p);
+            return buf;
+        }
         if (w->kind != LJ_K_STRINGGRID) return NULL;
         if (row >= g->rows || col >= g->cols || !g->cells) return "";
         t = g->cells[row * g->cols + col];
         return t ? t : "";
     }
+    if (w->name && strncmp(w->name, "icon", 4) == 0 && lj_window_of(w) == lj_desktop_window()) {   /* a fixture tile paints "(n) user name" */
+        lj_w_fixicon *f = (lj_w_fixicon *)w;
+        snprintf(buf, sizeof buf, "(%d) %s", f->number, f->user_name ? f->user_name : "");
+        return buf;
+    }
+    if (w->kind == LJ_K_STATUSBAR && lj_window_of(w) == lj_desktop_window()) return lj_statusbar_panel_text(LJ_SB_CLOCK);   /* the desktop's own status bar struct (sb_* names for the panels) */
     if (w->kind == LJ_K_STATUSBAR) { lj_w_statusbar *s = (lj_w_statusbar *)w; t = s->text[0]; return t ? t : (s->n && s->panels ? s->panels[0].caption : ""); }
     t = lj_w_edit_text(w);
     if (!t) t = lj_w_caption(w);
@@ -321,11 +366,32 @@ static int lj_us_screen(lj_window *win, int *x, int *y)
     return (m && m->host && m->host->screen_pos) ? m->host->screen_pos(m->host->ud, win, x, y) : -1;
 }
 
+/* <Form>.<item> names a menu item (TDMXOutForm.M_EnableOverwrite): fired as lj_menu's fire() does, without the bar. */
+static int lj_us_menu_click(char *spec)
+{
+    char *dot = strchr(spec, '.');
+    lj_window *win;
+    lj_menu *m;
+    lj_menu_rt *rt;
+    *dot = 0; win = lj_us.host.resolve ? lj_us.host.resolve(lj_us.host.ud, spec) : lj_uiscript_resolve_default(spec); *dot = '.';
+    m = win ? lj_window_menus(win) : NULL;
+    rt = m ? lj_menu_rt_named(m, dot + 1) : NULL;
+    if (!rt || !rt->fn || !rt->enabled) return -1;
+    if (lj_desc_bool(rt->item->auto_check, 0)) rt->checked = rt->checked ? 0u : 1u;
+    m->firing = rt->item;
+    rt->fn(lj_window_root(win), rt->ud);
+    m->firing = NULL;
+    lj_us.cur = win;
+    return 0;
+}
+
 static int lj_us_click(const lj_us_stmt *st, int button, int dbl)
 {
     lj_window *win;
     int sx, sy;
-    lj_widget *w = lj_us_widget(st->arg[0], &win, NULL, NULL);
+    lj_widget *w;
+    if (button == 1 && !dbl && st->nargs == 1 && lj_us_menu_click(st->arg[0]) == 0) return 0;
+    w = lj_us_widget(st->arg[0], &win, NULL, NULL);
     if (!w) return -1;
     lj_us_point(w, st, 1, &sx, &sy);
     lj_us.cur = win;
@@ -342,9 +408,9 @@ static int lj_us_drag(const lj_us_stmt *st)
     lj_widget *ws, *wd;
     int sx, sy, dx, dy, ox = 0, oy = 0, sxs, sys, dxs, dys;
     if (!(ws = lj_us_widget(st->arg[0], &src, NULL, NULL)) || !(wd = lj_us_widget(st->arg[1], &dst, NULL, NULL))) return -1;
-    lj_us_point(ws, st, LJ_US_ARGS, &sx, &sy);     /* centres: the optional dx dy offset the drop only */
+    lj_us_point(ws, st, st->nargs == 6 ? 2 : LJ_US_ARGS, &sx, &sy);     /* centre, or sx sy when six words; the last two numbers offset the drop */
     lj_us_point(wd, st, LJ_US_ARGS, &dx, &dy);
-    if (st->nargs == 4) { lj_us_int(st->arg[2], &ox); lj_us_int(st->arg[3], &oy); }
+    if (st->nargs >= 4) { lj_us_int(st->arg[st->nargs - 2], &ox); lj_us_int(st->arg[st->nargs - 1], &oy); }
     dx += ox; dy += oy;
     if (src != dst) {                                   /* the drop point in the source window's surface coordinates; lj_window.c maps it back through host->window_at */
         if (lj_us_screen(src, &sxs, &sys) != 0 || lj_us_screen(dst, &dxs, &dys) != 0) { lj_us_failf(lj_us.line, "%s", "drag across windows needs screen positions (not headless)"); return -1; }
@@ -362,14 +428,17 @@ static int lj_us_drag(const lj_us_stmt *st)
 static int lj_us_key(const lj_us_stmt *st)
 {
     lj_ui_event ev;
-    int vk, s, c, a;
-    if (!lj_us.cur) { lj_us_failf(lj_us.line, "%s", "no window to send the key to (open or click one first)"); return -1; }
+    int vk, s, c, a, n = 1;
+    if (!lj_us_cur()) { lj_us_failf(lj_us.line, "%s", "no window to send the key to (open or click one first)"); return -1; }
     lj_us_vk(st->arg[0], &vk, &s, &c, &a);
+    if (st->nargs == 2) lj_us_int(st->arg[1], &n);
     memset(&ev, 0, sizeof ev);
-    ev.type = LJ_EV_KEY_DOWN; ev.u.key.type = LJ_EV_KEY_DOWN; ev.u.key.key = vk; ev.u.key.shift = s ? 1u : 0u; ev.u.key.ctrl = c ? 1u : 0u; ev.u.key.alt = a ? 1u : 0u;
-    lj_window_event(lj_us.cur, &ev);
-    ev.type = LJ_EV_KEY_UP; ev.u.key.type = LJ_EV_KEY_UP;
-    lj_window_event(lj_us.cur, &ev);
+    while (n-- > 0) {
+        ev.type = LJ_EV_KEY_DOWN; ev.u.key.type = LJ_EV_KEY_DOWN; ev.u.key.key = vk; ev.u.key.shift = s ? 1u : 0u; ev.u.key.ctrl = c ? 1u : 0u; ev.u.key.alt = a ? 1u : 0u;
+        lj_window_event(lj_us.cur, &ev);
+        ev.type = LJ_EV_KEY_UP; ev.u.key.type = LJ_EV_KEY_UP;
+        lj_window_event(lj_us.cur, &ev);
+    }
     return 0;
 }
 
@@ -377,7 +446,7 @@ static int lj_us_type(const lj_us_stmt *st)
 {
     lj_ui_event ev;
     const unsigned char *p;
-    if (!lj_us.cur) { lj_us_failf(lj_us.line, "%s", "no window to type into (open or click one first)"); return -1; }
+    if (!lj_us_cur()) { lj_us_failf(lj_us.line, "%s", "no window to type into (open or click one first)"); return -1; }
     memset(&ev, 0, sizeof ev);
     ev.type = LJ_EV_CHAR; ev.u.key.type = LJ_EV_CHAR;
     for (p = (const unsigned char *)st->arg[0]; *p; p++) { ev.u.key.ch = *p; lj_window_event(lj_us.cur, &ev); }
@@ -429,9 +498,10 @@ static int lj_us_shot(const char *arg)
     if ((w = lj_desktop_window()) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);
     for (id = 0; id < LJ_WIN_COUNT; id++) if ((w = lj_win_get((enum lj_win)id)) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);
     for (id = 0; id < LJ_CTL_COUNT; id++) if ((w = lj_ctl_window_get((enum lj_ctl_kind)id)) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);
-    if (lj_us.cur && lj_us.cur != lj_desktop_window()) {           /* a host-resolved window the lists do not know is still captured once */
+    if ((w = lj_unassigned_window()) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);
+    if (lj_us_cur() && lj_us.cur != lj_desktop_window() && lj_us.cur != lj_unassigned_window()) {   /* a host-resolved window the lists do not know is still captured once */
         for (id = 0; id < LJ_WIN_COUNT; id++) if (lj_win_get((enum lj_win)id) == lj_us.cur) break;
-        if (id == LJ_WIN_COUNT) rc |= lj_us_shot_one(lj_us.cur, stem, ext, &n);
+        if (id == LJ_WIN_COUNT) { for (id = 0; id < LJ_CTL_COUNT; id++) if (lj_ctl_window_get((enum lj_ctl_kind)id) == lj_us.cur) break; if (id == LJ_CTL_COUNT) rc |= lj_us_shot_one(lj_us.cur, stem, ext, &n); }
     }
     lj_log("shot: %d window(s) -> %s-<Class>%s", n, stem, ext);
     if (rc != 0 || n == 0) { lj_us_failf(lj_us.line, "%s", n == 0 ? "no window open to capture" : "could not write every capture"); return -1; }
@@ -509,6 +579,7 @@ static int lj_us_exec(lj_us_stmt *st)
     lj_window *win;
     lj_widget *w;
     int row, col, id, k, ms;
+    char path[LJ_PATH_CAP];
     FILE *f;
     switch (st->verb) {
     case LJ_US_OPEN:
@@ -540,6 +611,9 @@ static int lj_us_exec(lj_us_stmt *st)
         if (!(win = lj_us_window(st->arg[0]))) return -1;
         return lj_us_assert_eq("caption", lj_window_caption(win)->text, st->arg[1]);
     case LJ_US_ASSERT_TEXT:
+        if (strncmp(st->arg[0], "main.sb_", 8) == 0) {
+            for (k = 0; k < LJ_SB_COUNT; k++) if (strcmp(st->arg[0] + 5, lj_us_sb_names[k]) == 0) return lj_us_assert_eq(st->arg[0], lj_statusbar_panel_text((enum lj_status_field)k), st->arg[1]);
+        }
         if (!(w = lj_us_widget(st->arg[0], &win, &row, &col))) return -1;
         return lj_us_assert_eq(st->arg[0], lj_us_text_of(w, row, col), st->arg[1]);
     case LJ_US_ASSERT_ENABLED:
@@ -551,11 +625,25 @@ static int lj_us_exec(lj_us_stmt *st)
     case LJ_US_ASSERT_VIEW:  return lj_us_assert_view(st);
     case LJ_US_ASSERT_FILE:
         f = fopen(st->arg[0], "rb");
+        if (!f && lj_ctx_get()->lib && lj_library_path(lj_ctx_get()->lib, st->arg[0], path, sizeof path) == 0) f = fopen(path, "rb");   /* a relative path is also tried under the user library */
         if (f) fclose(f);
         if ((f != NULL) == (strcmp(st->arg[1], "exists") == 0)) return 0;
         lj_us_failf(lj_us.line, f ? "%s exists" : "%s is missing", st->arg[0]);
         return -1;
     case LJ_US_ASSERT_PPS:   return lj_us_assert_pps(st);
+    case LJ_US_ASSERT_CLIENT: case LJ_US_ASSERT_POS: {
+        lj_rect r;
+        int x, y, want_x, want_y;
+        char msg[96];
+        if (!(win = lj_us_window(st->arg[0]))) return -1;
+        lj_us_int(st->arg[1], &want_x); lj_us_int(st->arg[2], &want_y);
+        if (st->verb == LJ_US_ASSERT_CLIENT) { lj_window_client_rect(win, &r); x = r.w; y = r.h; }
+        else if (lj_us_screen(win, &x, &y) != 0) { lj_us_failf(lj_us.line, "%s", "no screen position (headless)"); return -1; }
+        if (x == want_x && y == want_y) return 0;
+        snprintf(msg, sizeof msg, "%s %s is %dx%d, expected %dx%d", st->arg[0], st->verb == LJ_US_ASSERT_CLIENT ? "client" : "position", x, y, want_x, want_y);
+        lj_us_failf(lj_us.line, "%s", msg);
+        return -1;
+    }
     case LJ_US_LOG:
         lj_log("script: %s", st->arg[0]);
         return 0;

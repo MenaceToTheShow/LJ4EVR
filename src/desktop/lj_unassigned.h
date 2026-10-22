@@ -9,5 +9,6 @@
 #include "desktop/lj_desktop.h"
 
 int lj_unassigned_fixture_at_row(int row);   /* fixture index of a list row, -1 */
+lj_window *lj_unassigned_window(void);      /* the open TUnassignedForm, NULL when closed (the --script driver resolves it) */
 
 #endif /* LJ_DESKTOP_UNASSIGNED_H */

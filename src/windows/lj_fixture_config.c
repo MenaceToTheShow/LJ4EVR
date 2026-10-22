@@ -14,6 +14,7 @@
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/lj_menu.h"
 #include "ui/widgets/lj_widgets_basic.h"
+#include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_warnings.h"
 
@@ -117,14 +118,23 @@ static void notes_show(int id)
 {
     const lj_profile *p = id >= 0 ? lj_fixlib_by_id((uint16_t)id) : NULL;
     lj_widget *re = find("reLJNotes");
+    const lj_font *f = re ? lj_w_font_of(re) : NULL;
+    int maxw = re ? re->w - 2 * 2 - 2 * 3 - LJ_SB_W : 0;         /* the memo's text column beside its scrollbar (MM_BORDER / MM_PADX of lj_w_memo.c) */
     char *s;
     fc.note_n = 0;
     lj_str_copy(fc.note_buf, sizeof fc.note_buf, p && p->notes ? p->notes : (id >= 0 ? LJ_FC_NA : ""));
     for (s = fc.note_buf; fc.note_n < LJ_FC_NOTE_LINES && *s; ) {
-        char *nl = strchr(s, '\n');
+        char *nl = strchr(s, '\n'), *q, *brk = NULL;
+        if (nl) *nl = 0;
+        if (f) for (q = strchr(s, ' '); q; q = strchr(q + 1, ' ')) { *q = 0; if (lj_text_width(f, s) > maxw) { *q = ' '; break; } *q = ' '; brk = q; }   /* the last blank that still fits */
+        if (f && brk && lj_text_width(f, s) > maxw) {               /* TRichEdit WordWrap (lj_w_memo does not wrap): break here and go round on the rest */
+            *brk = 0; fc.note_lines[fc.note_n++] = s; s = brk + 1;
+            if (nl) *nl = '\n';
+            continue;
+        }
         fc.note_lines[fc.note_n++] = s;
         if (!nl) break;
-        *nl = 0; s = nl + 1;
+        s = nl + 1;
     }
     if (re) lj_w_memo_set_lines(re, fc.note_lines, fc.note_n);
     if (p) snprintf(fc.padr, sizeof fc.padr, "Profile uses %d DMX addresses", p->footprint);
@@ -475,6 +485,7 @@ lj_window *lj_fixture_config_open(void)
     for (i = 0; i < LJ_COUNT_OF(greyed); i++) lj_menu_set_enabled(m, greyed[i], 0);
     for (i = 0; i < LJ_COUNT_OF(checks); i++) lj_menu_set_checked(m, checks[i][0], ctx->forms_ini ? lj_ini_geti(ctx->forms_ini, "FIXTURECONF", checks[i][1], 1) : 1);
     notes_show(-1);
+    lj_w_tabs_select(find("PCNotes"), 0);                             /* LJ Profile Notes in front, as fixtureconfiguration.jpg shows (the DFM's ActivePage is the O/V page) */
     set_enabled("bAdd", 0);
     lj_fixture_config_refresh();
     lj_win_show(fc.win, 0);

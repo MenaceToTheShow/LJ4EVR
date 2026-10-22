@@ -1,48 +1,62 @@
-# w1_acceptance.lj4s - the W1 acceptance walkthrough of design 10 W1 items 2-5, 7, 8 and 10
-# as a --script (docs/ui-script.md). Run from the repo root so the shots land in
-# docs/screenshots/w1/:
-#   build-msvc\Release\lj4evr.exe --script tests\ui\scripts\w1_acceptance.lj4s
-# Widget names: DFM object names for generated forms (ui/forms/lj_forms_gen.c); the
-# names the builders gave code-built widgets (desktop icons icon<n>, Fixture
-# Configuration tvProfiles/eLink/eAddress/bAdd, control rows row<k>_bar/row<k>_fade,
-# status panels sb_*): the integrator aligns them with what landed.
-# Addresses: MAC 500 Mode 2/4 at 1:001 (ch 1 shutter, ch 2 intensity, ch 3/4 pan, 5/6 tilt),
-# Generic DMX Dimmer 1 at 1:017.
+# w1_acceptance.lj4s - the W1 acceptance walkthrough of design 10 W1 items 1-5, 7, 8 and 10
+# as a --script (docs/ui-script.md). Run from the repo root on a fresh Default library so
+# the shots land in docs/screenshots/w1/ and the sequence / cue get number 0001:
+#   build-ninja-msvc\lj4evr.exe --script tests\ui\scripts\w1_acceptance.lj4s
+# Widget names: DFM object names for generated forms (ui/forms/lj_forms_gen.c); for the
+# code-built widgets the names docs/ui-script.md lists (desktop tiles icon<n>, the icon
+# area `desktop`, toolbar buttons tb_fixture_<n>, status panels sb_cuemod.., control rows
+# row<ch>_bar / row<ch>_fade / row<ch>_shutter, master faders fader_master / fader_<n>).
+# Addresses: MAC 500 Mode 2/4 at 1:001 (ch 1 shutter, ch 2 intensity, ch 11/12 pan, 13/14 tilt),
+# Generic DMX Dimmer 1 Channel at 1:017.
+# Second run (item 10, every window back at its last position): w1_positions.lj4s.
 
 log "W1 acceptance 1: main window, three toolbars, status bar"
 assert_caption main "Martin LightJockey (User lib: Default)"
+assert_visible main.tb_row_seqcue 1
+assert_visible main.tb_row_cuelist 1
+assert_visible main.tb_row_fixture 1
+assert_visible main.sb_status 1
 shot docs/screenshots/w1/acceptance1-main.png
 
 # ---- item 2: Fixture Configuration adds MAC 500 (Mode 2/4) at 1:001 and Generic DMX Dimmer 1 at 1:017
 log "W1 acceptance 2: fixture configuration"
 open fixture_config
-click TFixtureConfigForm.tvProfiles              # Martin / MAC 500 / Mode 2/4 selected by the tree clicks below
-key Home
-type "MAC 500"
-key Enter
-click TFixtureConfigForm.bAdd
-click TFixtureConfigForm.eLink
+click TLinkConfigForm3.tvAvailable 100 8          # focus the Available Profiles tree
+click TLinkConfigForm3.sbMartin                   # Martin folder expanded and selected
+key Right                                         # first Martin profile
+key Down 60                                       # ... MAC 500 (sorted case-insensitively, 02 s3.1)
+key Right                                         # expand MAC 500
+key Right                                         # Mode 2/4 (exe row 12, the hand profile)
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
 type "1"
-click TFixtureConfigForm.eAddress
-type "1"
-key Enter
-click TFixtureConfigForm.tvProfiles
-key Home
-type "Generic DMX Dimmer 1"
-key Enter
-click TFixtureConfigForm.bAdd
-click TFixtureConfigForm.eLink
-type "1"
-click TFixtureConfigForm.eAddress
+key Enter                                         # eAdrKeyUp commits the address (link 1 is the add default)
+click TLinkConfigForm3.tvAvailable 100 8          # focus back on the tree (the keys went to eAdr)
+click TLinkConfigForm3.sbGeneric
+key Right                                         # DMX Dimmer folder
+key Right                                         # expand
+key Right                                         # " 1 Channel" (exe row 19)
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
 type "17"
 key Enter
-click TFixtureConfigForm.bOk
-assert_file Config.dat exists                     # relative to the library root when the app runs there; else see docs/running.md
+assert_text TLinkConfigForm3.LFixtures "2 Fixtures configured"
+assert_text TLinkConfigForm3.lAddresses "17 DMX Addresses Used"
 shot docs/screenshots/w1/acceptance2-config.png
+click TLinkConfigForm3.bSave                      # Config.dat written, the Unassigned list opens [02 s2.6]
+assert_file Config.dat exists                     # relative to the cwd, else under the user library
+close fixture_config
 
 # both appear in the Unassigned list and are dragged onto the desktop as (1) MAC500 and (2) DMX1
-drag TUnassignedForm.LV_Unassigned main.icon_area 120 80
-drag TUnassignedForm.LV_Unassigned main.icon_area 220 80
+wait 300
+close cue_form                                    # the Sequence and Cue windows sit over the icon area: out of the way of the drops
+close seq_form
+assert_text TUnassignedForm.LV_Unassigned.0.1 "MAC 500"
+shot docs/screenshots/w1/acceptance2-unassigned.png
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -300 -120  # row 1 (y 26) -> left of the icon area centre, clear of the stay-on-top list
+wait 300
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -200 -120  # the remaining row
+wait 300
 assert_text main.icon1 "(1) MAC500"
 assert_text main.icon2 "(2) DMX1"
 shot docs/screenshots/w1/acceptance2-desktop.png
@@ -50,141 +64,187 @@ shot docs/screenshots/w1/acceptance2-desktop.png
 # ---- item 3: MAC 500 as master enables the fixture toolbar; dimmer only Levels [F9]
 log "W1 acceptance 3: toolbar enables"
 click main.icon1
+wait 200
 assert_enabled main.tb_fixture_1 1                # Intensity
 assert_enabled main.tb_fixture_2 1                # Movement
-assert_enabled main.tb_fixture_7 1                # Levels (Extended for MAC 500)
+assert_enabled main.tb_fixture_3 1                # Colors
+assert_enabled main.tb_fixture_4 1                # Gobos
+assert_enabled main.tb_fixture_5 1                # Beam
+assert_enabled main.tb_fixture_6 1                # Effects
+assert_enabled main.tb_fixture_7 1                # Levels (Extended for the MAC 500)
+assert_enabled main.tb_fixture_8 1                # Lamp
+assert_enabled main.tb_fixture_9 1                # Reset
+assert_enabled main.tb_fixture_22 1               # Blackout
+click main.tb_fixture_13                        # None: a click on a selected icon de-selects it (Inclusive) [F12]
 click main.icon2
+wait 200
 assert_enabled main.tb_fixture_1 0
+assert_enabled main.tb_fixture_2 0
 assert_enabled main.tb_fixture_7 1
+assert_enabled main.tb_fixture_8 0
 shot docs/screenshots/w1/acceptance3-toolbar.png
+click main.tb_fixture_13                        # None: a click on a selected icon de-selects it (Inclusive) [F12]
 click main.icon1
+wait 200
 
 # ---- item 4: scene 1 and scene 2 exactly as the design says, save as 0001
 log "W1 acceptance 4: sequence"
 open seq_form
 open intensity
-click intensity.row1_shutter_open                 # shutter open (ch 1)
-click intensity.row2_bar 999 0                    # intensity 100 % (ch 2); x past the bar end clamps to full
+click intensity.row1_shutter                      # Shutter Closed -> Shutter Open (ch 1)
+rclick intensity.row2_bar 130 8                   # right-click the right arrow: intensity 100 % (ch 2) [F16]
+click intensity.row2_fade                         # the touched channel armed Fade (hand profile default): Fade -> Off
+click intensity.row2_fade                         # Off -> Snap ("all Snap")
 open movement
-click movement.home                               # pan/tilt home
-click main.icon2
+click movement.MvHome                             # pan/tilt home (0 : 0); the touched channels arm Snap
+click main.tb_fixture_13                        # None: a click on a selected icon de-selects it (Inclusive) [F12]
+click main.icon2                                  # the dimmer as master: the controls follow (Intensity / Movement close, Levels opens)
+wait 200
 open levels
-click levels.row1_bar 128 0                       # dimmer 50 % (1:017 = 128)
-click main.icon1
+click levels.row1_bar 16 80                       # dimmer 50 % (1:017 = 128: the track half)
 assert_text main.sb_seqcounter "1:1"
-click TSequenceForm.sb1                           # Add scene (copies scene 1)
+click TSequenceForm.sb7                           # Add scene (copies scene 1)
 assert_text main.sb_seqcounter "2:2"
-click intensity.row2_bar 0 0                      # intensity 0 %
-click intensity.row2_fade                         # intensity Fade
-click movement.ePan
-type "-16256"
-key Enter
-click movement.eTilt
-type "17120"
-key Enter
-click movement.row1_fade                          # pan/tilt Fade
-click main.icon2
-click levels.row1_bar 999 0                       # dimmer 100 %
+click levels.row1_bar 16 16                       # dimmer 100 %
+click levels.row1_fade                            # dimmer Snap -> Fade (item 6: "the dimmer 128 -> 255 linearly over 3.0 s")
+shot docs/screenshots/w1/acceptance4-levels.png
+click main.tb_fixture_13                        # None
 click main.icon1
+wait 200
+open intensity
+rclick intensity.row2_bar 5 8                     # right-click the left arrow: intensity 0 %
+click intensity.row2_fade                         # intensity Snap -> Fade
+open movement
+rclick movement.MvGrid 49 146                     # Goto Position: pan -16212 : tilt 17245 (the pixel nearest -16256 : 17120 on the 191-px grid)
+click movement.MvPanFade                          # pan Fade
+click movement.MvTiltFade                         # tilt Fade
 click TSequenceForm.EF
 key End
-key BS
-key BS
-key BS
-key BS
-key BS
+key BS 5
 type "03:00"                                      # fade time 3.00 s
-key Enter
 click TSequenceForm.ES
 key End
-key BS
-key BS
-key BS
-key BS
-key BS
+key BS 5
 type "04:00"                                      # scene time 4.00 s
-key Enter
 assert_text main.sb_seqcounter "2:2"
-click TSequenceForm.sb7                           # Save sequence
+click TSequenceForm.sb9                           # Save sequence (commits the time fields first)
+wait 300                                          # the dialog activates (FormActivate reloads its fields) before we type
+assert_text TSequenceForm.EF "3:00"               # lj_fmt_time s:hh (the DFM placeholder "88:88"; the reduced GIF reads "0:05" or "0.05", rig item)
+assert_text TSequenceForm.ES "4:00"
 click TSaveSeqForm.ESeqName
 type "first"
-click TSaveSeqForm.Bsave
+click TSaveSeqForm.BSaveNew                       # Save as New Sequence (Save Sequence needs a number)
+wait 300
 assert_caption TSequenceForm "SEQUENCE [0001 first]"
-assert_text main.tb_seqcue_seqno "0001"
+assert_text TSequenceForm.ESeqNo "0001"
+assert_text main.tb_seqname "first"               # the toolbar field (yellow = saved) [F7]
 shot docs/screenshots/w1/acceptance4-sequence.png
 
 # ---- item 5: cue window, Add Sequence to Current Cue, Save Cue 0001, Go
 log "W1 acceptance 5: cue"
 open cue_form
-click TSequenceForm.sb7
-click TSaveSeqForm.cbAddSeq                       # Add Sequence to Current Cue
-click TSaveSeqForm.Bsave
-assert_text TCurrentCue.Grid.1.1 "0001"           # row 1 = slot 1, Delphi 0-based Cells[col, row]: the integrator fixes the column
+click TSequenceForm.sb11                          # Add Sequence to Current Cue -> slot 1
+assert_text TCurrentCue.lj_cue_grid.1.0 "0001"    # row 1 = slot 1, col 0 = No
+assert_text TCurrentCue.lj_cue_grid.1.1 "first"
+assert_text TCurrentCue.lj_cue_grid.1.3 "1:2"
+assert_text TCurrentCue.lj_cue_grid.1.7 "fwd"
+assert_text TCurrentCue.lj_cue_grid.1.8 "auto"
+assert_text main.sb_cuemod "Cue Modified"
+click TSequenceForm.sb8                           # New/Clear the current sequence: it sits above the cue [F23], the cue plays alone
+assert_caption TSequenceForm "SEQUENCE [0000 No Name]"
 click TCurrentCue.sbSaveCue
+wait 300
 click TSaveCueForm.ECueName
 type "first cue"
-click TSaveCueForm.Bsave
+click TSaveCueForm.BSaveNew                       # Save New Cue (Save Cue needs a number)
+wait 300
 assert_caption TCurrentCue "CUE [0001 first cue]"
 assert_text main.sb_cuemod ""                     # Cue Modified flag clears on save
 click TCurrentCue.sbGo
-wait 1500
-assert_frame 1:1=255                              # scene 1: shutter open
-assert_frame 1:2=255 8                            # intensity on its way (scene 2 fades it down later)
-assert_frame 1:17=128
+wait 500
+assert_frame 1:1=20                               # scene 1: shutter open (LJ_CTL_SHUTTER_OPEN, F47 PROPOSAL)
+assert_frame 1:2=255                              # intensity 100 %
+assert_frame 1:11=128                             # pan home MSB (MAC 500 Mode 2/4: pan 11/12, tilt 13/14)
+assert_frame 1:12=0
+assert_frame 1:13=128                             # tilt home MSB
+assert_frame 1:14=0
+assert_frame 1:17=128                             # dimmer 50 %
 shot docs/screenshots/w1/acceptance5-cue-running.png
-wait 3000
-assert_frame 1:17=255 8                           # scene 2 after the 3 s fade: dimmer 100 %
+wait 3000                                         # 3.5 s in: the last whole second lies inside the 1.0-4.0 s fade
+assert_pps 1 30 45                                # ~40/s while values change, never 80 (items 6/7)
+wait 1000                                         # 4.5 s in: the 3.00 s fade is done
+assert_frame 1:2=0                                # intensity 0 %
+assert_frame 1:17=255                             # dimmer 100 %
+assert_frame 1:11=64                              # pan -16212 -> 16556 = 0x40AC
+assert_frame 1:12=172
+assert_frame 1:13=195                             # tilt 17245 -> 50013 = 0xC35D
+assert_frame 1:14=94
+wait 1000                                         # 5.5 s in: scene 2 held 1 s, the scene boundary snapped back to scene 1
+assert_frame 1:2=255
+assert_frame 1:17=128
+assert_frame 1:11=128
+click TCurrentCue.sbStop                          # Stop holds the scene 1 values (stop_holds)
+wait 2000
+assert_pps 1 0 2                                  # ~1/s idle
 
 # ---- item 7: GM 50 %, Blackout, Freeze, Offline / Online
 log "W1 acceptance 7: masters, blackout, freeze, offline"
 open master_intensity
-click TMasterIntensityForm.fader_master 0 0       # the master fader at 50 %: integrator sets the y that reads 50 %
+click TMasterIntensityForm.fader_master 16 67     # the track half: 128 = 50 %
 wait 300
 assert_view gm=128
+assert_frame 1:2=128                              # MAC 500 ch 2 halves
+assert_frame 1:17=64                              # the dimmer halves (ext_gm): 128 * 128 / 255
+assert_frame 1:1=20                               # the shutter does not
 click TMasterIntensityForm.bBlackOut
 wait 300
 assert_view blackout=1
 assert_frame 1:1=0                                # MAC 500 shutter closed by blackout
+assert_frame 1:17=64                              # the dimmer is left alone
+shot docs/screenshots/w1/acceptance7-blackout.png
 click TMasterIntensityForm.bRestore
 wait 300
 assert_view blackout=0
-click main.tb_seqcue_freeze
+assert_frame 1:1=20
+click main.tb_fixture_20                          # Freeze
 wait 300
 assert_view freeze=1
 shot docs/screenshots/w1/acceptance7-freeze.png
-click main.tb_seqcue_freeze
+click main.tb_fixture_20
 wait 300
 assert_view freeze=0
-click main.tb_seqcue_offline
+click main.tb_fixture_19                          # OnLine/OffLine
 wait 2000
 assert_view offline=1
 assert_pps 1 0 2                                  # ~1/s keep-alive while offline
-click main.tb_seqcue_offline
+shot docs/screenshots/w1/acceptance7-offline.png
+click main.tb_fixture_19
 wait 2000
 assert_view offline=0
-assert_pps 1 30 45                                # ~40/s while values change (never 80)
 click TMasterIntensityForm.bAll100
 wait 300
 assert_view gm=255
+assert_frame 1:17=128
 
 # ---- item 8: DMX Output Monitor, overwrite 1:017 = 200
 log "W1 acceptance 8: DMX output monitor"
 open dmx_monitor
-click TDMXOUTFORM.sg1 40 40                       # a cell of link 1 (the integrator points it at 1:017)
-click TDMXOUTFORM.sevalue
-key End
-key BS
-key BS
-key BS
+click TDMXOutForm.M_EnableOverwrite               # Preferences > Enable Overwrite (menu item)
+click TDMXOutForm.sg1 177 41                      # row "11", column "+6" = 1:017 (24-px cells: 2 + 7 * 25 + 12)
+click TDMXOutForm.sevalue
+key BS 3                                          # 255 -> 0
 type "200"
-key Enter
 wait 300
 assert_frame 1:17=200
 shot docs/screenshots/w1/acceptance8-monitor.png
-click TDMXOUTFORM.sbClear
+click TDMXOutForm.sbClear
 wait 300
+assert_frame 1:17=128
 
 # ---- item 10: every window reopens at its last position (forms.ini with LJ2's section names)
 log "W1 acceptance 10: positions persist on close"
+assert_client TSequenceForm 354 106
+assert_client TCurrentCue 604 254
+assert_client TMasterIntensityForm 664 297
 shot docs/screenshots/w1/acceptance10-all-windows.png
 quit

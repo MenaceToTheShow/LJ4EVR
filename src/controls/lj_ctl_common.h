@@ -50,6 +50,7 @@ typedef struct {
     uint8_t lo, hi, reverse;         /* value range of a bar / fader (row lo..hi, or the shutter's closed/open pair) */
     unsigned special:1;              /* part of the Intensity specials block (Preferences shows/hides it) */
     char text[12];                   /* a generated caption ("CH8") the widget's desc points at */
+    char name[16];                   /* the name the --script driver addresses the widget by: row<ch+1>_<bar|fade|shutter|btn<i>|radio<i>|pal<i>|scroll> (docs/ui-script.md) */
 } lj_ctl_elem;
 
 typedef struct lj_ctl_win {
@@ -79,6 +80,7 @@ lj_ctl_win *lj_ctl_rec(enum lj_ctl_kind kind);                                  
 
 /* registration and widgets the kind files build with */
 lj_ctl_elem *lj_ctl_elem_add(lj_ctl_win *c, lj_widget *w, const lj_ctl_row *row, const lj_ctl_button *btn, int role);   /* NULL when the window is full (logged) */
+lj_widget   *lj_ctl_elem_find(const lj_window *win, const char *name);   /* the elem widget of a control window by its row<ch>_<role> name; NULL */
 lj_ctl_desc *lj_ctl_desc_new(lj_ctl_elem *e, enum lj_ctl_row_kind kind, const char *caption, int x, int y, int w, int h);  /* an owned desc for a basic widget */
 lj_widget   *lj_ctl_button_new(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row, const lj_ctl_button *btn, int role,
                                const char *caption, int x, int y, int w, int h, int black);    /* TSpeedButton; black = white text on black (the specials, note 15/01 s4) */

@@ -387,7 +387,7 @@ int lj_platform_open_window(lj_window *win, unsigned flags)
     if (!native) SDL_SetWindowHitTest(sdl, lj_sdl_hit, win);
     lj_sdl_frame_extra(win, &dw, &dh);
     if (d && (d->min_width > 0 || d->min_height > 0))
-        SDL_SetWindowMinimumSize(sdl, (d->min_width + dw) * z, (d->min_height + dh) * z);
+        SDL_SetWindowMinimumSize(sdl, d->min_width * z, d->min_height * z);   /* Constraints are outer sizes (lj_window_resize clamps client + frame against them); adding dw/dh made TCurrentCue 620 wide (W1 acceptance 10) */
     SDL_StartTextInput(sdl);
     if (flags & LJ_WF_MAIN) lj_sdl.main = sdl;
     lj_sdl.wins[lj_sdl.nwins++] = pw;

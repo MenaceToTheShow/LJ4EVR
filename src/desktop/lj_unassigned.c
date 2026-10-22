@@ -49,6 +49,7 @@ static int lv_mouse(lj_widget *w, const lj_mouse_ev *m)   /* dmAutomatic: a left
 }
 
 int lj_unassigned_fixture_at_row(int row) { return row >= 0 && row < lj_una_n ? lj_una_fixture[row] : -1; }
+lj_window *lj_unassigned_window(void) { return lj_una; }
 
 lj_window *lj_unassigned_open(void)
 {

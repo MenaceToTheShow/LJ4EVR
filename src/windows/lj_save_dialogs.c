@@ -54,7 +54,8 @@ static void lj_ss_update(void)
     lj_ss_loading = 1;
     snprintf(buf, sizeof buf, "%04u", (unsigned)(s ? s->number : 0));
     lj_w_edit_set_text(lj_window_find(lj_ss_win, "SeqNum"), s && s->number ? buf : "");   /* blank until the first save [03 s4.2] */
-    lj_w_edit_set_text(lj_window_find(lj_ss_win, "ESeqName"), s ? s->name : "");
+    w = lj_window_find(lj_ss_win, "ESeqName");
+    if (w && !w->focused) lj_w_edit_set_text(w, s ? s->name : "");   /* FormActivate re-runs this: a name being typed is not overwritten */
     w = lj_window_find(lj_ss_win, "cbSeqType");
     if (w) { ((lj_w_combobox *)w)->index = 0; lj_widget_invalidate(w); }
     w = lj_window_find(lj_ss_win, "cbSlot");
@@ -81,14 +82,18 @@ static void lj_ss_sync_table(const lj_sequence *src)
 {
     lj_ctx *c = lj_ctx_get();
     lj_sequence *rec = (lj_sequence *)lj_table_get(&c->show->sequences, src->number);
-    if (!rec || rec == src) return;         /* a cue pinned this number: the runner keeps its pointer and sees the new content (2.3 rule 6) */
-    lj_lock();
+    int fresh = rec == NULL;
+    if (rec == src) return;
+    if (fresh) rec = lj_sequence_new_rec();  /* first save: the table holds a copy of what is on disk; the current record stays the editing copy */
+    lj_lock();                               /* a cue pinned this number: the runner keeps its pointer and sees the new content (2.3 rule 6) */
+    if (fresh) lj_table_put(&c->show->sequences, src->number, rec);
     if (lj_sequence_alloc(rec, src->n) == 0 && src->scenes) memcpy(rec->scenes, src->scenes, (size_t)src->n * sizeof *src->scenes);
     lj_str_copy(rec->name, sizeof rec->name, src->name);
     lj_str_copy(rec->type, sizeof rec->type, src->type);
     rec->sync_times = src->sync_times; rec->global_scene_time = src->global_scene_time; rec->global_fade_time = src->global_fade_time;
     rec->modified = 0;
     lj_unlock();
+    lj_cue_form_repin();                     /* slots holding this number (load error until now) pin the record */
 }
 
 static void lj_ss_take_fields(void)

@@ -78,7 +78,21 @@ lj_ctl_elem *lj_ctl_elem_add(lj_ctl_win *c, lj_widget *w, const lj_ctl_row *row,
     memset(e, 0, sizeof *e);
     e->w = w; e->row = row; e->btn = btn; e->role = (uint8_t)role;
     if (row) { e->lo = row->lo; e->hi = row->hi; e->reverse = row->reverse; e->dflt_state = lj_ctl_dflt_state(c, row->ch); }
+    if (row && role != LJ_CE_NONE) {                        /* code-built widgets carry no DFM name; the --script driver resolves these through lj_ctl_elem_find */
+        static const char *const suffix[] = { "", "fade", "bar", "shutter", "btn", "bar", "radio", "pal", "scroll" };
+        if (btn && row->buttons && role != LJ_CE_SHUTTER) snprintf(e->name, sizeof e->name, "row%d_%s%d", row->ch + 1, suffix[role], (int)(btn - row->buttons) + 1);
+        else snprintf(e->name, sizeof e->name, "row%d_%s", row->ch + 1, suffix[role]);
+    }
     return e;
+}
+
+lj_widget *lj_ctl_elem_find(const lj_window *win, const char *name)
+{
+    lj_ctl_win *c = lj_ctl_of(win);
+    int i;
+    if (!c || !name) return NULL;
+    for (i = 0; i < c->n; i++) if (c->e[i].w && c->e[i].name[0] && strcmp(c->e[i].name, name) == 0) return c->e[i].w;
+    return NULL;
 }
 
 lj_ctl_desc *lj_ctl_desc_new(lj_ctl_elem *e, enum lj_ctl_row_kind kind, const char *caption, int x, int y, int w, int h)

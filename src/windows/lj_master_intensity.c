@@ -25,6 +25,7 @@
  * 325 px of Panel1 left of Panel2, so 40 / 35 (PROPOSAL, rig item). Rows measured from masterintensity.gif. */
 static const int lj_mi_col_x[LJ_MI_COLS] = { 4, 46, 81, 116, 151, 186, 221, 256, 291 };
 static const int lj_mi_col_w[LJ_MI_COLS] = { 40, 33, 33, 33, 33, 33, 33, 33, 33 };
+static const char *const lj_mi_fader_names[LJ_MI_COLS] = { "fader_master", "fader_1", "fader_2", "fader_3", "fader_4", "fader_5", "fader_6", "fader_7", "fader_8" };
 enum { LJ_MI_Y_SYNC = 2, LJ_MI_Y_NAME = 18, LJ_MI_Y_FADER = 32, LJ_MI_Y_BUMP = 168, LJ_MI_Y_MODE = 192 };
 
 static const char *const lj_mi_mode_items[] = { "Master Proportional", "Master LoTP", "Master HTP", "Master no Effect" };   /* exe strings 0x23BCBC.. */
@@ -213,6 +214,7 @@ lj_window *lj_master_intensity_open(void)
         s.sync[i] = mk_button(panel, x, LJ_MI_Y_SYNC, w, 14, i == 0 ? "Clr Sync" : "Sync", &s.col[i]);   /* exe strings 0x23CE90 / 0x23CEA8 */
         s.name[i] = mk_label(panel, x, LJ_MI_Y_NAME, w, 13, name);
         s.fader[i] = lj_w_fader_create(panel, NULL);
+        s.fader[i]->name = lj_mi_fader_names[i];                 /* docs/ui-script.md: fader_master, fader_1 .. fader_8 */
         s.fader[i]->x = x + (w - LJ_FADER_W) / 2; s.fader[i]->y = LJ_MI_Y_FADER; s.fader[i]->h = LJ_MI_FADER_H;
         s.level[i] = i == 0 ? view()->gm : view()->sub[i - 1];
         if (!s.view) s.level[i] = LJ_GM_DOMAIN;                   /* before the first view copy every master is full (lj_engine_create) */
