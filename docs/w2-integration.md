@@ -401,3 +401,14 @@ library (the old `User\Default` moved aside first), Release and Debug, both rc 0
 Recorded, not changed: the exe pool also has a `Rows` key beside the nine `[STATICS2]` keys; which one holds the slot count
 is rig item 14 sB.8 item 2 (this pass follows the verdict: `SlotsVisible`). The design 2.3 rule 3 sentence for the
 Statics 2 link pin is the design owner's (ME-50 list).
+
+### Fix pass r1 CI
+
+    e0d4353 (fix pass r1)          run 39827846937: linux-gcc-asan red: test_controls_b heap-use-after-free in the test's
+                                   click helper (mouse events sent to the confirm box after its button destroyed it);
+                                   the other five jobs green
+    da78acf (the test clicks the button directly)
+                                   run 39828850629: green, all six jobs
+                                   https://github.com/UnbannableGT/LJ4EVR/actions/runs/39828850629
+                                   replay-frames.bin linux / windows / macos
+                                   4999049952535575a8588d37fa1d1fa34175cd325fb28569995188990b509646 (equal; ME-78, ME-98)
