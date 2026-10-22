@@ -80,6 +80,7 @@ static const lj_win_ops lj_win_table[LJ_WIN_COUNT] = {
     [LJ_WIN_CLOSE_PROMPT]    = { NULL /* lj_win_close_prompt(cb) */, lj_warnings_close_all, lj_win_close_prompt_window, NULL },
     /* W2 windows-b */
     [LJ_WIN_BGCUE_FORM]      = { lj_bgcue_form_open, lj_bgcue_form_close, lj_bgcue_form_get, lj_bgcue_form_refresh },
+    [LJ_WIN_SAVE_BGCUE]      = { lj_save_bg_open, lj_save_bg_close, lj_save_bg_get, NULL },
     [LJ_WIN_STATICS2_FORM]   = { lj_statics2_form_open, lj_statics2_form_close, lj_statics2_form_get, lj_statics2_form_refresh },
     [LJ_WIN_SMOKE_CONTROL]   = { lj_smoke_control_open, lj_smoke_control_close, lj_smoke_control_get, lj_smoke_control_refresh },
     /* W2 windows-a */

@@ -117,6 +117,7 @@ backup restore notes about striking_lamps` (DFM classes in `docs/w2-contracts.md
 | `assert_view <field>=<value> ...` | the W1 verb; fields `gm blackout freeze offline` and the W2 names `bg_any statics_any flash_latched flash_seq transparent_mode smoke_active haze_level chase_ms cue_number bg_number pending_link_cue snapshot_tick`; also accepted as two bare words `assert_view <field> <value>`. Values are unsigned decimal. `pending_link_cue` is the copy of the pass that handed the request out (the engine clears it at that read), so it is visible to exactly the next script line |
 | `assert_file_line <path> "text"` | the file (as given, else library-relative like `assert_file`) contains the line exactly once (CR/LF stripped before the compare) |
 | `sleep_until_tick <n>` | lets the loop run until the app's view copy reports `tick_no >= n`; fails after 10 s (a stopped engine) |
+| `move <Form> <x> <y>` | puts the window at screen x,y through `lj_win_host.move` (W2 integrator 2): windows open centred on top of each other, and a `drag` needs its drop target visible. Fails headless |
 
 Every W2 line is checked at load like the W1 verbs: unknown view fields, LED names, setups outside
 1..8, unknown key names, non-hex MIDI bytes and non-numeric ticks fail with `SCRIPT FAIL line n` before

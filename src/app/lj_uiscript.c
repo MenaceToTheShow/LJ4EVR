@@ -35,13 +35,13 @@ enum { LJ_US_ARGS = 6 };
 enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLCLICK, LJ_US_DRAG, LJ_US_TYPE, LJ_US_KEY, LJ_US_WAIT, LJ_US_SHOT,
                   LJ_US_ASSERT_CAPTION, LJ_US_ASSERT_TEXT, LJ_US_ASSERT_ENABLED, LJ_US_ASSERT_VISIBLE, LJ_US_ASSERT_FRAME, LJ_US_ASSERT_VIEW,
                   LJ_US_ASSERT_FILE, LJ_US_ASSERT_PPS, LJ_US_ASSERT_CLIENT, LJ_US_ASSERT_POS, LJ_US_LOG, LJ_US_QUIT,
-                  /* W2 (appended) */ LJ_US_MIDI, LJ_US_HOTKEY, LJ_US_ASSERT_LED, LJ_US_ASSERT_FILE_LINE, LJ_US_SLEEP_UNTIL_TICK, LJ_US_VERBS };
+                  /* W2 (appended) */ LJ_US_MIDI, LJ_US_HOTKEY, LJ_US_ASSERT_LED, LJ_US_ASSERT_FILE_LINE, LJ_US_SLEEP_UNTIL_TICK, LJ_US_MOVE, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
     { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
     { "assert_frame", 1, 2 }, { "assert_view", 1, 4 }, { "assert_file", 2, 2 }, { "assert_pps", 3, 3 }, { "assert_client", 3, 3 }, { "assert_pos", 3, 3 }, { "log", 1, 1 }, { "quit", 0, 0 },
     /* W2 (appended; docs/ui-script.md "W2 verbs"): parsed and type-checked here, executed by the app track (lj_us_exec_w2) */
-    { "midi", 3, 3 }, { "hotkey", 2, 2 }, { "assert_led", 2, 2 }, { "assert_file_line", 2, 2 }, { "sleep_until_tick", 1, 1 } };   /* assert_view gains W2 field names inside its W1 row */
+    { "midi", 3, 3 }, { "hotkey", 2, 2 }, { "assert_led", 2, 2 }, { "assert_file_line", 2, 2 }, { "sleep_until_tick", 1, 1 }, { "move", 3, 3 } };   /* assert_view gains W2 field names inside its W1 row */
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -215,7 +215,7 @@ static const char *lj_us_check(const lj_us_stmt *st)
     case LJ_US_ASSERT_PPS:
         if (lj_us_int(st->arg[0], &a) || a < 1 || a > LJ_LINKS || lj_us_int(st->arg[1], &b) || lj_us_int(st->arg[2], &c)) return "expected <link 1-4> <min> <max>";
         break;
-    case LJ_US_ASSERT_CLIENT: case LJ_US_ASSERT_POS:
+    case LJ_US_ASSERT_CLIENT: case LJ_US_ASSERT_POS: case LJ_US_MOVE:
         if (lj_us_int(st->arg[1], &a) || lj_us_int(st->arg[2], &b)) return "expected <Form> <x> <y>";
         break;
     default: break;
@@ -783,6 +783,15 @@ static int lj_us_exec(lj_us_stmt *st)
         snprintf(msg, sizeof msg, "%s %s is %dx%d, expected %dx%d", st->arg[0], st->verb == LJ_US_ASSERT_CLIENT ? "client" : "position", x, y, want_x, want_y);
         lj_us_failf(lj_us.line, "%s", msg);
         return -1;
+    }
+    case LJ_US_MOVE: {                                  /* W2 integrator 2: windows that open centred overlap; a drag needs its target visible */
+        const lj_win_host *h = lj_win_host_get();
+        int x, y;
+        if (!(win = lj_us_window(st->arg[0]))) return -1;
+        if (!h || !h->move) { lj_us_failf(lj_us.line, "%s", "move needs the platform (headless)"); return -1; }
+        lj_us_int(st->arg[1], &x); lj_us_int(st->arg[2], &y);
+        h->move(h->ud, win, x, y);
+        return 0;
     }
     case LJ_US_LOG:
         lj_log("script: %s", st->arg[0]);

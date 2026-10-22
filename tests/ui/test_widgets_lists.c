@@ -184,6 +184,16 @@ int lj_test_widgets_lists(int argc, char **argv)
     mouse(w, LJ_EV_MOUSE_DOWN, 2 + 40, 2 + 8, 1); mouse(w, LJ_EV_MOUSE_MOVE, 2 + 60, 2 + 8, 0); mouse(w, LJ_EV_MOUSE_UP, 2 + 60, 2 + 8, 1);
     CHECK(((lj_w_listview *)w)->col_w[0] == 60 && ev_count[LJ_WEV_COLUMN_CLICK] == 1);
     CHECK(lj_w_listview_row_at(w, 2 + 17 + 3 * 14 + 1) == 3 && lj_w_listview_row_at(w, 2 + 17 + 4 * 14 + 1) == -1);
+    {   int clicks = ev_count[LJ_WEV_CLICK], sels = ev_count[LJ_WEV_SELECT_ITEM];       /* W2 acceptance: a press on the selected row is a click (a dmAutomatic source drags it) */
+        click(w, 50, 2 + 17 + 3 * 14 + 5);
+        CHECK(((lj_w_listview *)w)->index == 3 && ev_count[LJ_WEV_CLICK] == clicks + 1 && ev_count[LJ_WEV_SELECT_ITEM] == sels);
+        ((lj_w_listview *)w)->sb.pos = 2; lj_w_listview_set_items(w, rows, 4);          /* the same rows again (a 100 ms refresh): the scroll stays */
+        CHECK(((lj_w_listview *)w)->sb.pos == 2 && ((lj_w_listview *)w)->index == -1);
+        lj_w_listview_set_items(w, rows, 3);                                            /* other rows: back to the top */
+        CHECK(((lj_w_listview *)w)->sb.pos == 0);
+        lj_w_listview_select(w, 2);
+        CHECK(((lj_w_listview *)w)->index == 2 && ev_count[LJ_WEV_SELECT_ITEM] == sels + 1);
+    }
     free_children(&root);
 
     /* ---- THeaderControl ---- */

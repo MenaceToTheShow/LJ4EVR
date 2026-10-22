@@ -1,0 +1,55 @@
+# w2_positions_2.lj4s - the restart half of w2_positions_1.lj4s: every window reopens at its saved position.
+log "W2 persistence 2: reopen at the saved position"
+click main.tb_fixture_13
+click main.icon1
+wait 300
+open loop_options
+wait 200
+assert_pos loop_options 100 1600
+close loop_options
+open cue_time
+wait 200
+assert_pos cue_time 140 1620
+close cue_time
+open bgcue_form
+wait 200
+assert_pos bgcue_form 180 1640
+close bgcue_form
+open save_bgcue
+wait 200
+assert_pos save_bgcue 220 1660
+close save_bgcue
+open statics2_form
+wait 200
+assert_pos statics2_form 260 1680
+close statics2_form
+open smoke_control
+wait 200
+assert_pos smoke_control 300 1700
+close smoke_control
+open position_presets
+wait 200
+assert_pos position_presets 380 1740      # one TPresetForm class = one [PRESETFORM] section, shared with the User Palette window moved last
+close position_presets
+open user_palettes
+wait 200
+assert_pos user_palettes 380 1740
+close user_palettes
+open fixture_groups
+wait 200
+assert_pos fixture_groups 420 1760
+close fixture_groups
+open htp_groups
+wait 200
+assert_pos htp_groups 460 1780
+close htp_groups
+wait 200
+open snapshot
+wait 200
+assert_pos snapshot 540 1820
+close snapshot
+open midi_in
+wait 200
+assert_pos midi_in 580 1840
+close midi_in
+quit

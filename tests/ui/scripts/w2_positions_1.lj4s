@@ -1,0 +1,72 @@
+# w2_positions_1.lj4s - W2 acceptance, restart persistence (docs/w2-integration.md section 9): opens every W2 window that
+# persists (poDesigned or code-built), moves it with `move`, closes it; then quit writes forms.ini. Run
+# w2_positions_2.lj4s after it. Positions are on the second display of the acceptance PC (y >= 1440): on this
+# four-monitor layout a SetWindowPos onto the primary display lands 1440 px lower (raw Win32 does the same).
+# Needs a library with a MAC 500 as fixture 1 (the end state of w2_acceptance.lj4s).
+log "W2 persistence 1: open, move, close"
+click main.tb_fixture_13
+click main.icon1
+wait 300
+open loop_options
+wait 200
+move loop_options 100 1600
+wait 200
+close loop_options
+open cue_time
+wait 200
+move cue_time 140 1620
+wait 200
+close cue_time
+open bgcue_form
+wait 200
+move bgcue_form 180 1640
+wait 200
+close bgcue_form
+open save_bgcue
+wait 200
+move save_bgcue 220 1660
+wait 200
+close save_bgcue
+open statics2_form
+wait 200
+move statics2_form 260 1680
+wait 200
+close statics2_form
+open smoke_control
+wait 200
+move smoke_control 300 1700
+wait 200
+close smoke_control
+open position_presets
+wait 200
+move position_presets 340 1720
+wait 200
+close position_presets
+open user_palettes
+wait 200
+move user_palettes 380 1740
+wait 200
+close user_palettes
+open fixture_groups
+wait 200
+move fixture_groups 420 1760
+wait 200
+close fixture_groups
+open htp_groups
+wait 200
+move htp_groups 460 1780
+wait 200
+close htp_groups
+wait 200
+wait 200
+open snapshot
+wait 200
+move snapshot 540 1820
+wait 200
+close snapshot
+open midi_in
+wait 200
+move midi_in 580 1840
+wait 200
+close midi_in
+quit

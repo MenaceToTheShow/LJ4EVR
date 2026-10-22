@@ -16,7 +16,8 @@
 #define LJ_FADER_TRACK_Y 16
 #define LJ_FADER_CHROME  32      /* rows not in the track: top 16 + bottom 16 */
 
-typedef struct { lj_widget base; int value, max; unsigned pressed:2, dragging:1; } lj_w_fader;   /* value 0..max (255) */
+typedef struct { lj_widget base; int value, max; unsigned pressed:2, dragging:1;
+                 void (*text)(int value, char *buf, size_t cap); } lj_w_fader;   /* value 0..max (255); text NULL = "NN%" readout, else the owner formats it (Smoke Control "FF" / "10s") */
 
 lj_widget *lj_w_fader_create(lj_widget *parent, const lj_ctl_desc *d);   /* position (value), max from the desc; height from the desc (track = height - 32) */
 int        lj_w_fader_value(const lj_widget *w);

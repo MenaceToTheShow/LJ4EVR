@@ -39,6 +39,7 @@ static unsigned long long lj_t_tid(void) { return (unsigned long long)(uintptr_t
 #include "model/lj_sequence.h"
 #include "model/lj_show.h"
 #include "ui/forms/lj_forms_gen.h"
+#include "windows/lj_cue_form.h"
 
 static int fails;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
@@ -136,9 +137,15 @@ int lj_test_uiscript_w2(int argc, char **argv)
     bad_line("assert_file_line w2.txt");
     bad_line("sleep_until_tick -3");
     bad_line("sleep_until_tick soon");
+    bad_line("move TSeqListForm 600");      /* move <Form> <x> <y> */
+    bad_line("move TSeqListForm x 380");
 #ifdef LJ_SOURCE_DIR
     {   char p[512];                          /* the W2 walkthrough parses (every line checked at load) */
         snprintf(p, sizeof p, "%s/tests/ui/scripts/w2_acceptance.lj4s", LJ_SOURCE_DIR);
+        CHECK(lj_uiscript_load(p) == 0);
+        snprintf(p, sizeof p, "%s/tests/ui/scripts/w2_positions_1.lj4s", LJ_SOURCE_DIR);   /* the restart persistence pair (integrator 2) */
+        CHECK(lj_uiscript_load(p) == 0);
+        snprintf(p, sizeof p, "%s/tests/ui/scripts/w2_positions_2.lj4s", LJ_SOURCE_DIR);
         CHECK(lj_uiscript_load(p) == 0); }
 #endif
 
@@ -264,6 +271,21 @@ int lj_test_uiscript_w2(int argc, char **argv)
         }
     }
     lj_ini_free(c->forms_ini); c->forms_ini = NULL;
+
+    /* ---- 7. W2 acceptance: New Cue after a load keeps the table's record (the walkthrough's Link to Cue load, New Cue,
+     *         MIDI load of another cue freed cue 0001's table record and the exit freed it again) ---- */
+    {   lj_cue *loaded = show->current_cue, *nine = lj_cue_new_rec();
+        nine->number = 9;
+        CHECK(lj_library_record_path(&lib, LJ_REC_CUE, 9, path, sizeof path) == 0 && lj_cue_save(path, nine) == 0);
+        lj_cue_free(nine);
+        CHECK(loaded && lj_table_get(&show->cues, 7) == loaded);
+        lj_cue_form_new_cue();
+        CHECK(show->current_cue && show->current_cue != loaded && show->current_cue->number == 0);
+        CHECK(lj_table_get(&show->cues, 7) == loaded && loaded->number == 7);
+        CHECK(lj_app_load_cue(9, 0) == 0);                      /* frees the unsaved working record, not cue 0007's */
+        CHECK(lj_table_get(&show->cues, 7) == loaded && loaded->number == 7 && show->current_cue == lj_table_get(&show->cues, 9));
+        lj_lock(); lj_engine_tick(e, lj_clock_us() + 175000u); lj_unlock();
+    }
 
     /* ---- teardown ---- */
     lj_app_seam_stop();

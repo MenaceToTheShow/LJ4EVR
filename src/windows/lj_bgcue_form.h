@@ -21,5 +21,9 @@ void       lj_bgcue_form_toggle_slot(int slot);             /* 1..5: LJ_CMD_BG_O
 int        lj_bgcue_form_row(int slot, char *dst, size_t cap);   /* 1..5: the LV1 row as shown, sub-items separated by '\t'; -1 out of range */
 lj_widget *lj_bgcue_form_slot_button(int slot);             /* 1..5, NULL when closed */
 int        lj_bgcue_form_last_cmd(lj_cmd *out);             /* the last command posted (tests); 0 = none */
+const lj_bgcue *lj_bgcue_form_work(void);                  /* the record the window edits (LJ_ACT_BGCUE_APPLY hands it to the app); number 0 = unsaved */
+lj_window *lj_save_bg_open(void);                           /* Save Background Cue (TSaveBGForm) */
+void       lj_save_bg_close(void);
+lj_window *lj_save_bg_get(void);
 
 #endif /* LJ_WINDOWS_BGCUE_FORM_H */

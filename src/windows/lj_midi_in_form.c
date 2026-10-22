@@ -37,7 +37,7 @@ static const lj_ctl_desc lj_mi_ctls[] = {
     { LJ_K_CHECKBOX, "cbBGOff", 12, 106, 220, 17, .caption = "Release BG Cue on Note Off", LJ_MI_F, .events = { { "OnClick", "cbSetupClick" } } },
     { LJ_K_CHECKBOX, "cbClOff", 12, 122, 220, 17, .caption = "Release Cuelist on Note Off", LJ_MI_F, .events = { { "OnClick", "cbSetupClick" } } },
     /* the program tabs */
-    { LJ_K_CHECKBOX, "cbEnable", 6, 26, 140, 17, .caption = "Enable Seq Flash", .visible = LJ_NO, LJ_MI_F, .events = { { "OnClick", "cbEnableClick" } } },
+    { LJ_K_CHECKBOX, "cbEnable", 6, 26, 120, 17, .caption = "Enable Seq Flash", .alignment = LJ_TA_LEFT /* midiinseq.gif: box right of the text; width PROPOSAL rig 05 s7.2 */, .visible = LJ_NO, LJ_MI_F, .events = { { "OnClick", "cbEnableClick" } } },
     { LJ_K_LABEL, "lChannel", 228, 28, 70, 13, .caption = "MIDI Channel#", .visible = LJ_NO, LJ_MI_F },
     { LJ_K_COMBOBOX, "cbChannel", 300, 24, 64, 21, .style = "csDropDownList", .visible = LJ_NO, LJ_MI_F, .events = { { "OnChange", "cbChannelChange" } } },
     LJ_MI_LV("lvSeq", 0, 3), LJ_MI_LV("lvCue", 1, 3), LJ_MI_LV("lvBG", 2, 3), LJ_MI_LV("lvCl", 3, 3), LJ_MI_LV("lvFn", 4, 2),
@@ -315,7 +315,7 @@ void lj_midi_in_form_refresh(void)
         lj_widget *lv = ktab() >= 0 ? find(lj_mi_lv[ktab()]) : NULL;
         mi.learning = 0;
         lj_w_set_caption(find("bLearn"), "Learn");
-        if (lv) { ((lj_w_listview *)lv)->index = note; lj_widget_invalidate(lv); }
+        if (lv) lj_w_listview_select(lv, note);                          /* the learnt note scrolls into view (midiinseq.gif shows the grid around the bound notes) */
         if (ktab() >= 0) {                                                /* bind at once when there is something to bind; an empty number only selects the row */
             const char *t = lj_w_edit_text(find("eNum"));
             if (lj_mi_kind[ktab()] == LJ_MIDI_FN || (t && *t)) lj_midi_in_form_set_note(note);

@@ -23,6 +23,7 @@
 #include "gfx/lj_bmp.h"
 #include "io/lj_fn.h"
 #include "io/lj_hotkeys.h"
+#include "io/lj_midi.h"
 #include "io/lj_net.h"
 #include "io/lj_sacn.h"
 #include "model/lj_cue.h"
@@ -291,6 +292,17 @@ static int lj_app_selftest(lj_window *seq, int startup_ok)
     if (mon) lj_win_close(LJ_WIN_DMX_MONITOR);
     printf("selftest TDMXOUTFORM: %s, %d unresolved DFM event name(s): %s\n", mon ? "opened and closed" : "did not open", lj_app_unknown_events, mon && lj_app_unknown_events == 0 ? "OK" : "FAIL");
     if (!mon || lj_app_unknown_events) startup_ok = 0;
+    {   /* W2 acceptance (I2): the OS MIDI backend lists its inputs (WinMM / CoreMIDI) and a note posted like a device's comes back off the UI queue */
+        static const uint8_t note[3] = { 0x90, 0x3C, 0x7F };
+        uint8_t m[3];
+        lj_midi_dev dev[16];
+        int ndev = lj_midi_list(dev, 16), ok;
+        while (lj_midi_poll(m)) {}
+        lj_midi_inject(note);
+        ok = ndev >= 0 && lj_midi_poll(m) == 1 && memcmp(m, note, 3) == 0;
+        printf("selftest MIDI-IN: %d input device(s) listed, injected 90 3C 7F polled back: %s\n", ndev, ok ? "OK" : "FAIL");
+        if (!ok) startup_ok = 0;
+    }
     if (!seq) { printf("selftest FAIL: TSEQUENCEFORM did not open\n"); return 1; }
     lj_window_set_active(seq, 0);
     lj_platform_present(seq);

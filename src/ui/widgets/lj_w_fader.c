@@ -13,7 +13,7 @@ static void paint(lj_widget *w, lj_surface *s)
 {
     lj_w_fader *f = (lj_w_fader *)w;
     const lj_font *font = lj_w_font_of(w);
-    char buf[8];
+    char buf[12];
     int ax, ay, i, th = track_h(w), covered, p1 = f->pressed == 1, p2 = f->pressed == 2, cx;
     uint32_t ink = w->enabled ? LJ_CLR_3DDKSHADOW : LJ_CLR_BTNSHADOW;
     lj_widget_abs(w, &ax, &ay);
@@ -29,7 +29,8 @@ static void paint(lj_widget *w, lj_surface *s)
     }
     covered = th - (f->max > 0 ? (th * f->value + f->max / 2) / f->max : 0);
     lj_fill(s, ax + LJ_FADER_TRACK_X, ay + LJ_FADER_TRACK_Y, LJ_FADER_TRACK_W, covered, LJ_FADER_BLUE);
-    snprintf(buf, sizeof buf, "%d%%", f->max > 0 ? (f->value * 100 + f->max / 2) / f->max : 0);
+    if (f->text) f->text(f->value, buf, sizeof buf);
+    else snprintf(buf, sizeof buf, "%d%%", f->max > 0 ? (f->value * 100 + f->max / 2) / f->max : 0);
     lj_text(s, font, cx - lj_text_width(font, buf) / 2, ay + LJ_FADER_TRACK_Y + th - 4 - font->height, buf, LJ_CLR_BTNHIGHLIGHT, 0);
 }
 

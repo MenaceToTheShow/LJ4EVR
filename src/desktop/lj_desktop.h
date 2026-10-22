@@ -100,6 +100,7 @@ enum lj_desktop_action {
     LJ_ACT_GLOBAL_PATCH_APPLY /* arg 0 = patch changed (LJ_CMD_GLOBAL_PATCH), 1 = HTP groups changed (LJ_CMD_HTP_GROUPS) */,
     LJ_ACT_MIDI_SAVE /* the MIDI-IN window's Auto Save / Save */, LJ_ACT_MIDI_OPEN_DEVICE /* arg = device index, -1 close */,
     LJ_ACT_LOAD_BGCUE /* arg = number: Select Background Cue / startup / hotkey */, LJ_ACT_STATIC_CLEAR /* arg = global slot: Clear Slot (engine handed NULL first) */,
+    LJ_ACT_BGCUE_APPLY /* the Background Cue window edited or saved its record (lj_bgcue_form_work): the app pins a copy and posts LJ_CMD_LOAD_BG */,
     LJ_ACT_COUNT
 };
 typedef void (*lj_desktop_action_fn)(enum lj_desktop_action a, int arg, void *ud);

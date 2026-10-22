@@ -172,3 +172,185 @@ ME-54 shared scrollbar fitting (five `fit_sb` copies remain), ME-57 the five san
     955a229 (ME-51, ME-64)     run 39803758128: green, all six jobs; determinism prints replay-frames.bin
                                776cf859abfbb8f418003a944ca7261f1fca89f8eb337a817a5af7ed2c4a5474 for linux, windows, macos
                                https://github.com/UnbannableGT/LJ4EVR/actions/runs/39803758128
+
+## 9. Acceptance (integrator 2, this PC, 2026-10-22)
+
+Design 10 W2, item by item, on Windows 11 (work PC, MSVC 19.44, 4 monitors: 2560x1440 at 0,0 and 0,1440, two
+1080x1920 portrait). The walkthrough is `tests/ui/scripts/w2_acceptance.lj4s` (291 lines, 35 asserts) run on a fresh
+`Default` library (`<userdir>User\Default`, `<userdir>forms.ini` and `<userdir>Default.lj4b` deleted first) with
+`build-ninja-msvc\lj4evr.exe --script` (Release) and `build-debug-win\lj4evr.exe --script` (asserts, debug heap):
+both exit 0. Screenshots: `docs/screenshots/w2/<step>-<Class>.png`, one per open window, from the window surfaces.
+
+| # | Item (design 10 W2) | Result | Evidence |
+|---|---|---|---|
+| 1 | The nine replay scenarios pass | tick | ctest lines below (`replay_all`, `replay_wire_drift`, every build tree) |
+| 2 | A MIDI note latches a cue on both OSes | tick on Windows through a real WinMM device; macOS: CI half only, the real-device Mac run stays open for Joey (ME-21) | below |
+| 3 | A 10-minute two-slot run shows zero cumulative drift on the wire | tick: 0 ticks at t = 600 s | capture below |
+| 4 | The Statics LED turns green on activation; the Statics 2 slot popup shows Martin's duplicated `Replace Page` / `Replace Slot` items | tick | walkthrough: `assert_text TStatics2Form.ReplacePage1` / `ReplacePage2` = `Replace Page`, `ReplaceSlot1` / `ReplaceSlot2` = `Replace Slot` (the popup's DFM items), then `M_RecordCurrentScene`, slot click, `assert_led statics 1`, `assert_view statics_any=1`, `assert_frame 1:17=255`; `statics-TLJMainForm.png` (Statics and Background Cue LEDs green), `statics-TStatics2Form.png` (slot 1 green) |
+| 5 | Every 15/02-15/05 id has a hand file (CI check by id) | tick | `profiles_ids` below |
+| + | Restart persistence of every W2 window | tick (12 windows; the centred dialogs are never persisted, design 7.10) | below |
+
+### Item 1: ctest (build-ninja-msvc, `ctest -R ^replay_all$ -V`, `-R ^replay_wire_drift$ -V`)
+
+    47: replay bgcue_over_statics: 10 ticks, 19 expects, 0 fails
+    47: replay chase_030ms: 57 ticks, 35 expects, 0 fails
+    47: replay cue_time_scaling: 2401 ticks, 30 expects, 0 fails
+    47: replay layer_flash_current_statics: 12 ticks, 16 expects, 0 fails
+    47: replay link_to_cue: 22 ticks, 20 expects, 0 fails
+    47: replay loop_bounce_random_limits: 169 ticks, 48 expects, 0 fails
+    47: replay seq_intensities: 5 ticks, 10 expects, 0 fails
+    47: replay statics_ltp_reorder: 13 ticks, 18 expects, 0 fails
+    47: replay transparent_cue_load: 13 ticks, 21 expects, 0 fails
+    1/1 Test #47: replay_all .......................   Passed    1.04 sec
+    68: replay drift_600s_two_slots_wire: 24004 ticks, 15 expects, 0 fails
+    1/1 Test #68: replay_wire_drift ................   Passed    0.87 sec
+
+Full runs after this section's fixes: `build-int-nosdl`, `build-ninja-msvc`, `build-debug-win`, `build-msvc` Release and
+Debug, each `100% tests passed, 0 tests failed out of 78`; 0 warnings on every build. `test_layering: 358 file(s) checked,
+170 header(s) compiled alone, 0 finding(s)`. `--selftest` (Release and Debug) rc 0, now with a MIDI line:
+`selftest MIDI-IN: 1 input device(s) listed, injected 90 3C 7F polled back: OK`; no `no binding for handler`, no
+`unknown event`.
+
+### Item 2: MIDI note latches a cue
+
+Devices on this PC: `midiInGetNumDevs` = 1, `Studio 68c MIDI In` (a hardware port with nothing plugged in); no loopMIDI,
+but its driver `teVirtualMIDI64.dll` is installed. A 50-line helper (`midiloop.c`, scratch, not in the repo: it creates
+the teVirtualMIDI port `LJ4EVR Loop`, which every program sees as a WinMM input, and plays 90 3C 7F / 80 3C 00 into it
+after 8 s) gave a real device path:
+
+    midi in 0: Studio 68c MIDI In (rc 0)
+    midi in 1: LJ4EVR Loop (rc 0)
+    send 90 3C 7F: 1
+    send 80 3C 00: 1
+
+- Learn in the app (walkthrough, inject path): MIDI-IN window, Cues tab, `Enable Cue Latch`, number 2, Learn, `midi 90 3C 7F`:
+  `assert_text TMidiInForm.lvCue.60.1 "2"`, `MIDIIn\MIDIMap.dat` = `map kind=cue ch=0 note=60 num=2`; New Cue, `assert_view
+  cue_number=0`, `midi 90 3C 7F`, `assert_view cue_number=2` (`midi-learn-TMidiInForm.png`: row 60 `2 bounce` selected).
+- Real device (recorded which: WinMM, not the inject seam): the same library with `MIDIIn.Ini [SETUP] DeviceCode=1`,
+  `midiloop 8 10` started, then the app with `assert_view cue_number=0`, `wait 14000`, `assert_view cue_number=2`: rc 0
+  (`midi-device-*.png`). Control run without the port: `midi: no input device 1`, `SCRIPT FAIL line 4: cue_number is 0,
+  expected 2`, rc 1.
+- macOS: `lj_midi_coremidi.c` builds on `macos-clang` (CI) and the new `--selftest` MIDI line lists the CoreMIDI inputs and
+  runs the inject path there; ctest `test_midi_map` runs the dispatch on all three OSes. The real-device Mac run is the ME-21
+  line for Joey.
+
+### Item 3: the 10-minute two-slot run on the wire
+
+Library `U:Drift` holding exactly the show of `tests/engine/replay/wire/drift_600s_two_slots_wire.lj4r` (two DMX dimmers at
+1:001 / 1:002; seq 1 `flip` 2 scenes x 4000 ms on ch 1, seq 2 `third` 3 scenes x 333 ms on ch 2; cue 1 = slots 1 and 2,
+loaded by `Main.Ini [STARTUP] Cue=1`), `lj4evr U:Drift --script` with `wait 615000` (rc 0). Two monitors ran the whole
+time: `tools/ref/08-sacn_ref.py monitor` on `ssh <runner-host>` (multicast on <nic>, the W1 copy with
+`time.monotonic()` stamps) and the same tool on this PC with `time.perf_counter()` stamps (the clock the app's
+`lj_clock_us` reads, so no rate difference between sender and receiver). The cue-load instant is the first ch-1 flip
+minus 4.000 s (tick 160). Analysis (scratch `drift_analyse.py`):
+
+    drift_local.log (this PC, QueryPerformanceCounter)
+    packets 5908, OOO lines 0, span 614.775 s, max packets in one second 12
+    slot 1 flips 153, slot 2 steps 1846
+    slot 1 boundary 150: 600.0001 s after the cue load = tick 24000.00 (expected 24000, 600.000 s) -> drift +0.1 ms
+    slot 1: worst |observed tick - 160 k| over 153 flips = 0.02 ticks
+    slot 2 boundary 1800: 599.4001 s = tick 23976.00 (expected 23976)
+    slot 2 boundary 1801: 599.7501 s = tick 23990.00 (expected 23990)
+    slot 2 boundary 1802: 600.0752 s = tick 24003.01 (expected 24003)
+    slot 2: worst |observed tick - ceil(333 n / 25)| over 1846 steps = 0.03 ticks
+    fit of the flips: receiver seconds per sender second = 1.0000000 (-0.0 ppm)
+    drift_remote.log (atlas-ci2, its own oscillator)
+    packets 5908, OOO lines 1, span 614.797 s, max packets in one second 12
+    slot 1 boundary 150: 600.0220 s after the cue load = tick 24000.88 (expected 24000, 600.000 s) -> drift +22.0 ms
+    slot 2 boundary 1801: 599.7720 s = tick 23990.88 (expected 23990)
+    fit of the flips: receiver seconds per sender second = 1.0000366 (+36.6 ppm)
+
+The monitor lines at the cue load, the first flip and boundary 150 (this PC):
+
+    401519.7931 DATA  <lan-ip> u1     pri 100 seq   0 sc 0x00 LJ4EVR <dev-pc> slots[1..8]=[0, 10, 0, 0, 0, 0, 0, 0]
+    401523.7927 DATA  <lan-ip> u1     pri 100 seq  36 sc 0x00 LJ4EVR <dev-pc> slots[1..8]=[255, 10, 0, 0, 0, 0, 0, 0]
+    402119.7928 DATA  <lan-ip> u1     pri 100 seq 129 sc 0x00 LJ4EVR <dev-pc> slots[1..8]=[0, 20, 0, 0, 0, 0, 0, 0]
+
+Drift at t = 600 s: 0 ticks (+0.1 ms on the sender's clock). On atlas-ci2 the 22 ms is that receiver's clock running
+36.6 ppm fast (600 s x 36.6e-6 = 22.0 ms; the fit over all 153 flips gives the same rate), not the stream: every boundary
+of both slots sits on its absolute tick (`ceil(333 n / 25)`, 11 E10); the relative re-arm that would put boundary 1801 on
+tick 25214 is absent. Rates: at most 12 packets in any second (ME-24's ~40 ceiling never reached), 3 TERM on quit.
+atlas-ci2 printed one `OOO seq 0 after 0` at stream start while this PC's capture of the same stream has one seq 0:
+the receiver has two NICs on the LAN (docs/fidelity.md row).
+
+### Item 4: the walkthrough (`w2_acceptance.lj4s`) and what it found
+
+Every step asserts (`assert_*` lines in the script) and leaves screenshots: `loop-options-*` (Bounce 1..3 x2, Link to Cue
+0001), `cue-time-*` (slot 1 250 %), `Cues/00000002.cue` line `slot 1 seq=1 on=1 trig=auto dir=bounce spt=1 atpt=1 tol=0
+first=1 last=3 loops=2 end=link goto=0 link=1 time=250 chase=0`, `link-to-cue-*` (`cue_number=2`, 30 s later `1`:
+pending_link_cue serviced by the app), `chase-*`, `bgcue-*` (`assert_led bgcue 1`, `bg_any=1 bg_number=1`),
+`statics-popup-*` / `statics-*` (item 4), `smoke-*` (`smoke_active=1` for the 2 s toggle, then 0), `htp-groups-*`
+(`lvGroups.0.2` = `2`), `global-patch-*` (`GlobalPatch.GPA`: `ch 1:2 ... htp=1`, `ch 1:17 ... inv=1 ... htp=1`),
+`midi-learn-*` / `midi-latch-*` (item 2), `restore-*` (the restored GPA line asserted again), `system-prefs-*` (Solo
+hidden and back, `Main.Ini [SOLO] Enabled=0`), `end-*`. Each window shot was compared with its CHM GIF (`loopcontrol`,
+`cuetime`, `bgcuecontrol`, `staticcontrol` + `staticsreplacematrix`, `smokecontrol`, `midiinseq`, `globalpatch`,
+`userlibrestore`, `systempreferencesdialog`, `toolandstatusbars`); docs/fidelity.md has the pairs (new section) and the
+rows for what still differs.
+
+App bugs fixed (in the app, not scripted around):
+
+| Where | What the walkthrough hit | Fix |
+|---|---|---|
+| `engine/lj_engine.c`, `windows/lj_cue_form.c` | `cue_number` stayed 0 after Save New Cue: the view took the number only at LOAD_CUE, and the save numbers the pinned record in place | the view reads `e->cue->number` every tick (as `bg_number`); the save writes the number under `lj_lock` |
+| `windows/lj_cue_form.c` | Release exit 127 / Debug segfault after the walkthrough: New Cue memset the current cue, which after a Link-to-Cue load is also the `cues` table's record; the MIDI load of cue 0002 then freed it as an unsaved working record and `lj_show_free` freed it again | New Cue on a loaded record leaves it to the table and makes a fresh working record; `test_uiscript_w2` section 7 (load, New Cue, load another, teardown under the debug heap) |
+| `windows/lj_bgcue_form.c`, `app/lj_app_seam.c`, `desktop/lj_desktop.h` | a BG cue could not be built in the app: LV1DragDrop and Clear Slot logged "waits for an app re-pin entry", `Save Background Cue` had no behaviour file | the window edits its own record (`lj_bgcue_form_work`), `LJ_ACT_BGCUE_APPLY` (appended) has the app pin a copy and post LOAD_BG in one critical section (an unsaved record is held by the app, not the table); TSaveBGForm (Save / Save New / transparent / Auto Close) in the same file; `LJ_WIN_SAVE_BGCUE` row |
+| `ui/widgets/lj_w_listview.c` | the List of Sequences could not drag its already-selected row (OnClick fired only on a new row) | a press on the selected row emits CLICK, as the VCL does; `test_widgets_lists` row |
+| `ui/widgets/lj_w_listview.c` | HTP Groups refills every 100 ms and `set_items` reset the scroll: groups 13-24 unreachable; the MIDI-IN grid jumped to note 0 after Learn | the same rows keep the scroll; `lj_w_listview_select` scrolls a row into view (Learn uses it); `test_widgets_lists` rows |
+| `platform/sdl/lj_sdl.c` | a drop onto a stay-on-top window under a later-opened one went to the later one | `window_at` tries `SDL_WINDOW_ALWAYS_ON_TOP` windows first |
+| `windows/lj_fixture_config.c` | 1 run in 3: `Warnings: address not 1..512` on Save: the 100 ms refresh rewrote `eAdr` between the typed digit and Enter (a typist sees the caret jump home: "17" can become "71") | the refresh leaves a focused edit alone (`eAdr`, `EUserName`) |
+| `controls/lj_ctl_movement.c` | Position Presets was built and never shown (`no screen position`) | shown through `lj_win_show` (fsStayOnTop) when created |
+| `windows/lj_backup_restore.c` | Target Library Path showed the archive's path | the open library's folder (`userlibrestore.gif`) |
+| `windows/lj_bgcue_form.c` | empty BG slots red, `bgcuecontrol.gif` green | empty = green |
+| `windows/lj_smoke_control.c`, `ui/widgets/lj_w_fader.*` | Smoke faders read `0%`, the GIF `FF` / `10s` / `35s` | `lj_w_fader.text` hook; hex / seconds |
+| `windows/lj_cue_time.c` | no scale ticks on the tracks | nine white ticks (PROPOSAL) |
+| `windows/lj_midi_in_form.c` | `Enable ...` box left of the text, the GIF has it right | `taLeftJustify` |
+
+Goldens regenerated and reviewed (REVIEWED.tsv rows): `WIN_BGCUE_FORM`, `WIN_SMOKE_CONTROL`, `W2A_TCUETIMEFORM`,
+`W2D_MIDIIN_SEQ`.
+
+Script-side corrections (the app was right): the loop-option edits commit on KeyUp, so each `type` is followed by `key End`;
+`REndLoop` has Columns=3 over 4 items, so Link to Cue is column 2 row 2; the bounce run needs 30 s at 250 % (the tick wait
+assumed the app had just started); the Smoke button fires while held, so the walkthrough uses the 2 s toggle (shipped
+`[SMOKE] Level=0 Duration=0` makes the Timer silent); HTP needs a row selected before Add; Global Patch fills its panel
+from the 200 ms timer, so the script waits after moving the row; Bsave is greyed until a BG cue has a number; the dimmer
+icon is de-selected by a second click (None first); an existing `Default.lj4b` asks "File already exists", so the archive is
+deleted before a run. New verb `move <Form> x y` (docs/ui-script.md): every window opens centred, and the List of
+Sequences covers the Background Cue window.
+
+Not fixed, recorded: every window opens centred until moved, where VCL `poDesigned` uses the DFM Left/Top (fidelity row);
+the Smoke cycle-progress bar and button art, the Restore folder tree (W4); `GroupInfo.dat` logs `rec: cannot open` /
+`not an LJ4 groups file` once on a fresh library (`lj_show_save_config` reads the absent file for its htp lines; harmless,
+defaults used); `MIDI-IN: device -1 did not open` prints -1 for the requested index when the open fails.
+
+### Persistence (forms.ini)
+
+`tests/ui/scripts/w2_positions_1.lj4s` (open, `move`, close every persisting W2 window) then `w2_positions_2.lj4s`
+(reopen, `assert_pos`): both rc 0. `forms.ini` after the pair:
+
+    [LOOPFORM] Left=100 Top=1600   [CUETIMEFORM] Left=140 Top=1620 Width=670 Height=309   [BGCUEFORM] Left=180 Top=1640
+    [SAVEBGFORM] Left=220 Top=1660   [STATICS2FORM] Left=260 Top=1680 Width=510 Height=450   [SMOKEFORM] Left=300 Top=1700
+    [PRESETFORM] Left=380 Top=1740 Width=210 Height=402   [GROUPFORM] Left=420 Top=1760 Width=220 Height=250
+    [HTPGROUPSFORM] Left=460 Top=1780   [SNAPSHOTSCENEFORM] Left=540 Top=1820   [MIDIINFORM] Left=580 Top=1840
+
+Position Presets and User Palette are one class (TPresetForm), so they share `[PRESETFORM]` as in LJ2: Position Presets
+reopens where the palette window was moved last. The W2 forms declaring `poOwnerFormCenter` / `poMainFormCenter` /
+`poScreenCenter` / `poDesktopCenter` (Global Patch, Intensity Groups, System Preferences, the Delete dialogs, User Libraries,
+Backup, Restore, Notes, About, Striking Lamps, Edit Hotkeys, cue page dialogs) are centred each time and never persisted
+(design 7.10). Default DMX Output has no window (`lj_default_output.h`). The positions are on the second display: on this
+PC a `SetWindowPos` onto the primary display (y < 1440) lands 1440 px lower, raw Win32 included (measured with
+`GetWindowRect`), so the scripts stay on display 2.
+
+### Item 5: profiles_ids (ctest -R ^profiles_ids$ -V)
+
+    64: check_profiles: tier 1 15/01 MAC 500 / Roboscan 918: 4 of 4 ids have a matching hand file
+    64: check_profiles: tier 2 15/02 MAC 600: 2 of 2 ids have a matching hand file
+    64: check_profiles: tier 3 15/03 MAC 250 family: 8 of 8 ids have a matching hand file
+    64: check_profiles: tier 4 15/04 MAC 2000 family: 11 of 11 ids have a matching hand file
+    64: check_profiles: tier 5 15/05 Roboscan 518 / 812 / 218: 9 of 9 ids have a matching hand file
+    1/1 Test #64: profiles_ids .....................   Passed    0.05 sec
+
+### docs/fidelity.md
+
+Rows appended: Smoke readouts (closed), Smoke progress bar / art (W4), Cue Time ticks (PROPOSAL), BG empty slots (closed),
+Restore window, MIDI-IN, first open of a `poDesigned` form, the seq-0 duplicate (receiver side). New section "Fidelity
+contract rows touched by W2": F8, F20, F25, F30, F48, F51, F52, I2, each with its screenshot pair or `deferred: needs rig`.

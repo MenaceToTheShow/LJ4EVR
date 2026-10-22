@@ -287,11 +287,13 @@ static void lj_sdl_host_popup_hide(void *ud, void *handle)
 
 static lj_window *lj_sdl_host_window_at(void *ud, int sx, int sy, int *x, int *y)
 {
-    int i, wx, wy, ww, wh, z = lj_sdl.cfg.zoom;
+    int i, pass, wx, wy, ww, wh, z = lj_sdl.cfg.zoom;
     (void)ud;
-    for (i = lj_sdl.nwins - 1; i >= 0; i--) {      /* ponytail: last opened wins; no z-order query in SDL */
+    for (pass = 0; pass < 2; pass++)                 /* fsStayOnTop windows first: they are above every normal window */
+    for (i = lj_sdl.nwins - 1; i >= 0; i--) {      /* ponytail: then last opened wins; no z-order query in SDL */
         SDL_Window *w = lj_sdl.wins[i]->sdl;
-        if (SDL_GetWindowFlags(w) & (SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED)) continue;
+        SDL_WindowFlags f = SDL_GetWindowFlags(w);
+        if ((f & (SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED)) || !(f & SDL_WINDOW_ALWAYS_ON_TOP) != pass) continue;
         if (!SDL_GetWindowPosition(w, &wx, &wy) || !SDL_GetWindowSize(w, &ww, &wh)) continue;
         if (sx >= wx && sx < wx + ww && sy >= wy && sy < wy + wh) {
             if (x) *x = (sx - wx) / z;

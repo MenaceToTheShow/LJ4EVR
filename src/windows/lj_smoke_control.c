@@ -1,4 +1,5 @@
 /* lj_smoke_control.c - Smoke Control (lj_smoke_control.h). */
+#include <stdio.h>
 #include <string.h>
 #include "windows/lj_smoke_control.h"
 
@@ -40,6 +41,13 @@ static int geti(const char *key, int dflt) { lj_ctx *c = lj_ctx_get(); return c-
 static void seti(const char *key, int v) { lj_ctx *c = lj_ctx_get(); if (c->main_ini) lj_ini_seti(c->main_ini, "SMOKE", key, v); }
 static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 static int value(enum lj_smoke_fader f) { return clampi(geti(lj_smoke_keys[f], 0), 0, lj_smoke_max[f]); }
+static void text_hex(int v, char *buf, size_t cap) { snprintf(buf, cap, "%02X", (unsigned)v & 0xFFu); }
+static void text_secs(int v, char *buf, size_t cap) { snprintf(buf, cap, "%ds", v); }
+static void text_cycle(int v, char *buf, size_t cap)           /* PROPOSAL rig 04 s12: minutes past 59 s (only "35s" is in the capture) */
+{
+    int ms = lj_smoke_cycle_ms(v);
+    if (ms < 60000) snprintf(buf, cap, "%ds", ms / 1000); else snprintf(buf, cap, "%dm", ms / 60000);
+}
 
 static void post(int ctl, uint32_t b, uint32_t c)
 {
@@ -175,7 +183,8 @@ lj_window *lj_smoke_control_open(void)
         s.idx[i] = i;
         s.fader[i] = lj_w_fader_create(shape->parent, NULL);
         s.fader[i]->x = shape->x; s.fader[i]->y = shape->y; s.fader[i]->w = shape->w; s.fader[i]->h = shape->h;
-        ((lj_w_fader *)s.fader[i])->max = lj_smoke_max[i];          /* ponytail: the readout is % (lj_w_fader); "FF" / "10s" / "35s" need a fader text hook in ui/ */
+        ((lj_w_fader *)s.fader[i])->max = lj_smoke_max[i];
+        ((lj_w_fader *)s.fader[i])->text = i == LJ_SMOKE_F_DURATION ? text_secs : i == LJ_SMOKE_F_CYCLE ? text_cycle : text_hex;   /* smokecontrol.gif: "FF" "10s" "35s" "29" "95" */
         lj_w_fader_set_value(s.fader[i], value((enum lj_smoke_fader)i));
         s.fader[i]->on_event = fader_event; s.fader[i]->ud = &s.idx[i];
     }

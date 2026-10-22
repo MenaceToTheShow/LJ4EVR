@@ -28,6 +28,7 @@
 #include "model/lj_sequence.h"
 #include "model/lj_show.h"
 #include "model/lj_statics.h"
+#include "windows/lj_bgcue_form.h"
 #include "windows/lj_cue_form.h"
 #include "windows/lj_master_intensity.h"
 #include "windows/lj_prefs.h"
@@ -44,6 +45,7 @@ static struct {
     lj_midi_map midi;
     lj_frame snap;                       /* the UI-owned frame LJ_CMD_SNAPSHOT_REQ fills (seam: read only after view.snapshot_tick == snap.tick_no) */
     struct { uint64_t at_us; uint64_t clear_us[LJ_FIXTURES]; } strike;   /* Auto LampOn due time; per fixture, when its lamp-on overwrite is released */
+    lj_bgcue *bg_unsaved;                /* the Background Cue window's record before its first save (number 0: no table entry); ponytail: not freed at exit, one record */
 } lj_s;
 
 static lj_library *lj_lib(void) { return lj_ctx_get()->lib; }
@@ -203,6 +205,31 @@ int lj_app_load_bgcue(uint32_t number)
     lj_app_commit(&fresh, &cmd);
     lj_unlock();
     if (old && old != bg) lj_bgcue_free(old);                    /* unpinned: the engine got the new pointer in the critical section above, and drains it before its next read */
+    return 0;
+}
+
+/* The Background Cue window's edited record (a drop, Clear Slot, a save): a fresh copy pinned in the bgcues table (or held
+ * here while it has no number) and LJ_CMD_LOAD_BG in the same critical section; the replaced record is freed after the post. */
+static int lj_app_bgcue_apply(const lj_bgcue *work)
+{
+    lj_show *show = lj_ctx_get()->show;
+    lj_bgcue *bg, *old = NULL, *old2 = NULL;
+    lj_app_fresh fresh;
+    lj_cmd cmd;
+    int i;
+    if (!show || !work || (bg = lj_bgcue_new_rec()) == NULL) return -1;
+    *bg = *work;
+    memset(&fresh, 0, sizeof fresh);
+    memset(&cmd, 0, sizeof cmd);
+    cmd.kind = LJ_CMD_LOAD_BG; cmd.a = bg->number; cmd.bg = bg;
+    for (i = 0; i < LJ_BG_SLOTS; i++) cmd.bgseq[i] = lj_app_seq_for(bg->slot[i].seq, &fresh);
+    lj_lock();
+    if (bg->number) { old = (lj_bgcue *)lj_table_get(&show->bgcues, bg->number); lj_table_put(&show->bgcues, bg->number, bg); old2 = lj_s.bg_unsaved; lj_s.bg_unsaved = NULL; }
+    else { old = lj_s.bg_unsaved; lj_s.bg_unsaved = bg; }
+    lj_app_commit(&fresh, &cmd);
+    lj_unlock();
+    if (old && old != bg) lj_bgcue_free(old);
+    lj_bgcue_free(old2);
     return 0;
 }
 
@@ -689,6 +716,7 @@ static void lj_app_w2_action(enum lj_desktop_action a, int arg, void *ud)
     case LJ_ACT_MIDI_SAVE:       lj_app_midi_save(); break;
     case LJ_ACT_MIDI_OPEN_DEVICE: if (lj_app_midi_open(arg) != 0) lj_log("MIDI-IN: device %d did not open", arg); break;
     case LJ_ACT_LOAD_BGCUE:      if (arg > 0) lj_app_load_bgcue((uint32_t)arg); else lj_app_bgcue_clear(); break;   /* 0 = New / Clear BGCue */
+    case LJ_ACT_BGCUE_APPLY:     lj_app_bgcue_apply(lj_bgcue_form_work()); break;
     case LJ_ACT_STATIC_CLEAR:    if (arg >= 0) lj_app_static_clear(arg / LJ_STATICS2_SLOTS_MAX + 1, arg % LJ_STATICS2_SLOTS_MAX + 1); break;
     default: break;
     }
@@ -702,7 +730,7 @@ void lj_app_seam_start(void)
         LJ_ACT_USER_LIBRARIES, LJ_ACT_DELETE_FILES, LJ_ACT_GLOBAL_PATCH, LJ_ACT_SYSTEM_PREFS, LJ_ACT_EDIT_HOTKEYS, LJ_ACT_ABOUT, LJ_ACT_FIXTURE_GROUPS,
         LJ_ACT_MIDI_IN, LJ_ACT_BGCUE_FORM, LJ_ACT_STATICS2_FORM, LJ_ACT_SMOKE_CONTROL, LJ_ACT_NOTES, LJ_ACT_BACKUP, LJ_ACT_RESTORE_LIBRARY,
         LJ_ACT_STRIKING_LAMPS, LJ_ACT_SELECT_LIBRARY, LJ_ACT_SYSTEM_PREFS_APPLY, LJ_ACT_HOTKEY_SETUP, LJ_ACT_HOTKEYS_ENABLED, LJ_ACT_SNAPSHOT,
-        LJ_ACT_DEFAULT_OUT, LJ_ACT_DEFAULT_OUT_APPLY, LJ_ACT_GLOBAL_PATCH_APPLY, LJ_ACT_MIDI_SAVE, LJ_ACT_MIDI_OPEN_DEVICE, LJ_ACT_LOAD_BGCUE, LJ_ACT_STATIC_CLEAR };
+        LJ_ACT_DEFAULT_OUT, LJ_ACT_DEFAULT_OUT_APPLY, LJ_ACT_GLOBAL_PATCH_APPLY, LJ_ACT_MIDI_SAVE, LJ_ACT_MIDI_OPEN_DEVICE, LJ_ACT_LOAD_BGCUE, LJ_ACT_STATIC_CLEAR, LJ_ACT_BGCUE_APPLY };
     lj_ctx *c = lj_ctx_get();
     char ini[LJ_PATH_CAP], map[LJ_PATH_CAP], err[128];
     int i, n;

@@ -537,6 +537,7 @@ static void lj_engine_fill_view(lj_engine *e, uint64_t now)
     s->cue_edit = e->cue_edit;
     s->tick_no = e->frame.tick_no;
     s->bg_number = e->bg ? e->bg->number : 0;                  /* W2 view fields */
+    s->cue_number = e->cue ? e->cue->number : 0;               /* the pinned record: a Save New Cue numbers it in place (W2 acceptance) */
     for (k = 0; k < LJ_BG_SLOTS; k++) s->bg_enabled[k] = (uint8_t)e->run[LJ_RUN_BG0 + k].enabled;
     s->chase_tap_us = e->chase_us;
     s->flash_latched = (uint8_t)(e->flash_latch && lj_runner_active(&e->run[LJ_RUN_FLASH]));

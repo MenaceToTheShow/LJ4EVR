@@ -178,6 +178,8 @@ int lj_fixture_config_dip_text(int address, char *out, size_t cap)
 }
 static void set_enabled(const char *name, int on) { lj_widget *w = find(name); if (w) { w->enabled = on != 0; lj_widget_invalidate(w); } }
 static void set_visible(const char *name, int on) { lj_widget *w = find(name); if (w) { w->visible = on != 0; lj_widget_invalidate(w); } }
+/* the 100 ms refresh refills the panel: an edit the user is typing into keeps its text and caret (W2 acceptance: "17" read back "" / "71") */
+static void set_edit(const char *name, const char *t) { lj_widget *w = find(name); if (w && !w->focused) lj_w_edit_set_text(w, t); }
 static int has_pt(const lj_profile *p) { int i; if (!p) return 0; for (i = 0; i < p->footprint && i < LJ_PROFILE_CH; i++) if (p->channel_class[i] == LJ_CH_PAN || p->channel_class[i] == LJ_CH_TILT) return 1; return 0; }
 
 static void panel_fill(void)
@@ -195,7 +197,7 @@ static void panel_fill(void)
         const lj_profile *p = lj_fixlib_by_id(f->profile_id);
         for (i = 0; i < 4; i++) lj_w_speedbutton_set_down(find(links[i]), f->link == i + 1);
         snprintf(num, sizeof num, "%d", f->address);
-        lj_w_edit_set_text(find("eAdr"), f->address ? num : "");
+        set_edit("eAdr", f->address ? num : "");
         lj_w_dipswitch_set_value(find("DipSwitch1"), f->address);
         set_visible("lDip", 1); set_visible("DipSwitch1", 1);                 /* W1: every profile shows the DIP pattern (LJ2 gates it on the profile's DIP flag, undecoded) */
         set_visible("pPTOptions", has_pt(p));
@@ -205,7 +207,7 @@ static void panel_fill(void)
         lj_w_checkbox_set_checked(find("cbIgnoreBo"), f->ignore_bo);
         lj_w_checkbox_set_checked(find("cbIgnoreGM"), f->ignore_gm);
         lj_w_checkbox_set_checked(find("cbLinkSM"), f->link_strobe_gm);
-        lj_w_edit_set_text(find("EUserName"), f->user_name);
+        set_edit("EUserName", f->user_name);
     }
     fc.loading = 0;
 }

@@ -101,6 +101,8 @@ static void select_row(lj_w_listview *v, int row)
     lj_w_emit(&v->base, LJ_WEV_CLICK);
 }
 
+void lj_w_listview_select(lj_widget *w, int row) { if (w) select_row((lj_w_listview *)w, row); }
+
 static int lv_mouse(lj_widget *w, const lj_mouse_ev *m)
 {
     lj_w_listview *v = (lj_w_listview *)w;
@@ -133,7 +135,8 @@ static int lv_mouse(lj_widget *w, const lj_mouse_ev *m)
     if (m->type != LJ_EV_MOUSE_DOWN || m->button != 1) return m->type == LJ_EV_MOUSE_DOWN;
     lj_widget_set_focus(w);
     row = lj_w_listview_row_at(w, m->y);
-    if (row >= 0) select_row(v, row);
+    if (row >= 0 && row == v->index) lj_w_emit(w, LJ_WEV_CLICK);   /* VCL OnClick fires on every press, not only on a new row: a dmAutomatic source drags its selected row */
+    else if (row >= 0) select_row(v, row);
     if (row >= 0 && m->clicks == 2) lj_w_emit(w, LJ_WEV_DBLCLICK);
     return 1;
 }
@@ -182,7 +185,8 @@ lj_widget *lj_w_listview_create(lj_widget *parent, const lj_ctl_desc *d)
 void lj_w_listview_set_items(lj_widget *w, const char *const *items, int n)
 {
     lj_w_listview *v = (lj_w_listview *)w;
+    if (items != v->items || (items ? n : 0) != v->n) v->sb.pos = 0;   /* a refresh of the same rows keeps the scroll (HTP Groups refills every 100 ms; rows 13-24 were unreachable) */
     v->items = items; v->n = items ? n : 0;
-    v->index = -1; v->sb.pos = 0;
+    v->index = -1;
     lj_widget_invalidate(w);
 }

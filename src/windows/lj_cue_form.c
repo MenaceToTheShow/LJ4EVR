@@ -434,11 +434,15 @@ int lj_cue_form_add_sequence(uint32_t seq_no)
 
 void lj_cue_form_new_cue(void)
 {
-    lj_cue *cue = cue_rec();
+    lj_cue *cue = cue_rec(), *fresh = NULL;
     if (!cue) return;
+    if (cue->number && lj_table_get(&C()->show->cues, cue->number) == cue && (fresh = lj_cue_new_rec()) == NULL) return;   /* a loaded cue is also the table's record: the table keeps it (W2 acceptance: a New Cue after a link load double-freed cue 0001) */
     lj_lock();
-    memset(cue, 0, sizeof *cue);                                  /* the record stays (the engine may pin it, 2.3 rule 6); its contents go */
-    cue->cue_time_pct = 100; cue->macro_amp_pct = 100; cue->macro_speed_pct = 100;
+    if (fresh) C()->show->current_cue = fresh;                     /* the engine keeps the old pointer until the repin below; the table owns it */
+    else {
+        memset(cue, 0, sizeof *cue);                              /* the record stays (the engine may pin it, 2.3 rule 6); its contents go */
+        cue->cue_time_pct = 100; cue->macro_amp_pct = 100; cue->macro_speed_pct = 100;
+    }
     lj_unlock();
     C()->cue_saved = 0;
     s.sel = 0;
@@ -471,7 +475,7 @@ int lj_cue_form_save(int mode, uint32_t number)
     else if (mode == 1) number = lj_library_next_number(c->lib, LJ_REC_CUE);
     if (number == 0 || number > LJ_NUMBER_MAX) { lj_log("lj_cue_form: save: no cue number"); return -1; }
     if (lj_library_record_path(c->lib, LJ_REC_CUE, number, path, sizeof path) != 0) return -1;
-    cue->number = number;
+    lj_lock(); cue->number = number; lj_unlock();                 /* the engine pins this record and reads its number each tick */
     if (lj_cue_save(path, cue) != 0) { lj_log("lj_cue_form: save %s failed", path); return -1; }
     rec = (lj_cue *)lj_table_get(&c->show->cues, number);
     lj_lock();

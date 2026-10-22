@@ -39,6 +39,7 @@ static int trk_h(const lj_widget *w) { int h = w->h - LJ_CT_TRK_Y - LJ_CT_FOOT; 
 #define LJ_CT_UNUSED 0xE0E0E0u   /* an empty slot: light grey [03 s5.6] */
 #define LJ_CT_FILL   0x0000FFu
 #define LJ_CT_TICK   0x00FF00u   /* the green centre tick = 100 % */
+#define LJ_CT_TICKS  10          /* white scale ticks across every track, measured from cuetime.gif (reduced: count only, ~9 per track), PROPOSAL rig 07 s14 */
 
 #define LJ_VK_PRIOR 0x21
 #define LJ_VK_NEXT  0x22
@@ -174,6 +175,7 @@ static void strip_paint(lj_widget *w, lj_surface *s)
             int c = lj_cue_time_pos_of(100, th - 4), q = lj_cue_time_pos_of(v, th - 4), lo = c < q ? c : q, hi = c < q ? q : c;
             lj_fill(s, x + 8, ay + LJ_CT_TRK_Y + 2 + (th - 5 - hi), LJ_CT_COL_W - 16, hi - lo + 1, LJ_CT_FILL);
         }
+        for (p = 1; p < LJ_CT_TICKS; p++) lj_hline(s, x + 8, ay + LJ_CT_TRK_Y + 2 + (th - 5) * p / LJ_CT_TICKS, LJ_CT_COL_W - 16, 0xFFFFFFu);
         p = lj_cue_time_pos_of(100, th - 4);
         lj_hline(s, x + 8, ay + LJ_CT_TRK_Y + 2 + (th - 5 - p), LJ_CT_COL_W - 16, LJ_CT_TICK);
         lj_edge_sunken(s, x, ay + box, LJ_CT_COL_W, LJ_CT_BOX_H, used ? 0xFFFFFFu : 0xC0C0C0u);

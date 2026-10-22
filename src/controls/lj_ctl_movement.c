@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "windows/lj_windows.h"
 
 /* ---------------------------------------------------------------------------
  * 17 s1-s3: coordinate model, resolution, relative movement
@@ -729,6 +730,7 @@ lj_window *lj_ctl_movement_presets_open(lj_window *win)
         mv->presets = lj_window_create(&lj_form_TPRESETFORM, b);
         if (!mv->presets) return NULL;
         lj_window_set_caption(mv->presets, "Position Presets");   /* [04 s1.6]; the DFM's design caption is 'PresetForm' */
+        lj_win_show(mv->presets, 2u /* fsStayOnTop */);            /* W2 acceptance: it was built and never reached the screen */
     }
     presets_fill(mv);
     return mv->presets;
