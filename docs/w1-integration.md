@@ -262,3 +262,19 @@ The nine must-fix items of `W1_CODE_MASTER_ELDER_VERDICT.md` section 4, applied 
 Observed, not a verdict item: from `acceptance7-blackout` to `acceptance10-all-windows` the main window shot is 799x604
 (606 before `open master_intensity` and again in the restart run); the OS resized the SDL window by 2 px once during
 the walkthrough; nothing in the pass touches the main window size. Recorded for the W2 app owner.
+
+### CI of the fix pass
+
+| Run | Commit | Result | Cause | Fix |
+|---|---|---|---|---|
+| 39708644481 | 3fcb05a | windows-msvc, linux-gcc-asan red | the job's own `findstr /c:"unknown event"` matched the new selftest line `0 unknown event line(s): OK`; gcc `-Wformat-truncation` on `lj_ctl_elem_add`'s `row%d_%s` into `name[16]` (the acceptance-walkthrough commit `b26ef82` had never reached CI: it went up with this push) | 90cf0c7: selftest line reads `0 unresolved DFM event name(s): OK`; `lj_ctl_elem.name[32]` with `%u` and unsigned operands (3 + 10 + 1 + 7 + 10 + NUL = 32) |
+| **39709471199** | **90cf0c7** | **all six jobs green** | | |
+
+    linux-gcc-asan / linux-clang    100% tests passed, 0 tests failed out of 55
+    windows-msvc                    100% tests passed out of 55 (Release) and 100% tests passed out of 55 (Debug, ME-70); both selftests OK, no `no binding for handler`, no `unknown event`
+    macos-clang                     100% tests passed out of 55; selftest OK
+    determinism                     frames-linux.bin = frames-macos.bin = frames-windows.bin, 1641600 bytes, sha256 5e61478e89c1ccfd4936ce7110a366e4f497c5ac0684493bc29ef189342c6ee7 (unchanged: ME-71 touches no scenario of dump-frames)
+
+Green run: https://github.com/UnbannableGT/LJ4EVR/actions/runs/39709471199 (main @ 90cf0c7). Not done here: `VERSION` 0.1.0 and the
+`v0.1.0` tag (the tagger's step after one verifier confirms this pass against the verdict), ME-21 (Joey's Mac run), ME-45 (the
+non-admin install from the tagged installer).
