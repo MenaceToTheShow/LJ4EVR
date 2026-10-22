@@ -293,7 +293,7 @@ static lj_window *lj_sdl_host_window_at(void *ud, int sx, int sy, int *x, int *y
     for (i = lj_sdl.nwins - 1; i >= 0; i--) {      /* ponytail: then last opened wins; no z-order query in SDL */
         SDL_Window *w = lj_sdl.wins[i]->sdl;
         SDL_WindowFlags f = SDL_GetWindowFlags(w);
-        if ((f & (SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED)) || !(f & SDL_WINDOW_ALWAYS_ON_TOP) != pass) continue;
+        if ((f & (SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED)) || ((f & SDL_WINDOW_ALWAYS_ON_TOP) != 0) == pass) continue;   /* pass 0: on-top only, pass 1: the rest */
         if (!SDL_GetWindowPosition(w, &wx, &wy) || !SDL_GetWindowSize(w, &ww, &wh)) continue;
         if (sx >= wx && sx < wx + ww && sy >= wy && sy < wy + wh) {
             if (x) *x = (sx - wx) / z;
