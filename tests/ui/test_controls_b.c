@@ -307,10 +307,10 @@ int lj_test_controls_b(int argc, char **argv)
             if (rt && rt->fn) rt->fn(lj_window_root(pw), rt->ud);
             mb = lj_win_message_window();
             CHECK(mb && strcmp(lj_w_caption(lj_window_find(mb, "Label1")), "Delete Selected Presets?") == 0);
-            if (mb) click_widget(mb, "BCancel", 1);
+            if (mb) lj_w_click(lj_window_find(mb, "BCancel"));   /* the box destroys itself in the handler: no further mouse events to it */
             CHECK(lj_win_message_window() == NULL && show->preset[0][98].used);
             if (rt && rt->fn) rt->fn(lj_window_root(pw), rt->ud);
-            if ((mb = lj_win_message_window()) != NULL) click_widget(mb, "BOk", 1);
+            if ((mb = lj_win_message_window()) != NULL) lj_w_click(lj_window_find(mb, "BOk"));
             CHECK(lj_win_message_window() == NULL && !show->preset[0][98].used);
         }
         lj_ctl_movement_presets_open(win);
