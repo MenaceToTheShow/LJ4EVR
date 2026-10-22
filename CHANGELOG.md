@@ -53,6 +53,33 @@ Everything an operator uses to run a show beyond one cue (design section 10 W2; 
 - ME-98: `pair16_static_bg.lj4r`, `blind_keep_contents.lj4r`; the replay-frames sha re-recorded.
 - ME-99: this changelog, the README status, `docs/file-formats.md` merged, the `w2-gates.md` Status column.
 
+### What v1.0.0 is not
+
+Unchanged from 0.1.0 and the README: no Audio Analyzer / audio trig, no DMX-in over sACN input or `.vtr` tables, no
+RS-232/TCP remote protocol, no External Application string output, no `.LJB` importer, no LJ MediaPlayer, no Art-Net.
+All seven are W5; their menu items, cue-list commands and toolbar buttons stay present, greyed, hint
+`Not available in LJ4EVR`.
+
+### Known gaps (W2 code council, `W2_CODE_MASTER_ELDER_VERDICT.md` sections 5-6)
+
+- W3 pre-fork (before the W3 contracts commit): ME-100 = ME-43 full align, ME-44 header pairing (+ `OS_HEADERS`),
+  ME-46 dfm2c event-name check, ME-47 `Items.Data` from the binary DFMs, ME-53 widthcorpus, ME-54 shared scrollbar
+  helpers, ME-57 five sans13 glyphs, ME-84 UTF-8 name cut; ME-101 the ME-86 orphan-API cleanup and the two
+  `test_layering` counts.
+- W3 entry (before `v0.3.0`): ME-102 release-then-free posts, ME-103 cue time in microseconds, ME-104 Select BG Cue
+  and Sequence Mode, ME-105 Copy From / Clear Fixture Data, ME-106 one tier id list; ME-45 a non-admin install of
+  this `v0.2.0` installer; ME-50 (+4) design sentences (design owner).
+- ME-21 (Joey): the Mac run of this `.dmg`, plus the real-device MIDI latch on macOS (acceptance item 2's Mac half;
+  Windows is ticked on a real WinMM device).
+- LOW: `Statics.dat` duplicate `slot` line (LORD_C-4), `.lj4b` in-place restore path check order (LORD_C-5),
+  CoreMIDI parser has no runnable check (LORD_C-6), `groups=` without `ERANGE` (LORD_C-7), more than 512
+  `MIDIMap.dat` lines message (LORD_C-8), `GO` / `STOP` / `TRIG` on static runner indices (LORD_ENGINE-7), progress
+  wrap after unfreeze (LORD_ENGINE-9), blank Delete Sequences `Modified` column (LORD_FIDELITY-12), About licence
+  label is a PROPOSAL (LORD_FIDELITY-13), two untagged literals (LORD_FIDELITY-14), popup capture evidence
+  (LORD_FIDELITY-15), placeholder LED art (LORD_FIDELITY-16), THotkeyFunctionDialog has no behaviour file,
+  TSavePresetForm unused, `GroupInfo.dat` logs twice on a fresh library, windows open centred instead of at DFM
+  Left/Top; ME-66 and the W1 fidelity rows carried.
+
 ## [0.1.0] - 2026-10-21 - W1 First light
 
 The program runs a show: fixtures configured, a sequence programmed, a cue
