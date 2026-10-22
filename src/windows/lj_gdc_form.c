@@ -183,7 +183,6 @@ static int run_prog(const lj_gdc_prog *p)
 }
 static void run1(int op, int lo, int hi, int v) { lj_gdc_prog p; p.n = 1; p.c[0].op = (uint8_t)op; p.c[0].lo = (uint16_t)lo; p.c[0].hi = (uint16_t)hi; p.c[0].v = (uint16_t)v; run_prog(&p); }
 
-int lj_gdc_form_command(const char *line);   /* the command line's [Enter]; also the UI script's way in */
 int lj_gdc_form_command(const char *line)
 {
     lj_gdc_prog p;
@@ -418,7 +417,7 @@ static void create_open(int gi)
     static const lj_binding b[] = { { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { NULL, NULL, NULL } };
     lj_ctx *c = lj_ctx_get();
     lj_widget *w;
-    char t[8];
+    char t[12];   /* any int (gcc -Wformat-truncation) */
     if (gi < 0 || gi >= LJ_GEN_GROUPS) { lj_log("generic dmx: all %d groups are in use", LJ_GEN_GROUPS); return; }
     create_close();
     if ((g.create_win = lj_window_create(&lj_form_TMEGAGROUPCREATEFORM, b)) == NULL) return;
@@ -597,7 +596,6 @@ void lj_gdc_form_refresh(void)
 static const char *const sf_boxes[LJ_ATTR_COUNT] = { "cbIntensity", "cbMovement", "cbColor", "cbGobo", "cbBeam", "cbEffects", "cbLevel", "cbMovementmacro" };   /* enum lj_attr */
 static lj_window *sf_win;
 
-int lj_seq_fades_apply(void);   /* OK: the window's choice on the selected fixtures of the current sequence; channels changed or -1 */
 int lj_seq_fades_apply(void)
 {
     lj_ctx *c = lj_ctx_get();
@@ -690,7 +688,6 @@ static void fs_cols(void)                     /* four equal columns: number, On/
     if (g1) ((lj_w_grid *)g1)->def_cw = (g1->w - 4) / 4;   /* ponytail: editfollowspot.gif has 20 / 30 / 150 / rest; lj_w_grid has one column width (per-column widths are an src/ui field) */
 }
 
-int lj_followspot_form_apply_scene(void);     /* Apply Current Scene to <row>: 0, -1 = no follow spot fixture selected */
 int lj_followspot_form_apply_scene(void)
 {
     lj_ctx *c = lj_ctx_get();

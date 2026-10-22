@@ -322,6 +322,19 @@ int lj_library_list_records(const lj_library *lib, enum lj_rec_kind kind, uint32
     return n;
 }
 
+int lj_library_list_files(const lj_library *lib, const char *rel, const char *ext, char names[][64], int max)
+{
+    char dir[LJ_PATH_CAP], name[260];
+    lj_dir d;
+    int n = 0, is_dir;
+    size_t len, el = strlen(ext);
+    if (lj_library_path(lib, rel, dir, sizeof dir) != 0 || lj_dir_open(&d, dir) != 0) return -1;
+    while (lj_dir_next(&d, name, sizeof name, &is_dir) == 1)
+        if (!is_dir && (len = strlen(name)) > el && len < 64 && lj_ieq(name + len - el, ext) && n < max) lj_str_copy(names[n++], 64, name);
+    lj_dir_close(&d);
+    return n;
+}
+
 uint32_t lj_library_next_number(lj_library *lib, enum lj_rec_kind kind)
 {
     char path[LJ_PATH_CAP];

@@ -25,7 +25,7 @@ void lj_w_header_paint(lj_surface *s, const lj_widget *w, int ax, int ay, int wi
     const lj_font *f = lj_w_font_of(w);
     int i, x = ax, ty = ay + (h - f->height) / 2;
     for (i = 0; i < n && x < ax + width; i++) {
-        int cw = widths[i], tx = x + 4, tw;
+        int cw = x + widths[i] > ax + width ? ax + width - x : widths[i], tx = x + 4, tw;   /* the last section stops at the view's edge */
         if (i == pressed) { lj_fill(s, x, ay, cw, h, LJ_CLR_BTNFACE); lj_bevel1(s, x, ay, cw, h, LJ_CLR_BTNSHADOW, LJ_CLR_BTNHIGHLIGHT); }
         else lj_button_raised(s, x, ay, cw, h);
         if (cols[i].caption) {

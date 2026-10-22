@@ -243,8 +243,7 @@ static void on_fader_paint(lj_widget *w, void *ud)
     lj_surface *s = lj_window_surface(dm.win);
     int ax, ay, v = dm.sel >= 0 ? dm.cur[dm.sel] : 0, h;
     (void)ud;
-    lj_widget_abs(w, &ax, &ay);
-    ax += lj_window_root(dm.win)->x; ay += lj_window_root(dm.win)->y;
+    lj_widget_abs(w, &ax, &ay);                                          /* surface coordinates: the root's x,y is in the sum */
     lj_fill(s, ax, ay, w->w, w->h, LJ_CLR_BTNHIGHLIGHT);
     h = (w->h - 2) * v / 255;
     lj_fill(s, ax + 1, ay + w->h - 1 - h, w->w - 2, h, 0x0000FFu);           /* blue fill as the level faders [07 s3.5]; PROPOSAL: the monitor fader itself is unmeasured */
@@ -255,7 +254,6 @@ static int fader_value(lj_widget *w)
     int ax, ay, v;
     if (!m) return -1;
     lj_widget_abs(dm.fader, &ax, &ay);
-    ax += lj_window_root(dm.win)->x; ay += lj_window_root(dm.win)->y;
     (void)w;
     v = 255 - (m->y - ay) * 255 / (dm.fader->h - 1);
     return v < 0 ? 0 : v > 255 ? 255 : v;

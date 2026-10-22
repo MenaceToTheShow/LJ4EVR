@@ -35,8 +35,6 @@
 #endif
 #define TMP "test_gdc_fs_tmp/"
 
-int lj_gdc_form_command(const char *line);           /* lj_gdc_form.c: the command line's [Enter] */
-int lj_followspot_form_apply_scene(void);            /* lj_gdc_form.c: Apply Current Scene to <row> */
 
 static int fails, unbound;
 #define CHECK(c) do { if (!(c)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #c); } } while (0)

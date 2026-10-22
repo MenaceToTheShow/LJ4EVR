@@ -1,7 +1,8 @@
 /* lj_fixture_config.c - see lj_fixture_config.h. Every OnXxx of TLINKCONFIGFORM3 is
- * bound (ME-16); the W2/W3 leaves (Export to text file, Export All, Import Profile,
- * Reload profile data, Find, the profile export popup) are greyed or log "Not
- * available in LJ4EVR"; Copy From Fixture / Clear Fixture Data are W4 (ME-105). */
+ * bound (ME-16). Import Profile, Export All, Create Export File and Reload profile
+ * data open lj_gs2_dialogs.c / run the app's reload (ME-31, W3); Find, Print and the
+ * Offline Visualizer exports log "Not available in LJ4EVR"; Copy From Fixture / Clear
+ * Fixture Data are W4 (ME-105). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen / localtime of the export (ME-92) */
 #include "windows/lj_fixture_config.h"
 
@@ -512,6 +513,16 @@ static void on_print(lj_widget *w, void *ud)                          /* M_Print
     if (it && it->name && !strcmp(it->name, "M_ExportConfig")) export_open();
     else lj_log("fixture config: Print Configuration: " LJ_FC_NA);   /* ME-31: no printing path (docs/fidelity.md) */
 }
+static void on_gs2(lj_widget *w, void *ud)                            /* ME-31: Import Profile, Export All, Create Export File, Reload profile data */
+{
+    const lj_menu_item_desc *it = lj_window_menu_item(fc.win);
+    const char *n = it && it->name ? it->name : "";
+    (void)w; (void)ud;
+    if (!strcmp(n, "M_ImportProfile")) lj_win_open(LJ_WIN_GS2_IMPORT);
+    else if (!strcmp(n, "M_ExportAll")) lj_desktop_run_action(LJ_ACT_GS2_EXPORT_ALL, 0);
+    else if (!strcmp(n, "M_CreateExportFile")) lj_win_open(LJ_WIN_GS2_EXPORT);
+    else if (!strcmp(n, "P_ReloadProfileData")) { lj_desktop_run_action(LJ_ACT_GS2_RELOAD, 0); tree_build(); if (find("tvAvailable")) lj_w_treeview_set_items(find("tvAvailable"), fc.tree_items, fc.tree_n); }
+}
 static void on_warnings(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(fc.win);
@@ -551,10 +562,10 @@ static const lj_binding lj_fc_bindings[] = {
     { "bSaveClick", on_save, NULL }, { "bRemoveClick", on_remove, NULL }, { "bRemoveDragDrop", noop, NULL }, { "bRemoveDragOver", noop, NULL }, { "bClearClick", on_clear, NULL },
     { "LinkMouseDown", on_link, NULL }, { "eAdrExit", on_addr_exit, NULL }, { "eAdrKeyUp", on_addr_key, NULL }, { "UdButton1Change", on_ud, NULL }, { "bAutoAddressClick", on_auto, NULL },
     { "cbInvPanClick", on_flag, NULL }, { "cbIntensitySpecialClick", on_flag, NULL }, { "EUserNameKeyUp", on_username, NULL },
-    { "M_PrintClick", on_print, NULL }, { "M_ImportProfileClick", na, NULL }, { "LocalHelpClick", noop, NULL }, { "M_ExportAllClick", na, NULL },
+    { "M_PrintClick", on_print, NULL }, { "M_ImportProfileClick", on_gs2, NULL }, { "LocalHelpClick", noop, NULL }, { "M_ExportAllClick", on_gs2, NULL },
     { "WarningsClick", on_warnings, NULL }, { "PrefsClick", on_warnings, NULL }, { "Help2Click", noop, NULL },
-    { "popAvailablePopup", noop, NULL }, { "M_CreateExportFileClick", na, NULL }, { "M_CreateOVExportClick", na, NULL }, { "M_DeleteProfileClick", na, NULL },
-    { "ConfiguredPopPopup", noop, NULL }, { "P_FixtureNotesClick", on_notes, NULL }, { "P_CloneClick", na, NULL }, { "P_ClearClick", na, NULL }, { "P_ReloadProfileDataClick", na, NULL },
+    { "popAvailablePopup", noop, NULL }, { "M_CreateExportFileClick", on_gs2, NULL }, { "M_CreateOVExportClick", na, NULL }, { "M_DeleteProfileClick", na, NULL },
+    { "ConfiguredPopPopup", noop, NULL }, { "P_FixtureNotesClick", on_notes, NULL }, { "P_CloneClick", na, NULL }, { "P_ClearClick", na, NULL }, { "P_ReloadProfileDataClick", on_gs2, NULL },
     { NULL, NULL, NULL }
 };
 
@@ -563,8 +574,8 @@ lj_window *lj_fixture_config_open(void)
     lj_ctx *ctx = lj_ctx_get();
     lj_widget *tv;
     lj_menu *m;
-    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */, "M_ImportProfile", "M_ExportAll", "P_ReloadProfileData" /* W3 */, "P_Clone", "P_Clear" /* ME-105: re-tagged W4, docs/fidelity.md row "Copy From Fixture / Clear Fixture Data" */,
-                                          "M_CreateExportfileOV", "M_CreateExportFile", "M_CreateOVExport", "M_DeleteProfile" /* W3 */ };
+    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */, "P_Clone", "P_Clear" /* ME-105: re-tagged W4, docs/fidelity.md row "Copy From Fixture / Clear Fixture Data" */,
+                                          "M_CreateExportfileOV", "M_CreateOVExport" /* Offline Visualizer: design 8.5 */, "M_DeleteProfile" /* W4 */ };
     static const char *const checks[][2] = { { "M_RemoveFixtures", "ConfirmRemove" }, { "M_OverwriteFixtures", "ConfirmOverwrite" }, { "M_ClearFixtures", "ConfirmClear" }, { "M_PrompClear", "PromtClearOnSave" }, { "M_ApplyDefault", "AlwaysApplyDefault" } };
     size_t i;
     if (fc.win) return fc.win;

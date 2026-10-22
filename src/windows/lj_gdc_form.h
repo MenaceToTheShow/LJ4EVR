@@ -31,6 +31,10 @@ void       lj_seq_fades_close(void);
 lj_window *lj_seq_fades_get(void);
 void       lj_seq_fades_refresh(void);
 
+int lj_gdc_form_command(const char *line);   /* the command line's [Enter]; also the UI script's way in */
+int lj_seq_fades_apply(void);                /* OK: the window's choice on the selected fixtures of the current sequence; channels changed or -1 */
+int lj_followspot_form_apply_scene(void);    /* Apply Current Scene to <row>: 0, -1 = no follow spot fixture selected */
+
 void lj_gdc_form_bind_fns(void);   /* the lj_fn rows this file owns (hotkeys of 01 s7), called from lj_win_set_host */
 
 #endif /* LJ_WINDOWS_GDC_FORM_H */

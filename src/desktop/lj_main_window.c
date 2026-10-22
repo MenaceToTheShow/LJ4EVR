@@ -24,6 +24,7 @@
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/lj_menu.h"
 #include "windows/lj_prefs.h"
+#include "windows/lj_profile_editor_form.h"
 
 #define LJ_NA_HINT "Not available in LJ4EVR"   /* ME-29 */
 
@@ -97,6 +98,7 @@ static const lj_menu_item_desc lj_pop_fixicon[] = {
     { .name = "PI_MoveIcon", .caption = "Move Icon", .on_click = "IconPopClick", .image_index = -1 },
     LJ_MSUB("PI_AlignIcon", "Align Icon", lj_pop_align),
 };
+static char lj_pi_customize_cap[32] = "Customize Fixture";   /* NIT-26: lj_main_menu_sync sets it per fixture (lj_customize_popup_caption) */
 static const lj_menu_item_desc lj_pop_icon_items[] = {
     LJ_MI("PI_SelectProgrammedType", "Select All Programmed of this type", "IconPopClick"),
     LJ_MI("PI_SelectType", "Select All of this type", "IconPopClick"),
@@ -111,7 +113,7 @@ static const lj_menu_item_desc lj_pop_icon_items[] = {
     LJ_MSEP("PI_N3"),
     LJ_MI("PI_FixtureConfig", "Fixture Configuration", "IconPopClick"),
     LJ_MI("PI_GlobalPatch", "Global Patch", "IconPopClick"),
-    LJ_MI("PI_Customize", "Customize Fixture", "IconPopClick"),
+    LJ_MI("PI_Customize", lj_pi_customize_cap, "IconPopClick"),
     LJ_MSEP("PI_N4"),
     LJ_MSUB("PI_FixtureIcon", "Fixture Icon", lj_pop_fixicon),
     LJ_MSEP("PI_N5"),
@@ -471,6 +473,7 @@ void lj_main_menu_sync(lj_window *win)
     lj_menu_set_checked(m, "StatusBar1", lj_statusbar_visible());
     lj_menu_set_checked(m, "PD_MoveAll", lj_desktop_move_mode_on());
     lj_menu_set_checked(m, "PD_ShowProgrammed", lj_desktop_show_programmed_on());
+    if (lj_desktop_popup_fixture() >= 0) lj_str_copy(lj_pi_customize_cap, sizeof lj_pi_customize_cap, lj_customize_popup_caption(lj_desktop_popup_fixture()));
     lj_menu_set_checked(m, "PI_MoveIcon", lj_desktop_popup_fixture() >= 0 && lj_desktop_icon_move_on(lj_desktop_popup_fixture()));
     lj_menu_set_visible(m, "M_Generic", generic_fixture_exists());
     hotkey_items_sync(m);

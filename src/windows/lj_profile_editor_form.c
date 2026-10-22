@@ -464,7 +464,7 @@ static int pal_of_page(void) { lj_widget *pc = pfind("PC1"); int i, a = pc ? ((l
 static void pe_on_lv(lj_widget *w, void *ud)   /* lvChange / lvClick: the row's value into the edit(s) */
 {
     int i = lv_by_ctl(w->name), r = row_of(w), k;
-    char t[8];
+    char t[12];   /* any int (gcc -Wformat-truncation) */
     (void)ud;
     if (pe.loading || r < 0) return;
     if (i >= 0) {
@@ -867,7 +867,7 @@ static void cc_paint(void)
     cc.rows.n = cc.n;
     for (k = 0; k < cc.n; k++) {
         const char *c = cc.cap[k][0] ? cc.cap[k] : p && p->level_caption[k][0] ? (const char *)p->level_caption[k] : "";
-        char dflt[8];
+        char dflt[16];   /* "CH" + the full %d range (gcc -Wformat-truncation) */
         if (!c[0]) { snprintf(dflt, sizeof dflt, "CH%d", k + 1); c = dflt; }   /* the Levels window's default caption */
         snprintf(cc.rows.t[k], sizeof cc.rows.t[k], "%d\t%s\t%s", k + 1, c, cc.gm_off >> k & 1u ? "Disabled" : "Enabled");   /* PROPOSAL rig: GM Control cell texts */
     }

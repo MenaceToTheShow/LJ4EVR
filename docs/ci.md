@@ -107,3 +107,18 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
   them as a static cycle. GNU ld reads archives once, in order; the W2 pre-integration
   run failed to link `lj4evr_render` on Linux before this. macOS and Windows get no
   cycle: their linkers resolve across archives, and ld64 warns about repeated libraries.
+
+## W3
+
+- `linux-clang` also builds the two libFuzzer targets (`-DLJ_FUZZ=ON`, `tools/fuzz/`) in
+  `build-fuzz` with the whole tree compiled `-fsanitize=fuzzer-no-link,address,undefined`,
+  so `lj_fixlib` and `lj_core` carry coverage, and runs `fuzz_gs2` and `fuzz_udf` for 60 s
+  each (LORD_C-17). `fuzz_gs2` also aborts when an accepted record does not write back
+  byte-exact.
+- The 66 generic-macro shapes (`src/engine/lj_shapes_gen.c`) are checked by the CTest rows
+  `gen_vectors_shapes_check` (`gen_vectors --shapes --check`) and `gen_vectors_shapes_mutated`
+  (WILL_FAIL) in every ctest job; `generate-check` keeps `gen_vectors --check` for
+  `tests/vectors.h` and `lj_trig_gen.c`.
+- `gs2_check` (the 48 shipped `.GS2` and the sampled `.Udf` against the Python oracle) is a
+  CTest row that prints SKIP without `LJ4EVR_REFERENCE_DIR`; it only compares on the
+  developer PC, where `reference/` exists.

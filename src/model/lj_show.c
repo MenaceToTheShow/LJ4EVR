@@ -19,6 +19,8 @@
 #include "core/lj_str.h"
 #include "fixlib/lj_gs2.h"
 
+#define LJ_GS2_LOAD_MAX 1024   /* user .GS2 profiles read per library (PROPOSAL bound) */
+
 lj_show *lj_show_new(void)
 {
     lj_show *s = (lj_show *)calloc(1, sizeof *s);
@@ -353,7 +355,21 @@ const lj_profile *lj_show_profile(const lj_show *show, int fixture)
     if (!f->link) return NULL;
     return f->kind == LJ_FX_GS2 ? lj_show_gs2(show, f->gs2_file) : lj_fixlib_by_id(f->profile_id);
 }
-int lj_show_gs2_load_all(const lj_library *lib, lj_profile **out, int *n) { (void)lib; *out = NULL; *n = 0; return 0; }
+int lj_show_gs2_load_all(const lj_library *lib, lj_profile **out, int *n)
+{
+    static char names[LJ_GS2_LOAD_MAX][64];   /* UI thread only (the app's reload) */
+    char rel[96], path[LJ_PATH_CAP], err[128];
+    int i, k = lj_library_list_files(lib, "UserFixtureDef", ".GS2", names, LJ_GS2_LOAD_MAX);
+    *out = NULL; *n = 0;
+    if (k <= 0) return 0;                                       /* no folder or no profile: 0 profiles */
+    if (!(*out = (lj_profile *)calloc((size_t)k, sizeof **out))) return -1;
+    for (i = 0; i < k; i++) {
+        if (snprintf(rel, sizeof rel, "UserFixtureDef/%s", names[i]) >= (int)sizeof rel || lj_library_path(lib, rel, path, sizeof path) != 0) continue;
+        if (lj_gs2_load(path, &(*out)[*n], err, sizeof err) != 0) { lj_log("%s: %s, skipped", rel, err); memset(&(*out)[*n], 0, sizeof **out); continue; }
+        (*n)++;
+    }
+    return 0;
+}
 void lj_show_gs2_free(lj_profile *p, int n)
 {
     int i;

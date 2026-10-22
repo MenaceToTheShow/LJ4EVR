@@ -103,8 +103,18 @@ void lj_w_tabs_layout(lj_widget *w)
         }
         i = 0;
     }
+    if (w->kind == LJ_K_TABCONTROL) {                                         /* AdjustClientRect = DisplayRect: an alClient child sits under the strip (one row) */
+        if (n > 0) t->tab_h = tab_rows(w, p, n > TAB_MAX ? TAB_MAX : n) * row_h(w) + 2;   /* tabs set at run time keep the created height until they exist */
+        for (c = w->first; c; c = c->next) {                                  /* tc1 of TFixtureSetupForm: 404x269, ODPanel21 at 4,24 396x241 (DFM) */
+            if (c->align != LJ_AL_CLIENT) continue;
+            c->x = LJ_TAB_PAD; c->y = lj_w_font_of(w)->height + 8 + 3;
+            c->w = w->w - 2 * LJ_TAB_PAD; c->h = w->h - c->y - LJ_TAB_PAD;
+            if (c->w < 0) c->w = 0;
+            if (c->h < 0) c->h = 0;
+        }
+        return;
+    }
     t->tab_h = tab_rows(w, p, n > TAB_MAX ? TAB_MAX : n) * row_h(w) + 2;
-    if (w->kind == LJ_K_TABCONTROL) return;
     for (c = w->first; c; c = c->next) {
         if (c->kind != LJ_K_TABSHEET) continue;
         c->x = LJ_TAB_PAD; c->y = t->tab_h + LJ_TAB_PAD;
@@ -114,6 +124,13 @@ void lj_w_tabs_layout(lj_widget *w)
         c->visible = (i == t->active) ? 1u : 0u;
         i++;
     }
+}
+
+static void tab_text(lj_surface *s, const lj_widget *w, int x, int y, const char *str, uint32_t rgb)   /* '&' prefixes as the tab control draws them: "&&" = '&' */
+{
+    const lj_font *f = lj_w_font_of(w);
+    if (w->enabled) { lj_text(s, f, x, y, str, rgb, 1); return; }
+    lj_text_disabled(s, f, x, y, str, 1);
 }
 
 static void tab_shape(lj_surface *s, int x, int y, int w, int h)
@@ -147,13 +164,13 @@ void lj_w_tabs_paint(lj_widget *w, lj_surface *s)
         if (act) continue;
         ty = ay + p[i].y + 2; tt = rh;
         tab_shape(s, x, ty, tw, tt);
-        lj_w_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, i))) / 2, ty + (tt - f->height) / 2 + 1, tab_caption(w, i), LJ_CLR_3DDKSHADOW);
+        tab_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, i))) / 2, ty + (tt - f->height) / 2 + 1, tab_caption(w, i), LJ_CLR_3DDKSHADOW);
     }
     if (t->active >= 0 && t->active < n) {
         int tw = p[t->active].w + 4, x = ax + p[t->active].x - 2, ty = ay + p[t->active].y, tt = rh + 3;
         tab_shape(s, x, ty, tw, tt);
         lj_hline(s, x + 1, fy, tw - 2, LJ_CLR_BTNFACE);   /* the frame's top line breaks under the active tab */
-        lj_w_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, t->active))) / 2, ty + (tt - f->height) / 2, tab_caption(w, t->active), LJ_CLR_3DDKSHADOW);
+        tab_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, t->active))) / 2, ty + (tt - f->height) / 2, tab_caption(w, t->active), LJ_CLR_3DDKSHADOW);
         if (w->focused) lj_focus_rect(s, x + 3, ty + 3, tw - 6, tt - 5);
     }
 }

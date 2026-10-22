@@ -19,6 +19,13 @@ void       lj_gs2_export_close(void);
 lj_window *lj_gs2_export_get(void);
 void       lj_gs2_export_refresh(void);
 
+/* W3 integrator: the testable cores (no file dialog: <library>\Import\ and <library>\Export\, PROPOSAL folders) */
+int  lj_gs2_import_file(const char *path, char *err, size_t cap);   /* a .Udf / .Udo / .GS2 parsed and written to UserFixtureDef\<base>.GS2; no reload; 0 / -1 */
+int  lj_gs2_import_folder(int keep_existing);                       /* every file of Import\ (keep_existing = "check modified": existing profiles kept), then LJ_ACT_GS2_RELOAD; count imported */
+int  lj_gs2_export_one(int index, char *err, size_t cap);           /* show->gs2[index] as Export\<base>.Udf; 0 / -1 */
+int  lj_gs2_export_all(void);                                       /* Export All (ME-31): every show->gs2 record as Export\<gs2_file> through lj_gs2_save; count written, -1 no library */
+lj_window *lj_gs2_export_all_open(void);                            /* TExportAllForm (Fixture Configuration > Export All); closed by lj_gs2_export_close */
+
 void lj_gs2_dialogs_bind_fns(void);   /* the lj_fn rows this file owns (hotkeys of 01 s7), called from lj_win_set_host */
 
 #endif /* LJ_WINDOWS_GS2_DIALOGS_H */

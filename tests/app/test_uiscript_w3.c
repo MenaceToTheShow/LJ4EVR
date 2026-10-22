@@ -40,6 +40,8 @@
 #include "model/lj_sequence.h"
 #include "model/lj_show.h"
 #include "model/lj_statics.h"
+#include "core/lj_fsinfo.h"
+#include "windows/lj_gs2_dialogs.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 
@@ -263,6 +265,40 @@ int lj_test_uiscript_w3(int argc, char **argv)
             CHECK(run_text("gs2_import lj_w3_synthetic.Udf\nquit\n") == 0);
             CHECK(lj_library_path(&lib, "UserFixtureDef/lj_w3_synthetic.GS2", path, sizeof path) == 0 && (f = fopen(path, "rb")) != NULL);
             if (f) fclose(f); } }
+
+    /* ---- 8b. ME-31 remainder: Import (check modified) from Import\, Export All byte-equal, Reload after an on-disk edit ---- */
+    {   static uint8_t a1[32768], b1[32768];
+        char src[LJ_PATH_CAP], dst[LJ_PATH_CAP], err[160];
+        size_t na = 0, nb = 0;
+        int k, hit = 0;
+        lj_profile p;
+        FILE *f;
+        if (lj_library_path(&lib, "UserFixtureDef/lj_w3_two.GS2", dst, sizeof dst) == 0) remove(dst);   /* the library outlives a run */
+        CHECK(lj_library_path(&lib, "Import", dst, sizeof dst) == 0 && lj_fs_mkdir(dst) == 0);
+        CHECK(lj_library_path(&lib, "UserFixtureDef/lj_w3_synthetic.GS2", src, sizeof src) == 0 && lj_library_path(&lib, "Import/lj_w3_two.GS2", dst, sizeof dst) == 0);
+        if ((f = fopen(src, "rb")) != NULL) { na = fread(a1, 1, sizeof a1, f); fclose(f); }
+        if ((f = fopen(dst, "wb")) != NULL) { fwrite(a1, 1, na, f); fclose(f); }
+        CHECK(na > 0 && lj_gs2_import_folder(1) == 1 && show->ngs2 == 2);       /* lj_w3_two is new; nothing else in Import\ */
+        CHECK(lj_gs2_import_folder(1) == 0);                                     /* check modified: the existing one is kept */
+        CHECK(lj_gs2_export_all() == 2);
+        for (k = 0; k < show->ngs2; k++) {
+            char rel[96];
+            snprintf(rel, sizeof rel, "UserFixtureDef/%s", show->gs2[k].gs2_file); lj_library_path(&lib, rel, src, sizeof src);
+            snprintf(rel, sizeof rel, "Export/%s", show->gs2[k].gs2_file); lj_library_path(&lib, rel, dst, sizeof dst);
+            na = nb = 0;
+            if ((f = fopen(src, "rb")) != NULL) { na = fread(a1, 1, sizeof a1, f); fclose(f); }
+            if ((f = fopen(dst, "rb")) != NULL) { nb = fread(b1, 1, sizeof b1, f); fclose(f); }
+            CHECK(na > 0 && na == nb && memcmp(a1, b1, na) == 0);               /* Export All writes the source bytes back (raw-record rule) */
+        }
+        CHECK(lj_library_path(&lib, "UserFixtureDef/lj_w3_two.GS2", src, sizeof src) == 0);
+        memset(&p, 0, sizeof p);
+        CHECK(lj_gs2_load(src, &p, err, sizeof err) == 0);
+        strcpy(p.name, "EDITED");
+        CHECK(lj_gs2_save(src, &p) == 0);
+        lj_gs2_free(&p);
+        lj_desktop_run_action(LJ_ACT_GS2_RELOAD, 0);                             /* Reload profile data */
+        for (k = 0; k < show->ngs2; k++) if (!strcmp(show->gs2[k].gs2_file, "lj_w3_two.GS2")) hit = !strcmp(show->gs2[k].name, "EDITED");
+        CHECK(hit); }
 
     /* ---- 9. ME-102: a full command array; Clear Slot and a BG cue load keep what the engine still holds ---- */
     {   lj_scene sc2;

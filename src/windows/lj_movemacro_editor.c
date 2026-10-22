@@ -498,7 +498,7 @@ static void mm_widget(lj_widget *w, int ev, void *ud)
 static const lj_menu_item_desc mm_pref_items[] = { { "M_ShowAll", "Show All Selected Fixtures", .on_click = "MenuClick" } };
 static const lj_menu_item_desc mm_bez_items[] = {
     { "M_NewShape", "&New Shape", .on_click = "MenuClick" }, { "M_SaveShape", "&Save Shape", .on_click = "MenuClick" },
-    { "M_SaveAs", "Save &as new Shape", .on_click = "MenuClick" }, { "N1", "-" },
+    { "M_SaveAs", "Save &as new Shape", .on_click = "MenuClick" }, { "N1", "-", .on_click = NULL },
     { "M_DeleteShape", "&Delete Shape", .on_click = "MenuClick" }, { "M_DeleteShapes", "&Delete Shapes", .on_click = "MenuClick" } };
 static const lj_menu_item_desc mm_menu_items[] = {
     { "M_Fades", "&Fades", .on_click = "MenuClick" },
@@ -512,11 +512,11 @@ static const lj_menu_desc mm_menus[] = { { "MainMenu1", 1, mm_menu_items, LJ_COU
 static const int mm_row_y[7] = { 2, 29, 55, 83, 109, 141, 167 };
 static const lj_ctl_desc d_mm_type_l = { LJ_K_LABEL, "MmTypeLabel", 190, 6, 60, 13, .caption = "Macro Type" };          /* exe 0x26AEB4 */
 static const lj_ctl_desc d_mm_type   = { LJ_K_COMBOBOX, "MmType", 252, 2, 188, 21, .style = "csDropDownList", .drop_down_count = 16 };
-static const lj_ctl_desc d_mm_trace  = { LJ_K_UNKNOWN, "MmTrace", 3, 2, MM_TRACE, 131 };
+static const lj_ctl_desc d_mm_trace  = { LJ_K_UNKNOWN, "MmTrace", 3, 2, MM_TRACE, 131, .tag = 0 };   /* .tag: gcc/clang -Wmissing-field-initializers */
 static const lj_ctl_desc d_mm_tabm   = { LJ_K_SPEEDBUTTON, "MmTabMacro", 3, 135, 64, 24, .caption = "Macro", .group_index = 3, .down = LJ_YES, .hint = "Track Macro Only", .show_hint = LJ_YES };            /* exe 0x26AE40 / 0x26AE54 */
 static const lj_ctl_desc d_mm_tabf   = { LJ_K_SPEEDBUTTON, "MmTabFixture", 67, 135, 64, 24, .caption = "Fixture", .group_index = 3, .hint = "Track Fixture Pan/Tilt", .show_hint = LJ_YES };      /* exe 0x26AE70 / 0x26AE80 */
 static const lj_ctl_desc d_mm_clear  = { LJ_K_BUTTON, "MmClear", 3, 161, MM_TRACE, 36, .caption = "Clear Image" };       /* exe 0x26AEA0 */
-static const lj_ctl_desc d_mm_canvas = { LJ_K_UNKNOWN, "MmBezier", MM_CLIENT_W + 2, 2, MM_BEZ_W - 4, MM_CLIENT_H - 4 };
+static const lj_ctl_desc d_mm_canvas = { LJ_K_UNKNOWN, "MmBezier", MM_CLIENT_W + 2, 2, MM_BEZ_W - 4, MM_CLIENT_H - 4, .tag = 0 };
 
 lj_window *lj_movemacro_editor_open(void)
 {
@@ -545,7 +545,7 @@ lj_window *lj_movemacro_editor_open(void)
     lj_w_label_create(root, &d_mm_type_l);
     mm.type = lj_w_combobox_create(root, &d_mm_type); mm.type->on_event = mm_widget;
     for (i = 0; i < 6; i++) {
-        osfs[i] = (lj_ctl_desc){ LJ_K_UNKNOWN, "MmOsf", 137, mm_row_y[osf_row[i]], 48, 22 };
+        osfs[i] = (lj_ctl_desc){ LJ_K_UNKNOWN, "MmOsf", 137, mm_row_y[osf_row[i]], 48, 22, .tag = 0 };
         mm.osf[i] = lj_w_osf_create(root, &osfs[i]); mm.osf[i]->on_event = mm_widget;
     }
     for (i = 0; i < MB_COUNT; i++) {
@@ -811,7 +811,7 @@ void lj_fan_out_refresh(void) { if (fo.win && lj_sel_serial() != fo.serial) { fo
 /* ---------------------------------------------------------------------------------------------------------------
  * Pan/Tilt Macro Auto Delay (TAutoDelayForm) [04 s4.6, 17 s6]
  * ------------------------------------------------------------------------------------------------------------- */
-static struct { lj_window *win; lj_widget *vmax, *vcount, *vseg; int max_delay, count, segments; uint32_t seed, serial; char t[3][8]; } ad;
+static struct { lj_window *win; lj_widget *vmax, *vcount, *vseg; int max_delay, count, segments; uint32_t seed, serial; char t[3][12]; } ad;   /* t: any int (gcc -Wformat-truncation) */
 
 static void ad_show(void)
 {

@@ -28,6 +28,7 @@ int  lj_library_is_default(const lj_library *lib);
 int  lj_library_path(const lj_library *lib, const char *rel, char *out, size_t cap);              /* root + rel ("Config.dat", "Cues\\CuePageInfo.Dat"); -1 when truncated */
 int  lj_library_record_path(const lj_library *lib, enum lj_rec_kind kind, uint32_t number, char *out, size_t cap);   /* "Sequences\\00000012.seq" ... 8-digit names [F28] */
 uint32_t lj_library_next_number(lj_library *lib, enum lj_rec_kind kind);                          /* allocates and persists the next [NEXT] number (design 5.2); recovery = max existing + 1 when the key is missing; 0 on error */
+int  lj_library_list_files(const lj_library *lib, const char *rel, const char *ext, char names[][64], int max);   /* W3: plain files of root + rel ending in ext (any case), names < 64 bytes, unsorted; count, -1 when the folder cannot be read */
 int  lj_library_list_records(const lj_library *lib, enum lj_rec_kind kind, uint32_t *numbers, int max);   /* numbers present on disk, ascending; count or -1 */
 int  lj_library_delete_record(const lj_library *lib, enum lj_rec_kind kind, uint32_t number);     /* the number is never reused */
 

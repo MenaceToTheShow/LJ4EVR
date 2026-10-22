@@ -149,6 +149,7 @@ static const lj_win_ops lj_win_table[LJ_WIN_COUNT] = {
     [LJ_WIN_CHANNEL_CONFIG] = { lj_channel_config_open, lj_channel_config_close, lj_channel_config_get, lj_channel_config_refresh },
     [LJ_WIN_GS2_IMPORT] = { lj_gs2_import_open, lj_gs2_import_close, lj_gs2_import_get, lj_gs2_import_refresh },
     [LJ_WIN_GS2_EXPORT] = { lj_gs2_export_open, lj_gs2_export_close, lj_gs2_export_get, lj_gs2_export_refresh },
+    [LJ_WIN_HOTKEY_FUNCTION] = { lj_hotkey_function_open, lj_hotkey_function_close, lj_hotkey_function_get, lj_hotkey_function_refresh },   /* W3: bodies in lj_cuelist_form.c */
 };
 static const lj_win_ops *lj_win_ops_of(enum lj_win id) { return (int)id >= 0 && id < LJ_WIN_COUNT ? &lj_win_table[id] : NULL; }
 

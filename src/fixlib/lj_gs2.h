@@ -32,7 +32,7 @@ int  lj_gs2_read(const uint8_t *buf, size_t len, lj_profile *out, char *err, siz
 int  lj_gs2_load(const char *path, lj_profile *out, char *err, size_t cap);                 /* a .GS2 file; gs2_file = its base name */
 int  lj_gs2_save(const char *path, const lj_profile *in);                                    /* lj_gs2_write to a file (UserFixtureDef\<name>.GS2, Save Profile, Export All) */
 int  lj_udf_parse(const uint8_t *data, size_t len, lj_profile *out, char *err, size_t cap);  /* container -> stream 0 -> lj_gs2_read; LJ_GS2_ERR_CRC on a bad footer */
-int  lj_udf_export(const char *path, const lj_profile *in, char *err, size_t cap);           /* .Udf: stream 0 = lj_gs2_write, the 266-byte file table, the footer with its CRC; no bitmap stream (D2: the icon bitmap is the user's file, copied by the dialog, never packed by us; PROPOSAL) */
+int  lj_udf_export(const char *path, const lj_profile *in, char *err, size_t cap);           /* .Udf: stream 0 = lj_gs2_write, the file table (532 bytes per entry, measured on udf200: docs/file-formats.md), the footer with its CRC; no bitmap stream (D2: the icon bitmap is the user's file, copied by the dialog, never packed by us; PROPOSAL) */
 void lj_gs2_free(lj_profile *p);                                                             /* frees gs2_raw (NULL is a no-op); the profile record itself belongs to the caller */
 
 #endif /* LJ_FIXLIB_GS2_H */

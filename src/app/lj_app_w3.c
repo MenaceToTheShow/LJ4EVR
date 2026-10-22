@@ -27,9 +27,11 @@
 #include "model/lj_followspot.h"
 #include "model/lj_genmacro.h"
 #include "model/lj_library.h"
+#include "model/lj_movemacro.h"
 #include "model/lj_show.h"
 #include "model/lj_statics.h"
 #include "model/lj_table.h"
+#include "windows/lj_gs2_dialogs.h"
 #include "windows/lj_prefs.h"
 #include "windows/lj_windows.h"
 
@@ -43,6 +45,7 @@ static struct {
     lj_mtc mtc;
     lj_gdc_state gdc;
     lj_gm_shapes *shapes;     /* the user's Macros.Mac override in force; NULL = the regenerated built-ins */
+    lj_bez_set *bez;          /* show->bez: the library's MacroShapes\*.bez, sampled; NULL = none */
 } lj_w3;
 
 static lj_library *lib(void) { return lj_ctx_get()->lib; }
@@ -155,8 +158,16 @@ static const lj_cl_host lj_w3_host = { NULL, h_load_cue, h_post, h_load_bg, h_fl
 
 void lj_app_cuelist_step(uint64_t now_us)
 {
+    lj_ini *mi = lj_ctx_get()->main_ini;
+    int t;
     lj_w3.steps++;
     lj_ctx_get()->cl = &lj_w3.run.st;
+    if (mi) {                                                        /* the Cuelist window's Preferences (Main.Ini [CUELIST2], PROPOSAL keys) */
+        lj_w3.run.ignore_first_wait = lj_ini_geti(mi, "CUELIST2", "IgnoreFirstWait", 0) != 0;
+        lj_w3.run.auto_cue_on_run = lj_ini_geti(mi, "CUELIST2", "AutoCue", 0) != 0;
+        t = lj_ini_geti(mi, "CUELIST2", "MTCTimeout", LJ_CL_MTC_STOP);
+        lj_w3.run.mtc_timeout = (uint8_t)(t >= LJ_CL_MTC_STOP && t <= LJ_CL_MTC_IGNORE ? t : LJ_CL_MTC_STOP);
+    }
     lj_cl_run_step(&lj_w3.run, now_us, &lj_w3_host);
     if (lj_w3.grave && lj_w3.run.cl != lj_w3.grave) { lj_cuelist_free(lj_w3.grave); lj_w3.grave = NULL; }
 }
@@ -255,9 +266,20 @@ int lj_app_gm_shapes_reload(void)   /* ME-34: <library>\Override\Macros.Mac (+ U
     return rc;
 }
 
-/* ponytail: the contract has no Bezier set loader (model/lj_movemacro.h lists no directory walk and the app has no
- * portable one); show->bez stays as the movement track builds it. Add the swap here once lj_bez_load_all exists. */
-int lj_app_bez_reload(void) { lj_log("app: Bezier shapes reload has no loader in model/lj_movemacro.h yet"); return -1; }
+int lj_app_bez_reload(void)   /* MacroShapes\*.bez parsed outside the lock, show->bez swapped under it, the old set freed after */
+{
+    lj_ctx *c = lj_ctx_get();
+    char dir[LJ_PATH_CAP];
+    lj_bez_set *ns, *old;
+    if (!c->show || !lib() || lj_library_path(lib(), LJ_BEZ_DIR, dir, sizeof dir) != 0) return -1;
+    if (!(ns = (lj_bez_set *)calloc(1, sizeof *ns))) return -1;
+    if (lj_bez_set_load(dir, ns) != 0) { free(ns); return -1; }
+    lj_lock();
+    old = lj_w3.bez; lj_w3.bez = ns; c->show->bez = ns;
+    lj_unlock();
+    if (old) { lj_bez_set_free(old); free(old); }
+    return 0;
+}
 
 int lj_app_followspot(int setting)
 {
@@ -394,7 +416,7 @@ static void act(enum lj_desktop_action a, int arg, void *ud)
     case LJ_ACT_GM_SHAPES_RELOAD: lj_app_gm_shapes_reload(); break;
     case LJ_ACT_BEZ_RELOAD:      lj_app_bez_reload(); break;
     case LJ_ACT_GS2_RELOAD:      lj_app_gs2_reload(); break;
-    case LJ_ACT_GS2_EXPORT_ALL:  lj_win_open(LJ_WIN_GS2_EXPORT); break;   /* TExportAllForm asks for the folder (gs2 track) */
+    case LJ_ACT_GS2_EXPORT_ALL:  lj_gs2_export_all_open(); break;    /* TExportAllForm: Export\ of the library (lj_gs2_dialogs.c) */
     case LJ_ACT_FOLLOWSPOT_APPLY: lj_app_followspot(arg); break;
     case LJ_ACT_FOLLOWSPOT:                                           /* tb_fixture_18: left = re-activate the last setting, right = the list [04 s13] */
         if (arg == 0 && c->followspot) lj_app_followspot(c->followspot); else lj_win_open(LJ_WIN_FOLLOWSPOT_LIST);
@@ -459,6 +481,7 @@ void lj_app_w3_start(void)
         if (lj_library_path(lib(), LJ_FOLLOWSPOT_FILE, path, sizeof path) == 0 && lj_followspot_load(path, c->show->followspot, err, sizeof err) != 0) lj_log("%s: %s", LJ_FOLLOWSPOT_FILE, err);
         lj_app_gs2_reload();
         lj_app_gm_shapes_reload();
+        lj_app_bez_reload();
     }
     for (i = 0; i < LJ_COUNT_OF(acts); i++) lj_desktop_bind_action(acts[i], act, NULL);
     for (i = 0; i < LJ_COUNT_OF(fns); i++) if (!lj_fn_bound(fns[i])) lj_fn_bind(fns[i], fn_row, NULL);
@@ -471,6 +494,7 @@ void lj_app_w3_stop(void)
     free(c->gm_edit); c->gm_edit = NULL;                              /* the engine is gone (or unbound) by now */
     if (lj_w3.shapes) { lj_gm_shapes_free(lj_w3.shapes); free(lj_w3.shapes); lj_w3.shapes = NULL; }
     c->gm_shapes = &lj_gm_shapes_builtin;
+    if (lj_w3.bez) { if (c->show && c->show->bez == lj_w3.bez) c->show->bez = NULL; lj_bez_set_free(lj_w3.bez); free(lj_w3.bez); lj_w3.bez = NULL; }
     if (lj_w3.grave) { lj_cuelist_free(lj_w3.grave); lj_w3.grave = NULL; }
     lj_cl_run_init(&lj_w3.run);
     c->cl = NULL;

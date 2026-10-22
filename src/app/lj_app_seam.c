@@ -281,7 +281,9 @@ static int lj_app_bgcue_apply(const lj_bgcue *work)
     return 0;
 }
 
-int lj_app_load_genmacro(uint32_t number)
+/* restart: the pending_genmacro service passes the macro's restart_on_load (b = restart, w3-contracts); Add Macro to
+ * Cue keeps b = 0 (CHM 5841). */
+static int lj_app_post_genmacro(uint32_t number, int restart)
 {
     lj_show *show = lj_ctx_get()->show;
     lj_genmacro *gm = lj_app_gm_for(number), *old = NULL;
@@ -289,6 +291,7 @@ int lj_app_load_genmacro(uint32_t number)
     if (!show) { free(gm); return -1; }
     memset(&cmd, 0, sizeof cmd);
     cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = number; cmd.gm = gm; cmd.c = LJ_GM_SRC_CUE;   /* NULL = engine off for this cue (load error logged); W3: the cue's rank-6 source */
+    cmd.b = restart && gm && gm->restart_on_load;
     lj_lock();
     if (gm) { old = (lj_genmacro *)lj_table_get(&show->macros, number); lj_table_put(&show->macros, number, gm); }
     cmd.at_us = lj_clock_us();
@@ -297,6 +300,7 @@ int lj_app_load_genmacro(uint32_t number)
     if (old && old != gm) free(old);
     return gm ? 0 : -1;
 }
+int lj_app_load_genmacro(uint32_t number) { return lj_app_post_genmacro(number, 0); }
 
 /* Swaps the current sequence under the lock, posts LJ_CMD_CURRENT_SEQ, returns the old record for the caller to free. */
 static lj_sequence *lj_app_set_current_seq(lj_sequence *s)
@@ -443,7 +447,7 @@ void lj_app_service_pending(void)
     link = c->view.pending_link_cue; bg = c->view.pending_bg; gm = c->view.pending_genmacro;
     if (link && lj_app_load_cue(link, 0) != 0) lj_log("link to cue %04u: not loaded, the slot stays stopped", (unsigned)link);
     if (bg) lj_app_load_bgcue(bg);
-    if (gm) lj_app_load_genmacro(gm);
+    if (gm) lj_app_post_genmacro(gm, 1);
 }
 
 void lj_app_midi_dispatch(void)
