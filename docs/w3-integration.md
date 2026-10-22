@@ -455,3 +455,54 @@ owner, in the vault. It is not in this commit; the design.md revision line is qu
                                         runner, a preemption; the re-run passed, no code touched)
                                         fuzz_gs2 DONE cov 708; fuzz_udf DONE cov 1463 (ME-114, was 175)
                                         https://github.com/UnbannableGT/LJ4EVR/actions/runs/39867308177
+
+## Release v0.3.0 (2026-10-22, this PC)
+
+Ruling: AUTHORIZE WITH GATES after the REV PATCH fix pass r1 (`W3_CODE_MASTER_ELDER_VERDICT.md` section 4, landed in
+70e6670 + d5d31e9).
+
+    3f5faef  Release 0.3.0   (VERSION 0.3.0; CHANGELOG 0.3.0 "What v1.0.0 is not" + known gaps = verdict sections 5-6;
+                              README status already 0.3.0 from ME-123)
+    ci.yml   39868854204 green, six jobs (3f5faef)
+    git tag -a v0.3.0 -m "LJ4EVR 0.3.0 - W3 show control"; git push origin v0.3.0   -> tag on 3f5faef
+    release.yml 39869504951 green first run
+
+Release: https://github.com/UnbannableGT/LJ4EVR/releases/tag/v0.3.0 (prerelease, 0.x)
+
+| Asset | Bytes | sha256 |
+|---|---|---|
+| `LJ4EVR-0.3.0-win64-setup.exe` | 1723124 | cc8e5fb943a7a66f6389f7f413f516dae895cf3dddaeb2bf7806496570329a2c |
+| `LJ4EVR-0.3.0-macos.dmg` | 4335448 | 3326af8a8859c7e6ce5464cbac5c47f0aeb476b52a5dcf5b6149254f594feaa9 |
+| `SHA256SUMS` | 184 | |
+
+`gh release download v0.3.0` into the scratch area; Get-FileHash of both files equals `SHA256SUMS`. Installer
+VERSIONINFO: ProductName=LJ4EVR ProductVersion=0.3.0 FileVersion=0.3.0.
+
+Windows installer, this PC (Windows 11, unelevated PowerShell, no UAC prompt; `whoami /groups` shows S-1-5-32-544
+"Group used for deny only", i.e. a filtered admin token, not a standard user, so ME-45 stays open for Joey):
+
+    (User\Default and Default.lj4b moved aside first: the script's fresh-library precondition)
+    LJ4EVR-0.3.0-win64-setup.exe /S                      -> rc 0
+    %LOCALAPPDATA%\Programs\LJ4EVR\                      lj4evr.exe 9854464, Uninstall.exe 111743, THIRD_PARTY_NOTICES.txt 2055
+    HKCU\...\Uninstall\LJ4EVR                            DisplayName "LJ4EVR 0.3.0", DisplayVersion 0.3.0
+    Start Menu\Programs\LJ4EVR 0.3.0\                    (per-user)
+    lj4evr.exe --version                                 LJ4EVR 0.3.0                                                   rc 0
+    lj4evr.exe --script tests\ui\scripts\w3_acceptance.lj4s
+                                                         from a scratch cwd holding a copy of tests\ui\scripts\ and an
+                                                         empty docs\screenshots\w3\: rc 0, every assert green, 10 shot
+                                                         lines, 47 PNGs (not committed); PIL verify over the 47: 0 errors,
+                                                         all 10 -TLJMainForm.png 799x606; stderr only the fresh-library
+                                                         "ini: cannot open" / "rec: cannot open" lines
+    Uninstall.exe /S _?=<instdir> (copy run from scratch) -> rc 0; HKCU uninstall key gone, Start Menu folder gone,
+                                                         install directory gone
+    User\Default and Default.lj4b restored from the copies moved aside; the run's library kept in the scratch area.
+
+Gotcha: `shot` does not create its directory. The first run, without `docs\screenshots\w3\` under the cwd, failed at
+script line 305 ("cannot write ...", "no window open to capture", rc 1); its library was set aside and the run repeated
+on a fresh one. In the repo the directory exists, so CI and repo-root runs are unaffected.
+
+macOS: no Mac on this PC. `LJ4EVR-0.3.0-macos.dmg` checked by size and signature only: 4335448 bytes, first block zlib
+(`78 da`, UDZO) and a `koly` UDIF trailer (version 4) in the last 512 bytes. **ME-21 Mac acceptance is open for Joey**:
+run the .dmg on his Mac (right-click LJ4EVR.app > Open, or `xattr -d com.apple.quarantine`), screenshot the Cuelist
+window and one menu, and latch a cue from a real MIDI device. **ME-45**: one install of this installer on a true
+standard-user account (verdict section 5). Both block `v1.0.0`; ME-45 also blocks the public flip.
