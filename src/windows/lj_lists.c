@@ -140,7 +140,7 @@ uint32_t lj_seqlist_number_at(int row) { return row >= 0 && row < lj_sl_n ? lj_s
 int lj_seqlist_selected(void)
 {
     lj_widget *lv = lj_sl_win ? lj_window_find(lj_sl_win, "LV1") : NULL;
-    return lv ? ((lj_w_listview *)lv)->index : -1;
+    return lv ? lj_w_listview_index(lv) : -1;
 }
 
 static uint32_t lj_sl_sel_no(void) { return lj_seqlist_number_at(lj_seqlist_selected()); }
@@ -197,7 +197,6 @@ static void lj_sl_delete(uint32_t no)
 
 /* ---- handlers ---- */
 
-static void lj_sl_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void lj_sl_on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_sl_close_pending = 1; }
 static void lj_sl_on_show(lj_widget *w, void *ud) { (void)w; (void)ud; lj_seqlist_rebuild(); }
 
@@ -236,9 +235,9 @@ static void lj_sl_on_delete(lj_widget *w, void *ud) { (void)w; (void)ud; lj_sl_d
 static const lj_binding lj_sl_bindings[] = {
     { "FormClose", lj_sl_on_close, NULL }, { "FormShow", lj_sl_on_show, NULL },
     { "LV1Click", lj_sl_on_click, NULL }, { "LV1DblClick", lj_sl_on_dblclick, NULL }, { "LV1ColumnClick", lj_sl_on_column, NULL }, { "LV1SelectItem", lj_sl_on_select, NULL },
-    { "M_ModeClick", lj_sl_on_mode, NULL }, { "Help1Click", lj_sl_noop, NULL },
+    { "M_ModeClick", lj_sl_on_mode, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { "P_EditClick", lj_sl_on_edit, NULL }, { "P_AddCueClick", lj_sl_on_addcue, NULL }, { "P_AddBGClick", lj_sl_on_addbg, NULL },
-    { "P_Add2510Click", lj_sl_noop, NULL }, { "P_DeleteClick", lj_sl_on_delete, NULL },
+    { "P_Add2510Click", lj_handler_noop, NULL }, { "P_DeleteClick", lj_sl_on_delete, NULL },
     { NULL, NULL, NULL }
 };
 

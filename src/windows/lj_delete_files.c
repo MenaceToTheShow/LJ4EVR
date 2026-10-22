@@ -33,7 +33,7 @@ static const lj_form_desc *const lj_df_forms[LJ_REC_KIND_COUNT] = { &lj_form_TDE
 static const char *const lj_df_lv[LJ_REC_KIND_COUNT] = { "LV1", "LV1", "lv1", "LV1", "LV1" };   /* TDeleteCuelistsForm spells it lv1 */
 
 static int valid(enum lj_rec_kind k) { return (int)k >= 0 && k < LJ_REC_KIND_COUNT; }
-static lj_widget *find(enum lj_rec_kind k, const char *n) { return df[k].win ? lj_window_find(df[k].win, n) : NULL; }
+static lj_widget *find(enum lj_rec_kind k, const char *n) { return lj_window_find(df[k].win, n); }
 static int kind_of(const lj_widget *w)
 {
     lj_window *win = lj_window_of((lj_widget *)w);
@@ -290,7 +290,6 @@ static void wrap_lv(enum lj_rec_kind k)
 
 /* ---- handlers ---- */
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_close(lj_widget *w, void *ud) { int k = kind_of(w); (void)ud; if (k >= 0) df[k].close_pending = 1; }
 static void on_select_all(lj_widget *w, void *ud) { int k = kind_of(w), i; (void)ud; if (k < 0) return; for (i = 0; i < df[k].n; i++) df[k].rows[i].sel = 1; show_rows((enum lj_rec_kind)k); }
 static void on_clear_all(lj_widget *w, void *ud) { int k = kind_of(w), i; (void)ud; if (k < 0) return; for (i = 0; i < df[k].n; i++) df[k].rows[i].sel = 0; show_rows((enum lj_rec_kind)k); }
@@ -317,22 +316,22 @@ static void on_column(lj_widget *w, void *ud)
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("delete files: Help is W4"); }
 
 static const lj_binding lj_df_seq_b[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormResize", noop, NULL }, { "FormShow", noop, NULL },
-    { "LV1Change", noop, NULL }, { "LV1ColumnClick", on_column, NULL }, { "LV1Compare", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "LV1Change", lj_handler_noop, NULL }, { "LV1ColumnClick", on_column, NULL }, { "LV1Compare", lj_handler_noop, NULL },
     { "BCheckClick", on_check, NULL }, { "bMarkClick", on_mark, NULL }, { "BSelectAllClick", on_select_all, NULL }, { "BClearAllClick", on_clear_all, NULL },
     { "BDeleteClick", on_delete, NULL }, { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 static const lj_binding lj_df_cue_b[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormResize", noop, NULL }, { "FormShow", noop, NULL },
-    { "LV1Click", noop, NULL }, { "LV1ColumnClick", on_column, NULL }, { "LV1Compare", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "LV1Click", lj_handler_noop, NULL }, { "LV1ColumnClick", on_column, NULL }, { "LV1Compare", lj_handler_noop, NULL },
     { "BSelectAllClick", on_select_all, NULL }, { "BClearAllClick", on_clear_all, NULL }, { "BDeleteClick", on_delete, NULL }, { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 static const lj_binding lj_df_cl_b[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormResize", noop, NULL }, { "lv1Change", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "lv1Change", lj_handler_noop, NULL },
     { "BSelectAllClick", on_select_all, NULL }, { "BClearAllClick", on_clear_all, NULL }, { "BDeleteClick", on_delete, NULL }, { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 static const lj_binding lj_df_bg_b[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormResize", noop, NULL }, { "LV1Change", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "LV1Change", lj_handler_noop, NULL },
     { "BSelectAllClick", on_select_all, NULL }, { "BClearAllClick", on_clear_all, NULL }, { "BDeleteClick", on_delete, NULL }, { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 static const lj_binding lj_df_macro_b[] = {
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormResize", noop, NULL }, { "LV1SelectItem", noop, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "LV1SelectItem", lj_handler_noop, NULL },
     { "BSelectAllClick", on_select_all, NULL }, { "BClearAllClick", on_clear_all, NULL }, { "BDeleteClick", on_delete, NULL }, { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 static const lj_binding *const lj_df_bindings[LJ_REC_KIND_COUNT] = { lj_df_seq_b, lj_df_cue_b, lj_df_cl_b, lj_df_bg_b, lj_df_macro_b };
 

@@ -75,10 +75,9 @@ static struct { lj_window *win; lj_memo_edit ed; int close_pending; } nf;
 
 static int notes_path(char *out, size_t cap) { lj_ctx *c = lj_ctx_get(); return c->lib ? lj_library_path(c->lib, LJ_NOTES_FILE, out, cap) : -1; }
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; nf.close_pending = 1; }
 static const lj_binding lj_nf_bindings[] = {
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL }, { "Memo1Change", noop, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Memo1Change", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_notes_form_open(void)

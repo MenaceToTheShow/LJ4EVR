@@ -78,9 +78,7 @@ static void modified(void)
     lj_ctx_set_modified(LJ_MOD_CUE, 1);
     lj_cue_form_repin();
 }
-static int form_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->forms_ini ? lj_ini_geti(c->forms_ini, "CUE", key, dflt) : dflt; }
 static void form_seti(const char *key, int v) { lj_ctx *c = C(); if (c->forms_ini) lj_ini_seti(c->forms_ini, "CUE", key, v); }
-static int main_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->main_ini ? lj_ini_geti(c->main_ini, "CUE", key, dflt) : dflt; }
 static void main_seti(const char *key, int v) { lj_ctx *c = C(); if (c->main_ini) lj_ini_seti(c->main_ini, "CUE", key, v); }
 
 void lj_cue_form_set_host(const lj_cue_form_host *host) { s.has_host = host != NULL; if (host) s.host = *host; }
@@ -104,7 +102,7 @@ const int *lj_cue_form_col_widths(void)
     int i;
     for (i = 0; i < LJ_CUE_COLS; i++) {
         snprintf(key, sizeof key, "C%d", i);
-        s.col_w[i] = form_geti(key, lj_cue_col_dflt[i]);
+        s.col_w[i] = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", key, lj_cue_col_dflt[i]);
         if (s.col_w[i] < 0 || s.col_w[i] > 1000) s.col_w[i] = lj_cue_col_dflt[i];
     }
     return s.col_w;
@@ -141,7 +139,7 @@ static void build_row(int i, lj_cue_row *r)
     r->enabled = (uint8_t)(sl ? sl->enabled : 1);
     if (!sl || sl->seq == 0) {
         snprintf(key, sizeof key, "SlotName%d", i);
-        lj_str_copy(r->cell[1], LJ_CUE_CELL, C()->forms_ini ? lj_ini_gets(C()->forms_ini, "CUE", key, "") : "");
+        lj_str_copy(r->cell[1], LJ_CUE_CELL, lj_ini_gets(C()->forms_ini, "CUE", key, ""));
         r->rgb = lj_cue_form_row_rgb(LJ_SLOT_EMPTY, 0, 0, 0, s.use_colors);
         return;
     }
@@ -249,7 +247,7 @@ static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
         return 1;
     }
     if (m->button == 1 && m->clicks == 2) {
-        if (form_geti("DBCLICKSEQ", 1) && cue_rec() && cue_rec()->slot[row].seq) lj_log("lj_cue_form: DoubleClick to Edit Sequence %04u: the sequence loader is W2", (unsigned)cue_rec()->slot[row].seq);
+        if (lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "DBCLICKSEQ", 1) && cue_rec() && cue_rec()->slot[row].seq) lj_log("lj_cue_form: DoubleClick to Edit Sequence %04u: the sequence loader is W2", (unsigned)cue_rec()->slot[row].seq);
         return 1;
     }
     if (m->ctrl) s.sel = (uint16_t)(s.sel ^ (1u << row));
@@ -548,7 +546,6 @@ static void sb_up(lj_widget *w, void *ud)
     else lj_log("lj_cue_form: %s is W2", n);                      /* BGCue / generic macro group [03 s5.4] */
 }
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void w2(lj_widget *w, void *ud) { (void)ud; lj_log("lj_cue_form: %s: W2", w->name ? w->name : "?"); }
 
 /* ---- menus ---- */
@@ -565,13 +562,13 @@ static const struct { const char *item, *key; int main, dflt, pref; } lj_cue_pre
 static const char *const lj_cue_trans_items[] = { "M_UseTransparentCues", "M_ForceTransparentCues", "M_IgnoreTransparenCues" };
 static const char *const lj_cue_int_items[] = { "M_CueIntDefault", "M_CueIntHTP", "M_CueIntLTP" };
 
-static int pref_get(int i) { return lj_cue_prefs[i].main ? main_geti(lj_cue_prefs[i].key, lj_cue_prefs[i].dflt) : form_geti(lj_cue_prefs[i].key, 0); }
+static int pref_get(int i) { const lj_ctx *c = lj_ctx_get(); return lj_ini_geti(lj_cue_prefs[i].main ? c->main_ini : c->forms_ini, "CUE", lj_cue_prefs[i].key, lj_cue_prefs[i].main ? lj_cue_prefs[i].dflt : 0); }
 static void pref_set(int i, int v) { if (lj_cue_prefs[i].main) main_seti(lj_cue_prefs[i].key, v); else form_seti(lj_cue_prefs[i].key, v); }
 
 static void apply_advanced(void)
 {
     lj_widget *p1 = lj_window_find(s.win, "Panel1"), *p2 = lj_window_find(s.win, "pOptions2"), *root = lj_window_root(s.win);
-    int on = form_geti("ViewAdvanced", 1);
+    int on = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "ViewAdvanced", 1);
     if (!p1 || !p2 || !root) return;
     p2->visible = on != 0;
     p1->h = on ? 60 : 31;                                           /* AutoSize panel: one or two 29-px rows + bevels (DFM) */
@@ -585,9 +582,9 @@ static void sync_checks(void)
     lj_menu *m = lj_window_menus(s.win);
     int i, t;
     for (i = 0; i < LJ_COUNT_OF(lj_cue_prefs); i++) lj_menu_set_checked(m, lj_cue_prefs[i].item, pref_get(i));
-    t = form_geti("Transparent", 0);
+    t = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "Transparent", 0);
     for (i = 0; i < 3; i++) lj_menu_set_checked(m, lj_cue_trans_items[i], i == t);
-    t = form_geti("SeqIntMode", 0);
+    t = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "SeqIntMode", 0);
     for (i = 0; i < 3; i++) lj_menu_set_checked(m, lj_cue_int_items[i], i == t);
     lj_menu_set_checked(m, "M_ShowasBPM", s.bpm);
     for (i = 0; i < 10; i++) {
@@ -608,10 +605,10 @@ static void prefs_click(lj_widget *w, void *ud)
         break;
     }
     for (i = 0; i < 3; i++) if (!strcmp(it->name, lj_cue_trans_items[i])) { form_seti("Transparent", i); C()->transparent_mode = (uint8_t)i; post3(LJ_CMD_TRANSPARENT, 0, (uint32_t)i, 0); }   /* Use / Force / Ignore [03 s5.8] */
-    if (!strcmp(it->name, "M_StickyFlashSequences")) C()->flash_latch = (uint8_t)(form_geti("StickyFlash", 0) != 0);   /* FLASH c = latch [03 s5.10] */
+    if (!strcmp(it->name, "M_StickyFlashSequences")) C()->flash_latch = (uint8_t)(lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "StickyFlash", 0) != 0);   /* FLASH c = latch [03 s5.10] */
     for (i = 0; i < 3; i++) if (!strcmp(it->name, lj_cue_int_items[i])) { form_seti("SeqIntMode", i); post3(LJ_CMD_SEQ_INT, 0, (uint32_t)i, 0); }
-    s.use_colors = form_geti("Use Colors", 1);
-    s.chase_fade = !main_geti("DisableChaseFade", 0);
+    s.use_colors = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "Use Colors", 1);
+    s.chase_fade = !lj_ini_geti(lj_ctx_get()->main_ini, "CUE", "DisableChaseFade", 0);
     if (!strcmp(it->name, "M_ViewAdvanced")) apply_advanced();
     sync_checks();
     lj_cue_form_refresh();
@@ -651,18 +648,17 @@ static void menu_options(lj_widget *w, void *ud)
     else if (it->tag == 2) { s.sel = 0x0FFF; for_selected(-1, op_clear, 0); s.sel = 0; lj_cue_form_refresh(); }
 }
 static void on_resize(lj_widget *w, void *ud) { (void)w; (void)ud; grid_layout(); }
-static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 /* ---- open / close / refresh ---- */
 static const lj_binding lj_cue_bindings[] = {
     { "sbMouseDown", sb_down, NULL }, { "sbMouseUp", sb_up, NULL }, { "sbDeleteBGCueMouseUp", w2, NULL }, { "sbDeleteMacroClick", w2, NULL },
-    { "eBGCueChange", noop, NULL }, { "eBGCueDragDrop", w2, NULL }, { "eBGCueDragOver", noop, NULL },
-    { "eMacroChange", noop, NULL }, { "eMacroDblClick", w2, NULL }, { "eMacroDragDrop", w2, NULL }, { "eMacroDragOver", noop, NULL },
+    { "eBGCueChange", lj_handler_noop, NULL }, { "eBGCueDragDrop", w2, NULL }, { "eBGCueDragOver", lj_handler_noop, NULL },
+    { "eMacroChange", lj_handler_noop, NULL }, { "eMacroDblClick", w2, NULL }, { "eMacroDragDrop", w2, NULL }, { "eMacroDragOver", lj_handler_noop, NULL },
     { "MenuOptions", menu_options, NULL }, { "DefaultView1Click", default_view, NULL }, { "DefaultVisibleColumns1Click", default_columns, NULL },
     { "ShowClick", show_click, NULL }, { "PrefsClick", prefs_click, NULL }, { "SlotsNames1Click", w2, NULL }, { "M_ShowasBPMClick", bpm_click, NULL },
-    { "Preferences1Click", prefs_open, NULL }, { "CueBuilder1Click", w2, NULL }, { "Help1Click", noop, NULL },
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL },
-    { "FormHide", noop, NULL }, { "FormResize", on_resize, NULL }, { "FormShow", noop, NULL },
+    { "Preferences1Click", prefs_open, NULL }, { "CueBuilder1Click", w2, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
+    { "FormHide", lj_handler_noop, NULL }, { "FormResize", on_resize, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_cue_form_open(void)
@@ -673,10 +669,10 @@ lj_window *lj_cue_form_open(void)
     s.win = lj_window_create(&lj_form_TCURRENTCUE, lj_cue_bindings);
     if (!s.win) { lj_log("lj_cue_form: TCurrentCue failed to build"); return NULL; }
     root = lj_window_root(s.win);
-    s.columns = (unsigned)form_geti("Columns", 65535);
-    s.use_colors = form_geti("Use Colors", 1);
-    s.bpm = form_geti("DisplayBPM", 0);
-    s.chase_fade = !main_geti("DisableChaseFade", 0);
+    s.columns = (unsigned)lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "Columns", 65535);
+    s.use_colors = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "Use Colors", 1);
+    s.bpm = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "DisplayBPM", 0);
+    s.chase_fade = !lj_ini_geti(lj_ctx_get()->main_ini, "CUE", "DisableChaseFade", 0);
     lj_cue_form_col_widths();
     s.grid = lj_w_alloc(sizeof(lj_cue_grid), root, NULL, &lj_cue_grid_vt, 0);
     s.grid->base.name = "lj_cue_grid";
@@ -756,23 +752,22 @@ void lj_cue_form_bind_fns(void)
 void lj_cue_form_apply_prefs(void)
 {
     lj_ctx *c = C();
-    int t = form_geti("Transparent", LJ_TRANSPARENT_USE);
+    int t = lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "Transparent", LJ_TRANSPARENT_USE);
     c->transparent_mode = (uint8_t)(t >= LJ_TRANSPARENT_USE && t <= LJ_TRANSPARENT_IGNORE ? t : LJ_TRANSPARENT_USE);
-    c->flash_latch = (uint8_t)(form_geti("StickyFlash", 0) != 0);
+    c->flash_latch = (uint8_t)(lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "StickyFlash", 0) != 0);
     post3(LJ_CMD_TRANSPARENT, 0, c->transparent_mode, 0);
 }
 
 /* ======================= Save Cue (TSaveCueForm, TSaveAsCueForm) [03 s5.7] ======================= */
 static struct { lj_window *win, *as; } sv;
 
-static int sv_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->forms_ini ? lj_ini_geti(c->forms_ini, "SAVECUEFORM", key, dflt) : dflt; }
 static void sv_seti(const char *key, int v) { lj_ctx *c = C(); if (c->forms_ini) lj_ini_seti(c->forms_ini, "SAVECUEFORM", key, v); }
 
 static void as_changed(lj_widget *w, void *ud);
 static void as_save(lj_widget *w, void *ud);
 static void as_activate(lj_widget *w, void *ud);
 static const lj_binding as_bindings[] = {
-    { "eCueNoChange", as_changed, NULL }, { "bSaveClick", as_save, NULL }, { "FormActivate", as_activate, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { NULL, NULL, NULL } };
+    { "eCueNoChange", as_changed, NULL }, { "bSaveClick", as_save, NULL }, { "FormActivate", as_activate, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 
 static void sv_fill(void)
 {
@@ -784,11 +779,11 @@ static void sv_fill(void)
     if ((w = lj_window_find(sv.win, "CueNo")) != NULL) lj_w_edit_set_text(w, cue && cue->number ? num : "");   /* blank until the first save */
     if ((w = lj_window_find(sv.win, "ECueName")) != NULL && !w->focused) lj_w_edit_set_text(w, cue ? cue->name : "");   /* FormActivate re-runs this: a name being typed is not overwritten */
     if ((w = lj_window_find(sv.win, "Bsave")) != NULL) { w->enabled = cue && cue->number; lj_widget_invalidate(w); }
-    if ((w = lj_window_find(sv.win, "cbTransparent")) != NULL) lj_w_checkbox_set_checked(w, cue ? cue->transparent : sv_geti("SaveTransparent", 0));
-    if ((w = lj_window_find(sv.win, "cbSaveMacro")) != NULL) lj_w_checkbox_set_checked(w, sv_geti("SaveMacro", 0));
-    if ((w = lj_window_find(sv.win, "cbClearSave")) != NULL) lj_w_checkbox_set_checked(w, sv_geti("ClearSave", 0));
-    lj_menu_set_checked(lj_window_menus(sv.win), "AutoClose", sv_geti("AutoClose", 1));
-    lj_menu_set_checked(lj_window_menus(sv.win), "EnterSave", sv_geti("SaveOnEnter", 1));
+    if ((w = lj_window_find(sv.win, "cbTransparent")) != NULL) lj_w_checkbox_set_checked(w, cue ? cue->transparent : lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "SaveTransparent", 0));
+    if ((w = lj_window_find(sv.win, "cbSaveMacro")) != NULL) lj_w_checkbox_set_checked(w, lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "SaveMacro", 0));
+    if ((w = lj_window_find(sv.win, "cbClearSave")) != NULL) lj_w_checkbox_set_checked(w, lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "ClearSave", 0));
+    lj_menu_set_checked(lj_window_menus(sv.win), "AutoClose", lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "AutoClose", 1));
+    lj_menu_set_checked(lj_window_menus(sv.win), "EnterSave", lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "SaveOnEnter", 1));
 }
 
 static void sv_take_fields(void)
@@ -808,7 +803,7 @@ static void sv_after_save(void)
     lj_widget *w;
     if (!sv.win) return;
     if ((w = lj_window_find(sv.win, "cbClearSave")) != NULL && lj_w_checkbox_checked(w)) lj_cue_form_new_cue();
-    if (sv_geti("AutoClose", 1)) lj_save_cue_close(); else sv_fill();
+    if (lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "AutoClose", 1)) lj_save_cue_close(); else sv_fill();
 }
 
 static void sv_save_click(lj_widget *w, void *ud)
@@ -830,11 +825,11 @@ static void sv_prefs(lj_widget *w, void *ud)
     const lj_menu_item_desc *it = lj_window_menu_item(sv.win);
     (void)w; (void)ud;
     if (!it || !it->name) return;
-    if (!strcmp(it->name, "AutoClose")) sv_seti("AutoClose", !sv_geti("AutoClose", 1));
-    else if (!strcmp(it->name, "EnterSave")) sv_seti("SaveOnEnter", !sv_geti("SaveOnEnter", 1));
+    if (!strcmp(it->name, "AutoClose")) sv_seti("AutoClose", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "AutoClose", 1));
+    else if (!strcmp(it->name, "EnterSave")) sv_seti("SaveOnEnter", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUEFORM", "SaveOnEnter", 1));
     sv_fill();
 }
-static void sv_keydown(lj_widget *w, void *ud) { (void)w; (void)ud; }   /* Save on [Enter]: the key is not readable from a binding until W0-last-event lands */
+/* sv_keydown = lj_handler_noop: Save on [Enter]: the key is not readable from a binding until W0-last-event lands */
 static void sv_close(lj_widget *w, void *ud)
 {
     lj_widget *cb;
@@ -843,9 +838,9 @@ static void sv_close(lj_widget *w, void *ud)
 }
 
 static const lj_binding sv_bindings[] = {
-    { "cbTransparentClick", sv_check_click, NULL }, { "BsaveClick", sv_save_click, NULL }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", noop, NULL },
-    { "FormClose", sv_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormHide", noop, NULL },
-    { "FormKeyDown", sv_keydown, NULL }, { "FormShow", noop, NULL }, { NULL, NULL, NULL } };
+    { "cbTransparentClick", sv_check_click, NULL }, { "BsaveClick", sv_save_click, NULL }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormClose", sv_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL },
+    { "FormKeyDown", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 
 /* Save As Cue# */
 static void as_changed(lj_widget *w, void *ud)
@@ -908,7 +903,7 @@ static void lc_free_items(void)
 static int lc_selected_number(uint32_t *out)
 {
     lj_widget *lv = lc.win ? lj_window_find(lc.win, "lvGlobal") : NULL;
-    int i = lv ? ((lj_w_listview *)lv)->index : -1;
+    int i = lv ? lj_w_listview_index(lv) : -1;
     if (i < 0 || i >= lc.n) return -1;
     *out = lc.numbers[i];
     return 0;
@@ -989,18 +984,18 @@ static void lc_go(lj_widget *w, void *ud)
 static void lc_show(lj_widget *w, void *ud) { (void)w; (void)ud; lj_list_cue_refresh(); }
 
 static const lj_binding lc_bindings[] = {
-    { "eGlobalCueNumChange", lc_num_change, NULL }, { "lvGlobalChange", noop, NULL }, { "lvPagesChange", noop, NULL }, { "TC1Change", lj_cue_pages_on_tab, NULL }, { "TC1Changing", noop, NULL },
-    { "bCueNumGoClick", lc_go, NULL }, { "bGoCueClick", lc_go, NULL }, { "lvGlobalColumnClick", noop, NULL }, { "lvGlobalCompare", noop, NULL },
-    { "lvGlobalDblClick", lc_dblclick, NULL }, { "lvPagesDblClick", lj_cue_pages_on_dblclick, NULL }, { "lvPagesDragDrop", lj_cue_pages_on_drop, NULL }, { "lvPagesDragOver", noop, NULL },
-    { "lvGlobalExit", noop, NULL }, { "lvPagesExit", noop, NULL },
+    { "eGlobalCueNumChange", lc_num_change, NULL }, { "lvGlobalChange", lj_handler_noop, NULL }, { "lvPagesChange", lj_handler_noop, NULL }, { "TC1Change", lj_cue_pages_on_tab, NULL }, { "TC1Changing", lj_handler_noop, NULL },
+    { "bCueNumGoClick", lc_go, NULL }, { "bGoCueClick", lc_go, NULL }, { "lvGlobalColumnClick", lj_handler_noop, NULL }, { "lvGlobalCompare", lj_handler_noop, NULL },
+    { "lvGlobalDblClick", lc_dblclick, NULL }, { "lvPagesDblClick", lj_cue_pages_on_dblclick, NULL }, { "lvPagesDragDrop", lj_cue_pages_on_drop, NULL }, { "lvPagesDragOver", lj_handler_noop, NULL },
+    { "lvGlobalExit", lj_handler_noop, NULL }, { "lvPagesExit", lj_handler_noop, NULL },
     { "sbNextMouseDown", lj_cue_pages_on_button, NULL }, { "sbNextPageMouseDown", lj_cue_pages_on_button, NULL }, { "sbPageGoMouseDown", lj_cue_pages_on_button, NULL },
     { "sbPrevMouseDown", lj_cue_pages_on_button, NULL }, { "sbPrevPageMouseDown", lj_cue_pages_on_button, NULL },
-    { "sbPageButtonsMouseUp", noop, NULL }, { "Splitter1Moved", noop, NULL }, { "GlobalPopClick", lc_pop_click, NULL }, { "PagesPopClick", lj_cue_pages_on_menu, NULL },
-    { "GlobalColumnClick", w2, NULL }, { "GlobalSortClick", w2, NULL }, { "Help1Click", noop, NULL }, { "LoadPages1Click", w2, NULL },
-    { "M_GlobalColumnsClick", noop, NULL }, { "M_GlobalColumnsDefaultClick", w2, NULL }, { "M_PagesClick", noop, NULL }, { "PageMenuClick", lj_cue_pages_on_menu, NULL },
-    { "PrefsClick", lj_cue_pages_on_prefs, NULL }, { "SavePages1Click", w2, NULL }, { "Sort1Click", noop, NULL },
-    { "FormActivate", noop, NULL }, { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormDeactivate", noop, NULL },
-    { "FormHide", noop, NULL }, { "FormKeyPress", noop, NULL }, { "FormResize", noop, NULL }, { "FormShow", lc_show, NULL },
+    { "sbPageButtonsMouseUp", lj_handler_noop, NULL }, { "Splitter1Moved", lj_handler_noop, NULL }, { "GlobalPopClick", lc_pop_click, NULL }, { "PagesPopClick", lj_cue_pages_on_menu, NULL },
+    { "GlobalColumnClick", w2, NULL }, { "GlobalSortClick", w2, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "LoadPages1Click", w2, NULL },
+    { "M_GlobalColumnsClick", lj_handler_noop, NULL }, { "M_GlobalColumnsDefaultClick", w2, NULL }, { "M_PagesClick", lj_handler_noop, NULL }, { "PageMenuClick", lj_cue_pages_on_menu, NULL },
+    { "PrefsClick", lj_cue_pages_on_prefs, NULL }, { "SavePages1Click", w2, NULL }, { "Sort1Click", lj_handler_noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL },
+    { "FormHide", lj_handler_noop, NULL }, { "FormKeyPress", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lc_show, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_list_cue_open(void)

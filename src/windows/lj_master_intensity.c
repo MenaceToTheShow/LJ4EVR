@@ -45,7 +45,6 @@ static struct {
 static const lj_engine_status lj_zero_view = { 0 };
 static lj_ctx *C(void) { return lj_ctx_get(); }
 static const lj_engine_status *view(void) { return s.view ? s.view : &lj_zero_view; }
-static int main_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->main_ini ? lj_ini_geti(c->main_ini, "GLOBALINTENSITY", key, dflt) : dflt; }
 static void main_seti(const char *key, int v) { lj_ctx *c = C(); if (c->main_ini) lj_ini_seti(c->main_ini, "GLOBALINTENSITY", key, v); }
 static void host_show(lj_window *w, int open) { const lj_cue_form_host *h = lj_cue_form_get_host(); if (w && h && h->show) h->show(h->ud, w, open); }
 
@@ -108,7 +107,7 @@ static void w2_event(lj_widget *w, int ev, void *ud) { (void)ud; if (ev == LJ_WE
 static int fadetime_ms(void)
 {
     lj_widget *cb = s.win ? lj_window_find(s.win, "cbFadetime") : NULL;
-    int i = cb ? ((lj_w_combobox *)cb)->index : main_geti("Fadetime", 3);
+    int i = cb ? ((lj_w_combobox *)cb)->index : lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "Fadetime", 3);
     if (i < 0) i = 0;
     if (i >= LJ_MI_FADETIMES) i = LJ_MI_FADETIMES - 1;
     main_seti("Fadetime", i);
@@ -133,13 +132,13 @@ static void b_restore(lj_widget *w, void *ud)
 static void sync_checks(void)
 {
     lj_menu *m = lj_window_menus(s.win);
-    lj_menu_set_checked(m, "M_MasterOnly", main_geti("MasterOnly", 0));
-    lj_menu_set_checked(m, "M_Pct", main_geti("Show Pct", 1));
-    lj_menu_set_checked(m, "M_SynchronizeBump", main_geti("SyncBump", 0));
+    lj_menu_set_checked(m, "M_MasterOnly", lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "MasterOnly", 0));
+    lj_menu_set_checked(m, "M_Pct", lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "Show Pct", 1));
+    lj_menu_set_checked(m, "M_SynchronizeBump", lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "SyncBump", 0));
 }
 static void apply_master_only(void)
 {
-    int only = main_geti("MasterOnly", 0), i;
+    int only = lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "MasterOnly", 0), i;
     for (i = 1; i < LJ_MI_COLS; i++) {
         lj_widget *ws[5] = { s.fader[i], s.mode[i], s.name[i], s.sync[i], s.bump[i] };
         int k;
@@ -152,19 +151,18 @@ static void prefs_click(lj_widget *w, void *ud)
     const lj_menu_item_desc *it = lj_window_menu_item(s.win);
     (void)w; (void)ud;
     if (!it || !it->name) return;
-    if (!strcmp(it->name, "M_MasterOnly")) { main_seti("MasterOnly", !main_geti("MasterOnly", 0)); apply_master_only(); }
-    else if (!strcmp(it->name, "M_Pct")) main_seti("Show Pct", !main_geti("Show Pct", 1));   /* ponytail: lj_w_fader prints % only; the absolute readout ("FF") waits for the widget */
-    else if (!strcmp(it->name, "M_SynchronizeBump")) main_seti("SyncBump", !main_geti("SyncBump", 0));
+    if (!strcmp(it->name, "M_MasterOnly")) { main_seti("MasterOnly", !lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "MasterOnly", 0)); apply_master_only(); }
+    else if (!strcmp(it->name, "M_Pct")) main_seti("Show Pct", !lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "Show Pct", 1));   /* ponytail: lj_w_fader prints % only; the absolute readout ("FF") waits for the widget */
+    else if (!strcmp(it->name, "M_SynchronizeBump")) main_seti("SyncBump", !lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "SyncBump", 0));
     sync_checks();
 }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void w2(lj_widget *w, void *ud) { (void)ud; lj_log("lj_master_intensity: %s: W2", w->name ? w->name : "?"); }
 
 static const lj_binding lj_mi_bindings[] = {
     { "bAll100Click", b_all100, NULL }, { "bAll0Click", b_all0, NULL }, { "bFadeOutClick", b_fade_out, NULL }, { "bFadeInClick", b_fade_in, NULL },
     { "bBlackOutClick", b_blackout, NULL }, { "bRestoreClick", b_restore, NULL }, { "InternalPatch1Click", w2, NULL }, { "PrefsClick", prefs_click, NULL },
-    { "M_IntGroupsClick", w2, NULL }, { "Help1Click", noop, NULL },
-    { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormHide", noop, NULL }, { "FormShow", noop, NULL },
+    { "M_IntGroupsClick", w2, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 static lj_widget *mk_button(lj_widget *parent, int x, int y, int w, int h, const char *caption, void *ud)
@@ -229,7 +227,7 @@ lj_window *lj_master_intensity_open(void)
         s.fadetime_items[i] = s.fadetime_text[i];
     }
     if ((cb = lj_window_find(s.win, "cbFadetime")) != NULL) {
-        int idx = main_geti("Fadetime", 3);
+        int idx = lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "Fadetime", 3);
         lj_w_combobox_set_items(cb, s.fadetime_items, LJ_MI_FADETIMES);
         ((lj_w_combobox *)cb)->index = idx < 0 ? 0 : idx >= LJ_MI_FADETIMES ? LJ_MI_FADETIMES - 1 : idx;
     }

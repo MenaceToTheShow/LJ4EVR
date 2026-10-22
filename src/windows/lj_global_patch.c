@@ -40,10 +40,10 @@ static const char *const lj_gp_htp_items[LJ_HTP_GROUPS] = {
 lj_window *lj_global_patch_window(void) { return gp ? gp->win : NULL; }
 const lj_patch_ch *lj_global_patch_work(void) { return gp ? gp->work : NULL; }
 void lj_global_patch_set_post(void (*post)(const lj_cmd *cmd)) { lj_gp_post = post; }
-static lj_widget *find(const char *n) { return gp && gp->win ? lj_window_find(gp->win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(gp ? gp->win : NULL, n); }
 static void post(const lj_cmd *c) { if (lj_gp_post) lj_gp_post(c); else lj_ctx_post(c); }
 
-int lj_global_patch_htp_masters(void) { lj_ctx *ctx = lj_ctx_get(); return ctx->main_ini ? lj_ini_geti(ctx->main_ini, "GLOBALPATCH", "HTPMasters", 0) != 0 : 0; }   /* PROPOSAL rig: LJ2's key is not in the shipped Main.Ini */
+int lj_global_patch_htp_masters(void) { lj_ctx *ctx = lj_ctx_get(); return lj_ini_geti(ctx->main_ini, "GLOBALPATCH", "HTPMasters", 0) != 0; }   /* PROPOSAL rig: LJ2's key is not in the shipped Main.Ini */
 
 static void addr_text(int code, char *out, size_t cap) { snprintf(out, cap, "%d:%03d", code / LJ_LINK_CH + 1, code % LJ_LINK_CH + 1); }
 
@@ -136,7 +136,7 @@ void lj_global_patch_refresh(void)
     int c;
     if (!gp) return;
     lv = find("lv1");
-    if (lv && ((lj_w_listview *)lv)->index != gp->sel) { gp->sel = ((lj_w_listview *)lv)->index; panel_fill(); }   /* lv1 has no OnChange in the DFM: the 200 ms timer notices the row */
+    if (lv && lj_w_listview_index(lv) != gp->sel) { gp->sel = lj_w_listview_index(lv); panel_fill(); }   /* lv1 has no OnChange in the DFM: the 200 ms timer notices the row */
     if (ctx->engine) {
         const lj_frame *f;
         lj_lock();
@@ -279,7 +279,6 @@ int lj_global_patch_menu(const char *item)
 }
 
 /* ---- handlers ---- */
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_menu(lj_widget *w, void *ud) { const lj_menu_item_desc *it = gp ? lj_window_menu_item(gp->win) : NULL; (void)w; (void)ud; if (it) lj_global_patch_menu(it->name); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; lj_global_patch_apply(); lj_global_patch_close(); }
 static void on_set(lj_widget *w, void *ud) { (void)w; (void)ud; lj_global_patch_set_values(); }
@@ -319,14 +318,14 @@ static void on_close(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_gp_bindings[] = {
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormKeyDown", noop, NULL }, { "FormResize", noop, NULL },
-    { "lv1Data", noop, NULL }, { "bOkClick", on_ok, NULL }, { "bSetClick", on_set, NULL }, { "bClearClick", on_clear, NULL },
-    { "eSourceInChange", noop, NULL }, { "rbModeClick", on_mode, NULL }, { "cbClick", noop, NULL }, { "clbGroupsClickCheck", on_groups, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL },
+    { "lv1Data", lj_handler_noop, NULL }, { "bOkClick", on_ok, NULL }, { "bSetClick", on_set, NULL }, { "bClearClick", on_clear, NULL },
+    { "eSourceInChange", lj_handler_noop, NULL }, { "rbModeClick", on_mode, NULL }, { "cbClick", lj_handler_noop, NULL }, { "clbGroupsClickCheck", on_groups, NULL },
     { "bLocatePrevClick", on_prev, NULL }, { "bLocateNextClick", on_next, NULL }, { "Timer1Timer", on_timer, NULL },
     { "NewGlobalPatch1Click", on_menu, NULL }, { "LoadGlobalPatch1Click", on_menu, NULL }, { "SaveGlobalPatch1Click", on_menu, NULL },
     { "PatchtoLink", on_menu, NULL }, { "ClearallDMXOut1Click", on_menu, NULL }, { "ClearallDMXin1Click", on_menu, NULL },
     { "ClearAllInverted1Click", on_menu, NULL }, { "ClearAllMin1Click", on_menu, NULL }, { "ClearAllMax1Click", on_menu, NULL }, { "ClearAll1Click", on_menu, NULL },
-    { "PrefsClick", on_menu, NULL }, { "Help1Click", on_help, NULL }, { "PopupMenu1Popup", noop, NULL }, { "P_ClearClick", on_menu, NULL },
+    { "PrefsClick", on_menu, NULL }, { "Help1Click", on_help, NULL }, { "PopupMenu1Popup", lj_handler_noop, NULL }, { "P_ClearClick", on_menu, NULL },
     { "P_OutSeqClick", on_menu, NULL }, { "P_InSeqClick", on_menu, NULL }, { "P_DMXModeClick", on_menu, NULL }, { "P_EnableIgnoreClick", on_menu, NULL },
     { NULL, NULL, NULL }
 };

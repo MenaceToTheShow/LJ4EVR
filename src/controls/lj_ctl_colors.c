@@ -540,7 +540,7 @@ void lj_ctl_c_refresh(lj_window *win)
 }
 
 /* ---- menu bar: UserPalette Preferences Fades Help, from the table's list (15/00 s2) ---- */
-static void menu_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }   /* UserPalette / Fades / Help: W2 behaviour, the items are greyed */
+/* menu_noop = lj_handler_noop: UserPalette / Fades / Help: W2 behaviour, the items are greyed */
 
 static void toggle(lj_ctl_c *c, const char *item, int which)
 {
@@ -562,7 +562,7 @@ static void menu_build(lj_ctl_c *c)
         memset(it, 0, sizeof *it);
         if (strcmp(names[n], "UserPalette") == 0) {
             it->name = "M_UserPalette"; it->caption = "&UserPalette"; it->on_click = "UserPaletteClick"; it->enabled = LJ_NO;
-            c->binds[nb].event = "UserPaletteClick"; c->binds[nb].fn = menu_noop; c->binds[nb++].ud = c;
+            c->binds[nb].event = "UserPaletteClick"; c->binds[nb].fn = lj_handler_noop; c->binds[nb++].ud = c;
         } else if (strcmp(names[n], "Preferences") == 0) {
             it->name = "M_Preferences"; it->caption = "&Preferences"; it->children = c->prefs; it->nchildren = 2;
             c->prefs[0].name = "M_ShowPalette"; c->prefs[0].caption = "Show &Palette"; c->prefs[0].on_click = "ShowPaletteClick"; c->prefs[0].checked = LJ_YES;
@@ -571,10 +571,10 @@ static void menu_build(lj_ctl_c *c)
             c->binds[nb].event = "ShowSpecialClick"; c->binds[nb].fn = show_special_click; c->binds[nb++].ud = c;
         } else if (strcmp(names[n], "Fades") == 0) {
             it->name = "M_Fades"; it->caption = "&Fades"; it->on_click = "FadesClick"; it->enabled = LJ_NO;
-            c->binds[nb].event = "FadesClick"; c->binds[nb].fn = menu_noop; c->binds[nb++].ud = c;
+            c->binds[nb].event = "FadesClick"; c->binds[nb].fn = lj_handler_noop; c->binds[nb++].ud = c;
         } else if (strcmp(names[n], "Help") == 0) {
             it->name = "M_Help"; it->caption = "&Help"; it->on_click = "HelpClick"; it->enabled = LJ_NO;
-            c->binds[nb].event = "HelpClick"; c->binds[nb].fn = menu_noop; c->binds[nb++].ud = c;
+            c->binds[nb].event = "HelpClick"; c->binds[nb].fn = lj_handler_noop; c->binds[nb++].ud = c;
         } else { it->name = names[n]; it->caption = names[n]; it->enabled = LJ_NO; }
     }
     c->menu.name = "MainMenu1"; c->menu.is_main = 1; c->menu.items = c->items; c->menu.n = n;

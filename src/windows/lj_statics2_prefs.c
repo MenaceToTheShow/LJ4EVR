@@ -36,9 +36,8 @@ static struct {
 } sp;
 
 static lj_ctx *C(void) { return lj_ctx_get(); }
-static lj_widget *find(const char *n) { return sp.win ? lj_window_find(sp.win, n) : NULL; }
-static int lv_index(lj_widget *lv) { return lv ? ((lj_w_listview *)lv)->index : -1; }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
+static lj_widget *find(const char *n) { return lj_window_find(sp.win, n); }
+static int lv_index(lj_widget *lv) { return lv ? lj_w_listview_index(lv) : -1; }
 
 static lj_static_groups *groups(void)                  /* the names live in Statics.dat ("group n name="); loaded once */
 {
@@ -148,7 +147,7 @@ static void name_ok(lj_widget *w, int ev, void *ud)
 static void name_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) name_close(); }
 static void name_open(int mode)
 {
-    static const lj_binding b[] = { { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     static const char *const caps[3] = { "Add Page", "Insert Page", "Edit Pagename" };   /* exe pool [14 sB.3]; which caption for which button: PROPOSAL rig 14 sB.8 item 12 */
     lj_show *sh = C()->show;
     lj_widget *w;
@@ -283,10 +282,10 @@ static void list_change(lj_widget *w, void *ud)                            /* lv
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; sp.close_pending = 1; }
 
 static const lj_binding lj_sp_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL },
-    { "PageControl1Change", noop, NULL }, { "sbDefaultClick", set_default, NULL }, { "ETabsSizeChange", noop, NULL } /* read on Apply */,
-    { "sbPageButtonClick", page_button, NULL }, { "sbPageMouseDown", noop, NULL }, { "lvPagesChange", noop, NULL }, { "lvPagesData", noop, NULL },
-    { "lvPagesDragDrop", noop, NULL }, { "lvPagesDragOver", noop, NULL } /* ponytail: Up / Down reorder; drag when asked */,
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "PageControl1Change", lj_handler_noop, NULL }, { "sbDefaultClick", set_default, NULL }, { "ETabsSizeChange", lj_handler_noop, NULL } /* read on Apply */,
+    { "sbPageButtonClick", page_button, NULL }, { "sbPageMouseDown", lj_handler_noop, NULL }, { "lvPagesChange", lj_handler_noop, NULL }, { "lvPagesData", lj_handler_noop, NULL },
+    { "lvPagesDragDrop", lj_handler_noop, NULL }, { "lvPagesDragOver", lj_handler_noop, NULL } /* ponytail: Up / Down reorder; drag when asked */,
     { "sbToggleTransparentClick", toggle_transparent, NULL }, { "eChange", edit_change, NULL }, { "lvChange", list_change, NULL },
     { "bClick", b_click, NULL }, { NULL, NULL, NULL } };
 
@@ -382,7 +381,7 @@ static void props_fade(lj_widget *w, void *ud)                                 /
 }
 static void props_on_close(lj_widget *w, void *ud) { (void)w; (void)ud; pr.close_pending = 1; }
 static const lj_binding lj_pr_bindings[] = {
-    { "FormClose", props_on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormResize", noop, NULL },
+    { "FormClose", props_on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL },
     { "bClick", props_b, NULL }, { "sbGrpClick", props_grp, NULL }, { "UdFadeChange", props_fade, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_static_props_open(void)

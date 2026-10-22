@@ -26,4 +26,12 @@ lj_window *lj_save_bg_open(void);                           /* Save Background C
 void       lj_save_bg_close(void);
 lj_window *lj_save_bg_get(void);
 
+/* ME-112: Select Background Cue (TSelectBGCueForm2, LJ_WIN_SELECT_BGCUE) and BG Cue - Sequence Mode (TBGCueSequenceModeForm, the
+ * slot popup's Sequence Mode..); bodies in lj_bgcue_form.c */
+lj_window *lj_select_bgcue_open(void);
+void       lj_select_bgcue_close(void);
+lj_window *lj_select_bgcue_get(void);
+void       lj_select_bgcue_refresh(void);
+lj_window *lj_bgcue_seqmode_get(void);
+
 #endif /* LJ_WINDOWS_BGCUE_FORM_H */

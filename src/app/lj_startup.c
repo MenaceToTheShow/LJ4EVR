@@ -48,12 +48,11 @@ void lj_startup_last_run(lj_ini *main_ini)
     lj_ini_seti(main_ini, "OTHER", "FirstRun", 0);
 }
 
-static void lj_startup_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 lj_window *lj_startup_status_create(void)
 {
-    static const lj_binding b[] = { { "FormClose", lj_startup_noop, NULL }, { "FormCreate", lj_startup_noop, NULL },
-                                    { "Re1MouseDown", lj_startup_noop, NULL }, { "Timer1Timer", lj_startup_noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL },
+                                    { "Re1MouseDown", lj_handler_noop, NULL }, { "Timer1Timer", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     return lj_window_create(&lj_form_TSTARTUPSTATUSWINDOW, b);
 }
 

@@ -403,3 +403,47 @@ per pixel.
     288c4ab (W3: acceptance walkthrough)  run 39857752487: green, all six jobs (windows-msvc, macos-clang, linux-clang
                                          with the 60 s fuzz step, linux-gcc-asan, generate-check, determinism)
                                          https://github.com/UnbannableGT/LJ4EVR/actions/runs/39857752487
+
+## Fix pass r1 (W3 code council, `W3_CODE_MASTER_ELDER_VERDICT.md` s4, ME-107..ME-123)
+
+Ruling REV PATCH; one commit "W3: council fix pass r1", this PC (MSVC 19.44, Windows 11), 2026-10-22. Item by item with
+the verifier line of verdict s4:
+
+| ME | Change | Verifier evidence |
+|---|---|---|
+| ME-107 | `lj_kv_get` copies only the matching key's value; any other value is skipped at any length (`model/lj_kv.c`) | `test_cuelist` 127-char Execute File `pstr` round trip; `test_followspot` 100-fixture `sel=` round trip; `test_model_records` 63-char `gs2=` keeps `ipan` / `swap` / `placed` |
+| ME-108 | `lj_cl_exec` commits `st.last`, `line_t0_us` and the next line (or the end) before any host callback; `in_exec` makes a nested Go return -1 and a nested pass a no-op; the pass stops when a callback ended the list or changed / unpinned it | `test_cuelist_run` row A (Hotkey Command = Cuelist Stop: IDLE, cue 2 never loaded) and row B (Cuelist Go from the line: depth 1, rc -1) |
+| ME-109 | `lj_mm_incr` from the programmed byte, then `incr * speed_pct / 100` (floor, 0 % frozen); the 127 cap reading tagged `PROPOSAL rig 17 s8 item 7` on `LJ_MOVEMACRO_PCT_MAX`; replay `macro_ctl` 0..999 | replay `movemacro_speed_pct`: `expect_mm 9 1 pan=160` (control at tick 2: 32 + 8 x 16; the probe text's tick 5 gives 4 x 32 + 5 x 16 = 208, recorded in the file) and 490 % `pan=1887` at tick 29, 0 fails |
+| ME-110 | `lj_sel_master_profile` returns `lj_show_profile` (GS2 included); `lj_app_gs2_reload` closes every control built from the old array (`lj_ctl_drop_profiles`) and re-resolves the Generic Macro Editor (`lj_genmacro_editor_reprofile`) before `lj_show_gs2_free`, then reopens the controls | `test_uiscript_w3` s8b: a GS2 fixture's master profile is in `show->gs2`, its control and the editor open, Reload profile data, both still open on the new array, refreshed (linux-gcc-asan in CI). The dimmer-derived synthetic GS2 has a Levels window, not Intensity: the row opens the profile's first window |
+| ME-111 | cell text clipped per glyph at the cell edge in `lj_w_listview.c` and the cue grid's `lv_paint` (as the header) | `test_cuelist_form` ink in the Command cell of the Hotkey Command line; `WIN_CUELIST_FORM` re-rendered (196 px, that cell only), REVIEWED.tsv row; fidelity row "Header and report-view text" updated |
+| ME-112 | Select Background Cue (TSelectBGCueForm2, `lj_win_table` row `select_bgcue`): the BG cue files with `(T)` before a transparent one, double-click = `LJ_ACT_LOAD_BGCUE`, Pop_Delete, Follow Active BG-Cue; sbLoad handled on its OnClick and Down while the list is open; BG Cue - Sequence Mode from the slot popup (Audio Trigged / No Loop -> the slot mode); Edit Sequence and Use Color Code greyed with fidelity rows | `test_uiscript_w3` s9a: `click TBGCueForm.sbLoad` opens the list latched, `(T)07` listed, double-click loads BG cue 7, sbLoad up after the second click, Toggle BG Cue List twice, Sequence Mode No Loop written, no `has no behaviour file yet`; Debug `--selftest` rc 0 with no such line; a Debug `--script` (`open bgcue_form`, `click TBGCueForm.sbLoad`, `assert_visible TSelectBGCueForm2.lv1 1`, `open select_bgcue`) rc 0 |
+| ME-113 | `lj_ini_find` / `lj_ini_sets` NULL-safe; 48 `x ? lj_ini_get* : dflt` ternaries and 15 one-line section wrappers (`sv_geti`, `form_geti`, `main_geti`, `acs_geti`, `statics_geti`, `geti`, `pref`, `main_pref`, `lg_pref`, `sl_pref`) inlined; `lj_handler_noop` (`ui/lj_window.h`) replaces 52 copies; 14 `find()` wrappers without the dead ternary; `lj_w_listview_index()` for the 37 index reads; `LJ_STATICS2_SLOTS_PER_PAGE` defined once (`model/lj_model.h`); `lj_cue_pages_load/save` moved into `model/lj_cuepage.c`; `lj_file_exists` -> `core/lj_fs_exists`; the second `lj_fs_mkdir` (`model/lj_library.c`) deleted; `OS_HEADERS` + `direct.h io.h dirent.h` with allow rows; ME-84: the sACN Source Name backs up to a UTF-8 character boundary before the 63-byte cut | `test_layering: 398 file(s) checked, 190 header(s) compiled alone, noop handlers 0, ini ternaries 0, 0 finding(s)`; `test_sacn_packets` 22-character row (61 bytes, ends on 0xAC); `ui_golden`, `ui_golden_ctl` and every form golden byte-unchanged |
+| ME-114 | `fuzz_udf` overwrites the footer CRC with `mz_crc32(body)` before `lj_udf_parse`; CI seeds `udf-corpus/` with `lj_w3_synthetic.Udf` (test_uiscript_w3's `lj_udf_export` output) and passes `-max_len=32768` | CI fuzz step log (recorded in `docs/ci.md` after the run) |
+| ME-115 | `lj_engine_freeze` shifts `mmc.t0_us` on unfreeze like a runner's fade | replay `movemacro_fade_freeze`: tick 71 `mm_amp=47 mm_fade=1` |
+| ME-116 | `lj_cl_pass` acts on the present -> absent time-code edge at a Wait MTC: Stop = end, Restart = run from line 1, Ignore = wait (`lj_mtc_time` returns -1 after `LJ_MTC_TIMEOUT_MS`) | three `test_cuelist_run` rows; the default (Stop) gives IDLE on the edge |
+| ME-117 | Delete Generic Macros posts `LOAD_GENMACRO gm NULL` only when the view's `gm_cue_number` is the deleted one; another number is freed directly | `test_uiscript_w3` s9b: macro 3 runs, macro 7 deleted, `gm_cue_number` stays 3 |
+| ME-118 | `ch_caption[LJ_PROFILE_CH][7]`, `eChannelName.max_length = 6`, `chcap` refuses 7 | `test_profile_editor` chcap rows (`Yellow` accepted, `TooLong` refused) |
+| ME-119 | Flash Sequence cell `%u%c%u s` with `lj_locale_decimal()` | `test_cuelist_form`: `0001 1.5 s` under C, `0001 1,5 s` under de-DE |
+| ME-120 | `OffsetMIDITimecodes1`, `OffsetPCTime1`, `OffsetMIDITimecodes2` (Sort MIDI wait times), `M_ImportOldCuelist` added to the greyed set; the W4 comment on the live item deleted | `test_cuelist_form` (all four disabled); four `docs/fidelity.md` rows |
+| ME-121 | `test_engine_ownership` genmacro load / delete (NULL, tick, free) / re-save / tick; `lj_cl_` / `lj_cuelist` in the engine-layer regex of `test_layering.py` | `test_engine_ownership: 0 failure(s)` (ASan in CI); a planted `lj_cl_bogus()` call in a copy of `engine/lj_engine.c` gives `cue-list symbol inside engine/` and exit 1 (local check) |
+| ME-122 | `lj_str_rtf_strip(dst, cap, rtf, len)` parses a terminated copy when the field holds no NUL; the editor passes `LJ_GS2_NOTES` | `test_gs2`: an all-0x01 4097-byte heap field strips to 4097 bytes (ASan: no over-read); a 9-byte bound reads `ab` |
+| ME-123 | `CHANGELOG.md [0.3.0]`, README status and the three docs rows, `w3-gates.md` Status column (verdict s7), `replay-grammar.md` W3 paragraph, fidelity F19 / F24 / F47 / I4 / I5 rows and the one F20 row, the stale `lj_shapes_gen.h` clause | the files |
+
+design 13 item 13: default kept (W5). Joey did not pull the MediaPlayer into W3 or drop it; the MP rows stay greyed
+with the inert-row rule (design 8.5, fidelity I4).
+
+ME-124 (the design sentences, design 7.7 `movementmacro.gif`, note 16 s2 width) belongs to the orchestrator as design
+owner, in the vault. It is not in this commit; the design.md revision line is quoted here when that revision lands.
+
+### Tests after the fix pass
+
+    ctest build-int3-nosdl (LJ_SDL=OFF, LJ4EVR_REFERENCE_DIR): 100% tests passed, 0 tests failed out of 98
+    ctest build-ninja-msvc (Release, SDL) and build-debug-win (Debug, SDL): 100% tests passed, 0 tests failed out of 98 (each)
+    0 warnings under /W4 /WX in the three trees; tools/fuzz/fuzz_udf.c compiled standalone with cl /W4 /WX: clean
+    replay: 36 scenario(s), 0 failed (movemacro_speed_pct 6 expects, movemacro_fade_freeze 4 expects added)
+    replay-frames.bin (ctest replay_dump), all three trees: 129,664,080 bytes,
+        sha256 b14d4b292708b88227b5fedd319537b05944c6a9947755475ac935b86468d05c (re-recorded once: ME-109, ME-115 add rows)
+    build-debug-win lj4evr --selftest: rc 0, 5 OK lines; no "has no behaviour file yet", "no binding", "unknown event"
+    w3_acceptance.lj4s on a fresh Default library (the user folder copied aside and restored after): Release rc 0,
+        Debug rc 0; the eleven re-shot captures in docs/screenshots/w3/ differ from the previous run only in the main
+        window's memory gauge (x 13..48, y 590..598) and the live movement trace

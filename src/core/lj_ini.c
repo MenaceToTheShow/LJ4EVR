@@ -62,6 +62,7 @@ static int lj_ini_find(lj_ini *ini, const char *sec, const char *key, int *sec_e
     int i, in = 0, found = -1;
     size_t kn = strlen(key);
     *sec_end = -1;
+    if (!ini) return -1;                                        /* ME-101: a NULL ini reads as empty, so callers need no "ini ? .. : dflt" */
     for (i = 0; i < ini->n; i++) {
         const char *l = ini->line[i];
         if (l[0] == '[') {
@@ -132,7 +133,9 @@ void lj_ini_sets(lj_ini *ini, const char *sec, const char *key, const char *v)
 {
     int end, i = lj_ini_find(ini, sec, key, &end);
     size_t kn = strlen(key), vn = strlen(v);
-    char *text = (char *)malloc(kn + 1 + vn + 1);
+    char *text;
+    if (!ini) return;
+    text = (char *)malloc(kn + 1 + vn + 1);
     if (!text) lj_fatal("lj_ini: out of memory");
     memcpy(text, i >= 0 ? ini->line[i] : key, kn);           /* an existing key keeps the file's spelling */
     text[kn] = '='; memcpy(text + kn + 1, v, vn + 1);

@@ -8,6 +8,6 @@
 
 #include "model/lj_genmacro.h"
 
-extern const lj_gm_shapes lj_gm_shapes_builtin;   /* n = nb = LJ_GM_SHAPES, names verbatim in file order; the W3 contract stub has n = 0 (sine fallback) */
+extern const lj_gm_shapes lj_gm_shapes_builtin;   /* n = nb = LJ_GM_SHAPES, names verbatim in file order */
 
 #endif /* LJ_ENGINE_SHAPES_GEN_H */

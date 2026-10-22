@@ -138,7 +138,7 @@ static void lj_sf_update(void)
     lj_sf_enable("sb1", scenes > 1); lj_sf_enable("sb2", scenes > 1);    /* prev/next only with more than one scene */
     lj_sf_enable("sb11", number != 0);                                   /* Add to current cue needs a saved sequence */
     lj_menu_set_checked(lj_window_menus(lj_sf_win), "DisableFade1", lj_sf_disable_fade);   /* ponytail: LJ2 re-captions to "Enable Fade"; lj_menu has no caption setter, a check mark marks the state */
-    lj_menu_set_checked(lj_window_menus(lj_sf_win), "M_KeepBlind", c->main_ini ? lj_ini_geti(c->main_ini, "PREFS", "KeepSeqBlind", 1) : 1);
+    lj_menu_set_checked(lj_window_menus(lj_sf_win), "M_KeepBlind", lj_ini_geti(c->main_ini, "PREFS", "KeepSeqBlind", 1));
     lj_sf_loading = 0;
 }
 
@@ -260,7 +260,7 @@ static void lj_sf_commit_times(void)
 static int lj_sf_warn(const char *key, int dflt)
 {
     lj_ctx *c = lj_ctx_get();
-    return c->main_ini ? lj_ini_geti(c->main_ini, "PREFS", key, dflt) != 0 : dflt;
+    return lj_ini_geti(c->main_ini, "PREFS", key, dflt) != 0;
 }
 
 static void lj_sf_new_now(int yes, void *ud)
@@ -448,7 +448,6 @@ void lj_seq_form_refresh(void)
 
 /* ---- handlers ---- */
 
-static void lj_sf_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void lj_sf_on_update(lj_widget *w, void *ud) { (void)w; (void)ud; lj_sf_update(); }
 static void lj_sf_on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_sf_close_pending = 1; }
 
@@ -514,13 +513,13 @@ static void lj_sf_on_keep_blind(lj_widget *w, void *ud)
 static void lj_sf_on_snapshot(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("seq_form: Snapshot is W2 [03 s4.7]"); }   /* stub: the snapshot / real-time recording dialog */
 
 static const lj_binding lj_sf_bindings[] = {
-    { "FormActivate", lj_sf_on_update, NULL }, { "FormClose", lj_sf_on_close, NULL }, { "FormCreate", lj_sf_noop, NULL },
-    { "FormDestroy", lj_sf_noop, NULL }, { "FormHide", lj_sf_noop, NULL }, { "FormShow", lj_sf_on_update, NULL },
+    { "FormActivate", lj_sf_on_update, NULL }, { "FormClose", lj_sf_on_close, NULL }, { "FormCreate", lj_handler_noop, NULL },
+    { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", lj_sf_on_update, NULL },
     { "cbSyncClick", lj_sf_on_sync, NULL }, { "cbSyncEnter", lj_sf_on_enter, NULL },
     { "cbGlobalFadeClick", lj_sf_on_global_fade, NULL }, { "cbGlobalSceneClick", lj_sf_on_global_scene, NULL },
     { "UdSceneChange", lj_sf_on_ud, (void *)1 }, { "UdFadeChange", lj_sf_on_ud, NULL },
-    { "DisableFade1Click", lj_sf_on_disable_fade, NULL }, { "Preferences1Click", lj_sf_noop, NULL },
-    { "M_KeepBlindClick", lj_sf_on_keep_blind, NULL }, { "M_SnapShotClick", lj_sf_on_snapshot, NULL }, { "Help1Click", lj_sf_noop, NULL },
+    { "DisableFade1Click", lj_sf_on_disable_fade, NULL }, { "Preferences1Click", lj_handler_noop, NULL },
+    { "M_KeepBlindClick", lj_sf_on_keep_blind, NULL }, { "M_SnapShotClick", lj_sf_on_snapshot, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { NULL, NULL, NULL }
 };
 

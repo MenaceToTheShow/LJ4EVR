@@ -21,19 +21,21 @@ int lj_movemacro_active(const lj_movemacro *m)
     return m && m->type != LJ_MM_TYPE_NONE && m->fstate[LJ_MMP_TYPE] != LJ_OFF;   /* W3: Bezier types too; their table comes from show->bez (lj_movemacro_offset_bez) */
 }
 
-static uint32_t lj_mm_incr(int cycle_byte, uint32_t tick_us)
+/* incr = N * tick / cycle in 16.16 [17 s7.3], from the programmed byte; the cue macro control's Speed then scales the
+ * RATE (ME-109: 50 % = half as fast, 490 % = 4.9 x), floor, 0 % = frozen [03 s5.11] */
+static uint32_t lj_mm_incr(int cycle_byte, uint32_t tick_us, int speed_pct)
 {
     uint64_t cycle_us = (uint64_t)cycle_byte * LJ_MOVEMACRO_CYCLE_UNIT_US;   /* PROPOSAL rig 17 s8 item 2 */
-    if (cycle_us == 0) return 0;                               /* speed 0 = frozen [03 s5.11] */
-    return (uint32_t)(((uint64_t)LJ_MM_N << 16) * tick_us / cycle_us);   /* incr = N * tick / cycle in 16.16 [17 s7.3] */
+    if (cycle_us == 0 || speed_pct <= 0) return 0;
+    return (uint32_t)(((uint64_t)LJ_MM_N << 16) * tick_us / cycle_us * (uint64_t)speed_pct / 100u);
 }
 
 void lj_movemacro_advance(lj_mm_state *s, const lj_movemacro *m, uint32_t tick_us, int speed_pct)
 {
     uint32_t ip, it;
     if (!lj_movemacro_active(m)) { s->idx_pan = s->idx_tilt = 0; return; }   /* reset when the previous output carried no macro [17 s7.1] */
-    ip = lj_mm_incr(lj_movemacro_scale(m->cycle_pan, speed_pct), tick_us);
-    it = (m->type == 1 || m->type == 6 || m->type >= LJ_MM_TYPE_BEZ0) ? ip : lj_mm_incr(lj_movemacro_scale(m->cycle_tilt, speed_pct), tick_us);   /* one common cycle for the ellipses (CHM 3197); Bezier too, so the drawn figure keeps its shape (PROPOSAL rig 17 s8 item 6) */
+    ip = lj_mm_incr(m->cycle_pan, tick_us, speed_pct);
+    it = (m->type == 1 || m->type == 6 || m->type >= LJ_MM_TYPE_BEZ0) ? ip : lj_mm_incr(m->cycle_tilt, tick_us, speed_pct);   /* one common cycle for the ellipses (CHM 3197); Bezier too, so the drawn figure keeps its shape (PROPOSAL rig 17 s8 item 6) */
     if (m->dir) { ip = 0u - ip; it = 0u - it; }                /* CCW decrements; wraps modulo N << 16 */
     s->idx_pan  = (s->idx_pan + ip)  & ((LJ_MM_N << 16) - 1);
     s->idx_tilt = (s->idx_tilt + it) & ((LJ_MM_N << 16) - 1);

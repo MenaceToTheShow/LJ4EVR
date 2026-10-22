@@ -52,7 +52,6 @@ static struct { lj_window *win; lj_ct_strip *strip; uint16_t sel; int view, sync
 
 static lj_ctx *C(void) { return lj_ctx_get(); }
 static lj_cue *cue_rec(void) { lj_ctx *c = C(); return c->show ? c->show->current_cue : NULL; }
-static int  form_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->forms_ini ? lj_ini_geti(c->forms_ini, "CUETIMEFORM", key, dflt) : dflt; }
 static void form_seti(const char *key, int v) { lj_ctx *c = C(); if (c->forms_ini) lj_ini_seti(c->forms_ini, "CUETIMEFORM", key, v); }
 lj_window *lj_cue_time_get(void) { return ct.win; }
 int lj_cue_time_last_cmd(lj_cmd *out) { if (out && ct.posts) *out = ct.last; return ct.posts; }
@@ -210,19 +209,19 @@ static void sync_checks(void)
     lj_menu *m = ct.win ? lj_window_menus(ct.win) : NULL;
     static const char *const ovr[4] = { "OVR_Always", "OVR_Min1", "OVR_Min2", "OVR_Min3" };
     lj_ctx *c = C();
-    int i, d = c->main_ini ? lj_ini_geti(c->main_ini, "MISC", "CUETIME_REMOTE_DELTA", 1) : 1;   /* exe key; [MISC] by the literal pool order (PROPOSAL rig 13 s6); "default 1" [03 s5.6] */
+    int i, d = lj_ini_geti(c->main_ini, "MISC", "CUETIME_REMOTE_DELTA", 1);   /* exe key; [MISC] by the literal pool order (PROPOSAL rig 13 s6); "default 1" [03 s5.6] */
     if (!m) return;
     lj_menu_set_checked(m, "CueOnly1", ct.view == 1);
     lj_menu_set_checked(m, "SequencesOnly1", ct.view == 2);
     lj_menu_set_checked(m, "CueandSequences1", ct.view == 3);
-    lj_menu_set_checked(m, "SequenceTitles1", form_geti("Titles", 1));
+    lj_menu_set_checked(m, "SequenceTitles1", lj_ini_geti(lj_ctx_get()->forms_ini, "CUETIMEFORM", "Titles", 1));
     lj_menu_set_checked(m, "SelectedSequences1", ct.sync);
     lj_menu_set_checked(m, "OneSequence1", !ct.sync);
     for (i = 0; i < 4; i++) lj_menu_set_checked(m, ovr[i], i == d);
 }
 static const lj_menu_item_desc *item(void) { return ct.win ? lj_window_menu_item(ct.win) : NULL; }
 static void on_view(lj_widget *w, void *ud) { const lj_menu_item_desc *it = item(); (void)w; (void)ud; if (it && it->tag >= 1 && it->tag <= 3) { ct.view = it->tag; form_seti("View", ct.view); } sync_checks(); if (ct.strip) lj_widget_invalidate(&ct.strip->base); }
-static void on_titles(lj_widget *w, void *ud) { (void)w; (void)ud; form_seti("Titles", !form_geti("Titles", 1)); sync_checks(); }   /* persisted; the title display itself is UNVERIFIED (cuetime.gif shows #n with it checked) */
+static void on_titles(lj_widget *w, void *ud) { (void)w; (void)ud; form_seti("Titles", !lj_ini_geti(lj_ctx_get()->forms_ini, "CUETIMEFORM", "Titles", 1)); sync_checks(); }   /* persisted; the title display itself is UNVERIFIED (cuetime.gif shows #n with it checked) */
 static void on_changes(lj_widget *w, void *ud) { const lj_menu_item_desc *it = item(); (void)w; (void)ud; if (it && it->name) { ct.sync = !strcmp(it->name, "SelectedSequences1"); form_seti("Sync", ct.sync); } sync_checks(); }
 static void on_ovr(lj_widget *w, void *ud)
 {
@@ -245,13 +244,12 @@ static void on_dflt_cue(lj_widget *w, void *ud) { (void)w; (void)ud; defaults(1,
 static void on_dflt_seq(lj_widget *w, void *ud) { (void)w; (void)ud; defaults(0, 1); }
 static void on_dflt_all(lj_widget *w, void *ud) { (void)w; (void)ud; defaults(1, 1); }
 static void on_show(lj_widget *w, void *ud) { (void)w; (void)ud; sync_checks(); lj_cue_time_refresh(); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 static const lj_binding lj_ct_bindings[] = {
     { "ViewClick", on_view, NULL }, { "SequenceTitles1Click", on_titles, NULL }, { "ChangesClick", on_changes, NULL },
-    { "OverrideOptions1Click", noop, NULL }, { "OVR_Click", on_ovr, NULL },
-    { "Cue1Click", on_dflt_cue, NULL }, { "Sequences1Click", on_dflt_seq, NULL }, { "All1Click", on_dflt_all, NULL }, { "Help1Click", noop, NULL },
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormHide", noop, NULL }, { "FormShow", on_show, NULL },
+    { "OverrideOptions1Click", lj_handler_noop, NULL }, { "OVR_Click", on_ovr, NULL },
+    { "Cue1Click", on_dflt_cue, NULL }, { "Sequences1Click", on_dflt_seq, NULL }, { "All1Click", on_dflt_all, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", on_show, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_cue_time_open(void)
@@ -269,9 +267,9 @@ lj_window *lj_cue_time_open(void)
     ct.strip->base.align = LJ_AL_CLIENT;
     if (bevel) bevel->align = LJ_AL_CLIENT;                        /* the raised bevel follows the client as the faders do */
     lj_widget_layout(root);
-    ct.view = form_geti("View", 3);
+    ct.view = lj_ini_geti(lj_ctx_get()->forms_ini, "CUETIMEFORM", "View", 3);
     if (ct.view < 1 || ct.view > 3) ct.view = 3;
-    ct.sync = form_geti("Sync", 1);
+    ct.sync = lj_ini_geti(lj_ctx_get()->forms_ini, "CUETIMEFORM", "Sync", 1);
     ct.posts = 0;
     memset(&ct.shown, 0, sizeof ct.shown); ct.caption[0] = 0;
     lj_widget_set_focus(&ct.strip->base);                          /* eFocusGrabber's role: the arrows reach the faders */

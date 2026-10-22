@@ -272,7 +272,6 @@ static void on_value_change(lj_widget *w, void *ud) { (void)ud; if (!dm.loading 
 static void on_clear(lj_widget *w, void *ud) { (void)w; (void)ud; if (dm.sel >= 0 && dm.overwrite_enabled) lj_dmx_monitor_overwrite(dm.sel, 256); }
 
 /* ---- menu, timer, close ---- */
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_prefs(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(dm.win);
@@ -308,7 +307,7 @@ static void on_find_start(lj_widget *w, void *ud)
 }
 static void on_find_channel(lj_widget *w, void *ud)
 {
-    static const lj_binding b[] = { { "FormClose", find_noop_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "bStartClick", on_find_start, NULL }, { "bCancelClick", find_noop_close, NULL }, { "Help1Click", noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormClose", find_noop_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bStartClick", on_find_start, NULL }, { "bCancelClick", find_noop_close, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     (void)w; (void)ud;
     if (dm.find_win) return;
     dm.find_win = lj_window_create(&lj_form_TFINDCHANNELFORM, b);
@@ -316,12 +315,12 @@ static void on_find_channel(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_dm_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_form_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormResize", noop, NULL },
-    { "sg1DrawCell", on_draw_cell, NULL }, { "sg1MouseDown", noop, NULL }, { "sg1MouseMove", noop, NULL }, { "sg1MouseUp", noop, NULL },
-    { "sg1MouseWheelDown", noop, NULL }, { "sg1MouseWheelUp", noop, NULL }, { "sg1SelectCell", on_select_cell, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL },
+    { "sg1DrawCell", on_draw_cell, NULL }, { "sg1MouseDown", lj_handler_noop, NULL }, { "sg1MouseMove", lj_handler_noop, NULL }, { "sg1MouseUp", lj_handler_noop, NULL },
+    { "sg1MouseWheelDown", lj_handler_noop, NULL }, { "sg1MouseWheelUp", lj_handler_noop, NULL }, { "sg1SelectCell", on_select_cell, NULL },
     { "pbValueMouseDown", on_fader_down, NULL }, { "pbValueMouseMove", on_fader_move, NULL }, { "pbValueMouseUp", on_fader_up, NULL }, { "pbValuePaint", on_fader_paint, NULL },
     { "sevalueChange", on_value_change, NULL }, { "sbClearClick", on_clear, NULL },
-    { "MPrefsClick", on_prefs, NULL }, { "FindChannel1Click", on_find_channel, NULL }, { "Help1Click", noop, NULL }, { "Timer1Timer", on_timer, NULL },
+    { "MPrefsClick", on_prefs, NULL }, { "FindChannel1Click", on_find_channel, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "Timer1Timer", on_timer, NULL },
     { NULL, NULL, NULL }
 };
 
@@ -370,7 +369,7 @@ lj_window *lj_dmx_monitor_open(void)
     g->row_select = 0;
     dm.prefs = LJ_DM_PREF_CHANGES | LJ_DM_PREF_USED | LJ_DM_PREF_MASTER | LJ_DM_PREF_AUTOSCROLL;   /* the DFM's Checked = True items */
     dm.sel = -1; dm.last_master = -1;
-    dm.debug_layer = ctx->main_ini ? lj_ini_geti(ctx->main_ini, "DEBUG", "MonitorLayer", 0) : 0;
+    dm.debug_layer = lj_ini_geti(ctx->main_ini, "DEBUG", "MonitorLayer", 0);
     copy_frame();
     memcpy(dm.base, dm.cur, sizeof dm.base);                                 /* "unchanged since open" */
     lj_dmx_monitor_select(0);

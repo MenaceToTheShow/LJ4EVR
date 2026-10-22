@@ -41,7 +41,7 @@ int lj_w_listview_row_at(const lj_widget *w, int y)
 }
 
 /* the col-th '\t'-separated field of s into buf */
-static const char *subitem(const char *s, int col, char *buf, size_t cap)
+static char *subitem(const char *s, int col, char *buf, size_t cap)
 {
     size_t i = 0;
     while (col > 0 && *s) { if (*s++ == '\t') col--; }
@@ -75,12 +75,15 @@ static void lv_paint(lj_widget *w, lj_surface *s)
         if (ry + v->row_h > ay + w->h - LV_BORDER) break;
         if (sel && v->row_select) lj_fill(s, x, ry, area_w, v->row_h, LJ_CLR_HIGHLIGHT);
         for (c = 0; c < v->ncols && x < ax + LV_BORDER + area_w; c++) {
-            const char *t = subitem(v->items[item], c, buf, sizeof buf);
-            int tw = lj_text_width(f, t), tx = x + 2, cw = ax + LV_BORDER + area_w - x < v->col_w[c] ? ax + LV_BORDER + area_w - x : v->col_w[c];   /* the last column stops at the view's edge */
+            char *t = subitem(v->items[item], c, buf, sizeof buf);
+            size_t k = strlen(t);
+            int tw, tx = x + 2, cw = ax + LV_BORDER + area_w - x < v->col_w[c] ? ax + LV_BORDER + area_w - x : v->col_w[c];   /* the last column stops at the view's edge */
+            while (k > 0 && lj_text_width(f, t) + 4 > cw) t[--k] = 0;   /* ME-111: clipped per glyph at the cell edge like the header (lj_w_header_paint), never dropped */
+            tw = lj_text_width(f, t);
             if (v->cols[c].alignment == LJ_TA_RIGHT) tx = x + cw - 2 - tw;
             else if (v->cols[c].alignment == LJ_TA_CENTER) tx = x + (cw - tw) / 2;
             if (c == 0 && sel && !v->row_select) lj_fill(s, x + 2, ry, tw + 4 < cw ? tw + 4 : cw - 2, v->row_h, LJ_CLR_HIGHLIGHT);
-            if (*t && tw + 4 <= cw) lj_w_text(s, w, tx, ty, t, sel && (v->row_select || c == 0) ? LJ_CLR_BTNHIGHLIGHT : LJ_CLR_3DDKSHADOW);
+            if (*t) lj_w_text(s, w, tx, ty, t, sel && (v->row_select || c == 0) ? LJ_CLR_BTNHIGHLIGHT : LJ_CLR_3DDKSHADOW);
             if (v->grid_lines && cw == v->col_w[c]) lj_vline(s, x + cw - 1, ry, v->row_h, LJ_CLR_BTNFACE);
             x += cw;
         }
@@ -101,6 +104,7 @@ static void select_row(lj_w_listview *v, int row)
     lj_w_emit(&v->base, LJ_WEV_CLICK);
 }
 
+int lj_w_listview_index(const lj_widget *w) { return w ? ((const lj_w_listview *)w)->index : -1; }
 void lj_w_listview_select(lj_widget *w, int row) { if (w) select_row((lj_w_listview *)w, row); }
 
 static int lv_mouse(lj_widget *w, const lj_mouse_ev *m)

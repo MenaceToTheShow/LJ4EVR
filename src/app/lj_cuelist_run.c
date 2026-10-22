@@ -69,17 +69,32 @@ static int lj_cl_wait_holds(lj_cl_run *r, const lj_cl_line *l, uint64_t now, int
     }
 }
 
-/* Executes line r->st.next: the command, then the latch; moves next on. 0 = the list goes on, 1 = it ended. */
+/* Executes line r->st.next: moves next on, then the command and the latch. 0 = the pass goes on, 1 = it stops (the list
+ * ended, or a host callback re-entered the runner: Hotkey Command = Cuelist Stop / Top / Prog, ME-108). st.last,
+ * line_t0_us and next are committed BEFORE any callback that can re-enter, and in_exec keeps a nested op from running
+ * a pass of its own (Cuelist Go from inside a line returns -1 instead of recursing). */
 static int lj_cl_exec(lj_cl_run *r, uint64_t now, uint32_t day, int mtc_ok, uint32_t mtc_ms, const lj_cl_host *h)
 {
     const lj_cl_line l = r->cl->lines[r->st.next - 1];   /* a copy: Link Cuelist may hand the old list back to its owner */
+    const lj_cuelist *cl0;
     uint32_t next = r->st.next + 1, i;
     if (l.cmd == LJ_CL_WAIT_ELAPSED) r->first_pending = 0;
+    if (l.cmd == LJ_CL_GOTO_LINE) next = (l.param_ms < 1 || l.param_ms > r->cl->n) ? 0 : l.param_ms;   /* beyond the last line: ignored, the list ends (LJ_CL_GOTO_BEYOND_IGNORED) */
+    if (l.cmd == LJ_CL_AUTOSEEK_MTC && mtc_ok)                                 /* jump to the first Wait MTC still ahead of the time code; none = go on */
+        for (i = 0; i < r->cl->n; i++)
+            if (r->cl->lines[i].cmd == LJ_CL_WAIT_MTC && !r->cl->lines[i].load_error && r->cl->lines[i].param_ms >= mtc_ms) { next = i + 1; break; }
+    r->st.last = l.line;
+    r->line_t0_us = now;
+    if (l.cmd == LJ_CL_LINK_CUELIST) {                                         /* the host loads the list; it never re-enters the runner */
+        const lj_cuelist *nl = NULL;
+        if (h->link && h->link(h->ud, l.ref, &nl) == 0 && nl && nl->n) { r->cl = nl; r->st.number = nl->number; r->st.last = 0; next = 1; }
+        else lj_log("cuelist: line %u: cue list %u not linked", (unsigned)l.line, (unsigned)l.ref);
+    }
+    if (!next || next > r->cl->n) lj_cl_end(r);
+    else { lj_cl_arrive(r, next, day); lj_cl_changed(r); }
+    cl0 = r->cl;
+    r->in_exec = 1;
     switch (l.cmd) {
-    case LJ_CL_GOTO_LINE:
-        if (l.param_ms < 1 || l.param_ms > r->cl->n) next = 0;                 /* beyond the last line: ignored, the list ends (LJ_CL_GOTO_BEYOND_IGNORED) */
-        else next = l.param_ms;
-        break;
     case LJ_CL_EXECUTE_FILE:
         if (!h->exec || h->exec(h->ud, l.param, l.comment) < 0) lj_log("cuelist: line %u: Execute File refused or failed ([CUELIST2] AllowExecute)", (unsigned)l.line);
         break;
@@ -94,24 +109,11 @@ static int lj_cl_exec(lj_cl_run *r, uint64_t now, uint32_t day, int mtc_ok, uint
     case LJ_CL_LOAD_BACKGROUND_CUE:
         if (!h->load_bg || h->load_bg(h->ud, l.ref) < 0) lj_log("cuelist: line %u: background cue %u not loaded", (unsigned)l.line, (unsigned)l.ref);
         break;
-    case LJ_CL_AUTOSEEK_MTC:                                                   /* jump to the first Wait MTC still ahead of the time code; none = go on */
-        if (mtc_ok) for (i = 0; i < r->cl->n; i++)
-            if (r->cl->lines[i].cmd == LJ_CL_WAIT_MTC && !r->cl->lines[i].load_error && r->cl->lines[i].param_ms >= mtc_ms) { next = i + 1; break; }
-        break;
     default: break;
     }
     lj_cl_latch(&l, h);
-    r->st.last = l.line;
-    r->line_t0_us = now;
-    if (l.cmd == LJ_CL_LINK_CUELIST) {
-        const lj_cuelist *nl = NULL;
-        if (h->link && h->link(h->ud, l.ref, &nl) == 0 && nl && nl->n) { r->cl = nl; r->st.number = nl->number; r->st.last = 0; next = 1; }
-        else lj_log("cuelist: line %u: cue list %u not linked", (unsigned)l.line, (unsigned)l.ref);
-    }
-    lj_cl_changed(r);
-    if (!next || next > r->cl->n) { lj_cl_end(r); return 1; }
-    lj_cl_arrive(r, next, day);
-    return 0;
+    r->in_exec = 0;
+    return r->st.state == LJ_CL_IDLE || !r->cl || r->cl != cl0;
 }
 
 static int lj_cl_clock(const lj_cl_host *h, uint32_t *ms_of_day, uint32_t *day)
@@ -120,8 +122,11 @@ static int lj_cl_clock(const lj_cl_host *h, uint32_t *ms_of_day, uint32_t *day)
     return h->clock && h->clock(h->ud, ms_of_day, day) == 0;
 }
 
+static int lj_cl_start(lj_cl_run *r, const lj_cuelist *cl, uint32_t n, uint64_t now, const lj_cl_host *h, int track);
+
 static int lj_cl_pass(lj_cl_run *r, uint64_t now, const lj_cl_host *h, int force)
 {
+    if (r->in_exec) return 0;                                                   /* ME-108: an op from inside a line never runs a nested pass */
     uint32_t ms_of_day, day, mtc_ms = 0, seen;
     int clk_ok = lj_cl_clock(h, &ms_of_day, &day), mtc_ok = h->timecode && h->timecode(h->ud, LJ_TC_MIDI, &mtc_ms) == 0, done = 0;
     uint32_t tc = 0;
@@ -133,6 +138,13 @@ static int lj_cl_pass(lj_cl_run *r, uint64_t now, const lj_cl_host *h, int force
     case LJ_TC_MIDI:       r->st.tc_ms = mtc_ok ? (int32_t)mtc_ms : -1; break;
     default:               r->st.tc_ms = h->timecode && h->timecode(h->ud, r->st.tc_src, &tc) == 0 ? (int32_t)tc : -1; break;   /* CD / DA / MP: -1 in W3 */
     }
+    if (r->mtc_seen && !mtc_ok && r->st.state != LJ_CL_IDLE && r->cl && r->st.next >= 1 && r->st.next <= r->cl->n
+        && r->cl->lines[r->st.next - 1].cmd == LJ_CL_WAIT_MTC) {               /* ME-116: the time code dropped out (LJ_MTC_TIMEOUT_MS) at a Wait MTC */
+        r->mtc_seen = 0;
+        if (r->mtc_timeout == LJ_CL_MTC_STOP) { lj_cl_end(r); return 0; }
+        if (r->mtc_timeout == LJ_CL_MTC_RESTART) { lj_cl_start(r, r->cl, 1, now, h, 0); return 0; }
+    }
+    r->mtc_seen = (uint8_t)mtc_ok;
     if (r->st.state == LJ_CL_IDLE || !r->cl) return 0;
     for (seen = 0; seen <= r->cl->n; seen++) {                                  /* a Goto loop with no waits runs one round per pass, never spins */
         const lj_cl_line *l;
@@ -208,6 +220,7 @@ int lj_cl_run_op(lj_cl_run *r, const lj_cuelist *cl, int op, uint32_t n, uint64_
     case LJ_CL_OP_TOP: return lj_cl_start(r, cl, 1, now_us, h, 0);
     case LJ_CL_OP_RUN: return lj_cl_start(r, cl, n ? n : 1, now_us, h, r->auto_cue_on_run || (cl && cl->tracking));
     case LJ_CL_OP_GO:
+        if (r->in_exec) return -1;                                             /* ME-108: Hotkey Command = Cuelist Go from inside a line */
         if (r->st.state == LJ_CL_IDLE) return lj_cl_start(r, cl, 1, now_us, h, 0);   /* "if not running, acts as Run from top" [03 s6.5] */
         /* Go executes the waiting line: a manual line, or an auto line held by its wait (an MTC wait with no time code);
          * the second half is PROPOSAL rig 03 s6.2 (LJ2 documents Go for manual lines only) */

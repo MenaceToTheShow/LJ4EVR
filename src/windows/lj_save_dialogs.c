@@ -29,7 +29,7 @@ static lj_sequence *lj_ss_seq(void) { lj_ctx *c = lj_ctx_get(); return c->show ?
 static int lj_ss_pref(const char *key, int dflt)
 {
     lj_ctx *c = lj_ctx_get();
-    return c->main_ini ? lj_ini_geti(c->main_ini, LJ_SS_SEC, key, dflt) : dflt;
+    return lj_ini_geti(c->main_ini, LJ_SS_SEC, key, dflt);
 }
 
 static void lj_ss_pref_set(const char *key, int v)
@@ -71,7 +71,7 @@ static void lj_ss_update(void)
     m = lj_window_menus(lj_ss_win);
     lj_menu_set_checked(m, "AutoClose", lj_ss_pref("AutoClose", 1));
     lj_menu_set_checked(m, "EnterSave", lj_ss_pref("EnterSave", 0));
-    lj_menu_set_checked(m, "M_QuickSaveOptions", lj_ctx_get()->main_ini ? lj_ini_geti(lj_ctx_get()->main_ini, "SEQQUICK", "UseOptions", 1) : 1);
+    lj_menu_set_checked(m, "M_QuickSaveOptions", lj_ini_geti(lj_ctx_get()->main_ini, "SEQQUICK", "UseOptions", 1));
     lj_menu_set_checked(m, "M_SavetoSlot", lj_ss_pref("ShowSlot", 0));
     lj_ss_loading = 0;
 }
@@ -179,12 +179,11 @@ void lj_save_seq_quick(void)
     lj_sequence *s = lj_ss_seq();
     if (!s) return;
     if (s->number == 0) { lj_win_open(LJ_WIN_SAVE_SEQ); return; }
-    lj_ss_save(0, c->main_ini ? lj_ini_geti(c->main_ini, "SEQQUICK", "UseOptions", 1) : 1);
+    lj_ss_save(0, lj_ini_geti(c->main_ini, "SEQQUICK", "UseOptions", 1));
 }
 
 /* ---- handlers ---- */
 
-static void lj_ss_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void lj_ss_on_update(lj_widget *w, void *ud) { (void)w; (void)ud; lj_ss_update(); }
 static void lj_ss_on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_ss_close_pending = 1; }
 static void lj_ss_on_save(lj_widget *w, void *ud) { (void)w; lj_save_seq_do(ud != NULL); }
@@ -224,15 +223,14 @@ static void lj_ss_on_show_slot(lj_widget *w, void *ud) { (void)w; (void)ud; lj_s
 /* FormKeyDown (KeyPreview): "Save on [Enter]" needs the key of the event; lj_window has no
  * last-event accessor yet (W0-last-event gate, integrator), so the pref persists and the
  * check mark shows, but Enter does not save until lj_window_last_event lands. */
-static void lj_ss_on_keydown(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 static const lj_binding lj_ss_bindings[] = {
-    { "FormActivate", lj_ss_on_update, NULL }, { "FormClose", lj_ss_on_close, NULL }, { "FormCreate", lj_ss_noop, NULL },
-    { "FormDestroy", lj_ss_noop, NULL }, { "FormDeactivate", lj_ss_noop, NULL }, { "FormHide", lj_ss_noop, NULL },
-    { "FormKeyDown", lj_ss_on_keydown, NULL }, { "FormShow", lj_ss_on_update, NULL },
+    { "FormActivate", lj_ss_on_update, NULL }, { "FormClose", lj_ss_on_close, NULL }, { "FormCreate", lj_handler_noop, NULL },
+    { "FormDestroy", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL },
+    { "FormKeyDown", lj_handler_noop, NULL }, { "FormShow", lj_ss_on_update, NULL },
     { "cbOptionsClick", lj_ss_on_options, NULL }, { "BsaveClick", lj_ss_on_save, NULL }, { "BSaveNewClick", lj_ss_on_save, (void *)1 },
     { "PrefsClick", lj_ss_on_prefs, NULL }, { "M_QuickSaveOptionsClick", lj_ss_on_quick_options, NULL }, { "M_SavetoSlotClick", lj_ss_on_show_slot, NULL },
-    { "Preferences1Click", lj_ss_noop, NULL }, { "Help1Click", lj_ss_noop, NULL },
+    { "Preferences1Click", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { NULL, NULL, NULL }
 };
 

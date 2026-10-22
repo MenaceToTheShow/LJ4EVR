@@ -5,11 +5,12 @@ behavioural reference) for Windows and macOS, with sACN E1.31 output. One static
 executable per OS; SDL3 supplies the window, input, timers and a surface blit,
 every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 
-Status: **W2 Playback** (version 0.2.0). Everything an operator uses to run a
-show beyond one cue: loop options, chase, cue time, cue pages, transparent and
-flash cues, the Background Cue, Statics 2, groups, presets and palettes, Global
-Patch, Smoke Control, snapshots, Edit Hotkeys with 8 setups, MIDI-IN with Learn,
-System Preferences, backup / restore (`CHANGELOG.md`, `docs/w2-integration.md`).
+Status: **W3 Show control** (version 0.3.0). Cue lists with their runner (PC
+time, MTC, manual lines, links, hotkey commands), the Generic Macro Editor with
+the 66 shapes, movement macros with Bezier shapes, Fan Out and Auto Delay, Cue
+Macro Control, Generic DMX Control, follow spots, sequence fades, `.GS2` / `.Udf`
+import and export, the Generic Fixture Profile editor, and the 15/06-15/09 hand
+profiles; W2 playback underneath (`CHANGELOG.md`, `docs/w3-integration.md`).
 Pre-release until v1.0.0.
 
 ## Build
@@ -60,7 +61,7 @@ may pull any of them forward before W3; the default is the list above.
 - `docs/replay-grammar.md` - the `.lj4r` engine replay scenarios
 - `docs/running.md` - running the app, `Main.Ini`, `--selftest` and the other flags
 - `docs/sacn.md` - the sACN sender, `Hardware.Ini [SACN]`, the LAN capture
-- `docs/screenshots/` - the W0, W1 and W2 acceptance captures
+- `docs/screenshots/` - the W0, W1, W2 and W3 acceptance captures
 - `docs/ui-script.md` - the `--script` driver behind the acceptance walkthrough
 - `docs/w0-contracts.md` - map of the W0 headers and the three rules for tracks
 - `docs/w0-integration.md` - the W0 integration log
@@ -70,6 +71,9 @@ may pull any of them forward before W3; the default is the list above.
 - `docs/w2-contracts.md` - the W2 seams between the eleven tracks
 - `docs/w2-gates.md` - the W2 gate table with the council's status column
 - `docs/w2-integration.md` - the W2 integration log, CI rounds, acceptance walkthrough and fix pass
+- `docs/w3-contracts.md` - the W3 seams between the ten tracks
+- `docs/w3-gates.md` - the W3 gate table with the council's status column
+- `docs/w3-integration.md` - the W3 integration log, CI rounds, acceptance walkthrough and fix pass
 
 Licence: MIT (`LICENSE`). Third-party notices: `NOTICE`. LightJockey is a
 trademark of Martin Professional; LJ4EVR is not affiliated.

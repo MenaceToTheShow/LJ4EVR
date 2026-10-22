@@ -18,7 +18,5 @@ int         lj_cue_add_sequence(lj_cue *cue, uint32_t seq, int slot /* 0 = first
 int         lj_cue_find_free(const lj_cue *cue);                                  /* 1..12 or -1 */
 
 typedef struct { char name[31]; uint32_t cue[LJ_CUE_PAGES]; int n; } lj_cue_page;
-int lj_cue_pages_load(const char *path, lj_cue_page *out, int max);              /* CuePageInfo.Dat: returns the count, -1 on error (W2 consumer) */
-int lj_cue_pages_save(const char *path, const lj_cue_page *in, int n);
 
 #endif /* LJ_MODEL_CUE_H */

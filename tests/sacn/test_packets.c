@@ -73,6 +73,11 @@ int lj_test_sacn_packets(int argc, char **argv)
     memset(cfg.name, 'x', 63); cfg.name[63] = 0;
     CHECK(lj_sacn_pack_data(pkt, &cfg, 1, 0, 0, slots) == 0);
     CHECK(pkt[106] == 'x' && pkt[107] == 0 && pkt[108] == 100);
+    /* ME-84: 22 non-ASCII characters (21 x CP1252 0x80 euro = 3 UTF-8 bytes each, after "ab\xE9" = 4) cut on a
+     * character boundary: 4 + 19 x 3 = 61 bytes, never a dangling lead byte */
+    memcpy(cfg.name, "ab\xE9", 3); memset(cfg.name + 3, 0x80, 21); cfg.name[24] = 0;
+    CHECK(lj_sacn_pack_data(pkt, &cfg, 1, 0, 0, slots) == 0);
+    CHECK(pkt[44 + 60] == 0xAC && pkt[44 + 61] == 0 && pkt[44 + 62] == 0 && pkt[44 + 58] == 0xE2);
 
     /* rejected arguments */
     CHECK(lj_sacn_pack_data(pkt, &cfg, 0, 0, 0, slots) == -1);

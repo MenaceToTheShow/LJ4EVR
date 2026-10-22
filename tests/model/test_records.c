@@ -13,6 +13,7 @@
 #include "model/lj_scene.h"
 #include "model/lj_sequence.h"
 #include "model/lj_cue.h"
+#include "model/lj_cuepage.h"
 #include "model/lj_cuelist.h"
 #include "model/lj_bgcue.h"
 #include "model/lj_statics.h"
@@ -210,6 +211,12 @@ static void lj_test_config(const lj_library *lib)
     CHECK(lj_config_validate(b) != NULL);
     lj_show_remove_fixture(b, 0);
     CHECK(lj_show_fixture_count(b) == 1 && lj_config_validate(b) == NULL);
+    /* ME-107: a 63-char gs2= (the gs2_file cap) no longer drops ipan / swap / placed after it */
+    memset(b->fixture[1].gs2_file, 'G', sizeof b->fixture[1].gs2_file - 1); b->fixture[1].gs2_file[sizeof b->fixture[1].gs2_file - 1] = 0;
+    b->fixture[1].invert_pan = 1; b->fixture[1].swap_pt = 1; b->fixture[1].placed = 1;
+    CHECK(lj_show_save_config(b, lib) == 0);
+    CHECK(lj_show_load(a, lib) == 0);
+    CHECK(strlen(a->fixture[1].gs2_file) == 63 && a->fixture[1].invert_pan == 1 && a->fixture[1].swap_pt == 1 && a->fixture[1].placed == 1);
     lj_library_path(lib, "Config.dat", path, sizeof path);
     lj_write_text(path, "LJ4 config 1\nfx 1 kind=gs2 gs2=x.GS2 link=9 addr=1\n");
     CHECK(lj_show_load(b, lib) == -1);                    /* Config.dat exists and is invalid */

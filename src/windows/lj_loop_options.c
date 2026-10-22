@@ -183,13 +183,12 @@ static void on_default(lj_widget *w, void *ud)
 }
 static void on_select_cue(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_LIST_CUE); }   /* ponytail: opens the List of Cues; the number is typed into eLink (no pick-back seam yet) */
 static void on_show(lj_widget *w, void *ud) { (void)w; (void)ud; fill(); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 static const lj_binding lj_lo_bindings[] = {
     { "bDefaultLoopClick", on_default, NULL }, { "REndLoopClick", on_end, NULL }, { "RDirectionClick", on_dir, NULL },
-    { "UdButtonsChange", on_ud, NULL }, { "EValidateKeyPress", noop, NULL } /* digits only: the edits are LJ_W_EDIT_NUM */, { "EKeyUp", on_edit_keyup, NULL },
-    { "bSelectCueClick", on_select_cue, NULL }, { "cbTrigLoadClick", on_trig_load, NULL }, { "Help1Click", noop, NULL },
-    { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormHide", noop, NULL }, { "FormShow", on_show, NULL },
+    { "UdButtonsChange", on_ud, NULL }, { "EValidateKeyPress", lj_handler_noop, NULL } /* digits only: the edits are LJ_W_EDIT_NUM */, { "EKeyUp", on_edit_keyup, NULL },
+    { "bSelectCueClick", on_select_cue, NULL }, { "cbTrigLoadClick", on_trig_load, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", on_show, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_loop_options_open(void)

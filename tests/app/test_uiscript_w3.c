@@ -21,6 +21,7 @@
 #include "app/lj_app_seam.h"
 #include "app/lj_app_w3.h"
 #include "app/lj_uiscript.h"
+#include "controls/lj_ctl.h"
 #include "controls/lj_ctl_movement.h"
 #include "core/lj_clock.h"
 #include "core/lj_ini.h"
@@ -35,12 +36,18 @@
 #include "model/lj_bgcue.h"
 #include "model/lj_cue.h"
 #include "model/lj_cuelist.h"
+#include "model/lj_genmacro.h"
 #include "model/lj_library.h"
 #include "model/lj_scene.h"
 #include "model/lj_sequence.h"
 #include "model/lj_show.h"
 #include "model/lj_statics.h"
 #include "core/lj_fsinfo.h"
+#include "ui/lj_menu.h"
+#include "ui/widgets/lj_widgets_basic.h"
+#include "ui/widgets/lj_widgets_lists.h"
+#include "windows/lj_bgcue_form.h"
+#include "windows/lj_genmacro_editor.h"
 #include "windows/lj_gs2_dialogs.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
@@ -52,6 +59,17 @@ static char logged[8192];
 static void sink(void *ud, const char *line) { (void)ud; if (strlen(logged) + strlen(line) + 2 < sizeof logged) { strcat(logged, line); strcat(logged, "\n"); } }
 static const lj_engine_status *view(void *ud) { (void)ud; return &lj_ctx_get()->view; }
 static int write_file(const char *path, const char *text) { FILE *f = fopen(path, "wb"); if (!f) return -1; fputs(text, f); fclose(f); return 0; }
+
+static int fire_menu(lj_window *win, const char *item)   /* runs a menu item's bound handler as lj_menu's fire() does */
+{
+    lj_menu *m = lj_window_menus(win);
+    lj_menu_rt *rt = lj_menu_rt_named(m, item);
+    if (!rt || !rt->fn) return -1;
+    m->firing = rt->item;
+    rt->fn(lj_window_root(win), rt->ud);
+    m->firing = NULL;
+    return 0;
+}
 
 static int run_script(const char *path)
 {
@@ -271,6 +289,7 @@ int lj_test_uiscript_w3(int argc, char **argv)
         char src[LJ_PATH_CAP], dst[LJ_PATH_CAP], err[160];
         size_t na = 0, nb = 0;
         int k, hit = 0;
+        enum lj_ctl_kind kk;
         lj_profile p;
         FILE *f;
         if (lj_library_path(&lib, "UserFixtureDef/lj_w3_two.GS2", dst, sizeof dst) == 0) remove(dst);   /* the library outlives a run */
@@ -298,7 +317,20 @@ int lj_test_uiscript_w3(int argc, char **argv)
         lj_gs2_free(&p);
         lj_desktop_run_action(LJ_ACT_GS2_RELOAD, 0);                             /* Reload profile data */
         for (k = 0; k < show->ngs2; k++) if (!strcmp(show->gs2[k].gs2_file, "lj_w3_two.GS2")) hit = !strcmp(show->gs2[k].name, "EDITED");
-        CHECK(hit); }
+        CHECK(hit);
+        /* ME-110: a GS2 fixture's controls come from its GS2 profile, and Reload profile data with Intensity and the
+         * Generic Macro Editor open re-resolves both before the old array is freed (linux-gcc-asan: no use-after-free) */
+        show->fixture[2].kind = LJ_FX_GS2; strcpy(show->fixture[2].gs2_file, "lj_w3_two.GS2"); show->fixture[2].link = 1; show->fixture[2].address = 200;
+        lj_sel_none(); lj_sel_set(2, 1, 1);
+        CHECK(lj_sel_master_profile() == lj_show_profile(show, 2) && lj_sel_master_profile() >= show->gs2 && lj_sel_master_profile() < show->gs2 + show->ngs2);
+        kk = lj_sel_master_profile() && lj_sel_master_profile()->nwindows ? lj_sel_master_profile()->windows[0].kind : LJ_CTL_INTENSITY;   /* the dimmer-derived GS2: its Levels window */
+        CHECK(lj_ctl_open(kk) != NULL);
+        CHECK(lj_genmacro_editor_open() != NULL);
+        lj_desktop_run_action(LJ_ACT_GS2_RELOAD, 0);
+        CHECK(lj_ctl_window_get(kk) != NULL && lj_sel_master_profile() >= show->gs2 && lj_sel_master_profile() < show->gs2 + show->ngs2);
+        lj_ctl_refresh(); lj_genmacro_editor_refresh();                          /* both read the profile they hold */
+        lj_ctl_close(kk); lj_genmacro_editor_close();
+        lj_sel_none(); memset(&show->fixture[2], 0, sizeof show->fixture[2]); }
 
     /* ---- 9. ME-102: a full command array; Clear Slot and a BG cue load keep what the engine still holds ---- */
     {   lj_scene sc2;
@@ -340,6 +372,70 @@ int lj_test_uiscript_w3(int argc, char **argv)
         tick(e, &t);
         lj_lock(); CHECK(lj_engine_frame(e)->merged[99] != 77); lj_unlock();
     }
+
+    /* ---- 9a. ME-104 / ME-112: sbLoad opens Select Background Cue latched; a double-click loads a BG cue; "(T)"; the Toggle
+     * BG Cue List hotkey; the slot popup's Sequence Mode.. writes the slot mode ---- */
+    {   lj_window *lw, *bw, *mw = NULL;
+        lj_widget *lv;
+        lj_bgcue *bg = lj_bgcue_new_rec();
+        int k, row = -1;
+        bg->number = 7; bg->transparent = 1; bg->slot[0].seq = 1; bg->slot[0].enabled = 1; bg->slot[0].mode = LJ_BG_AUTO;
+        CHECK(lj_library_record_path(&lib, LJ_REC_BG, 7, path, sizeof path) == 0 && lj_bgcue_save(path, bg) == 0);
+        lj_bgcue_free(bg);
+        logged[0] = 0;
+        lj_log_set_sink(sink, NULL);
+        CHECK(run_text("open bgcue_form\nclick TBGCueForm.sbLoad\nquit\n") == 0);
+        lw = lj_win_get(LJ_WIN_SELECT_BGCUE); bw = lj_win_get(LJ_WIN_BGCUE_FORM);
+        CHECK(lw != NULL && bw != NULL && lj_w_speedbutton_down(lj_window_find(bw, "sbLoad")) == 1);
+        lv = lj_window_find(lw, "lv1");
+        for (k = 0; lv && k < ((lj_w_listview *)lv)->n; k++) if (strcmp(((lj_w_listview *)lv)->items[k], "(T)07\t") == 0) row = k;
+        CHECK(row >= 0);                                         /* transparent: "(T)" before the number; no name */
+        if (row >= 0) { ((lj_w_listview *)lv)->index = row; lj_w_emit(lv, LJ_WEV_DBLCLICK); }
+        tick(e, &t); tick(e, &t);
+        lj_win_refresh_all();
+        CHECK(c->view.bg_number == 7 && lj_bgcue_form_work()->slot[0].seq == 1);
+        CHECK(run_text("click TBGCueForm.sbLoad\nquit\n") == 0);
+        CHECK(lj_win_get(LJ_WIN_SELECT_BGCUE) == NULL && lj_w_speedbutton_down(lj_window_find(bw, "sbLoad")) == 0);
+        lj_fn_run(LJ_FN_TOGGLE_BG_CUE_LIST, 1); CHECK(lj_win_get(LJ_WIN_SELECT_BGCUE) != NULL);
+        lj_fn_run(LJ_FN_TOGGLE_BG_CUE_LIST, 1); CHECK(lj_win_get(LJ_WIN_SELECT_BGCUE) == NULL);
+        lj_w_listview_select(lj_window_find(bw, "LV1"), 0);
+        CHECK(fire_menu(bw, "P_SequenceMode") == 0 && (mw = lj_bgcue_seqmode_get()) != NULL);
+        if (mw) {
+            CHECK(strncmp(lj_w_edit_text(lj_window_find(mw, "eSeqName")), "0001 ", 5) == 0);   /* "Seq 0001 <name>" (bgcue-sequencemode.gif) */
+            lj_w_checkbox_click(lj_window_find(mw, "cb1Shot"));
+            lj_w_click(lj_window_find(mw, "bOk"));
+            CHECK(lj_bgcue_seqmode_get() == NULL && lj_bgcue_form_work()->slot[0].mode == LJ_BG_NOLOOP);
+        }
+        lj_log_set_sink(NULL, NULL);
+        CHECK(strstr(logged, "has no behaviour file yet") == NULL);
+        lj_win_close(LJ_WIN_BGCUE_FORM); }
+
+    /* ---- 9b. ME-117 / ME-121: Delete Generic Macros stops only the running macro; delete, re-save, load, tick (ASan) ---- */
+    {   lj_genmacro *gm = lj_genmacro_new_rec();
+        uint32_t k;
+        for (k = 3; gm && k <= 7; k += 4) {
+            gm->number = k; gm->ch[0].shape = 1; gm->ch[0].amp_pos = 40; gm->ch[0].cycle_ds = 10;
+            CHECK(lj_library_record_path(&lib, LJ_REC_MACRO, k, path, sizeof path) == 0 && lj_genmacro_save(path, gm) == 0);
+        }
+        free(gm);
+        CHECK(lj_app_load_genmacro(7) == 0 && lj_app_load_genmacro(3) == 0);   /* 7 stays in show->macros, 3 runs */
+        tick(e, &t); tick(e, &t);
+        CHECK(c->view.gm_cue_number == 3 && lj_table_get(&show->macros, 7) != NULL);
+        CHECK(lj_app_delete_record(LJ_REC_MACRO, 7) == 0);
+        tick(e, &t); tick(e, &t);
+        CHECK(c->view.gm_cue_number == 3 && lj_table_get(&show->macros, 7) == NULL);   /* ME-117: macro 3 keeps running */
+        CHECK(lj_app_delete_record(LJ_REC_MACRO, 3) == 0);
+        tick(e, &t); tick(e, &t);
+        CHECK(c->view.gm_cue_number == 0);                       /* the running one stops; freed after the engine let go */
+        gm = lj_genmacro_new_rec();                              /* re-save 3 and load it again */
+        if (gm) { gm->number = 3; gm->ch[0].shape = 2; gm->ch[0].amp_pos = 20; gm->ch[0].cycle_ds = 5;
+                  CHECK(lj_library_record_path(&lib, LJ_REC_MACRO, 3, path, sizeof path) == 0 && lj_genmacro_save(path, gm) == 0); free(gm); }
+        CHECK(lj_app_load_genmacro(3) == 0);
+        tick(e, &t); tick(e, &t);
+        CHECK(c->view.gm_cue_number == 3);
+        CHECK(lj_app_delete_record(LJ_REC_MACRO, 3) == 0);
+        tick(e, &t); tick(e, &t);
+        CHECK(c->view.gm_cue_number == 0); }
 
     /* ---- teardown ---- */
     lj_win_close_all();

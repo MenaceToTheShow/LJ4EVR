@@ -84,11 +84,10 @@ int  lj_striking_lamps_count(void) { return sl.n; }
 int  lj_striking_lamps_fixture(int i) { return i >= 0 && i < sl.n ? sl.fx[i] : -1; }
 void lj_striking_lamps_set_strike(void (*fn)(int fixture, void *ud), void *ud) { sl.strike = fn; sl.ud = ud; }
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_stop(lj_widget *w, void *ud) { (void)w; (void)ud; sl.close_pending = 1; }
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_striking_lamps_step((uint32_t)(lj_clock_us() / 1000)); }
 static const lj_binding lj_sl_bindings[] = {
-    { "FormClose", on_stop, NULL }, { "FormCreate", noop, NULL }, { "bCloseClick", on_stop, NULL }, { "Timer1Timer", on_timer, NULL },
+    { "FormClose", on_stop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "bCloseClick", on_stop, NULL }, { "Timer1Timer", on_timer, NULL },
     { NULL, NULL, NULL } };
 
 static lj_window *create_win(void)

@@ -30,3 +30,5 @@ int lj_fs_mkdir(const char *path)
     return path && mkdir(path, 0777) == 0 ? 0 : -1;
 #endif
 }
+
+int lj_fs_exists(const char *path) { FILE *f = path ? fopen(path, "rb") : NULL; if (!f) return 0; fclose(f); return 1; }

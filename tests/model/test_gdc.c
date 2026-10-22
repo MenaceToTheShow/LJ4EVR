@@ -237,6 +237,11 @@ int lj_test_followspot(int argc, char **argv)
     CHECK(lj_followspot_load("test_followspot.dat", back, err, sizeof err) == 0);
     CHECK(memcmp(back, fs, sizeof(lj_followspot) * LJ_FOLLOWSPOT) == 0);
     CHECK(lj_followspot_load("test_followspot_missing.dat", back, err, sizeof err) == 0 && back[0].used == 0);
+    /* ME-107: a setting with all 100 fixtures selected (sel= ~290 bytes) loads back and keeps the other settings */
+    memset(fs[7].selected, 1, sizeof fs[7].selected); fs[7].used = 1;
+    CHECK(lj_followspot_save("test_followspot.dat", fs) == 0);
+    CHECK(lj_followspot_load("test_followspot.dat", back, err, sizeof err) == 0 && memcmp(back, fs, sizeof(lj_followspot) * LJ_FOLLOWSPOT) == 0);
+    memset(&fs[7], 0, sizeof fs[7]);
     fs[5].state[9] = 3; CHECK(lj_followspot_validate(fs) != NULL); fs[5].state[9] = 0;
     fs[5].static_page = 65; fs[5].static_slot = 1; CHECK(lj_followspot_validate(fs) != NULL); fs[5].static_page = 0; fs[5].static_slot = 0;
     memset(fs[5].name, 'x', sizeof fs[5].name); CHECK(lj_followspot_validate(fs) != NULL); fs[5].name[0] = 0;

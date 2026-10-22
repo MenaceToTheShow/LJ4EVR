@@ -1,5 +1,5 @@
 /* lj_cuepage.c - the cue page set (lj_cuepage.h, 03 s5.8, F28). The file layer is the W1
- * lj_cue_pages_load/save of lj_cue.c (CuePageInfo.Dat). */
+ * lj_cue_pages_load/save below (CuePageInfo.Dat; merged here from lj_cue.c, ME-101). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC */
 #include <stdio.h>
 #include <string.h>
@@ -149,4 +149,49 @@ uint32_t lj_cuepages_step_cue(lj_cuepages *p, int delta)
     if (c < 0 || c >= pg->n) return 0;
     p->cursor = c;
     return pg->cue[c];
+}
+
+int lj_cue_pages_load(const char *path, lj_cue_page *out, int max)
+{
+    char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP];
+    int fmt, r, n = 0, item = 0, j;
+    const char *bad = NULL;
+    lj_rec *rec = lj_rec_open_read(path, "cuepages", &fmt);
+    if (!rec) return -1;
+    while ((r = lj_rec_next(rec, k, sizeof k, v, sizeof v)) == 1) {
+        item++;
+        if (strcmp(k, "page") != 0) continue;
+        if (lj_kv_range_lead(v, 0, n + 1, n + 1, NULL) != n + 1) { bad = "page index out of order"; break; }   /* ME-77 helper */
+        if (n >= max) { bad = "more pages than the caller holds"; break; }
+        memset(&out[n], 0, sizeof out[n]);
+        if (lj_kv_get(v, "name", q, sizeof q) == 1) lj_str_copy(out[n].name, sizeof out[n].name, q);
+        if (lj_kv_get(v, "cues", q, sizeof q) == 1 && q[0]) {
+            out[n].n = lj_kv_list(q, out[n].cue, LJ_CUE_PAGES);
+            if (out[n].n < 0) { bad = "bad cues= list"; break; }
+            for (j = 0; j < out[n].n; j++) if (out[n].cue[j] < 1 || out[n].cue[j] > LJ_NUMBER_MAX) break;
+            if (j < out[n].n) { bad = "cue number not 1..99999999"; break; }   /* ME-77: no alias of an over-long number */
+        }
+        n++;
+    }
+    lj_rec_close(rec);
+    if (!bad && r < 0) bad = "unreadable line";
+    if (bad) { lj_kv_err(NULL, 0, path, item, bad); return -1; }
+    return n;
+}
+
+int lj_cue_pages_save(const char *path, const lj_cue_page *in, int n)
+{
+    char q[72], list[LJ_KV_VAL_CAP];
+    int i, j, ok = 1;
+    lj_rec *rec = lj_rec_open_write(path, "cuepages", 1);
+    if (!rec) return -1;
+    for (i = 0; ok && i < n; i++) {
+        size_t len = 0;
+        list[0] = 0;
+        for (j = 0; j < in[i].n && j < LJ_CUE_PAGES; j++)
+            len += (size_t)snprintf(list + len, sizeof list - len, "%s%u", j ? "," : "", (unsigned)in[i].cue[j]);
+        lj_kv_quote(q, sizeof q, in[i].name);
+        ok = lj_rec_write(rec, "page ", "%d name=%s cues=%s", i + 1, q, list) == 0;
+    }
+    return lj_rec_close(rec) == 0 && ok ? 0 : -1;
 }

@@ -7,9 +7,12 @@ Checks, over src/:
   2. OS headers only on the per-file allowlist (platform/: anything).
   3. No float, double, <math.h>, <stdatomic.h> or volatile in any SDL-free directory
      (comments and string literals stripped first).
-  4. No lj_table_* call inside engine/.
+  4. No lj_table_* call and no cue-list symbol (lj_cl_*, lj_cuelist*) inside engine/ (ME-121: the cue list runs
+     on the UI thread, design 2.3 rule 4).
   5. File names lj_<name>.c/.h, include guards LJ_<DIR>_<NAME>_H.
   6. Every header compiles alone in its own translation unit (compiler from --cc).
+  7. ME-101 counts, both must stay 0: byte-identical do-nothing widget handlers (lj_handler_noop is the one) and
+     "x ? lj_ini_get*" ternaries (lj_ini_geti / lj_ini_gets read a NULL ini as empty).
 
 usage: test_layering.py --src <repo>/src --cc <compiler> [--gen <dir with version.h>]
 exit 0 = clean, 1 = findings printed one per line.
@@ -39,20 +42,23 @@ SDL_ALLOWED = {"platform", "app"}
 SDL_FREE = {"core", "model", "engine", "fixlib", "io", "gfx", "ui", "desktop", "controls", "windows"}
 
 OS_HEADERS = {"windows.h", "unistd.h", "pthread.h", "winsock2.h", "ws2tcpip.h", "iphlpapi.h", "mmsystem.h",
-              "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "sys/socket.h", "CoreMIDI/CoreMIDI.h"}
+              "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "sys/socket.h", "CoreMIDI/CoreMIDI.h",
+              "direct.h", "io.h", "dirent.h"}   # ME-113 / ME-44: the CRT directory headers too
 OS_ALLOW = {   # relative to src/, forward slashes
     "core/lj_clock.c": {"windows.h", "time.h"},
     "core/lj_lock.c": {"windows.h", "pthread.h"},
     "io/lj_net.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
     "io/lj_sacn.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
     "io/lj_midi_winmm.c": {"windows.h", "mmsystem.h"},
-    "model/lj_library.c": {"sys/stat.h"},   # POSIX mkdir for lj_library_create (Windows uses <direct.h>/<io.h>)
+    "model/lj_library.c": {"sys/stat.h", "direct.h", "io.h", "dirent.h"},   # the library folder walk and rmdir (_findfirst / opendir)
+    "model/lj_movemacro.c": {"io.h", "dirent.h"},   # W3: the MacroShapes\*.bez listing
     "io/lj_midi_coremidi.c": {"CoreMIDI/CoreMIDI.h"},
     "app/lj_sysmem.c": {"windows.h", "unistd.h", "sys/sysctl.h"},   # W2 app: the memory gauge free-memory query (ME-87)
-    "core/lj_fsinfo.c": {"sys/types.h", "sys/stat.h"},   # W3 movement: file mtime (LORD_FIDELITY-12) and the MacroShapes mkdir
+    "core/lj_fsinfo.c": {"sys/types.h", "sys/stat.h", "direct.h"},   # W3 movement: file mtime (LORD_FIDELITY-12) and lj_fs_mkdir (_mkdir)
 }
 NAME_EXEMPT = {"app/main.c"}
 
+NOOP_RE = re.compile(r'void\s+(\w+)\s*\(\s*lj_widget\s*\*\s*w\s*,\s*void\s*\*\s*ud\s*\)\s*\{\s*\(void\)\s*w\s*;\s*\(void\)\s*ud\s*;\s*\}')
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*([<"])([^>"]+)[>"]', re.M)
 
 
@@ -128,6 +134,7 @@ def main():
     findings = []
     headers = []
     nfiles = 0
+    noops = ternaries = 0
     for dirpath, _, files in os.walk(src):
         for fn in sorted(files):
             if not fn.endswith((".c", ".h")):
@@ -181,6 +188,16 @@ def main():
             # 4. engine never looks a record up
             if layer == "engine" and re.search(r'\blj_table_\w+\s*\(', code):
                 findings.append("%s: lj_table_* call inside engine/" % rel)
+            if layer == "engine" and re.search(r'\b(lj_cl_|lj_cuelist)\w*', code):
+                findings.append("%s: cue-list symbol inside engine/ (the runner is UI-thread, design 2.3 rule 4)" % rel)
+            # 7. ME-101 counts
+            for m in NOOP_RE.finditer(text):
+                if m.group(1) != "lj_handler_noop":
+                    noops += 1
+                    findings.append("%s: %s is a copy of lj_handler_noop (ME-101)" % (rel, m.group(1)))
+            for _ in re.finditer(r'\?\s*lj_ini_get[is]\s*\(', code):
+                ternaries += 1
+                findings.append("%s: \"? lj_ini_get\" ternary; lj_ini_geti/gets take a NULL ini (ME-101)" % rel)
     # 6. headers alone
     with tempfile.TemporaryDirectory() as tmp:
         for h in headers:
@@ -189,8 +206,8 @@ def main():
                 findings.append("%s: does not compile alone:\n    %s" % (h, err.replace("\n", "\n    ")))
     for f in findings:
         print(f)
-    print("test_layering: %d file(s) checked, %d header(s) compiled alone, %d finding(s)"
-          % (nfiles, len(headers), len(findings)))
+    print("test_layering: %d file(s) checked, %d header(s) compiled alone, noop handlers %d, ini ternaries %d, %d finding(s)"
+          % (nfiles, len(headers), noops, ternaries, len(findings)))
     return 1 if findings else 0
 
 

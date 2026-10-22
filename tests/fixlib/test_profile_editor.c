@@ -166,7 +166,9 @@ static void test_config_channels(void)
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchcap 33 text=X\n");
     CHECK(lj_config_load(path, b, err, sizeof err) == -1);      /* offset 33 rejected (lj_kv_range_lead) */
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchcap 1 text=TooLong\n");
-    CHECK(lj_config_load(path, b, err, sizeof err) == -1);      /* six bytes do not fit ch_caption[6] */
+    CHECK(lj_config_load(path, b, err, sizeof err) == -1);      /* ME-118: seven bytes do not fit ch_caption[7] (DFM MaxLength = 6) */
+    write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchcap 1 text=Yellow\n");
+    CHECK(lj_config_load(path, b, err, sizeof err) == 0 && strcmp(b->fixture[0].ch_caption[0], "Yellow") == 0);   /* ME-118: six accepted */
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchgm=0,2\n");
     CHECK(lj_config_load(path, b, err, sizeof err) == -1);
     write_file(path, "LJ4 config 1\nchgm=2\n");

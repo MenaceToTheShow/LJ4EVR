@@ -220,6 +220,8 @@ static void layout_surface(lj_window *win, int cw, int ch)
     win->dirty_all = 1;
 }
 
+void lj_handler_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
+
 lj_window *lj_window_create(const lj_form_desc *desc, const lj_binding *bindings)
 {
     lj_window *win;

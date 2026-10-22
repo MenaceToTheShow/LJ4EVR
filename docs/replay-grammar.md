@@ -73,7 +73,7 @@ the timestamp (chase-tap resolution). Every `LJ_CMD_*` kind has a form:
 | `at k overwrite l:a <v>` / `at k overwrite l:a clear` / `at k overwrite clear` | `LJ_CMD_OVERWRITE` |
 | `at k htp <group> <0..255>` | `LJ_CMD_HTP_GROUP` |
 | `at k seq_int slot<k> <0..255>` / `at k seq_int mode default\|htp\|lotp` | `LJ_CMD_SEQ_INT` |
-| `at k macro_ctl <amp_pct> <speed_pct>` | `LJ_CMD_MACRO_CTL` |
+| `at k macro_ctl <amp_pct> <speed_pct>` | `LJ_CMD_MACRO_CTL` (each 0..999, ME-109) |
 | `at k disable_fade 0\|1` | `LJ_CMD_DISABLE_FADE` |
 | `at k sacn_cfg` | `LJ_CMD_SACN_CFG` with a default config (`lj_sacn_cfg_default`); after tick k the harness checks `lj_engine_take_sacn_cfg` returns that pointer once and NULL the second time |
 
@@ -262,10 +262,12 @@ Expectations:
 | `expect_view <tick> ...` | gains `gm_engine gm_slot gm_cue gm_editor mm_amp mm_speed mm_fade mm_frozen` |
 | `expect_mm <tick> <fixture> pan=<idx> tilt=<idx>` | `mm_idx_pan` / `mm_idx_tilt` of the view (ME-35: two runners holding one fixture's macro advance it one step per tick) |
 
-## The five W3 scenarios (design 10 W3 acceptance 1, 3, 4)
+## The W3 scenarios (design 10 W3 acceptance 1, 3, 4)
 
-`cuelist_run` (cuelist-core), `genmacro_sine_amp186` and `genmacro_vs_bgcue` (genmacro), `movemacro_six_shapes` and
-`fanout_auto_delay` (movement). Committed by the contracts seat with their header comment and W2-grammar build lines
-only (0 expects, so `replay_all` stays green); each owning track adds the W3 lines and the expects with the rule ids in
-`# NOTE` lines, as W2 did.
+Nine scenarios, 130 expects: `cuelist_run` (cuelist-core, 33), `genmacro_sine_amp186` (23) and `genmacro_vs_bgcue`
+(15) (genmacro), `movemacro_six_shapes` (27) and `fanout_auto_delay` (8) (movement), `channel_gm_disabled`
+(profile-editor, ME-32, 3), `gdc_followspot` (gdc-fades-followspot, 11), and from the council fix pass r1
+`movemacro_speed_pct` (ME-109: the cue macro control's Speed scales the index rate, 50 % and 490 %, 6) and
+`movemacro_fade_freeze` (ME-115: a Freeze shifts the macro fade's t0, 4). The rule ids sit in each file's `# NOTE`
+lines. `macro_ctl` takes 0..999 for both values (`LJ_MOVEMACRO_PCT_MAX`, LORD_ENGINE-10).
 

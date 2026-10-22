@@ -137,6 +137,7 @@ void lj_bgcue_form_refresh(void)
         lj_w_listview_set_items(lv, s.rows, LJ_BG_SLOTS);
         l->index = keep;
     }
+    lj_w_speedbutton_set_down(lj_window_find(s.win, "sbLoad"), lj_select_bgcue_get() != NULL);
     if (s.shown_bg != v->bg_number && (cb = lj_window_find(s.win, "cb1")) != NULL) {
         lj_w_combobox *c = (lj_w_combobox *)cb;
         c->index = -1;
@@ -162,7 +163,9 @@ static void cb_change(lj_widget *w, void *ud)
 }
 static void sb_new(lj_widget *w, void *ud) { (void)w; (void)ud; memset(&lj_bg_work, 0, sizeof lj_bg_work); lj_desktop_run_action(LJ_ACT_LOAD_BGCUE, 0); }
 static void sb_delete(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_DELETE_BG); }
-static void sb_load(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_SELECT_BGCUE); }
+/* ME-112: sbLoad (AllowAllUp, GroupIndex 3) is down while the list is open. Its DFM OnMouseUp fires before the latch toggles, so
+ * the button is handled on its OnClick (after the latch, as sbSave) and the refresh then sets Down from the window */
+static void sb_load(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) { lj_win_toggle(LJ_WIN_SELECT_BGCUE); lj_bgcue_form_refresh(); } }
 static void sb_save(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) lj_win_open(LJ_WIN_SAVE_BGCUE); }   /* sbSave has no DFM event: LJ2 wires it in code */
 
 /* Main.Ini [BGCUE] ConfirmClear / ConfirmDelete / RestoreState: our keys (PROPOSAL rig: LJ2's are not in the shipped file);
@@ -174,7 +177,7 @@ static void sync_checks(void)
     lj_ctx *c = lj_ctx_get();
     int i;
     for (i = 0; i < (int)LJ_COUNT_OF(lj_bg_pref_keys); i++)
-        lj_menu_set_checked(lj_window_menus(s.win), lj_bg_pref_items[i], c->main_ini ? lj_ini_geti(c->main_ini, "BGCUE", lj_bg_pref_keys[i], i == 2 ? LJ_BG_RESTORE_ONOFF : 1) : 0);
+        lj_menu_set_checked(lj_window_menus(s.win), lj_bg_pref_items[i], lj_ini_geti(c->main_ini, "BGCUE", lj_bg_pref_keys[i], i == 2 ? LJ_BG_RESTORE_ONOFF : 1));
 }
 static void pref_click(lj_widget *w, void *ud)
 {
@@ -186,8 +189,43 @@ static void pref_click(lj_widget *w, void *ud)
         if (!strcmp(it->name, lj_bg_pref_items[i])) lj_ini_seti(c->main_ini, "BGCUE", lj_bg_pref_keys[i], !lj_ini_geti(c->main_ini, "BGCUE", lj_bg_pref_keys[i], i == 2 ? LJ_BG_RESTORE_ONOFF : 1));
     sync_checks();
 }
-/* ponytail: Sequence Mode.. (TBGCueSequenceModeForm) and Edit Sequence are not wired yet; logged */
-static void later(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("bgcue form: Sequence Mode.. / Edit Sequence not implemented yet"); }
+/* ---- BG Cue - Sequence Mode (TBGCueSequenceModeForm, bgcue-sequencemode.gif; ME-112): the slot popup's "Sequence Mode..":
+ * "Seq 0001 Lite on", Audio Trigged / No Loop; OK writes the slot's mode (Auto when neither is checked, 03 s7). Both checked
+ * = No Loop (PROPOSAL rig 03 s7: LJ2 shows two independent check boxes, the slot holds one mode) ---- */
+static struct { lj_window *win; int slot; } sm;
+static void sm_close(void) { if (!sm.win) return; lj_win_hide(sm.win); lj_window_destroy(sm.win); sm.win = NULL; }
+static void sm_ok(lj_widget *w, void *ud)
+{
+    int nl = lj_w_checkbox_checked(lj_window_find(sm.win, "cb1Shot")), au = lj_w_checkbox_checked(lj_window_find(sm.win, "cbMusicTrigged"));
+    (void)w; (void)ud;
+    lj_bg_work.slot[sm.slot].mode = (uint8_t)(nl ? LJ_BG_NOLOOP : au ? LJ_BG_AUDIO : LJ_BG_AUTO);
+    sm_close();
+    apply();
+}
+static void sm_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) sm_close(); }
+static void seq_mode(lj_widget *w, void *ud)
+{
+    static const lj_binding b[] = { { "bOkClick", sm_ok, NULL }, { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL },
+                                    { "FormDestroy", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    lj_ctx *c = lj_ctx_get();
+    lj_widget *lv = lj_window_find(s.win, "LV1"), *x;
+    const lj_sequence *seq;
+    char t[48];
+    int i = lj_w_listview_index(lv);
+    (void)w; (void)ud;
+    if (i < 0 || i >= LJ_BG_SLOTS || !lj_bg_work.slot[i].seq) return;
+    sm_close();
+    if (!(sm.win = lj_window_create(&lj_form_TBGCUESEQUENCEMODEFORM, b))) return;
+    sm.slot = i;
+    seq = c->show ? (const lj_sequence *)lj_table_get(&c->show->sequences, lj_bg_work.slot[i].seq) : NULL;
+    snprintf(t, sizeof t, "%04u %s", (unsigned)lj_bg_work.slot[i].seq, seq ? seq->name : "");
+    lj_w_edit_set_text(lj_window_find(sm.win, "eSeqName"), t);
+    lj_w_checkbox_set_checked(lj_window_find(sm.win, "cbMusicTrigged"), lj_bg_work.slot[i].mode == LJ_BG_AUDIO);
+    lj_w_checkbox_set_checked(lj_window_find(sm.win, "cb1Shot"), lj_bg_work.slot[i].mode == LJ_BG_NOLOOP);
+    if ((x = lj_window_find(sm.win, "bCancel")) != NULL) { x->on_event = sm_cancel; x->ud = NULL; }
+    lj_win_show(sm.win, LJ_BG_STAY_ON_TOP);
+}
+lj_window *lj_bgcue_seqmode_get(void) { return sm.win; }
 /* a sequence dragged from the List of Sequences onto a row fills that slot, past the rows the first free one [03 s7] */
 static void lv_drop(lj_widget *w, void *ud)
 {
@@ -202,7 +240,7 @@ static void lv_drop(lj_widget *w, void *ud)
 static void clear_slot(lj_widget *w, void *ud)
 {
     lj_widget *lv = lj_window_find(s.win, "LV1");
-    int i = lv ? ((lj_w_listview *)lv)->index : -1;
+    int i = lv ? lj_w_listview_index(lv) : -1;
     (void)w; (void)ud;
     if (i < 0 || i >= LJ_BG_SLOTS || !lj_bg_work.slot[i].seq) return;
     memset(&lj_bg_work.slot[i], 0, sizeof lj_bg_work.slot[i]);
@@ -210,15 +248,14 @@ static void clear_slot(lj_widget *w, void *ud)
 }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_bgcue_form_close(); }
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_bgcue_form_refresh(); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 static const lj_binding lj_bg_bindings[] = {
-    { "sbNewClick", sb_new, NULL }, { "sbDeleteClick", sb_delete, NULL }, { "sbMouseUp", sb_load, NULL }, { "cb1Change", cb_change, NULL },
-    { "LV1DblClick", noop, NULL }, { "LV1DragDrop", lv_drop, NULL }, { "LV1DragOver", noop, NULL },
-    { "BGCueTimerTimer", on_timer, NULL }, { "PopupMenu1Popup", noop, NULL },
-    { "P_SequenceModeClick", later, NULL }, { "P_EditSequenceClick", later, NULL }, { "P_ClearSlotClick", clear_slot, NULL },
-    { "PrefClicks", pref_click, NULL }, { "Help1Click", noop, NULL },
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL },
+    { "sbNewClick", sb_new, NULL }, { "sbDeleteClick", sb_delete, NULL }, { "sbMouseUp", lj_handler_noop, NULL }, { "cb1Change", cb_change, NULL },
+    { "LV1DblClick", lj_handler_noop, NULL }, { "LV1DragDrop", lv_drop, NULL }, { "LV1DragOver", lj_handler_noop, NULL },
+    { "BGCueTimerTimer", on_timer, NULL }, { "PopupMenu1Popup", lj_handler_noop, NULL },
+    { "P_SequenceModeClick", seq_mode, NULL }, { "P_EditSequenceClick", lj_handler_noop, NULL } /* greyed: docs/fidelity.md (W4) */, { "P_ClearSlotClick", clear_slot, NULL },
+    { "PrefClicks", pref_click, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_bgcue_form_open(void)
@@ -241,6 +278,8 @@ lj_window *lj_bgcue_form_open(void)
         s.btn[i]->on_event = slot_event; s.btn[i]->ud = &s.idx[i];
     }
     if ((w = lj_window_find(s.win, "sbSave")) != NULL) { w->on_event = sb_save; w->ud = NULL; }
+    if ((w = lj_window_find(s.win, "sbLoad")) != NULL) { w->on_event = sb_load; w->ud = NULL; }
+    lj_menu_set_enabled(lj_window_menus(s.win), "P_EditSequence", 0);   /* ME-112: Edit Sequence has no behaviour yet (fidelity row, W4) */
     fill_combo();
     sync_checks();
     lj_bgcue_form_refresh();
@@ -250,6 +289,7 @@ lj_window *lj_bgcue_form_open(void)
 
 void lj_bgcue_form_close(void)
 {
+    sm_close();
     if (!s.win) return;
     lj_win_hide(s.win);
     lj_window_destroy(s.win);
@@ -258,7 +298,6 @@ void lj_bgcue_form_close(void)
 
 /* ---- Save Background Cue (TSaveBGForm 198x92 [03 s7]): # and Name, Save (the record's number, greyed while it has none) /
  * Save New (the next [NEXT] number), "Save as Transparent BGCue"; Auto Close in forms.ini [SAVEBGFORM] (PROPOSAL key) ---- */
-static int sv_geti(const char *key, int dflt) { lj_ctx *c = lj_ctx_get(); return c->forms_ini ? lj_ini_geti(c->forms_ini, "SAVEBGFORM", key, dflt) : dflt; }
 static void sv_fill(void)
 {
     char no[12];
@@ -269,8 +308,8 @@ static void sv_fill(void)
     if ((w = lj_window_find(sv.win, "eName")) != NULL) lj_w_edit_set_text(w, lj_bg_work.name);
     if ((w = lj_window_find(sv.win, "cbTransparent")) != NULL) lj_w_checkbox_set_checked(w, lj_bg_work.transparent);
     if ((w = lj_window_find(sv.win, "Bsave")) != NULL) { w->enabled = lj_bg_work.number != 0; lj_widget_invalidate(w); }
-    lj_menu_set_checked(lj_window_menus(sv.win), "M_AutoClose", sv_geti("AutoClose", 1));
-    lj_menu_set_checked(lj_window_menus(sv.win), "M_EnterSave", sv_geti("SaveOnEnter", 0));
+    lj_menu_set_checked(lj_window_menus(sv.win), "M_AutoClose", lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEBGFORM", "AutoClose", 1));
+    lj_menu_set_checked(lj_window_menus(sv.win), "M_EnterSave", lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEBGFORM", "SaveOnEnter", 0));
 }
 static void sv_save(lj_widget *w, void *ud)
 {
@@ -290,7 +329,7 @@ static void sv_save(lj_widget *w, void *ud)
     lj_bg_work = rec;
     apply();
     if (s.win) fill_combo();
-    if (sv_geti("AutoClose", 1)) lj_save_bg_close(); else sv_fill();
+    if (lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEBGFORM", "AutoClose", 1)) lj_save_bg_close(); else sv_fill();
 }
 static void sv_prefs(lj_widget *w, void *ud)
 {
@@ -298,13 +337,13 @@ static void sv_prefs(lj_widget *w, void *ud)
     const lj_menu_item_desc *it = lj_window_menu_item(sv.win);
     (void)w; (void)ud;
     if (!it || !it->name || !c->forms_ini) return;
-    if (!strcmp(it->name, "M_AutoClose")) lj_ini_seti(c->forms_ini, "SAVEBGFORM", "AutoClose", !sv_geti("AutoClose", 1));
-    else if (!strcmp(it->name, "M_EnterSave")) lj_ini_seti(c->forms_ini, "SAVEBGFORM", "SaveOnEnter", !sv_geti("SaveOnEnter", 0));
+    if (!strcmp(it->name, "M_AutoClose")) lj_ini_seti(c->forms_ini, "SAVEBGFORM", "AutoClose", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEBGFORM", "AutoClose", 1));
+    else if (!strcmp(it->name, "M_EnterSave")) lj_ini_seti(c->forms_ini, "SAVEBGFORM", "SaveOnEnter", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEBGFORM", "SaveOnEnter", 0));
     sv_fill();
 }
 static const lj_binding sv_bindings[] = {
-    { "BsaveClick", sv_save, NULL }, { "BSaveNewClick", sv_save, (void *)1 }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", noop, NULL },
-    { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormKeyDown", noop, NULL }, { "FormShow", noop, NULL },
+    { "BsaveClick", sv_save, NULL }, { "BSaveNewClick", sv_save, (void *)1 }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_save_bg_open(void)
@@ -346,4 +385,90 @@ void lj_bgcue_form_bind_fns(void)
                                        LJ_FN_BGCUE_TOGGLE_SLOT_1, LJ_FN_BGCUE_TOGGLE_SLOT_2, LJ_FN_BGCUE_TOGGLE_SLOT_3, LJ_FN_BGCUE_TOGGLE_SLOT_4, LJ_FN_BGCUE_TOGGLE_SLOT_5 };
     int i;
     for (i = 0; i < (int)LJ_COUNT_OF(rows); i++) lj_fn_bind(rows[i], fn_bg, NULL);
+}
+
+
+/* ---- Select Background Cue (TSelectBGCueForm2, ME-104 / ME-112; 03 s7 "Load (list ...)"): every BG cue file of the library,
+ * "(T)" before a transparent one's number (as the List of Cues, 03 s5.8), double-click loads it through LJ_ACT_LOAD_BGCUE (the
+ * app pins it, design 2.3 rule 2), Pop_Delete opens Delete Background Cues. Opened by the BG cue window's sbLoad and the Toggle
+ * BG Cue List hotkey; stay-on-top. Preferences (Main.Ini [BGCUELIST], PROPOSAL keys): Follow Active BG-Cue selects the loaded
+ * one; Use Color Code for Transparent Cues is greyed (the report view has no per-row colour; the "(T)" prefix stays) ---- */
+static struct { lj_window *win; char row[LJ_BG_FILES][48]; const char *rows[LJ_BG_FILES]; uint32_t no[LJ_BG_FILES]; int n; uint32_t shown; } sl;
+static void sl_fill(void)
+{
+    lj_ctx *c = lj_ctx_get();
+    static lj_bgcue tmp;
+    char path[LJ_PATH_CAP], err[128];
+    int n = c->lib ? lj_library_list_records(c->lib, LJ_REC_BG, sl.no, LJ_BG_FILES) : 0, i;
+    if (n < 0) n = 0;
+    for (i = 0; i < n; i++) {
+        const lj_bgcue *rec = c->show ? (const lj_bgcue *)lj_table_get(&c->show->bgcues, sl.no[i]) : NULL;
+        if (!rec && lj_library_record_path(c->lib, LJ_REC_BG, sl.no[i], path, sizeof path) == 0 && lj_bgcue_load(path, &tmp, err, sizeof err) == 0) rec = &tmp;
+        snprintf(sl.row[i], sizeof sl.row[i], "%s%02u\t%s", rec && rec->transparent ? "(T)" : "", (unsigned)sl.no[i], rec ? rec->name : "load error");
+        sl.rows[i] = sl.row[i];
+    }
+    sl.n = n;
+    lj_w_listview_set_items(lj_window_find(sl.win, "lv1"), sl.rows, n);
+    sl.shown = 0xFFFFFFFFu;
+}
+static void sl_load(lj_widget *w, void *ud)
+{
+    int i = lj_w_listview_index(lj_window_find(sl.win, "lv1"));
+    (void)w; (void)ud;
+    if (i >= 0 && i < sl.n) lj_desktop_run_action(LJ_ACT_LOAD_BGCUE, (int)sl.no[i]);
+}
+static void sl_delete(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_DELETE_BG); }
+static void sl_close_ev(lj_widget *w, void *ud) { (void)w; (void)ud; lj_select_bgcue_close(); }
+static void sl_checks(void)
+{
+    lj_menu_set_checked(lj_window_menus(sl.win), "M_FollowActiveCue", lj_ini_geti(lj_ctx_get()->main_ini, "BGCUELIST", "FollowActive", 1));
+    lj_menu_set_enabled(lj_window_menus(sl.win), "M_TransColor", 0);
+}
+static void sl_pref(lj_widget *w, void *ud)
+{
+    lj_ctx *c = lj_ctx_get();
+    const lj_menu_item_desc *it = lj_window_menu_item(sl.win);
+    (void)w; (void)ud;
+    if (it && it->name && !strcmp(it->name, "M_FollowActiveCue") && c->main_ini)
+        lj_ini_seti(c->main_ini, "BGCUELIST", "FollowActive", !lj_ini_geti(c->main_ini, "BGCUELIST", "FollowActive", 1));
+    sl_checks();
+    sl.shown = 0xFFFFFFFFu;
+}
+static const lj_binding sl_bindings[] = {
+    { "lv1DblClick", sl_load, NULL }, { "lv1CustomDrawItem", lj_handler_noop, NULL }, { "lv1DrawItem", lj_handler_noop, NULL },
+    { "lv1EnterExit", lj_handler_noop, NULL }, { "lv1KeyDown", lj_handler_noop, NULL }, { "PrefsClick", sl_pref, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "Pop1Popup", lj_handler_noop, NULL }, { "Pop_DeleteClick", sl_delete, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", sl_close_ev, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
+    { "FormDeactivate", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+
+lj_window *lj_select_bgcue_open(void)
+{
+    if (sl.win) return sl.win;
+    memset(&sl, 0, sizeof sl);
+    if (!(sl.win = lj_window_create(&lj_form_TSELECTBGCUEFORM2, sl_bindings))) { lj_log("bgcue form: cannot create TSelectBGCueForm2"); return NULL; }
+    sl_fill();
+    sl_checks();
+    lj_select_bgcue_refresh();
+    lj_win_show(sl.win, LJ_BG_STAY_ON_TOP);
+    lj_bgcue_form_refresh();
+    return sl.win;
+}
+void lj_select_bgcue_close(void)
+{
+    lj_window *w = sl.win;
+    if (!w) return;
+    sl.win = NULL;                                             /* FormClose re-entry guard */
+    lj_win_hide(w);
+    lj_window_destroy(w);
+    lj_bgcue_form_refresh();                                   /* sbLoad up again */
+}
+lj_window *lj_select_bgcue_get(void) { return sl.win; }
+void lj_select_bgcue_refresh(void)
+{
+    const lj_engine_status *v = &lj_ctx_get()->view;
+    int i;
+    if (!sl.win || sl.shown == v->bg_number) return;
+    sl.shown = v->bg_number;
+    if (!lj_ini_geti(lj_ctx_get()->main_ini, "BGCUELIST", "FollowActive", 1)) return;
+    for (i = 0; i < sl.n; i++) if (sl.no[i] == v->bg_number) { ((lj_w_listview *)lj_window_find(sl.win, "lv1"))->index = i; lj_widget_invalidate(lj_window_find(sl.win, "lv1")); }
 }

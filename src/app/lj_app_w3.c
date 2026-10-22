@@ -32,6 +32,7 @@
 #include "model/lj_show.h"
 #include "model/lj_statics.h"
 #include "model/lj_table.h"
+#include "windows/lj_genmacro_editor.h"
 #include "windows/lj_gs2_dialogs.h"
 #include "windows/lj_prefs.h"
 #include "windows/lj_warnings.h"
@@ -251,6 +252,7 @@ int lj_app_gs2_reload(void)
     lj_ctx *c = lj_ctx_get();
     lj_profile *np = NULL, *op;
     int nn = 0, on, i;
+    unsigned reopen;
     if (!c->show || !lib() || lj_show_gs2_load_all(lib(), &np, &nn) != 0) return -1;   /* parsed outside the lock */
     lj_lock();
     op = c->show->gs2; on = c->show->ngs2;
@@ -258,7 +260,10 @@ int lj_app_gs2_reload(void)
     for (i = 0; c->engine && i < LJ_FIXTURES; i++)                 /* every GS2 fixture re-bound before the old array goes (rule 6, ME-31) */
         if (c->show->fixture[i].kind == LJ_FX_GS2 && c->show->fixture[i].link) lj_engine_bind_profile(c->engine, i, lj_show_gs2(c->show, c->show->fixture[i].gs2_file));
     lj_unlock();
+    reopen = lj_ctl_drop_profiles(op, on);                           /* ME-110: no control or editor keeps a pointer into the old array */
+    lj_genmacro_editor_reprofile();
     lj_show_gs2_free(op, on);
+    for (i = 0; i < LJ_CTL_COUNT; i++) if (reopen >> i & 1u) lj_ctl_open((enum lj_ctl_kind)i);   /* rebuilt from the new array */
     return 0;
 }
 

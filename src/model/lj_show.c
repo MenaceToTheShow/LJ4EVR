@@ -15,6 +15,7 @@
 #include "model/lj_presets.h"
 #include "model/lj_kv.h"
 #include "model/lj_words.h"
+#include "core/lj_fsinfo.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "fixlib/lj_gs2.h"
@@ -107,12 +108,12 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
             f->icon_y = (int16_t)lj_kv_range(v, "y", 0, -32768, 32767, &rbad);
             f->tab = (uint8_t)lj_kv_range(v, "tab", 0, 0, 255, &rbad);
             f->intensity_group = (uint8_t)lj_kv_range(v, "sub", 0, 0, LJ_SUBMASTERS, &rbad);
-        } else if (strcmp(k, "chcap") == 0) {                 /* W3 (ME-32): "chcap 3 text=Inte": offset 1..32, caption <= 5 bytes */
+        } else if (strcmp(k, "chcap") == 0) {                 /* W3 (ME-32): "chcap 3 text=Inte": offset 1..32, caption <= 6 bytes (DFM MaxLength = 6, ME-118) */
             long n = lj_kv_range_lead(v, 0, 1, LJ_PROFILE_CH, &rbad);
             if (!cur) { bad = "chcap before fx"; break; }
             if (!rbad) {
                 int got = lj_kv_get(v, "text", q, sizeof cur->ch_caption[0]);
-                if (got < 0) { bad = "chcap text longer than 5"; break; }
+                if (got < 0) { bad = "chcap text longer than 6"; break; }
                 lj_str_copy(cur->ch_caption[n - 1], sizeof cur->ch_caption[0], got == 1 ? q : "");
             }
         } else if (strcmp(k, "chgm") == 0) {                  /* W3 (ME-32): "chgm=1,3": the offsets 1..32 with Grand Master control disabled */
@@ -240,7 +241,6 @@ int lj_defaultout_save(const char *path, const uint8_t out[LJ_CHANS])
 
 /* ---- the library as a whole ---- */
 
-static int lj_file_exists(const char *path) { FILE *f = fopen(path, "rb"); if (!f) return 0; fclose(f); return 1; }
 
 int lj_show_load(lj_show *show, const lj_library *lib)
 {
@@ -249,32 +249,32 @@ int lj_show_load(lj_show *show, const lj_library *lib)
     const char *bad;
     lj_library_path(lib, "Config.dat", path, sizeof path);
     memset(show->fixture, 0, sizeof show->fixture);
-    if (lj_file_exists(path)) {
+    if (lj_fs_exists(path)) {
         if (lj_config_load(path, show, err, sizeof err) != 0) return -1;
         if ((bad = lj_config_validate(show)) != NULL) { lj_log("%s: %s", path, bad); memset(show->fixture, 0, sizeof show->fixture); return -1; }
     }
     lj_library_path(lib, "DefaultOut.dat", path, sizeof path);
     memset(show->default_out, 0, sizeof show->default_out);
-    if (lj_file_exists(path)) lj_defaultout_load(path, show->default_out, err, sizeof err);
+    if (lj_fs_exists(path)) lj_defaultout_load(path, show->default_out, err, sizeof err);
     lj_library_path(lib, LJ_PATCH_FILE, path, sizeof path);   /* W2: the live global patch (PROPOSAL rig file name) */
     lj_patch_init(show->patch);
-    if (lj_file_exists(path)) lj_patch_load(path, show->patch, err, sizeof err);
+    if (lj_fs_exists(path)) lj_patch_load(path, show->patch, err, sizeof err);
     lj_library_path(lib, "GroupInfo.dat", path, sizeof path);
     memset(show->user_group, 0, sizeof show->user_group);
-    if (lj_file_exists(path)) lj_groups_load(path, show->user_group, err, sizeof err);
+    if (lj_fs_exists(path)) lj_groups_load(path, show->user_group, err, sizeof err);
     lj_library_path(lib, "Statics.dat", path, sizeof path);
     lj_statics_free(show->pages, show->npages);
     show->pages = NULL; show->npages = 0;
-    if (lj_file_exists(path)) lj_statics_load(path, &show->pages, &show->npages, err, sizeof err);
+    if (lj_fs_exists(path)) lj_statics_load(path, &show->pages, &show->npages, err, sizeof err);
     memset(show->preset, 0, sizeof show->preset);
     for (i = 0; i < LJ_FIXTURES; i++) {
         if (!show->fixture[i].link) continue;
         snprintf(rel, sizeof rel, "Presets\\fixture%03d.pre", i + 1);
         lj_library_path(lib, rel, path, sizeof path);
-        if (lj_file_exists(path)) lj_presets_load(path, show->preset[i], err, sizeof err);
+        if (lj_fs_exists(path)) lj_presets_load(path, show->preset[i], err, sizeof err);
         snprintf(rel, sizeof rel, LJ_CUSTOM_PAL_FMT, i + 1);   /* W3: Customize Fixture overrides (design 6.5); a bad file logs and stays default */
         lj_library_path(lib, rel, path, sizeof path);
-        if (lj_file_exists(path)) lj_fixture_custom_load(path, show->fixture[i].custom, err, sizeof err);
+        if (lj_fs_exists(path)) lj_fixture_custom_load(path, show->fixture[i].custom, err, sizeof err);
     }
     return 0;
 }

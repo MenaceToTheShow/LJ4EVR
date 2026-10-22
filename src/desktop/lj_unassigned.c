@@ -18,7 +18,7 @@ static const char  *lj_una_ptr[LJ_FIXTURES];
 static int          lj_una_fixture[LJ_FIXTURES], lj_una_n;
 static lj_widget_vt lj_una_vt; static int (*lj_una_mouse_orig)(lj_widget *, const lj_mouse_ev *);
 
-static void h_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }   /* FormCreate / FormShow / ColumnClick / Compare / EndDrag: the VCL sort hooks; the list is rebuilt by number */
+/* h_noop = lj_handler_noop: FormCreate / FormShow / ColumnClick / Compare / EndDrag: the VCL sort hooks; the list is rebuilt by number */
 static void h_move_icons(lj_widget *w, void *ud) { (void)ud; lj_desktop_move_mode(!lj_w_checkbox_checked(w)); }   /* OnMouseDown fires before the toggle */
 static void h_place_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_auto_place(0); }
 static void h_unassign_all(lj_widget *w, void *ud)   /* "Unassign All Fixtures ?" (13 exe strings) is the app's prompt; PROPOSAL: W1 unassigns straight away */
@@ -32,8 +32,8 @@ static void h_unassign_all(lj_widget *w, void *ud)   /* "Unassign All Fixtures ?
 static void h_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_HELP, 0); }
 
 static const lj_binding lj_una_bindings[] = {
-    { "FormCreate", h_noop, NULL }, { "FormShow", h_noop, NULL },
-    { "LV_UnassignedColumnClick", h_noop, NULL }, { "LV_UnassignedCompare", h_noop, NULL }, { "LV_UnassignedEndDrag", h_noop, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "LV_UnassignedColumnClick", lj_handler_noop, NULL }, { "LV_UnassignedCompare", lj_handler_noop, NULL }, { "LV_UnassignedEndDrag", lj_handler_noop, NULL },
     { "MoveIconsMouseDown", h_move_icons, NULL }, { "M_PlaceAllClick", h_place_all, NULL },
     { "UnassignAll1Click", h_unassign_all, NULL }, { "Help1Click", h_help, NULL },
     { NULL, NULL, NULL } };

@@ -33,7 +33,7 @@ static lj_hs_state hs;
 
 lj_window *lj_hardware_setup_window(void) { return hs.win; }
 static lj_sacn_cfg *cfg(void) { lj_ctx *c = lj_ctx_get(); return c->sacn ? c->sacn : &hs.local; }
-static lj_widget *find(const char *n) { return hs.win ? lj_window_find(hs.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(hs.win, n); }
 
 static void ip_text(uint32_t ip, char *out, size_t cap) { snprintf(out, cap, "%u.%u.%u.%u", (ip >> 24) & 255, (ip >> 16) & 255, (ip >> 8) & 255, ip & 255); }
 static int ip_parse(const char *s, uint32_t *out)
@@ -194,15 +194,14 @@ const char *lj_hardware_setup_apply(void)
 }
 
 /* ---- handlers ---- */
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void na(lj_widget *w, void *ud) { (void)ud; lj_log("hardware setup: %s: Not available in LJ4EVR", w && w->name ? w->name : "?"); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_hardware_setup_apply() == NULL) lj_hardware_setup_close(); }
 
 static const lj_binding lj_hs_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormDeactivate", noop, NULL }, { "PC1Change", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL }, { "PC1Change", lj_handler_noop, NULL },
     { "bOkClick", on_ok, NULL }, { "bdetectHardwareClick", na, NULL }, { "bClearhardwareClick", na, NULL }, { "cbUseDMXinClick", na, NULL },
-    { "RGrefreshClick", noop, NULL }, { "lvUSBDblClick", noop, NULL }, { "lvUSBSelectItem", noop, NULL }, { "sbID1MouseDown", noop, NULL }, { "sbID1MouseUp", noop, NULL },
-    { "sbWinampClick", na, NULL }, { "bMTCSeelctClick", na, NULL }, { "RG2532EnableClick", noop, NULL }, { "rg2518EnableClick", noop, NULL }, { "Help1Click", noop, NULL },
+    { "RGrefreshClick", lj_handler_noop, NULL }, { "lvUSBDblClick", lj_handler_noop, NULL }, { "lvUSBSelectItem", lj_handler_noop, NULL }, { "sbID1MouseDown", lj_handler_noop, NULL }, { "sbID1MouseUp", lj_handler_noop, NULL },
+    { "sbWinampClick", na, NULL }, { "bMTCSeelctClick", na, NULL }, { "RG2532EnableClick", lj_handler_noop, NULL }, { "rg2518EnableClick", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { NULL, NULL, NULL }
 };
 

@@ -28,7 +28,7 @@ static int  t_post(void *ud, const lj_cmd *c) { (void)ud; if (c->kind == LJ_CMD_
 static int  t_load_bg(void *ud, uint32_t n) { (void)ud; t_rec('g', n, 0); return 0; }
 static int  t_flash(void *ud, uint32_t seq, int on) { (void)ud; t_rec('f', seq, (uint32_t)on); return 0; }
 static int  t_link(void *ud, uint32_t n, const lj_cuelist **out) { (void)ud; t_rec('k', n, 0); *out = T.linked; return T.linked ? 0 : -1; }
-static void t_fn(void *ud, int fn) { (void)ud; t_rec('h', (uint32_t)fn, 0); }
+static void t_fn(void *ud, int fn);
 static int  t_exec(void *ud, const char *path, const char *args) { (void)ud; (void)path; (void)args; t_rec('x', 0, 0); return -1; }   /* AllowExecute=0 */
 static void t_clear(void *ud) { (void)ud; t_rec('z', 0, 0); }
 static int  t_timecode(void *ud, int src, uint32_t *ms) { (void)ud; if (src == LJ_TC_MIDI && T.mtc_ok) { *ms = T.mtc_ms; return 0; } return -1; }
@@ -39,8 +39,17 @@ static int  t_clock(void *ud, uint32_t *ms_of_day, uint32_t *day)
     return 0;
 }
 static const lj_cl_host H = { NULL, t_load_cue, t_post, t_load_bg, t_flash, t_link, t_fn, t_exec, t_clear, t_timecode, t_clock };
-
 static lj_cl_run R;
+static struct { int op, depth, max_depth, rc; } RE;   /* ME-108: a Hotkey Command that drives the runner it runs in */
+static void t_fn(void *ud, int fn)
+{
+    (void)ud; t_rec('h', (uint32_t)fn, 0);
+    if (!RE.op) return;
+    if (++RE.depth > RE.max_depth) RE.max_depth = RE.depth;
+    if (RE.depth < 50) RE.rc = lj_cl_run_op(&R, R.cl, RE.op, 0, T.now, &H);
+    RE.depth--;
+}
+
 static void t_reset(uint32_t clock_base_ms) { memset(&T, 0, sizeof T); T.clock_base_ms = clock_base_ms; lj_cl_run_init(&R); }
 static int t_op(const lj_cuelist *cl, int op, uint32_t n) { return lj_cl_run_op(&R, cl, op, n, T.now, &H); }
 /* the app's idle loop: one step per 10 ms wake up to `ms`, the time read once per pass */
@@ -253,6 +262,39 @@ static void t_ops(void)
         CHECK(t_op(&lp, LJ_CL_OP_TOP, 0) == 0 && t_count('c') == 2);
         CHECK(lj_cl_run_step(&R, 10000u, &H) == 3 && R.st.state == LJ_CL_RUNNING);
         free(lp.lines);
+    }
+    /* ME-108 row A: line 1 Hotkey Command = Cuelist Stop: the list stops, cue 2 of line 2 never loads */
+    {
+        lj_cuelist re; memset(&re, 0, sizeof re); re.number = 6;
+        l = t_line(0, LJ_CL_HOTKEY_COMMAND, 7, 0, 0, 0); lj_cuelist_insert(&re, 0, &l);
+        l = t_line(0, LJ_CL_NONE, 0, 0, 2, 0); lj_cuelist_insert(&re, 1, &l);
+        t_reset(0); memset(&RE, 0, sizeof RE); RE.op = LJ_CL_OP_STOP;
+        CHECK(t_op(&re, LJ_CL_OP_TOP, 0) == 0 && R.st.state == LJ_CL_IDLE && t_at('c', 2) == -1 && R.st.last == 1);
+        t_run_to(100); CHECK(t_at('c', 2) == -1);
+        /* row B: Cuelist Go from inside the line returns at depth 1 (-1), never recurses */
+        t_reset(0); memset(&RE, 0, sizeof RE); RE.op = LJ_CL_OP_GO;
+        CHECK(t_op(&re, LJ_CL_OP_TOP, 0) == 0 && RE.max_depth == 1 && RE.rc == -1 && t_count('h') == 1 && t_at('c', 2) == 0 && R.st.state == LJ_CL_IDLE);
+        memset(&RE, 0, sizeof RE);
+        free(re.lines);
+    }
+    /* ME-116: the time code drops out at a Wait MTC: Stop (default) / Restart / Ignore */
+    {
+        lj_cuelist mt; int mode;
+        memset(&mt, 0, sizeof mt); mt.number = 7;
+        l = t_line(0, LJ_CL_NONE, 0, 0, 1, 0); lj_cuelist_insert(&mt, 0, &l);
+        l = t_line(0, LJ_CL_WAIT_MTC, 5000, 0, 2, 0); lj_cuelist_insert(&mt, 1, &l);
+        for (mode = LJ_CL_MTC_STOP; mode <= LJ_CL_MTC_IGNORE; mode++) {
+            t_reset(0); R.mtc_timeout = (uint8_t)mode;
+            CHECK(t_op(&mt, LJ_CL_OP_TOP, 0) == 0 && R.st.next == 2);
+            T.mtc_ok = 1; T.mtc_ms = 1000; t_run_to(100);
+            CHECK(R.st.state == LJ_CL_RUNNING && R.st.next == 2 && t_count('c') == 1);
+            T.mtc_ok = 0; t_run_to(110);                                         /* lj_mtc_time is -1 once the code is 500 ms old */
+            if (mode == LJ_CL_MTC_STOP) CHECK(R.st.state == LJ_CL_IDLE);
+            if (mode == LJ_CL_MTC_RESTART) CHECK(R.st.state == LJ_CL_RUNNING && R.st.next == 2 && t_count('c') == 2 && T.ev[1].a == 1);
+            if (mode == LJ_CL_MTC_IGNORE) CHECK(R.st.state == LJ_CL_RUNNING && R.st.next == 2 && t_count('c') == 1);
+            t_run_to(1000); CHECK(t_count('c') == (mode == LJ_CL_MTC_RESTART ? 2 : 1));   /* one edge, one action */
+        }
+        free(mt.lines);
     }
     free(cl.lines); free(other.lines);
 }

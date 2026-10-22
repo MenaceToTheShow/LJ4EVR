@@ -1,0 +1,26 @@
+LJ4 replay 1
+# movemacro_speed_pct (03 s5.11, 17 s7.3, ME-109; owner movement): the cue macro control's Speed scales the index RATE.
+# One MAC 500 on the System Ellipse, cycle byte 32 (3.2 s = 32 index points per 25 ms tick; tick 1 = one step).
+# macro_ctl 100 50 at tick 2 halves the rate (16 points per tick, a 6.4 s cycle): tick 9 = 32 + 8 x 16 = 160, the value
+# of LORD_ENGINE-2's probe (with the control at tick 5, as the probe text says, the index is 4 x 32 + 5 x 16 = 208; the
+# old code gave 448). 490 % at tick 20 runs it 4.9 x faster: floor(32 x 65536 x 490 / 100) = 10276044 in 16.16 per
+# tick, so tick 29 = 320 + floor(10 x 10276044 / 65536) = 320 + 1567 = 1887 (the "Speed 490 %" of cuemacrocontrol.gif).
+# 0 % at tick 30 freezes the index [03 s5.11]. The amplitude stays 100 % throughout.
+tick_us=25000
+patch 1 profile=12 link=1 addr=1
+seq 1 name="ellipse"
+scene st=60000 ft=0
+ch 1:11=128:S 1:12=0:S 1:13=128:S 1:14=0:S
+fx 1 macro=1,127,127,32,32,0,0,0,1 mst=S,S,S,S,S,S
+cue 1
+slot 1 seq=1
+at 0 load_cue 1
+expect_mm 1 1 pan=32 tilt=32
+at 2 macro_ctl 100 50
+expect_mm 9 1 pan=160 tilt=160
+at 20 macro_ctl 100 490
+expect_mm 19 1 pan=320 tilt=320
+expect_mm 29 1 pan=1887 tilt=1887
+at 30 macro_ctl 100 0
+expect_mm 35 1 pan=1887 tilt=1887
+expect_view 35 mm_speed=0

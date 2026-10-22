@@ -51,7 +51,7 @@ static struct {
 
 lj_window *lj_user_palettes_window(void) { return up.win; }
 int lj_user_palettes_count(void) { return up.win ? up.list.n : 0; }
-static lj_widget *find(const char *n) { return up.win ? lj_window_find(up.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(up.win, n); }
 
 static int path_of(char *out, size_t cap)
 {
@@ -70,7 +70,7 @@ void lj_user_palettes_refresh(void)
     int i, n = up.list.n < 256 ? up.list.n : 256, keep;
     if (!up.win) return;
     for (i = 0; i < n; i++) { snprintf(up.text[i], sizeof up.text[i], "%02d\t%s", i + 1, up.list.e[i].name); up.items[i] = up.text[i]; }   /* "01 All White" (usercolorpalette.gif) */
-    keep = lv ? ((lj_w_listview *)lv)->index : -1;
+    keep = lv ? lj_w_listview_index(lv) : -1;
     if (lv) { lj_w_listview_set_items(lv, up.items, n); ((lj_w_listview *)lv)->index = keep < n ? keep : -1; lj_widget_invalidate(lv); }
     snprintf(up.entries, sizeof up.entries, "%d Entries", up.list.n);
     lj_w_set_caption(find("lentries"), up.entries);
@@ -149,7 +149,7 @@ int lj_user_palettes_delete(int index)
 }
 
 /* ---- TSavePresetForm2 ---- */
-static int selected_row(void) { lj_widget *lv = find("lv"); int i = lv ? ((lj_w_listview *)lv)->index : -1; return i < up.list.n ? i : -1; }
+static int selected_row(void) { lj_widget *lv = find("lv"); int i = lv ? lj_w_listview_index(lv) : -1; return i < up.list.n ? i : -1; }
 static int filter_now(void) { int f = find("rgFixtures") ? lj_w_radiogroup_index(find("rgFixtures")) : 1; return f < 0 ? 1 : f; }
 static void save_close(void) { if (up.save) { lj_win_hide(up.save); lj_window_destroy(up.save); up.save = NULL; } }
 static void save_click(lj_widget *w, void *ud)
@@ -161,11 +161,10 @@ static void save_click(lj_widget *w, void *ud)
     lj_user_palettes_record(as_new ? -1 : selected_row(), name, filter_now());
     save_close();
 }
-static void save_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void save_form_close(lj_widget *w, void *ud) { (void)w; (void)ud; save_close(); }
 static const lj_binding lj_up_save_bindings[] = {
-    { "FormClose", save_form_close, NULL }, { "FormCreate", save_noop, NULL }, { "FormDestroy", save_noop, NULL }, { "FormKeyDown", save_noop, NULL },
-    { "FormShow", save_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", save_noop, NULL }, { "Help1Click", save_noop, NULL }, { NULL, NULL, NULL } };
+    { "FormClose", save_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL },
+    { "FormShow", lj_handler_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 static void save_dialog(void)
 {
     int i = selected_row();
@@ -181,7 +180,6 @@ static void save_dialog(void)
 }
 
 /* ---- TPresetForm ---- */
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_save(lj_widget *w, void *ud) { (void)w; (void)ud; save_dialog(); }
 static void on_assign(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_assign(selected_row(), filter_now()); }
 static void on_clear(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_clear(selected_row(), filter_now()); }
@@ -190,9 +188,9 @@ static void on_delete(lj_widget *w, void *ud) { (void)w; (void)ud; if (selected_
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_close(); }
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("user palettes: Help: no help file is shipped (D2)"); }
 static const lj_binding lj_up_bindings[] = {
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormResize", noop, NULL }, { "FormShow", noop, NULL },
-    { "lvChange", noop, NULL }, { "lvDblClick", on_assign, NULL }, { "bSaveClick", on_save, NULL }, { "bAssignClick", on_assign, NULL },
-    { "bClearClick", on_clear, NULL }, { "Help1Click", on_help, NULL }, { "LvPopPopup", noop, NULL }, { "P_DeletePalettesClick", on_delete, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "lvChange", lj_handler_noop, NULL }, { "lvDblClick", on_assign, NULL }, { "bSaveClick", on_save, NULL }, { "bAssignClick", on_assign, NULL },
+    { "bClearClick", on_clear, NULL }, { "Help1Click", on_help, NULL }, { "LvPopPopup", lj_handler_noop, NULL }, { "P_DeletePalettesClick", on_delete, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_user_palettes_open_kind(enum lj_ctl_kind kind)

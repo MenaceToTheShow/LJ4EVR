@@ -119,6 +119,7 @@ typedef struct {
 lj_widget *lj_w_listview_create(lj_widget *parent, const lj_ctl_desc *d);
 void lj_w_listview_set_items(lj_widget *w, const char *const *items, int n);
 int  lj_w_listview_row_at(const lj_widget *w, int y);
+int  lj_w_listview_index(const lj_widget *w);                     /* ME-101: ItemIndex (-1 none, or w NULL) */
 void lj_w_listview_select(lj_widget *w, int row);                  /* selects and scrolls the row into view (as a click would: OnSelectItem + OnClick when it changes) */
 
 /* ---- THeaderControl (lj_w_headercontrol.c); the paint is shared with TListView ---- */

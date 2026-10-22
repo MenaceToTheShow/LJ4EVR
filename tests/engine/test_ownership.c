@@ -4,7 +4,9 @@
  * section, the old record freed only after the tick swapped it out, then a
  * new record pinned); 300 commands between two ticks -> 44 logged drops
  * (rule 1); pending_* fields are handed out once (rule 3). Under ASan the
- * free-after-swap order is what proves rule 6. */
+ * free-after-swap order is what proves rule 6. ME-121 (ME-2, W3): the same order for a generic macro on the cue
+ * source: LOAD_GENMACRO gm NULL under the lock, a tick, then the free; a re-saved record pinned by the next load.
+ * The app path (lj_app_delete_record(LJ_REC_MACRO)) is test_uiscript_w3 section 9b. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,6 +98,34 @@ int lj_test_engine_ownership(int argc, char **argv)
     lj_engine_view(e, &st);
     CHECK(st.slot_status[0] == LJ_SLOT_RUNNING && f->out[0][0] == 100);
     CHECK(lj_engine_runner(e, LJ_RUN_SLOT0)->seq == seq2);
+
+    /* ME-121: generic macro 3 on the cue source; delete (gm NULL, tick, free), re-save, tick (ASan: no use after free) */
+    {
+        lj_genmacro *gm = (lj_genmacro *)calloc(1, sizeof *gm), *gm2 = (lj_genmacro *)calloc(1, sizeof *gm2);
+        if (!gm || !gm2) { CHECK(0); free(gm); free(gm2); }
+        else {
+            gm->number = gm2->number = 3;
+            gm->ch[0].shape = gm2->ch[0].shape = 1; gm->ch[0].amp_pos = gm2->ch[0].amp_pos = 50; gm->ch[0].cycle_ds = gm2->ch[0].cycle_ds = 10;
+            memset(&cmd, 0, sizeof cmd);
+            cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.c = LJ_GM_SRC_CUE; cmd.gm = gm;
+            CHECK(lj_engine_cmd(e, &cmd) == 0);
+            now += LJ_TICK_US_DEFAULT; lj_engine_tick(e, now); lj_engine_view(e, &st);
+            CHECK(st.gm_cue_number == 3);
+            cmd.gm = NULL;                                     /* the delete: the engine lets go first */
+            CHECK(lj_engine_cmd(e, &cmd) == 0);
+            now += LJ_TICK_US_DEFAULT; lj_engine_tick(e, now); lj_engine_view(e, &st);
+            CHECK(st.gm_cue_number == 0);
+            free(gm);                                          /* after the swap */
+            now += LJ_TICK_US_DEFAULT; lj_engine_tick(e, now);
+            cmd.gm = gm2;                                      /* the re-save under the same number */
+            CHECK(lj_engine_cmd(e, &cmd) == 0);
+            now += LJ_TICK_US_DEFAULT; lj_engine_tick(e, now); now += LJ_TICK_US_DEFAULT; lj_engine_tick(e, now); lj_engine_view(e, &st);
+            CHECK(st.gm_cue_number == 3);
+            cmd.gm = NULL; CHECK(lj_engine_cmd(e, &cmd) == 0);
+            now += LJ_TICK_US_DEFAULT; lj_engine_tick(e, now);
+            free(gm2);
+        }
+    }
 
     /* rule 1: 300 commands between two ticks -> 256 accepted, 44 logged drops */
     memset(&cmd, 0, sizeof cmd);

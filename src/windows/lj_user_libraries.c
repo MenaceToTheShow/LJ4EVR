@@ -18,7 +18,7 @@ static struct {
     int n, row; char names[LJ_UL_MAX][LJ_LIBNAME_CAP]; char line[LJ_UL_MAX][LJ_PATH_CAP + LJ_LIBNAME_CAP + 8]; const char *items[LJ_UL_MAX];
 } ul;
 
-static lj_widget *find(const char *n) { return ul.win ? lj_window_find(ul.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(ul.win, n); }
 static const char *current(void) { lj_ctx *c = lj_ctx_get(); return c->lib ? c->lib->name : "Default"; }
 static int is_locked(int row) { return row < 0 || row >= ul.n || strcmp(ul.names[row], "Default") == 0 || strcmp(ul.names[row], current()) == 0; }
 
@@ -101,14 +101,13 @@ static void on_create(lj_widget *w, void *ud) { (void)w; (void)ud; open_name(0);
 static void on_rename(lj_widget *w, void *ud) { (void)w; (void)ud; if (!is_locked(ul.row)) open_name(1); }
 static void on_backup(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_BACKUP); }
 static void on_restore(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_RESTORE); }
-static void on_change(lj_widget *w, void *ud) { (void)ud; lj_user_libraries_select(((lj_w_listview *)w)->index); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
+static void on_change(lj_widget *w, void *ud) { (void)ud; lj_user_libraries_select(lj_w_listview_index(w)); }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; ul.close_pending = 1; }
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("user libraries: Help is W4"); }
 static void close_event(lj_widget *w, int ev, void *ud) { if (ev == LJ_WEV_CLICK) on_close(w, ud); }
 
 static const lj_binding lj_ul_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormResize", noop, NULL }, { "LV1Change", on_change, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "LV1Change", on_change, NULL },
     { "bSelectClick", on_select, NULL }, { "bCreateClick", on_create, NULL }, { "bDeleteClick", on_delete, NULL }, { "bRenameClick", on_rename, NULL },
     { "bbackupClick", on_backup, NULL }, { "bRestoreClick", on_restore, NULL }, { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 
@@ -171,7 +170,7 @@ static void on_name_change(lj_widget *w, void *ud)
     if (ok) { ok->enabled = t && t[0]; lj_widget_invalidate(ok); }
 }
 static const lj_binding lj_ln_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "eNameChange", on_name_change, NULL }, { "Help1Click", on_help, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "eNameChange", on_name_change, NULL }, { "Help1Click", on_help, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_user_lib_name_open(void)

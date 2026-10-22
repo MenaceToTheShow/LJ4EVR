@@ -27,7 +27,6 @@
 #define GS2_EXPORT_DIR "Export"   /* PROPOSAL folder: LJ2 asks with a TSaveDialog / folder box */
 #define GS2_ROWS 256
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static lj_library *lib(void) { return lj_ctx_get()->lib; }
 static lj_show *show(void) { return lj_ctx_get()->show; }
 static void caption(lj_window *win, const char *name, const char *text) { lj_widget *w = win ? lj_window_find(win, name) : NULL; if (w) { lj_w_set_caption(w, text); lj_widget_invalidate(w); } }
@@ -106,8 +105,8 @@ static void im_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_fo
 static void im_sel(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_folder(1); im.close_pending = 1; }
 static void im_ov(lj_widget *w, void *ud) { (void)ud; if (w) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; } }   /* Offline Visualizer files: design 8.5 */
 static const lj_binding im_b[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "bImportAllClick", im_all, NULL },
-    { "bImportSelClick", im_sel, NULL }, { "cbImportOVFilesClick", im_ov, NULL }, { "Help1Click", noop, NULL }, { NULL, NULL, NULL } };
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bImportAllClick", im_all, NULL },
+    { "bImportSelClick", im_sel, NULL }, { "cbImportOVFilesClick", im_ov, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_gs2_import_open(void)
 {
@@ -171,8 +170,8 @@ static void ex_save(lj_widget *w, void *ud)
     ex.close_pending = 1;
 }
 static const lj_binding ex_b[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormShow", noop, NULL },
-    { "bSaveClick", ex_save, NULL }, { "BitBtn1Click", noop, NULL } /* bkHelp */, { NULL, NULL, NULL } };
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "bSaveClick", ex_save, NULL }, { "BitBtn1Click", lj_handler_noop, NULL } /* bkHelp */, { NULL, NULL, NULL } };
 
 lj_window *lj_gs2_export_open(void)
 {
@@ -193,7 +192,7 @@ lj_window *lj_gs2_export_open(void)
 static void all_export(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("export all: %d profile(s) written", lj_gs2_export_all()); }
 static void all_cancel(lj_widget *w, void *ud) { (void)w; (void)ud; ex.all_close = 1; }   /* BitBtn1 bkCancel */
 static const lj_binding all_b[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "bExportClick", all_export, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bExportClick", all_export, NULL },
     { "BitBtn1Click", all_cancel, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_gs2_export_all_open(void)

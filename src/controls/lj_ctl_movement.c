@@ -482,11 +482,11 @@ lj_window *lj_ctl_movement_create(const lj_profile *p)
     mv = calloc(1, sizeof *mv);
     if (!mv) lj_fatal("movement: out of memory");
     mv->p = p; mv->bits16 = p->pt16 != 0; mv->master = -1;
-    mv->res = ini ? lj_ini_geti(ini, LJ_MV_SECTION, mv->bits16 ? "Res16Bit" : "Res8Bit", mv->bits16 ? LJ_POS_RES16_DEFAULT : LJ_POS_RES8_DEFAULT)
-                  : mv->bits16 ? LJ_POS_RES16_DEFAULT : LJ_POS_RES8_DEFAULT;
+    mv->res = lj_ini_geti(ini, LJ_MV_SECTION, mv->bits16 ? "Res16Bit" : "Res8Bit", mv->bits16 ? LJ_POS_RES16_DEFAULT : LJ_POS_RES8_DEFAULT)
+                 ;
     if (mv->res < 1) mv->res = 1;
     if (mv->res > (mv->bits16 ? LJ_POS_RES16_MAX : LJ_POS_RES8_MAX)) mv->res = mv->bits16 ? LJ_POS_RES16_MAX : LJ_POS_RES8_MAX;
-    mv->absolute = ini ? lj_ini_geti(ini, LJ_MV_SECTION, "Abs", 1) != 0 : 1;
+    mv->absolute = lj_ini_geti(ini, LJ_MV_SECTION, "Abs", 1) != 0;
 
     mv->desc.name = "MovementControl"; mv->desc.class_name = "TMovement";   /* lj_formsini_section -> MOVEMENT, the section lj_ctl_common's chrome table names (LJ2 keeps it in Main.Ini, 7.10) */
     mv->desc.caption = tab && tab->caption ? tab->caption : lj_mv_caption[mv->bits16 != 0];
@@ -706,7 +706,7 @@ static void presets_fill(lj_mv *mv)
     const lj_show *show = lj_ctx_get()->show;
     lj_widget *lv = lj_window_find(mv->presets, "lv");
     char text[32];
-    int n, keep = lv ? ((lj_w_listview *)lv)->index : -1;
+    int n, keep = lv ? lj_w_listview_index(lv) : -1;
     mv->npresets = 0;
     for (n = 1; show && n <= LJ_PRESETS; n++) {
         if (!preset_used(show, n)) continue;
@@ -722,11 +722,10 @@ static void presets_fill(lj_mv *mv)
 static int presets_selected(lj_mv *mv)
 {
     lj_widget *lv = lj_window_find(mv->presets, "lv");
-    int i = lv ? ((lj_w_listview *)lv)->index : -1;
+    int i = lv ? lj_w_listview_index(lv) : -1;
     return i >= 0 && i < mv->npresets ? mv->preset_no[i] : -1;
 }
 
-static void presets_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void presets_close(lj_widget *w, void *ud) { (void)w; ((lj_mv *)ud)->presets = NULL; }   /* the platform owns the lj_window after OnClose */
 static void presets_assign(lj_widget *w, void *ud) { lj_mv *mv = ud; int n = presets_selected(mv); (void)w; if (n > 0) lj_ctl_movement_preset_apply(mv->win, n); }
 static void presets_clear(lj_widget *w, void *ud) { (void)w; lj_ctl_movement_preset_clear(((lj_mv *)ud)->win); }
@@ -764,10 +763,10 @@ lj_window *lj_ctl_movement_presets_open(lj_window *win)
     if (!mv) return NULL;
     if (!mv->presets) {
         lj_binding b[] = {
-            { "FormClose", presets_close, mv }, { "FormCreate", presets_noop, mv }, { "FormDestroy", presets_noop, mv },
-            { "FormResize", presets_noop, mv }, { "FormShow", presets_noop, mv }, { "lvChange", presets_noop, mv },
+            { "FormClose", presets_close, mv }, { "FormCreate", lj_handler_noop, mv }, { "FormDestroy", lj_handler_noop, mv },
+            { "FormResize", lj_handler_noop, mv }, { "FormShow", lj_handler_noop, mv }, { "lvChange", lj_handler_noop, mv },
             { "lvDblClick", presets_assign, mv }, { "bSaveClick", presets_save, mv }, { "bAssignClick", presets_assign, mv },
-            { "bClearClick", presets_clear, mv }, { "Help1Click", presets_help, mv }, { "LvPopPopup", presets_noop, mv },
+            { "bClearClick", presets_clear, mv }, { "Help1Click", presets_help, mv }, { "LvPopPopup", lj_handler_noop, mv },
             { "P_DeletePalettesClick", presets_delete, mv }, { NULL, NULL, NULL } };
         mv->presets = lj_window_create(&lj_form_TPRESETFORM, b);
         if (!mv->presets) return NULL;

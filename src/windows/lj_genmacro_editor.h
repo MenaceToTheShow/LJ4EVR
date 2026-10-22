@@ -13,6 +13,7 @@ lj_window *lj_genmacro_editor_open(void);
 void       lj_genmacro_editor_close(void);
 lj_window *lj_genmacro_editor_get(void);
 void       lj_genmacro_editor_refresh(void);
+void       lj_genmacro_editor_reprofile(void);   /* ME-110: the master's profile moved (Reload profile data): re-resolve e.prof now, before the old GS2 array is freed */
 
 /* LJ_WIN_SAVE_GENMACRO "save_genmacro": TSaveMacroDialog "Save Macro" 326x120, red bands (+ TSaveAsMacroDialog "Save as Macro#" 220x70; "Macro #%d", "Error : Maximum number of Macros exceeded") */
 lj_window *lj_save_genmacro_open(void);

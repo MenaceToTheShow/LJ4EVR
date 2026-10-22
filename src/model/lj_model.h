@@ -21,9 +21,7 @@ enum { LJ_BG_FILES = 99, LJ_SCENES_MAX = 999, LJ_PRESETS = 99, LJ_USER_GROUPS = 
        LJ_HOTKEY_SETUPS = 8, LJ_STATIC_PAGES_MAX = 64,
        LJ_TIME_MAX_MS = 60000, LJ_SCENE_TIME_DEFAULT_MS = 1000, LJ_FADE_TIME_DEFAULT_MS = 50,
        LJ_NAME_CAP = 31, LJ_NUMBER_MAX = 99999999 /* 8-digit file names [F28] */ };
-#ifndef LJ_STATICS2_SLOTS_PER_PAGE
-#define LJ_STATICS2_SLOTS_PER_PAGE 20   /* 14 sB.8 item 2 PROPOSAL; the same macro as engine/lj_engine_rules.h (the design's rules header is below the model, so both spell it) */
-#endif
+#define LJ_STATICS2_SLOTS_PER_PAGE 20   /* 14 sB.8 item 2 PROPOSAL (one definition, ME-101) */
 #define LJ_STATICS2_SLOTS_MAX 64        /* ME-30 cap: slots stored per page and the global-index stride; n per page visible, LJ_STATICS2_SLOTS_PER_PAGE (20) default, PROPOSAL rig 14 sB.8 item 2 */
 
 typedef enum { LJ_OFF = 0, LJ_SNAP = 1, LJ_FADE = 2 } lj_fstate;         /* 03 s2; byte values as .seq implies, 18 s4 */
@@ -84,7 +82,7 @@ typedef struct { uint8_t kind /*enum lj_fixture_kind*/; uint16_t profile_id;   /
                  uint8_t invert_pan, invert_tilt, swap_pt, ignore_bo, ignore_gm, link_strobe_gm;
                  char user_name[31]; uint8_t placed, tab; int16_t icon_x, icon_y; uint8_t intensity_group /*0 or 1-8*/;
                  lj_palette custom[6];
-                 char ch_caption[LJ_PROFILE_CH][6]; uint32_t ch_gm_off;   /* W3 Channel Configuration (ME-32): per-offset caption ("" = the profile's), bit k = Disable Grand Master Control on offset k; Config.dat chcap n= / chgm= */
+                 char ch_caption[LJ_PROFILE_CH][7]; uint32_t ch_gm_off;   /* W3 Channel Configuration (ME-32): per-offset caption ("" = the profile's), bit k = Disable Grand Master Control on offset k; Config.dat chcap n= / chgm= */
                } lj_fixture;        /* 02 s2.4, s4.3; kind/profile_id 0 with link 0 = unused row */
 
 typedef struct { char name[31]; uint8_t member[LJ_FIXTURES]; } lj_group;                       /* 18 s8 */

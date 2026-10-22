@@ -39,7 +39,7 @@ static const lj_sp_box lj_sp_boxes[] = {   /* box -> field -> the Main.Ini key l
 static struct { lj_window *win; lj_sysprefs page; int close_pending, guard; } sp;
 
 static uint8_t *field(lj_sysprefs *p, size_t off) { return (uint8_t *)p + off; }
-static lj_widget *find(const char *n) { return sp.win ? lj_window_find(sp.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(sp.win, n); }
 
 int lj_system_prefs_box_count(void) { return LJ_COUNT_OF(lj_sp_boxes); }
 const char *lj_system_prefs_box(int i, const char **sec, const char **key)
@@ -84,17 +84,16 @@ static void exclusive(lj_widget *w, const char *a, const char *b)
 }
 static void on_confine(lj_widget *w, void *ud) { (void)ud; exclusive(w, "cbOpenOnDesktop", "cbOpenOnWindowsDesktop"); }
 static void on_instance(lj_widget *w, void *ud) { (void)ud; exclusive(w, "cbPrimary", "cbSecondary"); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void w4(lj_widget *w, void *ud) { (void)ud; lj_log("system prefs: %s: the Data Restore data is W4", w && w->name ? w->name : "?"); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_system_prefs_apply() == 0) sp.close_pending = 1; }
 static void on_cancel(lj_widget *w, void *ud) { (void)w; (void)ud; sp.close_pending = 1; }
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("system prefs: Help is W4"); }
 
 static const lj_binding lj_sp_bindings[] = {
-    { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL }, { "PC1Change", noop, NULL },
-    { "cbOpenOnDesktopClick", on_confine, NULL }, { "cbExternal01Click", noop, NULL }, { "cbExternal10Click", noop, NULL },
-    { "cbPrimaryClick", on_instance, NULL }, { "cbSecondaryClick", on_instance, NULL }, { "cbClick", noop, NULL }, { "cbSandnetClick", noop, NULL }, { "cbCaptureClick", noop, NULL },
-    { "bCreateClick", w4, NULL }, { "bNewPasswordClick", w4, NULL }, { "ePasswordKeyDown", noop, NULL }, { "ValidatePassword", w4, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "PC1Change", lj_handler_noop, NULL },
+    { "cbOpenOnDesktopClick", on_confine, NULL }, { "cbExternal01Click", lj_handler_noop, NULL }, { "cbExternal10Click", lj_handler_noop, NULL },
+    { "cbPrimaryClick", on_instance, NULL }, { "cbSecondaryClick", on_instance, NULL }, { "cbClick", lj_handler_noop, NULL }, { "cbSandnetClick", lj_handler_noop, NULL }, { "cbCaptureClick", lj_handler_noop, NULL },
+    { "bCreateClick", w4, NULL }, { "bNewPasswordClick", w4, NULL }, { "ePasswordKeyDown", lj_handler_noop, NULL }, { "ValidatePassword", w4, NULL },
     { "BCancelClick", on_cancel, NULL }, { "BokClick", on_ok, NULL }, { "Help1Click", on_help, NULL },
     { NULL, NULL, NULL } };
 

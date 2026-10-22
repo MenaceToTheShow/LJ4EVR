@@ -123,6 +123,13 @@ static void lj_t_files(void)
         CHECK(lj_cuelist_save("test_cl_all2.Cl2", &b) == 0 && lj_t_same_file("test_cl_all.Cl2", "test_cl_all2.Cl2"));
     }
 
+    /* ME-107: a 127-char Execute File pstr (the param cap) round-trips; every key after it still reads */
+    a.lines[4] = lj_t_line(1, LJ_CL_EXECUTE_FILE, 0, "", 0, 0, 0, "after");
+    memset(a.lines[4].param, 'p', sizeof a.lines[4].param - 1); a.lines[4].param[sizeof a.lines[4].param - 1] = 0; a.lines[4].line = 5;
+    CHECK(lj_cuelist_save("test_cl_long.Cl2", &a) == 0);
+    CHECK(lj_cuelist_load("test_cl_long.Cl2", &b, err, sizeof err) == 0 && b.n == 20 && lj_t_line_eq(&a.lines[4], &b.lines[4]));
+    remove("test_cl_long.Cl2");
+
     /* file boundary: out-of-range values refuse the file (never alias into range) */
     lj_t_write("test_cl_bad.Cl2", "LJ4 cl 1\nnum=1\nline 1 adv=auto cmd=none trig=4096\n");
     CHECK(lj_cuelist_load("test_cl_bad.Cl2", &b, err, sizeof err) == -1 && b.n == 0);

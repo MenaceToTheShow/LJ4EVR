@@ -1,5 +1,6 @@
 /* lj_str.c - bounded CP1252 strings and the UTF-8 boundary conversions (design 2.1). */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "core/lj_str.h"
 
@@ -98,7 +99,7 @@ int lj_fmt_time(char *dst, size_t cap, uint32_t ms)
 enum { LJ_BS = 0x5C };   /* backslash */
 static int lj_hex(int c) { return c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1; }
 static int lj_alpha(int c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
-int lj_str_rtf_strip(char *dst, size_t cap, const char *rtf)
+static int lj_rtf_strip_z(char *dst, size_t cap, const char *rtf)
 {
     static const char *const skip[] = { "fonttbl", "colortbl", "stylesheet", "info", "pict", "header", "footer", NULL };
     const unsigned char *s = (const unsigned char *)rtf;
@@ -131,4 +132,17 @@ int lj_str_rtf_strip(char *dst, size_t cap, const char *rtf)
     }
     dst[o] = 0;
     return trunc ? -1 : 0;
+}
+
+int lj_str_rtf_strip(char *dst, size_t cap, const char *rtf, size_t len)
+{
+    char *copy = NULL;
+    int r;
+    if (rtf && !memchr(rtf, 0, len)) {                            /* no NUL inside the field: parse a terminated copy */
+        if ((copy = (char *)malloc(len + 1)) == NULL) { if (dst && cap) dst[0] = 0; return -1; }
+        memcpy(copy, rtf, len); copy[len] = 0; rtf = copy;
+    }
+    r = lj_rtf_strip_z(dst, cap, rtf);
+    free(copy);
+    return r;
 }

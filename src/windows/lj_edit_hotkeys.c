@@ -27,8 +27,8 @@ static struct {
     int np[4]; uint32_t pnum[4][LJ_EH_PROGS]; char pline[4][LJ_EH_PROGS][96]; const char *pitems[4][LJ_EH_PROGS];
 } eh;
 
-static lj_widget *find(const char *n) { return eh.win ? lj_window_find(eh.win, n) : NULL; }
-static int sel_index(const char *lv) { lj_widget *w = find(lv); return w ? ((lj_w_listview *)w)->index : -1; }
+static lj_widget *find(const char *n) { return lj_window_find(eh.win, n); }
+static int sel_index(const char *lv) { lj_widget *w = find(lv); return w ? lj_w_listview_index(w) : -1; }
 static void select_row(const char *lv, int row) { lj_widget *w = find(lv); if (w) { ((lj_w_listview *)w)->index = row; lj_widget_invalidate(w); } }
 
 static void combo_cols(enum lj_fn fn, uint32_t num, char *scrl, size_t cs, char *combo, size_t cc)
@@ -225,7 +225,6 @@ static int ekey_key(lj_widget *w, const lj_key_ev *k)
 
 /* ---- handlers ---- */
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_assign(lj_widget *w, void *ud) { (void)w; (void)ud; lj_edit_hotkeys_assign_fn(); }
 static void on_assign_prog(lj_widget *w, void *ud) { (void)w; (void)ud; lj_edit_hotkeys_assign_prog(); }
 static void on_clear_fn(lj_widget *w, void *ud)
@@ -258,7 +257,7 @@ static void on_find(lj_widget *w, void *ud)
 static void on_tab(lj_widget *w, void *ud) { (void)ud; set_tab(((lj_w_tabs *)w)->active >= 0 && ((lj_w_tabs *)w)->active < 4 ? ((lj_w_tabs *)w)->active : 0); }
 static void on_fn_change(lj_widget *w, void *ud)
 {
-    int r = ((lj_w_listview *)w)->index;
+    int r = lj_w_listview_index(w);
     const lj_hotkey *k = r >= 0 && r < eh.nf && eh.fn_of[r] ? lj_hotkeys_find_fn(&eh.work, (enum lj_fn)eh.fn_of[r], 0) : NULL;
     (void)ud;
     lj_w_checkbox_set_checked(find("cbScroll"), k && k->scroll);
@@ -300,15 +299,15 @@ static void on_cancel(lj_widget *w, void *ud)
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("edit hotkeys: Help is W4"); }
 
 static const lj_binding lj_eh_bindings[] = {
-    { "_h", noop, NULL }, { "FormClose", on_cancel, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL },
+    { "_h", lj_handler_noop, NULL }, { "FormClose", on_cancel, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "bAssignProgClick", on_assign_prog, NULL }, { "bClearProgClick", on_clear_prog, NULL }, { "PC1Change", on_tab, NULL },
-    { "lvProgChange", on_prog_change, NULL }, { "lvProgClick", on_prog_change, NULL }, { "eKeyChange", noop, NULL },
+    { "lvProgChange", on_prog_change, NULL }, { "lvProgClick", on_prog_change, NULL }, { "eKeyChange", lj_handler_noop, NULL },
     { "bClearHotkeyClick", on_clear_hotkey, NULL }, { "bFindClick", on_find, NULL }, { "lvFunctionsChange", on_fn_change, NULL },
     { "bAssignClick", on_assign, NULL }, { "bClearFunctionClick", on_clear_fn, NULL }, { "bOkClick", on_ok, NULL }, { "bCancelClick", on_cancel, NULL },
     { "M_DisableDialogsClick", on_disable_dialogs, NULL }, { "SaveHotkeyLayout1Click", on_save, NULL }, { "LoadHotkeys1Click", on_load, NULL },
     { "DefaultHotkeys1Click", on_default, NULL }, { "ClearAllHotkeys1Click", on_clear_all, NULL }, { "Help1Click", on_help, NULL },
-    { "PopupMenu1Popup", noop, NULL }, { "ClearFunctions1Click", on_clear1, NULL }, { "SetScrollLock1Click", on_scroll1, NULL },
-    { "PopupMenu2Popup", noop, NULL }, { "ClearFunctions2Click", on_clear2, NULL }, { "SetScrollLock2Click", on_scroll2, NULL },
+    { "PopupMenu1Popup", lj_handler_noop, NULL }, { "ClearFunctions1Click", on_clear1, NULL }, { "SetScrollLock1Click", on_scroll1, NULL },
+    { "PopupMenu2Popup", lj_handler_noop, NULL }, { "ClearFunctions2Click", on_clear2, NULL }, { "SetScrollLock2Click", on_scroll2, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_edit_hotkeys_open(void)

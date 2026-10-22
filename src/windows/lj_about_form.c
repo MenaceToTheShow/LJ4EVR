@@ -21,11 +21,10 @@ static const char *const lj_about_lines[] = {
 
 void lj_win_about_text(char *dst, size_t cap) { if (dst && cap) snprintf(dst, cap, "LJ4EVR %s\nThird-party notices: %s", LJ_VERSION_STR, LJ_ABOUT_NOTICES); }
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_key(lj_widget *w, void *ud) { (void)w; (void)ud; ab.close_pending = 1; }
 static void on_link(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("about: %s is beside the program file", LJ_ABOUT_NOTICES); }   /* ponytail: no shell-open from windows/; the app can open it when asked */
 static const lj_binding lj_ab_bindings[] = {
-    { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormKeyPress", on_key, NULL }, { "Label4Click", on_link, NULL }, { "Timer1Timer", noop, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyPress", on_key, NULL }, { "Label4Click", on_link, NULL }, { "Timer1Timer", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_about_form_open(void)

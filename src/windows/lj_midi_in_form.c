@@ -88,7 +88,7 @@ static struct {
     char log[LJ_MI_LOG][40]; const char *log_items[LJ_MI_LOG]; int nlog;
 } mi;
 
-static lj_widget *find(const char *n) { return mi.win ? lj_window_find(mi.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(mi.win, n); }
 static lj_midi_map *map(void) { return lj_ctx_get()->midi; }
 static int ktab(void) { return mi.tab >= 1 && mi.tab <= LJ_MI_KINDS ? mi.tab - 1 : -1; }   /* index into the lj_mi_* kind tables */
 static int entry_ch(int k) { lj_midi_map *m = map(); int c = m ? m->channel[lj_mi_kind[k]] : 16; return c == 16 ? LJ_MIDI_CH_ALL : c; }   /* the grid edits the entries of the shown channel */
@@ -100,7 +100,7 @@ static void fill_grid(int k)
     lj_midi_map *m = map();
     int n, i, ch = entry_ch(k), keep;
     lj_widget *lv = find(lj_mi_lv[k]);
-    keep = lv ? ((lj_w_listview *)lv)->index : -1;
+    keep = lv ? lj_w_listview_index(lv) : -1;
     for (n = 0; n < LJ_MI_NOTES; n++) {
         const lj_midi_map_entry *e = NULL;
         char name[64] = "";
@@ -174,7 +174,7 @@ int lj_midi_in_form_set_note(int note)
     int k = ktab(), fi;
     if (!m || k < 0) return -1;
     lv = find(lj_mi_lv[k]);
-    if (note < 0 && lv) note = ((lj_w_listview *)lv)->index;
+    if (note < 0 && lv) note = lj_w_listview_index(lv);
     if (note < 0 || note >= LJ_MI_NOTES) return -1;
     memset(&e, 0, sizeof e);
     e.kind = (uint8_t)lj_mi_kind[k]; e.ch = (uint8_t)entry_ch(k); e.note = (uint8_t)note;
@@ -216,7 +216,6 @@ void lj_midi_in_form_log(const uint8_t msg[3])
 
 /* ---- handlers ---- */
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_tab(lj_widget *w, void *ud) { (void)ud; if (((lj_w_tabs *)w)->active != mi.tab) lj_midi_in_form_tab(((lj_w_tabs *)w)->active); }
 static void on_device(lj_widget *w, void *ud)
 {
@@ -263,7 +262,7 @@ static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("midi in
 
 static const lj_binding lj_mi_bindings[] = {
     { "FormClose", on_close, NULL }, { "TC1Change", on_tab, NULL }, { "cbDeviceChange", on_device, NULL }, { "cbSetupClick", on_setup_box, NULL },
-    { "cbEnableClick", on_enable, NULL }, { "cbChannelChange", on_channel, NULL }, { "lvMapChange", noop, NULL }, { "bLearnClick", on_learn, NULL },
+    { "cbEnableClick", on_enable, NULL }, { "cbChannelChange", on_channel, NULL }, { "lvMapChange", lj_handler_noop, NULL }, { "bLearnClick", on_learn, NULL },
     { "bSetClick", on_set, NULL }, { "bSaveClick", on_save, NULL }, { "bCloseClick", on_close, NULL }, { "M_OptionClick", on_option, NULL },
     { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 

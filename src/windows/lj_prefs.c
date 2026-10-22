@@ -37,7 +37,7 @@ void lj_startup_opts_save(lj_ini *ini, const lj_startup_opts *o)
 }
 
 lj_window *lj_startup_options_window(void) { return so.win; }
-static lj_widget *find(const char *n) { return so.win ? lj_window_find(so.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(so.win, n); }
 static void number_field(const char *name, int32_t v) { char t[16]; if (v >= 0) snprintf(t, sizeof t, "%04d", (int)v); else t[0] = 0; lj_w_edit_set_text(find(name), t); }   /* 4-digit display [F28] */
 
 static void page_fill(void)
@@ -59,7 +59,6 @@ int lj_startup_options_apply(void)
     return 0;
 }
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void na(lj_widget *w, void *ud) { (void)ud; lj_log("startup options: %s: list pick is W2 (windows-b lists)", w && w->name ? w->name : "?"); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_startup_options_apply() == 0) lj_startup_options_close(); }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_startup_options_close(); }
@@ -73,10 +72,10 @@ static void on_clear(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_so_bindings[] = {
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "BOkClick", on_ok, NULL }, { "Help1Click", noop, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "BOkClick", on_ok, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { "SeqSelectClick", na, NULL }, { "CueSelectClick", na, NULL }, { "ClSelectClick", na, NULL }, { "sbPCueSelectClick", na, NULL },
     { "SeqClearClick", on_clear, NULL }, { "CueClearClick", on_clear, NULL }, { "ClClearClick", on_clear, NULL }, { "sbPCueClearClick", on_clear, NULL },
-    { "bBrowseClick", na, NULL }, { "lbautoClick", noop, NULL }, { "P_DeleteClick", na, NULL }, { "AutoPopPopup", noop, NULL },
+    { "bBrowseClick", na, NULL }, { "lbautoClick", lj_handler_noop, NULL }, { "P_DeleteClick", na, NULL }, { "AutoPopPopup", lj_handler_noop, NULL },
     { NULL, NULL, NULL }
 };
 

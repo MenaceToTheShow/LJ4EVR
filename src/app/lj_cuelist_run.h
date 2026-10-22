@@ -54,6 +54,8 @@ typedef struct {
     uint8_t  auto_cue_on_run;            /* M_AutoCue "Automatic Cue update on Run" */
     uint8_t  mtc_timeout;                /* enum lj_cl_mtc_timeout */
     uint8_t  first_pending;              /* internal: the first Wait Elapsed after Run is still ahead */
+    uint8_t  in_exec;                    /* internal (ME-108): a line's host callback is running; a nested Go returns -1, Stop / unpin act at once */
+    uint8_t  mtc_seen;                   /* internal (ME-116): the previous pass had a time code; present -> absent at a Wait MTC applies mtc_timeout */
 } lj_cl_run;
 
 void lj_cl_run_init(lj_cl_run *r);                                                    /* IDLE, tc source PC elapsed */

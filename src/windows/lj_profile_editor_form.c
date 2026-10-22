@@ -42,10 +42,10 @@ static void rows_set(lj_widget *w, lj_rows *r)
     if (!w) return;
     for (i = 0; i < r->n; i++) r->p[i] = r->t[i];
     if (w->kind == LJ_K_LISTBOX) { keep = ((lj_w_list *)w)->index; lj_w_list_set_items(w, r->p, r->n); ((lj_w_list *)w)->index = keep < r->n ? keep : -1; }
-    else { keep = ((lj_w_listview *)w)->index; lj_w_listview_set_items(w, r->p, r->n); ((lj_w_listview *)w)->index = keep < r->n ? keep : -1; }
+    else { keep = lj_w_listview_index(w); lj_w_listview_set_items(w, r->p, r->n); ((lj_w_listview *)w)->index = keep < r->n ? keep : -1; }
     lj_widget_invalidate(w);
 }
-static int row_of(lj_widget *w) { return !w ? -1 : w->kind == LJ_K_LISTBOX ? ((lj_w_list *)w)->index : ((lj_w_listview *)w)->index; }
+static int row_of(lj_widget *w) { return !w ? -1 : w->kind == LJ_K_LISTBOX ? ((lj_w_list *)w)->index : lj_w_listview_index(w); }
 static void check_quiet(lj_widget *cb, int on)   /* TCheckBox.SetChecked fires OnClick; a repaint from the model must not */
 {
     void (*fn)(lj_widget *, int, void *);
@@ -73,7 +73,6 @@ static int edit_num(lj_widget *e, int lo, int hi, int *out)   /* 1 = a number in
     *out = (int)v;
     return 1;
 }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void close_win(lj_window **win) { if (*win) { lj_win_hide(*win); lj_window_destroy(*win); *win = NULL; } }
 static void set_bitbtn(lj_window *win, const char *name, void (*fn)(lj_widget *, int, void *))   /* bkOK / bkCancel rows with no OnClick */
 {
@@ -123,8 +122,8 @@ static void rgb_change(lj_widget *w, void *ud)
     lj_widget_invalidate(s);
 }
 static const lj_binding lj_rgb_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "eRedChange", rgb_change, NULL },
-    { "eEditEnter", noop, NULL }, { "bOkClick", rgb_ok, NULL }, { NULL, NULL, NULL } };
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "eRedChange", rgb_change, NULL },
+    { "eEditEnter", lj_handler_noop, NULL }, { "bOkClick", rgb_ok, NULL }, { NULL, NULL, NULL } };
 static void rgb_open(uint32_t rgb, void (*done)(uint32_t rgb))
 {
     char t[8];
@@ -307,7 +306,7 @@ static void pe_paint(void)
         lj_widget *re = pfind("Notes");
         int n = 0;
         char *s = plain;
-        lj_str_rtf_strip(plain, sizeof plain, (const char *)praw() + 0x0062);
+        lj_str_rtf_strip(plain, sizeof plain, (const char *)praw() + 0x0062, LJ_GS2_NOTES);
         while (s && *s && n < 256) { char *nl = strchr(s, '\n'); lines[n++] = s; if (nl) { *nl = 0; s = nl + 1; } else s = NULL; }
         if (re) lj_w_memo_set_lines(re, (const char *const *)lines, n);
     }
@@ -614,22 +613,22 @@ static void pe_on_lv_popup(lj_widget *w, void *ud)   /* P_lvClick: Insert / Dele
 static void pe_on_ov_clear(lj_widget *w, void *ud) { (void)w; (void)ud; edit_quiet(pfind("eMan"), ""); edit_quiet(pfind("eModel"), ""); edit_quiet(pfind("eMode"), ""); pe.ed.dirty = 1; }   /* the OV link strings; the OV list itself is inert (D12) */
 
 static const lj_binding lj_pe_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", pe_on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", pe_on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "bCancelClick", pe_on_cancel, NULL }, { "bApplyClick", pe_on_apply, NULL }, { "bApplyAllClick", pe_on_apply_all, NULL },
     { "PC1Change", pe_on_page, NULL }, { "PaletteTabChange", pe_on_pal_tab, NULL },
-    { "cbEnableClick", pe_on_dirty, NULL }, { "cbTransparentClick", pe_on_dirty, NULL }, { "NotesChange", noop, NULL },
+    { "cbEnableClick", pe_on_dirty, NULL }, { "cbTransparentClick", pe_on_dirty, NULL }, { "NotesChange", lj_handler_noop, NULL },
     { "bSetIconBMPClick", pe_on_set_icon, NULL }, { "bClearIconBMPClick", pe_on_clear_icon, NULL },
-    { "lvChange", pe_on_lv, NULL }, { "lvClick", pe_on_lv, NULL }, { "lvBitmapDragDrop", noop, NULL }, { "lvBitmapDragOver", noop, NULL },
-    { "bSetValClick", pe_on_set_val, NULL }, { "bClearClick", pe_on_clear_val, NULL }, { "eValKeyDown", noop, NULL },
-    { "eColorValKeyDown", noop, NULL }, { "eGoboValKeyDown", noop, NULL }, { "eEffectsValKeyDown", noop, NULL },
+    { "lvChange", pe_on_lv, NULL }, { "lvClick", pe_on_lv, NULL }, { "lvBitmapDragDrop", lj_handler_noop, NULL }, { "lvBitmapDragOver", lj_handler_noop, NULL },
+    { "bSetValClick", pe_on_set_val, NULL }, { "bClearClick", pe_on_clear_val, NULL }, { "eValKeyDown", lj_handler_noop, NULL },
+    { "eColorValKeyDown", lj_handler_noop, NULL }, { "eGoboValKeyDown", lj_handler_noop, NULL }, { "eEffectsValKeyDown", lj_handler_noop, NULL },
     { "bGetBMPClick", pe_on_get_bmp, NULL }, { "bSelectColorColorClick", pe_on_colors, NULL }, { "bSelectValTypeClick", pe_on_val_type, NULL },
-    { "lbFunctionsClick", pe_on_functions, NULL }, { "lbFunctionsDrawItem", noop, NULL }, { "eFunctionNameChange", pe_on_function_name, NULL },
+    { "lbFunctionsClick", pe_on_functions, NULL }, { "lbFunctionsDrawItem", lj_handler_noop, NULL }, { "eFunctionNameChange", pe_on_function_name, NULL },
     { "bDeleteFunctionClick", pe_on_delete_function, NULL },
-    { "lvLevelsClick", pe_on_levels_click, NULL }, { "bLevelStatusClick", pe_on_level_status, NULL }, { "eLevelNameChange", pe_on_level_name, NULL }, { "eLevelNameKeyDown", noop, NULL },
-    { "lvDefsChange", noop, NULL }, { "lvDefsResize", noop, NULL }, { "lvDefsSelectItem", noop, NULL }, { "Button1Click", pe_on_ov_clear, NULL },
+    { "lvLevelsClick", pe_on_levels_click, NULL }, { "bLevelStatusClick", pe_on_level_status, NULL }, { "eLevelNameChange", pe_on_level_name, NULL }, { "eLevelNameKeyDown", lj_handler_noop, NULL },
+    { "lvDefsChange", lj_handler_noop, NULL }, { "lvDefsResize", lj_handler_noop, NULL }, { "lvDefsSelectItem", lj_handler_noop, NULL }, { "Button1Click", pe_on_ov_clear, NULL },
     { "M_FilesClick", pe_on_files, NULL }, { "M_LoadClick", pe_on_load, NULL }, { "M_SaveClick", pe_on_save, NULL }, { "M_SaveAsClick", pe_on_save_as, NULL },
-    { "ClearProfile1Click", pe_on_clear_profile, NULL }, { "Help1Click", noop, NULL },
-    { "lv_PopUp", noop, NULL }, { "P_lvClick", pe_on_lv_popup, NULL },
+    { "ClearProfile1Click", pe_on_clear_profile, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "lv_PopUp", lj_handler_noop, NULL }, { "P_lvClick", pe_on_lv_popup, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_profile_editor_open(void)
@@ -787,8 +786,8 @@ static void cp_select(lj_widget *w, void *ud)
 static void cp_change(lj_widget *w, void *ud) { (void)ud; if (cpfind("bOk")) { cpfind("bOk")->enabled = row_of(w) >= 0; lj_widget_invalidate(cpfind("bOk")); } }
 static void cp_same(lj_widget *w, void *ud) { (void)w; (void)ud; cp_fill(); }
 static const lj_binding lj_cp_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "Help1Click", noop, NULL },
-    { "bSelectAllClick", cp_select, NULL }, { "bSelectNoneClick", cp_select, NULL }, { "cb1Click", cp_same, NULL }, { "cbGobo1Click", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "bSelectAllClick", cp_select, NULL }, { "bSelectNoneClick", cp_select, NULL }, { "cb1Click", cp_same, NULL }, { "cbGobo1Click", lj_handler_noop, NULL },
     { "lv1Change", cp_change, NULL }, { NULL, NULL, NULL } };
 static void cf_on_copy(lj_widget *w, void *ud)
 {
@@ -801,9 +800,9 @@ static void cf_on_copy(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_cf_bindings[] = {
-    { "FormClose", cf_on_cancel, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "Help1Click", noop, NULL },
-    { "pc1Change", noop, NULL }, { "tc1Change", cf_on_tab, NULL }, { "LV1Change", noop, NULL }, { "LV1DragDrop", noop, NULL }, { "LV1DragOver", noop, NULL },
-    { "lvDefsChange", noop, NULL }, { "lvDefsSelectItem", noop, NULL }, { "bClearOVClick", noop, NULL }, { "DefaultOVLink1Click", noop, NULL },   /* the O/V tab: present, inert (D12) */
+    { "FormClose", cf_on_cancel, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "pc1Change", lj_handler_noop, NULL }, { "tc1Change", cf_on_tab, NULL }, { "LV1Change", lj_handler_noop, NULL }, { "LV1DragDrop", lj_handler_noop, NULL }, { "LV1DragOver", lj_handler_noop, NULL },
+    { "lvDefsChange", lj_handler_noop, NULL }, { "lvDefsSelectItem", lj_handler_noop, NULL }, { "bClearOVClick", lj_handler_noop, NULL }, { "DefaultOVLink1Click", lj_handler_noop, NULL },   /* the O/V tab: present, inert (D12) */
     { "bApplyClick", cf_on_apply, NULL }, { "bCancelClick", cf_on_cancel, NULL },
     { "bGetGoboBmpClick", cf_on_gobo_bmp, NULL }, { "bGetColorBMPClick", cf_on_color_bmp, NULL }, { "bGetRGBClick", cf_on_rgb, NULL },
     { "bClearClick", cf_on_clear, NULL }, { "B_CopyClick", cf_on_copy, NULL },
@@ -863,7 +862,7 @@ const lj_palette *lj_customize_fixture_work(void) { return cf.win ? cf.work : NU
 /* =====================================================================================================================
  * Channel Configuration (TChannelDefForm, ME-32)
  * ===================================================================================================================== */
-static struct { lj_window *win; int fixture, n; char cap[LJ_PROFILE_CH][6]; uint32_t gm_off; lj_rows rows; } cc;
+static struct { lj_window *win; int fixture, n; char cap[LJ_PROFILE_CH][7]; uint32_t gm_off; lj_rows rows; } cc;
 
 static lj_widget *ccfind(const char *n) { return cc.win ? lj_window_find(cc.win, n) : NULL; }
 static void cc_paint(void)
@@ -888,7 +887,7 @@ static void cc_on_list(lj_widget *w, void *ud)
     if (r < 0 || !e) return;
     fn = e->on_event; e->on_event = NULL; lj_w_edit_set_text(e, cc.cap[r]); e->on_event = fn;
 }
-static void cc_on_name(lj_widget *w, void *ud) { int r = row_of(ccfind("chList")); (void)ud; if (r < 0) return; lj_str_copy(cc.cap[r], sizeof cc.cap[r], lj_w_edit_text(w)); cc_paint(); }   /* 5 bytes: the level caption width (MaxLength 6 in the DFM, ch_caption[6]) */
+static void cc_on_name(lj_widget *w, void *ud) { int r = row_of(ccfind("chList")); (void)ud; if (r < 0) return; lj_str_copy(cc.cap[r], sizeof cc.cap[r], lj_w_edit_text(w)); cc_paint(); }   /* 6 bytes: TCHANNELDEFFORM eChannelName MaxLength = 6, ch_caption[7] (ME-118) */
 static void cc_on_gm(lj_widget *w, void *ud)
 {
     int r = row_of(ccfind("chList"));
@@ -913,7 +912,7 @@ static void cc_ok(lj_widget *w, int ev, void *ud)
 }
 static void cc_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) lj_channel_config_close(); }
 static const lj_binding lj_cc_bindings[] = {
-    { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL }, { "Help1Click", noop, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { "chListChange", cc_on_list, NULL }, { "eChannelNameChange", cc_on_name, NULL }, { "bEnableGMClick", cc_on_gm, NULL }, { "bDisableGMClick", cc_on_gm, NULL },
     { NULL, NULL, NULL } };
 
@@ -935,7 +934,7 @@ lj_window *lj_channel_config_open(void)
     {   char t[112]; snprintf(t, sizeof t, "(%d) %s", f + 1, profile_text(p, buf, sizeof buf)); lj_w_set_caption(ccfind("lFixType"), t); }   /* "(2) Generic.." (channelconfiguration.gif; exe "(%d) %s") */
     lj_w_set_caption(ccfind("lUsername"), sh->fixture[f].user_name);
     snprintf(buf, sizeof buf, "%d/%d", sh->fixture[f].link, sh->fixture[f].address); lj_w_set_caption(ccfind("lDmxAdr"), buf);   /* "1/38" (channelconfiguration.gif) */
-    if (ccfind("eChannelName")) { ((lj_w_edit *)ccfind("eChannelName"))->max_length = 5; edit_quiet(ccfind("eChannelName"), ""); }
+    if (ccfind("eChannelName")) { ((lj_w_edit *)ccfind("eChannelName"))->max_length = 6; edit_quiet(ccfind("eChannelName"), ""); }
     cc_paint();
     lj_win_show(cc.win, 0);
     return cc.win;

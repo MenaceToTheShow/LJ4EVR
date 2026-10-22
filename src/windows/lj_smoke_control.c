@@ -37,10 +37,9 @@ lj_window *lj_smoke_control_get(void) { return s.win; }
 lj_widget *lj_smoke_control_fader(enum lj_smoke_fader f) { return (int)f >= 0 && f < LJ_SMOKE_F_COUNT ? s.fader[f] : NULL; }
 int lj_smoke_control_last_cmd(lj_cmd *out) { if (out && s.has_last) *out = s.last; return s.has_last; }
 
-static int geti(const char *key, int dflt) { lj_ctx *c = lj_ctx_get(); return c->main_ini ? lj_ini_geti(c->main_ini, "SMOKE", key, dflt) : dflt; }
 static void seti(const char *key, int v) { lj_ctx *c = lj_ctx_get(); if (c->main_ini) lj_ini_seti(c->main_ini, "SMOKE", key, v); }
 static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
-static int value(enum lj_smoke_fader f) { return clampi(geti(lj_smoke_keys[f], 0), 0, lj_smoke_max[f]); }
+static int value(enum lj_smoke_fader f) { return clampi(lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", lj_smoke_keys[f], 0), 0, lj_smoke_max[f]); }
 static void text_hex(int v, char *buf, size_t cap) { snprintf(buf, cap, "%02X", (unsigned)v & 0xFFu); }
 static void text_secs(int v, char *buf, size_t cap) { snprintf(buf, cap, "%ds", v); }
 static void text_cycle(int v, char *buf, size_t cap)           /* PROPOSAL rig 04 s12: minutes past 59 s (only "35s" is in the capture) */
@@ -73,7 +72,7 @@ static void post_fader(enum lj_smoke_fader f)
 /* Main.Ini [SMOKE] Toggle (ours): 0 = smoke while held, 2/4/6/8 = M_Toggle2..8 (the low second of "2-3 sec", PROPOSAL rig 04 s12), -1 = the Duration fader */
 static uint32_t toggle_ms(void)
 {
-    int t = geti("Toggle", 0);
+    int t = lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "Toggle", 0);
     if (t < 0) return (uint32_t)value(LJ_SMOKE_F_DURATION) * 1000u;
     return (uint32_t)clampi(t, 0, 9) * 1000u;
 }
@@ -81,7 +80,7 @@ static uint32_t toggle_ms(void)
 void lj_smoke_control_button(int down)
 {
     uint32_t t = toggle_ms();
-    if (down && geti("Reset", 1)) post(LJ_SMOKE_RESET, 0, 0);       /* "Reset cycle on smoke" (shipped Reset=1) */
+    if (down && lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "Reset", 1)) post(LJ_SMOKE_RESET, 0, 0);       /* "Reset cycle on smoke" (shipped Reset=1) */
     if (t && !down) return;                                          /* toggle mode: the engine ends the burst (mouse only, 04 s12) */
     s.button_down = down != 0;
     post(LJ_SMOKE_BUTTON, (uint32_t)s.button_down, t);
@@ -117,7 +116,7 @@ static void reset_event(lj_widget *w, int ev, void *ud) { (void)ud; if (ev == LJ
 
 static void view_haze(void)
 {
-    int on = geti("ViewHaze", 1), i;
+    int on = lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "ViewHaze", 1), i;
     lj_widget *w;
     for (i = 0; i < (int)LJ_COUNT_OF(lj_smoke_haze_ctls); i++) if ((w = lj_window_find(s.win, lj_smoke_haze_ctls[i])) != NULL) w->visible = on != 0;
     for (i = LJ_SMOKE_F_HAZE; i < LJ_SMOKE_F_COUNT; i++) if (s.fader[i]) s.fader[i]->visible = on != 0;
@@ -126,11 +125,11 @@ static void view_haze(void)
 static void sync_checks(void)
 {
     lj_menu *m = lj_window_menus(s.win);
-    int t = geti("Toggle", 0);
-    lj_menu_set_checked(m, "M_ViewHaze", geti("ViewHaze", 1));
-    lj_menu_set_checked(m, "M_EnableOnStart", geti("TimerOnStart", 0));
-    lj_menu_set_checked(m, "M_ResetOnSmoke", geti("Reset", 1));
-    lj_menu_set_checked(m, "M_UseLevel", geti("UseLevel", 0));
+    int t = lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "Toggle", 0);
+    lj_menu_set_checked(m, "M_ViewHaze", lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "ViewHaze", 1));
+    lj_menu_set_checked(m, "M_EnableOnStart", lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "TimerOnStart", 0));
+    lj_menu_set_checked(m, "M_ResetOnSmoke", lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "Reset", 1));
+    lj_menu_set_checked(m, "M_UseLevel", lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "UseLevel", 0));
     lj_menu_set_checked(m, "M_Toggle2", t == 2); lj_menu_set_checked(m, "M_Toggle4", t == 4);
     lj_menu_set_checked(m, "M_Toggle6", t == 6); lj_menu_set_checked(m, "M_Toggle8", t == 8);
     lj_menu_set_checked(m, "M_ToggleDur", t < 0);
@@ -146,7 +145,7 @@ static void prefs_click(lj_widget *w, void *ud)
     int i;
     (void)w; (void)ud;
     for (i = 0; it && it->name && i < (int)LJ_COUNT_OF(names); i++)
-        if (!strcmp(it->name, names[i])) seti(keys[i], !geti(keys[i], dflt[i]));
+        if (!strcmp(it->name, names[i])) seti(keys[i], !lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", keys[i], dflt[i]));
     view_haze();
     sync_checks();
 }
@@ -155,17 +154,16 @@ static void toggle_click(lj_widget *w, void *ud)
     const lj_menu_item_desc *it = lj_window_menu_item(s.win);
     (void)w; (void)ud;
     if (!it || !it->name) return;
-    seti("Toggle", !strcmp(it->name, "M_ToggleDur") ? -1 : (geti("Toggle", 0) == it->tag ? 0 : it->tag));   /* the checked radio clicked again = hold mode */
+    seti("Toggle", !strcmp(it->name, "M_ToggleDur") ? -1 : (lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "Toggle", 0) == it->tag ? 0 : it->tag));   /* the checked radio clicked again = hold mode */
     sync_checks();
 }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_smoke_control_close(); }
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_smoke_control_refresh(); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 static const lj_binding lj_smoke_bindings[] = {
-    { "SmokePrefsClick", prefs_click, NULL }, { "M_Toggle2Click", toggle_click, NULL }, { "Help1Click", noop, NULL },
+    { "SmokePrefsClick", prefs_click, NULL }, { "M_Toggle2Click", toggle_click, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { "Timer1Timer", on_timer, NULL }, { "Timer2Timer", on_timer, NULL },
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_smoke_control_open(void)
@@ -222,7 +220,7 @@ static void fn_smoke(enum lj_fn fn, int edge, uint32_t prog, void *ud)
 {
     (void)prog; (void)ud;
     if (fn == LJ_FN_SMOKE_BUTTON_FLASH) {                            /* hotkeys smoke while held: the toggle preference is mouse only (04 s12) */
-        if (edge && geti("Reset", 1)) post(LJ_SMOKE_RESET, 0, 0);
+        if (edge && lj_ini_geti(lj_ctx_get()->main_ini, "SMOKE", "Reset", 1)) post(LJ_SMOKE_RESET, 0, 0);
         s.button_down = edge != 0;
         post(LJ_SMOKE_BUTTON, (uint32_t)s.button_down, 0);
         return;

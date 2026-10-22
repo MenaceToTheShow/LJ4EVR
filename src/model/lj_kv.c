@@ -8,16 +8,19 @@
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 
-/* Next "key=value" token of a field list: 1 produced, 0 end, -1 bad (unterminated quote or overflow). */
-static int lj_kv_next(const char **pp, char *k, size_t kcap, char *v, size_t vcap)
+/* Next "key=value" token of a field list: 1 produced, 0 end, -1 bad (unterminated quote, or the wanted key's value
+ * overflows vcap). Only the value of the key named want is copied into v (ME-107): a long value of any other key is
+ * skipped at any length, so a 64-char Execute File pstr no longer breaks every key after it. *hit = key matched. */
+static int lj_kv_next(const char **pp, const char *want, int *hit, char *v, size_t vcap)
 {
-    const char *p = *pp;
+    const char *p = *pp, *k;
     size_t n = 0;
+    int cp;
     while (*p == ' ') p++;
     if (!*p) { *pp = p; return 0; }
-    while (*p && *p != ' ' && *p != '=') { if (n + 1 >= kcap) return -1; k[n++] = *p++; }
-    k[n] = 0;
-    n = 0;
+    k = p;
+    while (*p && *p != ' ' && *p != '=') p++;
+    cp = *hit = (size_t)(p - k) == strlen(want) && memcmp(k, want, (size_t)(p - k)) == 0;
     if (*p == '=') {
         p++;
         if (*p == '"') {
@@ -25,25 +28,25 @@ static int lj_kv_next(const char **pp, char *k, size_t kcap, char *v, size_t vca
             for (;;) {
                 if (!*p) return -1;
                 if (*p == '"') { if (p[1] == '"') p++; else { p++; break; } }
-                if (n + 1 >= vcap) return -1;
-                v[n++] = *p++;
+                if (cp) { if (n + 1 >= vcap) return -1; v[n++] = *p; }
+                p++;
             }
         } else {
-            while (*p && *p != ' ') { if (n + 1 >= vcap) return -1; v[n++] = *p++; }
+            while (*p && *p != ' ') { if (cp) { if (n + 1 >= vcap) return -1; v[n++] = *p; } p++; }
         }
     }
-    v[n] = 0;
+    if (cp) v[n] = 0;
     *pp = p;
     return 1;
 }
 
 int lj_kv_get(const char *fields, const char *key, char *out, size_t cap)
 {
-    char k[32];
-    int r;
-    while ((r = lj_kv_next(&fields, k, sizeof k, out, cap)) == 1)
-        if (strcmp(k, key) == 0) return 1;
-    if (cap) out[0] = 0;
+    int r, hit;
+    if (!cap) return -1;
+    while ((r = lj_kv_next(&fields, key, &hit, out, cap)) == 1)
+        if (hit) return 1;
+    out[0] = 0;
     return r;
 }
 

@@ -236,7 +236,7 @@ void lj_toolbars_build(lj_window *win, lj_widget *root)
     lj_tb_counter = lj_widget_find(lj_tb_row[0], "sb_seqcounter");
     lj_tb_clname  = lj_widget_find(lj_tb_row[1], "tb_clname");
     for (i = 0; i < LJ_TB_COUNT; i++)   /* W2: Main.Ini [PREFS] ViewSCBar ViewClBar ViewFixBar through ctx->prefs; the W1 [TOOLBARS] keys only without a prefs record */
-        lj_tb_row[i]->visible = ctx->prefs ? bar_flag(ctx->prefs, i) != 0 : ctx->main_ini ? lj_ini_geti(ctx->main_ini, "TOOLBARS", lj_ini_keys[i], 1) != 0 : 1;
+        lj_tb_row[i]->visible = ctx->prefs ? bar_flag(ctx->prefs, i) != 0 : lj_ini_geti(ctx->main_ini, "TOOLBARS", lj_ini_keys[i], 1) != 0;
     lj_desktop_seqcue_fields(0, NULL, 1, 1, 0, NULL);
 }
 

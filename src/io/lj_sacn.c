@@ -71,13 +71,13 @@ static void lj_sacn_root(uint8_t *out, const lj_sacn_cfg *cfg, uint32_t vector, 
     memcpy(out + 22, cfg->cid, 16);
 }
 
-static void lj_sacn_name_utf8(uint8_t out[64], const char *name_cp1252)   /* 6.2.2: 64 octets, NUL-terminated, cut at 63 bytes like the oracle */
+static void lj_sacn_name_utf8(uint8_t out[64], const char *name_cp1252)   /* 6.2.2: 64 octets, NUL-terminated, at most 63 bytes, cut on a UTF-8 character boundary (ME-84) */
 {
     char u[LJ_SACN_NAME_CAP * 3 + 1];
     size_t n;
     lj_cp1252_to_utf8(u, sizeof u, name_cp1252);
     n = strlen(u);
-    if (n > 63) n = 63;
+    if (n > 63) { n = 63; while (n > 0 && ((unsigned char)u[n] & 0xC0) == 0x80) n--; }   /* u[n] is the first byte left out: never cut inside a character */
     memset(out, 0, 64);
     memcpy(out, u, n);
 }

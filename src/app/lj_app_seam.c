@@ -426,7 +426,7 @@ int lj_app_delete_record(int kind, uint32_t number)
     case LJ_REC_MACRO:                                                /* generic macros (W2): the running one is switched off first */
         lj_lock();
         rec = lj_table_remove(&show->macros, number);
-        if (rec) { cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = 0; cmd.gm = NULL; if (lj_app_post_locked(&cmd) != 0) rec = NULL; }   /* ME-102 (the cue source; the editor's record is ctx->gm_edit, never a table record) */
+        if (rec && c->view.gm_cue_number == number) { cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = 0; cmd.gm = NULL; if (lj_app_post_locked(&cmd) != 0) rec = NULL; }   /* ME-102 (the cue source; the editor's record is ctx->gm_edit, never a table record); ME-117: only when it is the running one, another number is freed directly (the table entry was its only pin) */
         lj_unlock();
         free(rec);
         break;

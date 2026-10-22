@@ -10,7 +10,7 @@ typedef struct lj_ini lj_ini;
 lj_ini     *lj_ini_load(const char *path);                                        /* NULL when the file cannot be read */
 lj_ini     *lj_ini_new(void);                                                     /* empty document */
 int         lj_ini_save(lj_ini *ini, const char *path);                           /* 0 / -1 */
-int         lj_ini_geti(lj_ini *ini, const char *sec, const char *key, int dflt);
+int         lj_ini_geti(lj_ini *ini, const char *sec, const char *key, int dflt);    /* ini NULL = dflt (as lj_ini_gets); a NULL ini is never written (sets / seti: no-op) */
 void        lj_ini_seti(lj_ini *ini, const char *sec, const char *key, int v);
 const char *lj_ini_gets(lj_ini *ini, const char *sec, const char *key, const char *dflt);  /* pointer valid until the next set/free on this ini (LORD_C-18) */
 void        lj_ini_sets(lj_ini *ini, const char *sec, const char *key, const char *v);

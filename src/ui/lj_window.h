@@ -18,6 +18,7 @@ typedef struct lj_window lj_window;                          /* surface + root w
  * name that matches nothing in the desc and once per DFM handler no binding
  * covers, and asserts in debug builds. */
 typedef struct { const char *event; void (*fn)(lj_widget *w, void *ud); void *ud; } lj_binding;
+void lj_handler_noop(lj_widget *w, void *ud);   /* ME-101: the one do-nothing binding (FormCreate, Help, events a behaviour file ignores); test_layering counts copies = 0 */
 
 lj_window *lj_window_create(const lj_form_desc *desc, const lj_binding *bindings);   /* instantiates the tree in DFM order; NULL + log on failure */
 void       lj_window_destroy(lj_window *win);                                        /* frees the tree and the surface; NULL is a no-op */

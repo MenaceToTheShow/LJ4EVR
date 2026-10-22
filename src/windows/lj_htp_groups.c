@@ -44,7 +44,7 @@ static struct { lj_window *win; char row[LJ_HTP_GROUPS][64]; const char *rows[LJ
 static uint8_t lj_hg_level[LJ_HTP_GROUPS + 1];   /* the Toggle hotkeys' state */
 
 lj_window *lj_htp_groups_window(void) { return hg.win; }
-static lj_widget *find(const char *n) { return hg.win ? lj_window_find(hg.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(hg.win, n); }
 static const char *name_of(int g)
 {
     static char dflt[24];
@@ -122,8 +122,8 @@ void lj_htp_groups_refresh(void)
     lj_widget *lv = find("lvGroups");
     int g;
     if (!hg.win) return;
-    if (lv && ((lj_w_listview *)lv)->index != hg.sel) {   /* no OnChange on a code-built list we fill ourselves: the 100 ms hook notices the row */
-        hg.sel = ((lj_w_listview *)lv)->index;
+    if (lv && lj_w_listview_index(lv) != hg.sel) {   /* no OnChange on a code-built list we fill ourselves: the 100 ms hook notices the row */
+        hg.sel = lj_w_listview_index(lv);
         lj_w_edit_set_text(find("eName"), hg.sel >= 0 ? name_of(hg.sel + 1) : "");
     }
     for (g = 1; g <= LJ_HTP_GROUPS; g++) {
@@ -133,8 +133,7 @@ void lj_htp_groups_refresh(void)
     if (lv) { int keep = hg.sel; lj_w_listview_set_items(lv, hg.rows, LJ_HTP_GROUPS); ((lj_w_listview *)lv)->index = keep; lj_widget_invalidate(lv); }
 }
 
-static int sel_group(void) { lj_widget *lv = find("lvGroups"); return lv && ((lj_w_listview *)lv)->index >= 0 ? ((lj_w_listview *)lv)->index + 1 : -1; }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
+static int sel_group(void) { lj_widget *lv = find("lvGroups"); return lv && lj_w_listview_index(lv) >= 0 ? lj_w_listview_index(lv) + 1 : -1; }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_htp_groups_close(); }
 static void on_add(lj_widget *w, void *ud) { (void)w; (void)ud; lj_htp_groups_assign(sel_group(), 1); }
 static void on_remove(lj_widget *w, void *ud) { (void)w; (void)ud; lj_htp_groups_assign(sel_group(), 0); }
@@ -149,7 +148,7 @@ static void on_masters(lj_widget *w, void *ud)
 }
 static const lj_binding lj_hg_bindings[] = {
     { "FormClose", on_close, NULL }, { "bRenameClick", on_rename, NULL }, { "bAddClick", on_add, NULL }, { "bRemoveClick", on_remove, NULL },
-    { "bClearClick", on_clear, NULL }, { "cbMastersClick", on_masters, NULL }, { "Help1Click", noop, NULL }, { NULL, NULL, NULL } };
+    { "bClearClick", on_clear, NULL }, { "cbMastersClick", on_masters, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_htp_groups_open(void)
 {

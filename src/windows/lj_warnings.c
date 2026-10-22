@@ -51,7 +51,6 @@ static void show_centered(lj_window *w, unsigned flags)
 }
 
 static void destroy(lj_window **slot) { if (*slot) { lj_win_hide(*slot); lj_window_destroy(*slot); *slot = NULL; } }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 /* ---- the three red boxes ---- */
 static void post_b(enum lj_cmd_kind kind, uint32_t b) { lj_cmd c; memset(&c, 0, sizeof c); c.kind = (uint8_t)kind; c.b = b; lj_ctx_post(&c); }
@@ -70,9 +69,9 @@ static void on_cancel(lj_widget *w, void *ud)
 
 void lj_win_warning(enum lj_warning w, int show)
 {
-    static const lj_binding status_b[] = { { "FormActivate", noop, NULL }, { "FormDestroy", noop, NULL }, { "Timer1Timer", noop, NULL }, { "BitBtn1Click", on_cancel, (void *)(intptr_t)LJ_WARN_BLACKOUT }, { NULL, NULL, NULL } };
-    static const lj_binding freeze_b[] = { { "FormActivate", noop, NULL }, { "FormDestroy", noop, NULL }, { "Timer1Timer", noop, NULL }, { "bCancelClick", on_cancel, (void *)(intptr_t)LJ_WARN_FROZEN }, { NULL, NULL, NULL } };
-    static const lj_binding offline_b[] = { { "Timer1Timer", noop, NULL }, { "bCancelClick", on_cancel, (void *)(intptr_t)LJ_WARN_OFFLINE }, { NULL, NULL, NULL } };
+    static const lj_binding status_b[] = { { "FormActivate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Timer1Timer", lj_handler_noop, NULL }, { "BitBtn1Click", on_cancel, (void *)(intptr_t)LJ_WARN_BLACKOUT }, { NULL, NULL, NULL } };
+    static const lj_binding freeze_b[] = { { "FormActivate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Timer1Timer", lj_handler_noop, NULL }, { "bCancelClick", on_cancel, (void *)(intptr_t)LJ_WARN_FROZEN }, { NULL, NULL, NULL } };
+    static const lj_binding offline_b[] = { { "Timer1Timer", lj_handler_noop, NULL }, { "bCancelClick", on_cancel, (void *)(intptr_t)LJ_WARN_OFFLINE }, { NULL, NULL, NULL } };
     lj_ctx *ctx = lj_ctx_get();
     int slot;
     if ((int)w < 0 || w >= LJ_WARN_COUNT) return;
@@ -102,7 +101,7 @@ static void on_close_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud;
 
 void lj_win_close_prompt(void (*on_result)(int yes, void *ud), void *ud)
 {
-    static const lj_binding b[] = { { "FormShow", noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormShow", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     lj_ctx *ctx = lj_ctx_get();
     int any = ctx->modified[LJ_MOD_SEQ] || ctx->modified[LJ_MOD_CUE] || ctx->modified[LJ_MOD_CL];
     lj_widget *w;
@@ -132,8 +131,8 @@ static void on_bcancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (
 
 static lj_window *confirm_form(const char *caption, const char *line1, const char *line2, int with_cancel)
 {
-    static const lj_binding b[] = { { "FormActivate", noop, NULL }, { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDeactivate", noop, NULL },
-                                    { "FormShow", noop, NULL }, { "BOkClick", on_ok, NULL }, { "bSaveClick", on_ok, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL },
+                                    { "FormShow", lj_handler_noop, NULL }, { "BOkClick", on_ok, NULL }, { "bSaveClick", on_ok, NULL }, { NULL, NULL, NULL } };
     lj_widget *w;
     if (lj_msg_win) confirm_answer(0);
     lj_msg_win = lj_window_create(&lj_form_TCONFIRMFORM, b);

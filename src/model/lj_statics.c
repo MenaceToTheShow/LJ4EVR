@@ -174,7 +174,7 @@ int lj_statics_swap_pages(lj_static_page *pages, int npages, int a, int b)
 
 int lj_statics_ini_visible(lj_ini *main_ini)
 {
-    int n = main_ini ? lj_ini_geti(main_ini, "STATICS2", "SlotsVisible", LJ_STATICS2_SLOTS_PER_PAGE) : LJ_STATICS2_SLOTS_PER_PAGE;
+    int n = lj_ini_geti(main_ini, "STATICS2", "SlotsVisible", LJ_STATICS2_SLOTS_PER_PAGE);
     return n < 1 ? 1 : n > LJ_STATICS2_SLOTS_MAX ? LJ_STATICS2_SLOTS_MAX : n;   /* ME-30: 1..64, 65 clamps to 64 */
 }
 

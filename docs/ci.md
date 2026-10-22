@@ -114,7 +114,10 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
   `build-fuzz` with the whole tree compiled `-fsanitize=fuzzer-no-link,address,undefined`,
   so `lj_fixlib` and `lj_core` carry coverage, and runs `fuzz_gs2` and `fuzz_udf` for 60 s
   each (LORD_C-17). `fuzz_gs2` also aborts when an accepted record does not write back
-  byte-exact.
+  byte-exact. `fuzz_udf` (ME-114) rewrites the footer CRC with `mz_crc32` of the body
+  before parsing, so mutations reach the inflate and record paths, starts from
+  `udf-corpus/` (the `lj_w3_synthetic.Udf` that `test_uiscript_w3` exports in the ctest
+  step) and runs with `-max_len=32768`.
 - The 66 generic-macro shapes (`src/engine/lj_shapes_gen.c`) are checked by the CTest rows
   `gen_vectors_shapes_check` (`gen_vectors --shapes --check`) and `gen_vectors_shapes_mutated`
   (WILL_FAIL) in every ctest job; `generate-check` keeps `gen_vectors --check` for

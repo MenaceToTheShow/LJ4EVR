@@ -54,7 +54,6 @@ static lj_static_slot *slot_ptr(int slot)
     if (slot < 1 || slot > LJ_S2_N || lj_s2_cur_page < 1 || lj_s2_cur_page > npages()) return NULL;
     return &sh->pages[lj_s2_cur_page - 1].slot[slot - 1];
 }
-static int statics_geti(const char *key) { lj_ctx *c = lj_ctx_get(); return c->main_ini ? lj_ini_geti(c->main_ini, "STATICS", key, 0) : 0; }
 
 int lj_statics2_visible(void)
 {
@@ -138,9 +137,9 @@ int lj_statics2_set_level(int slot, int pct)
     lj_lock(); st->level_pct = (uint8_t)pct; lj_unlock();
     active = lj_statics2_slot_active(slot);
     if (st->kind != LJ_STATIC_EMPTY) {
-        if (active && pct == 0 && statics_geti("LevelAutoDisable")) deactivate(slot);
+        if (active && pct == 0 && lj_ini_geti(lj_ctx_get()->main_ini, "STATICS", "LevelAutoDisable", 0)) deactivate(slot);
         else if (active) activate(slot, st, LJ_REP_ADD);          /* the new level, no scope releases */
-        else if (pct > 0 && statics_geti("LevelAutoEnable")) activate(slot, st, st->replace);
+        else if (pct > 0 && lj_ini_geti(lj_ctx_get()->main_ini, "STATICS", "LevelAutoEnable", 0)) activate(slot, st, st->replace);
     }
     if (slot <= s.n) level_text(slot - 1);
     return 0;
@@ -316,14 +315,13 @@ static void tb_change(lj_widget *w, void *ud) { (void)ud; lj_statics2_set_page((
 static void menu_click(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_STATICS2_PREFS); }   /* M_Prefs */
 static void group_clicked(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("statics: the group picker is the Statics Preferences Groups tab"); }   /* popGroups' "?" placeholder */
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_statics2_form_close(); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 static const lj_binding lj_s2_bindings[] = {
-    { "PanelMouseDown", panel_down, NULL }, { "PanelMouseMove", noop, NULL }, { "PanelMouseUp", noop, NULL },
-    { "tbPagesChange", tb_change, NULL }, { "tbPagesDrawTab", noop, NULL },
-    { "acExecute", noop, NULL } /* the TActions fire through their menu items (menu_action) */, { "MenuClick", menu_click, NULL },
-    { "popPopup", noop, NULL }, { "popGroupClicked", group_clicked, NULL },
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL },
+    { "PanelMouseDown", panel_down, NULL }, { "PanelMouseMove", lj_handler_noop, NULL }, { "PanelMouseUp", lj_handler_noop, NULL },
+    { "tbPagesChange", tb_change, NULL }, { "tbPagesDrawTab", lj_handler_noop, NULL },
+    { "acExecute", lj_handler_noop, NULL } /* the TActions fire through their menu items (menu_action) */, { "MenuClick", menu_click, NULL },
+    { "popPopup", lj_handler_noop, NULL }, { "popGroupClicked", group_clicked, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 static lj_widget *mk_cell(lj_widget *parent, int y, uint32_t rgb, void (*ev)(lj_widget *, int, void *), int *ud)
@@ -341,7 +339,7 @@ static lj_widget *mk_cell(lj_widget *parent, int y, uint32_t rgb, void (*ev)(lj_
 static int s2_geti(const char *key, int dflt, int lo, int hi)
 {
     lj_ctx *c = lj_ctx_get();
-    int v = c->main_ini ? lj_ini_geti(c->main_ini, "STATICS2", key, dflt) : dflt;
+    int v = lj_ini_geti(c->main_ini, "STATICS2", key, dflt);
     return v < lo ? lo : v > hi ? hi : v;
 }
 void lj_statics2_view_get(lj_statics2_view *v)

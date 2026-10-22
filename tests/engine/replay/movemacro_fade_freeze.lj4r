@@ -1,0 +1,22 @@
+LJ4 replay 1
+# movemacro_fade_freeze (design 3.3, 11 F20, 03 s5.11, ME-115; owner movement): a Freeze pauses the cue macro control's
+# Fade out like every other fade; at the unfreeze it resumes with its remaining time instead of jumping to its end.
+# macro_fade out 1000 at tick 10, freeze 1 at tick 30 (the gain holds tick 29's, 475 ms in: floor(100 x 0.525) = 52),
+# freeze 0 at tick 70 (the fade t0 moves by the 40 frozen ticks; tick 70 is 500 ms in): tick 71 is 525 ms
+# into the fade, so mm_amp = floor(100 x (1 - 0.525)) = 47 and the fade is still running (LORD_ENGINE-3's probe).
+tick_us=25000
+patch 1 profile=12 link=1 addr=1
+seq 1 name="ellipse"
+scene st=60000 ft=0
+ch 1:11=128:S 1:12=0:S 1:13=128:S 1:14=0:S
+fx 1 macro=1,127,127,32,32,0,0,0,1 mst=S,S,S,S,S,S
+cue 1
+slot 1 seq=1
+at 0 load_cue 1
+at 10 macro_fade out 1000
+expect_view 29 mm_fade=1
+at 30 freeze 1
+expect_view 50 mm_amp=52 mm_fade=1
+at 70 freeze 0
+expect_view 71 mm_amp=47 mm_fade=1
+expect_view 91 mm_amp=0 mm_fade=0

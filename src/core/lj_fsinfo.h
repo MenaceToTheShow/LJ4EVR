@@ -9,5 +9,6 @@
  * file cannot be stat'ed */
 int lj_fs_mtime_text(const char *path, char *out, size_t cap);
 int lj_fs_mkdir(const char *path);   /* 0 when created or already there, -1 otherwise */
+int lj_fs_exists(const char *path);  /* 1 when the file opens for reading, else 0 (ME-101: was static in model/lj_show.c) */
 
 #endif /* LJ_CORE_FSINFO_H */

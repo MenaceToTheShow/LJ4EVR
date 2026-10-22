@@ -31,7 +31,6 @@
 #define LJ_MOVEMACRO_N_TABLE       4096   /* 17 s7.3 ASSUMED, rig 17 s8 item 6; == size of lj_sin4096 */
 #define LJ_MOVEMACRO_AMP_MAX        127   /* 17 R11 */
 #define LJ_GENMACRO_SHAPE_N        8192   /* 14 sA.3: shape index space, delta = shape[(idx - delay) & 8191] * amp / 32640 */
-#define LJ_STATICS2_SLOTS_PER_PAGE   20   /* 14 sB.8 item 2 PROPOSAL (== model/lj_model.h) */
 #define LJ_STATIC_RUNNERS            64   /* one runner per active static slot (design 3.2); PROPOSAL: the 65th activation releases the oldest (LTP order), rig 14 sB.8 item 10 */
 #define LJ_SEQFORM_SHRINK_TO_PANEL1   1   /* design 7.6 / R17 PROPOSAL, rig Q6: Sequence window client becomes 354x106 on show; --explode shows the DFM as designed */
 #define LJ_ENGINE_CMD_CAP           256   /* the command array; a full array logs and drops (design 2.3 rule 1) */
@@ -112,7 +111,7 @@
 #define LJ_GENMACRO_EDITOR_AFTER_CUE  1   /* PROPOSAL: the editor's live macro (LJ_GM_SRC_EDITOR) applies after the cue's at rank 6; rig 14 sA.7 */
 #define LJ_GENMACRO_RESTART_CUE_ONLY  1   /* CHM 5841: Restart on cue load fires only when the cue loads the macro, not on add-to-cue or editor load */
 #define LJ_MACRO_INDEX_ONCE_PER_TICK  1   /* ME-35 (design 3.6, 11 C9, 17 s7.1): the per-fixture movement-macro index is engine state advanced once per tick in step 2, runners only read it (replay movemacro_six_shapes: two slots, one step); it resets when the previous tick's merged[] carried no macro for that fixture; cue macro control scaling applies at runner evaluation, cue-slot runners only; the overlay stays pre-merge. Rank 6's per-channel index advances once per tick per source after the merge (lj_gm_rank6_tick) */
-#define LJ_MOVEMACRO_PCT_MAX        999   /* 03 s5.11: the cue macro control's 1-999 % option; the scaled byte still clamps at LJ_MOVEMACRO_AMP_MAX */
+#define LJ_MOVEMACRO_PCT_MAX        999   /* 03 s5.11: the cue macro control's 1-999 % option. Amplitude scales the byte (clamped at LJ_MOVEMACRO_AMP_MAX); Speed scales the index rate, unclamped (ME-109); whether LJ2 also caps the scaled speed at raw 127 (the byte-as-speed reading of 17 s7.3) is PROPOSAL rig 17 s8 item 7 */
 #define LJ_MOVEMACRO_FADE_LINEAR      1   /* PROPOSAL rig 03 s5.11: Fade out / Fade in move the amplitude scale linearly between its value and 0 over the selected time */
 #define LJ_MOVEMACRO_DELAY_UNIT     256   /* 17 s6.2: the delay byte, 256 = 100 % = 0 % */
 #define LJ_MOVEMACRO_STEP_MAX       512   /* 04 s4.4: Stepped Ellipse step size up to 512 (8 points at N 4096) */

@@ -5,6 +5,63 @@ single source of the number.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-22 - W3 Show control
+
+Cue lists, generic and movement macros, Generic DMX Control, follow spots, sequence fades, user fixture profiles and the
+15/06-15/09 hand profiles (design section 10 W3; acceptance walked through in `docs/w3-integration.md`, gates in
+`docs/w3-gates.md`).
+
+- Cue list core (`src/model/lj_cuelist.c`, `src/app/lj_cuelist_run.c`): the `.Cl2` record with every 03 s6.3 command
+  word (CD / DA / MP lines load red, are skipped and written back unchanged); the runner on the UI thread inside the
+  10 ms loop (design 2.3 rule 4): auto and manual lines, Wait Elapsed / PC clock / date change / MTC, Goto Line, Link
+  Cuelist, Flash Sequence, Hotkey Command, marks, Run to line, tracking; MTC quarter frames from `lj_midi_feed`.
+- Cuelist window (`src/windows/lj_cuelist_form.c`): TCuelist2Form with its grid, the edit panel per command, the recent
+  commands, Lock / Browse, marks, Save / Select / Set Cue Trig / Log TimeCode, the time-code source row, the Hotkey
+  Command picker, colour codes.
+- Generic macros (`src/model/lj_genmacro.c`, `src/engine/lj_genmacro.c`, `src/windows/lj_genmacro_editor.c`): rank 6
+  with the cue and editor sources, the 66 regenerated shapes (`lj_shapes_gen.c` from `gen_vectors.py --shapes`), a
+  user's `Macros.Mac` override, `.CMA` files, the Generic Macro Editor and its save / select dialogs.
+- Movement (`src/model/lj_movemacro.c`, `src/engine/lj_movemacro.c`, `src/windows/lj_movemacro_editor.c`): the six
+  system shapes and Bezier shapes as integer tables, the Movement Macro and Bezier editors, Fan Out, Auto Delay, Delete
+  Macros and the Cue Macro Control.
+- Generic DMX Control, sequence fades and follow spots (`src/model/lj_gdc.c`, `lj_seqfades.c`, `lj_followspot.c`,
+  `src/windows/lj_gdc_form.c`): the F35 command grammar, Set Fade Status, Select / Edit FollowSpot Settings.
+- `.GS2` / `.Udf` (`src/fixlib/lj_gs2.c`): import and export with the raw-record rule (design 5.3), byte-exact on the
+  48 shipped files, Import / Export / Export All / Reload profile data, the RTF notes stripper, two libFuzzer targets.
+- Profile editor (`src/windows/lj_profile_editor_form.c`): the Generic Fixture Profile editor (11 tabs), Customize
+  Fixture, Channel Configuration with per-channel captions and Grand Master control.
+- Profiles (`src/fixlib/hand/`): 15/06 Atomic 3000, 15/07 MiniMAC, 15/08 RoboColor, 15/09 MAC 550 / 575 / 700.
+- Desktop and app (`src/app/`, `src/desktop/`): the W3 actions and hotkeys, the cue-list and follow-spot toolbar
+  rows, pending generic-macro loads, the W3 script verbs and the walkthrough `tests/ui/scripts/w3_acceptance.lj4s` with
+  its captures in `docs/screenshots/w3/`.
+- Integrator: the W3 widgets (Bezier canvas, string grids), the nine W3 replays, the fuzz step in CI.
+
+### Fix pass r1 (W3 code council, ME-107..ME-123)
+
+- ME-107: a long field (a 64-character Execute File path, a 100-fixture follow-spot selection, a long `gs2=`) no
+  longer breaks the keys after it on load.
+- ME-108: a Hotkey Command line that stops, restarts or reloads its own cue list commits the line first; Cuelist Go
+  from inside a line is refused instead of recursing.
+- ME-109: the Cue Macro Control's Speed scales the macro rate (50 % = half as fast); `macro_ctl` takes 0..999.
+- ME-110: a fixture bound to a user `.GS2` opens its own control windows; Reload profile data re-resolves open
+  controls and the Generic Macro Editor before the old profiles are freed.
+- ME-111: report-view and cue-grid cells clip their text at the cell edge instead of blanking it.
+- ME-112: Select Background Cue (the `(T)` list, double-click loads, sbLoad latched) and BG Cue - Sequence Mode.
+- ME-113: one do-nothing handler and NULL-safe INI reads (the copies deleted, counted to 0 in `test_layering.py`);
+  the cue-page file layer in one file; one `lj_fs_mkdir`; the CRT directory headers allow-listed; the sACN Source Name
+  cut on a UTF-8 character boundary.
+- ME-114: `fuzz_udf` recomputes the footer CRC and starts from an exported `.Udf`.
+- ME-115: a Freeze pauses the Cue Macro Control's fade instead of ending it.
+- ME-116: the MTC time-out preference (Stop / Restart / Ignore) acts when the time code drops out at a Wait MTC.
+- ME-117: deleting a generic macro stops the running one only when it is that macro.
+- ME-118: Channel Configuration captions keep 6 characters (DFM MaxLength 6).
+- ME-119: the Flash Sequence cell uses the host decimal separator.
+- ME-120: Offset / Sort MIDI and PC time codes and Import Old Format Cuelist are greyed, with fidelity rows.
+- ME-121: the ownership evidence for generic macros (delete, re-save, tick) and no cue-list symbol under `engine/`.
+- ME-122: the RTF notes stripper reads at most the field's 4097 bytes.
+- ME-123: this changelog, the README status, the `w3-gates.md` Status column, the replay-grammar W3 paragraph and the
+  W3 fidelity rows.
+
 ## [0.2.0] - 2026-10-22 - W2 Playback
 
 Everything an operator uses to run a show beyond one cue (design section 10 W2; acceptance walked through in

@@ -23,7 +23,7 @@ static struct {
 } ig;
 
 lj_window *lj_intensity_groups_window(void) { return ig.win; }
-static lj_widget *find(const char *n) { return ig.win ? lj_window_find(ig.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(ig.win, n); }
 static lj_widget *findn(const char *stem, int k) { char n[32]; snprintf(n, sizeof n, "%s%d", stem, k); return find(n); }
 int lj_intensity_groups_group_of(int f) { return ig.win && f >= 0 && f < LJ_FIXTURES ? ig.grp[f] : -1; }
 
@@ -129,7 +129,6 @@ static void load_working(void)
 }
 
 /* ---- handlers ---- */
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_pg(lj_widget *w, void *ud) { (void)ud; ig.tab = ((lj_w_tabs *)w)->active; enable_buttons(); }
 static void on_name(lj_widget *w, void *ud)
 {
@@ -143,7 +142,7 @@ static void on_assign_master(lj_widget *w, void *ud) { (void)w; (void)ud; lj_int
 static void on_remove(lj_widget *w, void *ud)
 {
     lj_widget *lv = ig.tab > 0 ? findn("ListView", ig.tab) : NULL;
-    int i = lv ? ((lj_w_listview *)lv)->index : -1;
+    int i = lv ? lj_w_listview_index(lv) : -1;
     (void)w; (void)ud;
     if (i >= 0 && i < ((lj_w_listview *)lv)->n) lj_intensity_groups_remove(ig.fx[ig.tab][i]);   /* ponytail: the list's one selected row; MultiSelect rows need a multi-select listview */
 }
@@ -179,8 +178,8 @@ static void on_close(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_ig_bindings[] = {
-    { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL },
-    { "PGChange", on_pg, NULL }, { "ListViewChange", noop, NULL }, { "NameChange", on_name, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "PGChange", on_pg, NULL }, { "ListViewChange", lj_handler_noop, NULL }, { "NameChange", on_name, NULL },
     { "BAssignSelectedClick", on_assign_sel, NULL }, { "bAssignMasterClick", on_assign_master, NULL }, { "bRemoveClick", on_remove, NULL },
     { "bSaveClick", on_save, NULL }, { "DefaultSetup1Click", on_default, NULL }, { "ClearAll1Click", on_clear_all, NULL }, { "Help1Click", on_help, NULL },
     { NULL, NULL, NULL } };

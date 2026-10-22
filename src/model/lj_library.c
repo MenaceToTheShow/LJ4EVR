@@ -1,7 +1,6 @@
 /* lj_library.c - the user library folder (lj_library.h, design 5.1/5.2, 01 s8, 18 s2).
  * Folder names are LJ2's; numbering is DirInfo.Ini [NEXT] (ours). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen/localtime under /W4 /WX on MSVC */
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +17,7 @@
 #include "model/lj_library.h"
 #include "model/lj_model.h"
 #include "model/lj_cue.h"
+#include "core/lj_fsinfo.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "miniz.h"
@@ -28,16 +28,6 @@ static const char *const lj_rec_ext[LJ_REC_KIND_COUNT]    = { ".seq", ".cue", ".
 static const char *const lj_rec_key[LJ_REC_KIND_COUNT]    = { "Seq", "Cue", "Cl", "Bg", "Macro" };
 
 /* ---- the few filesystem calls, both CRTs ---- */
-
-static int lj_fs_mkdir(const char *path)
-{
-#ifdef _WIN32
-    int r = _mkdir(path);
-#else
-    int r = mkdir(path, 0777);
-#endif
-    return (r == 0 || errno == EEXIST) ? 0 : -1;
-}
 
 static int lj_fs_rmdir(const char *path)
 {

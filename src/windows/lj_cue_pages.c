@@ -30,7 +30,6 @@ static struct {
 } cp;
 
 static lj_ctx *C(void) { return lj_ctx_get(); }
-static int  acs_geti(const char *key, int dflt) { lj_ctx *c = C(); return c->forms_ini ? lj_ini_geti(c->forms_ini, "ACUESELECT", key, dflt) : dflt; }
 static void acs_seti(const char *key, int v) { lj_ctx *c = C(); if (c->forms_ini) lj_ini_seti(c->forms_ini, "ACUESELECT", key, v); }
 
 lj_cuepages *lj_cue_pages_model(void)
@@ -47,7 +46,7 @@ lj_cuepages *lj_cue_pages_model(void)
         c->cue_pages = &lj_cp_own;
     }
     if (c->cue_pages->n == 0 && lj_cuepages_add(c->cue_pages, LJ_CP_FIRST_PAGE) == 0) c->cue_pages->current = 0;
-    if (!cp.loaded) { cp.loaded = 1; c->cue_pages->current = acs_geti("Page", 0); }
+    if (!cp.loaded) { cp.loaded = 1; c->cue_pages->current = lj_ini_geti(lj_ctx_get()->forms_ini, "ACUESELECT", "Page", 0); }
     if (c->cue_pages->current < 0 || c->cue_pages->current >= c->cue_pages->n) c->cue_pages->current = 0;
     return c->cue_pages;
 }
@@ -68,7 +67,7 @@ int lj_cue_pages_store(void)
 
 /* ---- the List of Cues page side ---- */
 static lj_widget *lc_find(const char *name) { lj_window *w = lj_list_cue_get(); return w ? lj_window_find(w, name) : NULL; }
-static int lv_index(void) { lj_widget *lv = lc_find("lvPages"); return lv ? ((lj_w_listview *)lv)->index : -1; }
+static int lv_index(void) { lj_widget *lv = lc_find("lvPages"); return lv ? lj_w_listview_index(lv) : -1; }
 
 void lj_cue_pages_fill(lj_window *lc)
 {
@@ -109,7 +108,7 @@ static void load(uint32_t cue)
 int lj_cue_pages_step_page(int delta)
 {
     lj_cuepages *p = lj_cue_pages_model();
-    int r = lj_cuepages_step(p, delta, acs_geti("CircularPageSelect", 0));
+    int r = lj_cuepages_step(p, delta, lj_ini_geti(lj_ctx_get()->forms_ini, "ACUESELECT", "CircularPageSelect", 0));
     if (r >= 0) { p->cursor = -1; acs_seti("Page", p->current); refill(); }
     return r;
 }
@@ -120,7 +119,7 @@ uint32_t lj_cue_pages_step_cue(int delta, int latch)
     int sel = lv_index();
     if (sel >= 0) p->cursor = sel;                         /* the row the operator clicked */
     cue = lj_cuepages_step_cue(p, delta);
-    if (!cue && acs_geti("NPChangePage", 0) && lj_cuepages_step(p, delta, acs_geti("CircularPageSelect", 0)) >= 0) {   /* "Next/Prev Cue changes page" */
+    if (!cue && lj_ini_geti(lj_ctx_get()->forms_ini, "ACUESELECT", "NPChangePage", 0) && lj_cuepages_step(p, delta, lj_ini_geti(lj_ctx_get()->forms_ini, "ACUESELECT", "CircularPageSelect", 0)) >= 0) {   /* "Next/Prev Cue changes page" */
         p->cursor = delta > 0 ? -1 : p->page[p->current].n;
         cue = lj_cuepages_step_cue(p, delta);
     }
@@ -255,7 +254,7 @@ static void sync_prefs(lj_window *lc)
     lj_menu *m = lc ? lj_window_menus(lc) : NULL;
     int i;
     if (!m) return;
-    for (i = 0; i < LJ_COUNT_OF(lj_acs_prefs); i++) lj_menu_set_checked(m, lj_acs_prefs[i].item, acs_geti(lj_acs_prefs[i].key, lj_acs_prefs[i].dflt));
+    for (i = 0; i < LJ_COUNT_OF(lj_acs_prefs); i++) lj_menu_set_checked(m, lj_acs_prefs[i].item, lj_ini_geti(lj_ctx_get()->forms_ini, "ACUESELECT", lj_acs_prefs[i].key, lj_acs_prefs[i].dflt));
     lj_menu_set_checked(m, "PopLockList", cp.locked);
 }
 void lj_cue_pages_on_prefs(lj_widget *w, void *ud)
@@ -265,7 +264,7 @@ void lj_cue_pages_on_prefs(lj_widget *w, void *ud)
     int i;
     (void)w; (void)ud;
     if (it && it->name) for (i = 0; i < LJ_COUNT_OF(lj_acs_prefs); i++)
-        if (!strcmp(it->name, lj_acs_prefs[i].item)) { acs_seti(lj_acs_prefs[i].key, !acs_geti(lj_acs_prefs[i].key, lj_acs_prefs[i].dflt)); break; }
+        if (!strcmp(it->name, lj_acs_prefs[i].item)) { acs_seti(lj_acs_prefs[i].key, !lj_ini_geti(lj_ctx_get()->forms_ini, "ACUESELECT", lj_acs_prefs[i].key, lj_acs_prefs[i].dflt)); break; }
     sync_prefs(lc);                                          /* the Preferences1 parent click lands here too: it just re-syncs the checks */
 }
 
@@ -291,10 +290,9 @@ static void pn_ok(lj_widget *w, int ev, void *ud)
     changed();
 }
 static void pn_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) lj_cue_page_name_close(); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 lj_window *lj_cue_page_name_open_mode(enum lj_page_name_mode mode)
 {
-    static const lj_binding b[] = { { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     static const char *const caps[3] = { "Add New Cue Page", "Insert New Cue Page", "Edit Page Name" };   /* DFM caption; exe 0x1628A4, 0x161494 */
     lj_cuepages *p = lj_cue_pages_model();
     lj_widget *w;
@@ -333,7 +331,7 @@ static void ro_lv_event(lj_widget *w, int ev, void *ud)
 {
     (void)ud;
     if (ro.lv_event) ro.lv_event(w, ev, ro.lv_ud);
-    if (ev == LJ_WEV_CLICK && ((lj_w_listview *)w)->index >= 0) lj_dnd_begin(w, LJ_DND_PAGE_ROW, ((lj_w_listview *)w)->index);   /* DragMode = dmAutomatic */
+    if (ev == LJ_WEV_CLICK && lj_w_listview_index(w) >= 0) lj_dnd_begin(w, LJ_DND_PAGE_ROW, lj_w_listview_index(w));   /* DragMode = dmAutomatic */
 }
 static void ro_drop(lj_widget *w, void *ud)
 {
@@ -357,8 +355,8 @@ static void ro_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (e
 static void ro_show(lj_widget *w, void *ud) { (void)w; (void)ud; ro_fill(); }
 lj_window *lj_cue_pages_reorder_open(void)
 {
-    static const lj_binding b[] = { { "lvPagesDragDrop", ro_drop, NULL }, { "lvPagesDragOver", noop, NULL }, { "Help1Click", noop, NULL },
-                                    { "FormActivate", ro_show, NULL }, { "FormCreate", noop, NULL }, { "FormResize", noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "lvPagesDragDrop", ro_drop, NULL }, { "lvPagesDragOver", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+                                    { "FormActivate", ro_show, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     lj_widget *w;
     if (ro.win) return ro.win;
     ro.win = lj_window_create(&lj_form_TREORDERCUEPAGESFORM, b);

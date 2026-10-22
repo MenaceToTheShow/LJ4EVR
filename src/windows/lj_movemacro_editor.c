@@ -42,7 +42,6 @@
 #define LJ_WIN_STAY_ON_TOP 2u   /* = LJ_WF_STAY_ON_TOP of platform/lj_platform.h (not includable from windows/) */
 #define LJ_MM_CAPTION "Movement Macro"   /* exe 0x26AE24 */
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("movement: Help: no help file is shipped (D2)"); }
 
 /* ---------------------------------------------------------------------------------------------------------------
@@ -429,7 +428,7 @@ static void on_name_pref(lj_widget *w, void *ud)
     if (it && it->name) lj_menu_set_checked(lj_window_menus(lj_window_of(w)), it->name, it->checked != LJ_YES);   /* ponytail: the check shows, Enter already saves */
 }
 static const lj_binding lj_bezname_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormKeyDown", noop, NULL } /* Save on [Enter]: bSave is the Default button */,
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL } /* Save on [Enter]: bSave is the Default button */,
     { "bSaveClick", on_name_save, NULL }, { "PrefsClick", on_name_pref, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_movemacro_editor_name_window(void) { return mm.name_win; }
@@ -621,7 +620,7 @@ static void dm_ok(lj_widget *w, void *ud)
 }
 static void dm_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) lj_delete_movemacro_close(); }
 static const lj_binding lj_dm_bindings[] = {
-    { "FormCreate", noop, NULL }, { "bOkClick", dm_ok, NULL }, { "bAllClick", dm_all, NULL }, { "bNoneClick", dm_none, NULL }, { "LB1Click", noop, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "bOkClick", dm_ok, NULL }, { "bAllClick", dm_all, NULL }, { "bNoneClick", dm_none, NULL }, { "LB1Click", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_delete_movemacro_open(void)
@@ -744,7 +743,7 @@ static void fo_pan(lj_widget *w, void *ud) { (void)w; (void)ud; fo_spread(0); }
 static void fo_tilt(lj_widget *w, void *ud) { (void)w; (void)ud; fo_spread(1); }
 static void fo_rg(lj_widget *w, void *ud) { (void)w; (void)ud; lj_window_invalidate_all(fo.win); }
 static void fo_clear(lj_widget *w, void *ud) { (void)w; (void)ud; fo.ncust = 0; fo_list(); }   /* Clear Custom Selection: rebuilt from the selection */
-static void fo_start_drag(lj_widget *w, void *ud) { (void)ud; fo.drag_row = ((lj_w_listview *)w)->index; }
+static void fo_start_drag(lj_widget *w, void *ud) { (void)ud; fo.drag_row = lj_w_listview_index(w); }
 static void fo_drop(lj_widget *w, void *ud)                  /* drag lines to reorder [04 s4.2] */
 {
     lj_window *win = lj_window_of(w);
@@ -776,11 +775,10 @@ int lj_fan_out_custom_move(int from, int to)                 /* the drag-and-dro
     fo_list();
     return 0;
 }
-static void fo_close(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static const lj_binding lj_fo_bindings[] = {
-    { "FormClose", fo_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormResize", noop, NULL }, { "FormShow", noop, NULL },
-    { "Lv1DragDrop", fo_drop, NULL }, { "Lv1DragOver", noop, NULL }, { "Lv1StartDrag", fo_start_drag, NULL },
-    { "sbNewClick", fo_clear, NULL }, { "sbDeleteClick", fo_clear, NULL }, { "cb1Change", noop, NULL },   /* ponytail: saved custom selections (TSaveSelectionForm) are not kept; the list is per session */
+    { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
+    { "Lv1DragDrop", fo_drop, NULL }, { "Lv1DragOver", lj_handler_noop, NULL }, { "Lv1StartDrag", fo_start_drag, NULL },
+    { "sbNewClick", fo_clear, NULL }, { "sbDeleteClick", fo_clear, NULL }, { "cb1Change", lj_handler_noop, NULL },   /* ponytail: saved custom selections (TSaveSelectionForm) are not kept; the list is per session */
     { "bPanClick", fo_pan, NULL }, { "bTiltClick", fo_tilt, NULL }, { "rg1Click", fo_rg, NULL }, { "pb1Paint", fo_paint_grid, NULL },
     { "DeleteAllCustomSettings1Click", fo_clear, NULL }, { "help1Click", help, NULL },
     { NULL, NULL, NULL } };
@@ -862,7 +860,7 @@ int lj_auto_delay_apply(void)                                /* Apply: delays in
 }
 static void ad_ok(lj_widget *w, void *ud) { (void)w; (void)ud; lj_auto_delay_apply(); }
 static const lj_binding lj_ad_bindings[] = {
-    { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", ad_check, NULL },
+    { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", ad_check, NULL },
     { "CheckControls", ad_check, NULL }, { "UdSegmentsChange", ad_seg, NULL }, { "UdIncrementChange", ad_inc, NULL }, { "udMaxDelayChange", ad_max, NULL },
     { "bOkClick", ad_ok, NULL }, { "Help1Click", help, NULL }, { NULL, NULL, NULL } };
 /* the value boxes between each label and its TUdButton (code-built in LJ2: autodelay.gif, PROPOSAL rig) */
@@ -967,9 +965,9 @@ static void cm_menu(lj_widget *w, void *ud)
     }
 }
 static const lj_binding lj_cm_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", noop, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormShow", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { "MacroFadeClick", cm_fade, NULL }, { "sbFreezeMacroMouseUp", cm_freeze, NULL }, { "cbFadeTimeChange", cm_time, NULL },
-    { "Range1Click", noop, NULL }, { "M_PctClick", cm_menu, NULL }, { "M_LinkSpeedFaderClick", noop, NULL }, { "M_LinkCueClick", cm_menu, NULL },
+    { "Range1Click", lj_handler_noop, NULL }, { "M_PctClick", cm_menu, NULL }, { "M_LinkSpeedFaderClick", lj_handler_noop, NULL }, { "M_LinkCueClick", cm_menu, NULL },
     { "OptionsClick", cm_menu, NULL }, { "Help1Click", help, NULL }, { NULL, NULL, NULL } };
 /* the two faders inside Panel2 (Ampl.) / Panel3 (Speed), code-built in LJ2 (cuemacrocontrol.gif, PROPOSAL rig) */
 static const lj_ctl_desc d_cm_amp   = { LJ_K_UNKNOWN, "FaderAmp", 2, 18, LJ_FADER_W, 166, .max = 100, .position = 100 };

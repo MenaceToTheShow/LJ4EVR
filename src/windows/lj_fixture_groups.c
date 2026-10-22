@@ -64,8 +64,7 @@ static struct {
 } fg;
 
 lj_window *lj_fixture_groups_window(void) { return fg.win; }
-static lj_widget *find(const char *n) { return fg.win ? lj_window_find(fg.win, n) : NULL; }
-static int pref(const char *key, int dflt) { lj_ctx *c = lj_ctx_get(); return c->forms_ini ? lj_ini_geti(c->forms_ini, "GROUPS", key, dflt) : dflt; }   /* PROPOSAL rig keys */
+static lj_widget *find(const char *n) { return lj_window_find(fg.win, n); }
 
 static void save_groups(void)
 {
@@ -78,7 +77,7 @@ static void save_groups(void)
 static const char *fixture_label(const lj_show *sh, int f, char *buf, size_t cap)
 {
     const lj_profile *p = lj_fixlib_by_id(sh->fixture[f].profile_id);
-    snprintf(buf, cap, "\t(%d) %s", f + 1, pref("ShowUserNames", 0) || !p ? sh->fixture[f].user_name : p->name);
+    snprintf(buf, cap, "\t(%d) %s", f + 1, lj_ini_geti(lj_ctx_get()->forms_ini, "GROUPS", "ShowUserNames", 0) || !p ? sh->fixture[f].user_name : p->name);
     return buf;
 }
 
@@ -97,7 +96,7 @@ void lj_fixture_groups_refresh(void)
     int f, g, i;
     if (!fg.win || !sh) return;
     fg.n = 0;
-    if (pref("ShowSystem", 1)) for (f = 0; f < LJ_FIXTURES; f++) {
+    if (lj_ini_geti(lj_ctx_get()->forms_ini, "GROUPS", "ShowSystem", 1)) for (f = 0; f < LJ_FIXTURES; f++) {
         const lj_profile *p;
         if (!sh->fixture[f].link) continue;
         for (i = 0; i < f; i++) if (sh->fixture[i].link && sh->fixture[i].profile_id == sh->fixture[f].profile_id) break;
@@ -116,8 +115,8 @@ void lj_fixture_groups_refresh(void)
     if (tv) lj_w_treeview_set_items(tv, fg.items, fg.n);
     lj_w_set_caption(find("bMode"), lj_sel_mode() == LJ_SEL_EXCLUSIVE ? "Mode:Exclusive" : "Mode:Inclusive");
     lj_w_set_caption(find("bFilter"), fg.filter == 1 ? "Filter:Odd" : fg.filter == 2 ? "Filter:Even" : "Filter:All");
-    lj_menu_set_checked(lj_window_menus(fg.win), "M_ShowSystem", pref("ShowSystem", 1));
-    lj_menu_set_checked(lj_window_menus(fg.win), "M_ShowUser", pref("ShowUserNames", 0));
+    lj_menu_set_checked(lj_window_menus(fg.win), "M_ShowSystem", lj_ini_geti(lj_ctx_get()->forms_ini, "GROUPS", "ShowSystem", 1));
+    lj_menu_set_checked(lj_window_menus(fg.win), "M_ShowUser", lj_ini_geti(lj_ctx_get()->forms_ini, "GROUPS", "ShowUserNames", 0));
 }
 
 static int passes(int f) { return fg.filter == 0 || (fg.filter == 1) == ((f + 1) % 2 == 1); }   /* odd/even by fixture number [RN 2.2] */
@@ -221,8 +220,7 @@ static void add_ok(lj_widget *w, int ev, void *ud)
     add_close();
 }
 static void add_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) add_close(); }
-static void add_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
-static const lj_binding lj_fg_add_bindings[] = { { "FormCreate", add_noop, NULL }, { "FormDestroy", add_noop, NULL }, { "FormShow", add_noop, NULL }, { NULL, NULL, NULL } };
+static const lj_binding lj_fg_add_bindings[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 static void add_dialog(int rename)
 {
     const lj_show *sh = lj_ctx_get()->show;
@@ -267,8 +265,8 @@ static void on_prefs(lj_widget *w, void *ud)
     const lj_menu_item_desc *it = fg.win ? lj_window_menu_item(fg.win) : NULL;
     (void)w; (void)ud;
     if (!it || !ctx->forms_ini) return;
-    if (strcmp(it->name, "M_ShowSystem") == 0) lj_ini_seti(ctx->forms_ini, "GROUPS", "ShowSystem", !pref("ShowSystem", 1));
-    else lj_ini_seti(ctx->forms_ini, "GROUPS", "ShowUserNames", !pref("ShowUserNames", 0));
+    if (strcmp(it->name, "M_ShowSystem") == 0) lj_ini_seti(ctx->forms_ini, "GROUPS", "ShowSystem", !lj_ini_geti(lj_ctx_get()->forms_ini, "GROUPS", "ShowSystem", 1));
+    else lj_ini_seti(ctx->forms_ini, "GROUPS", "ShowUserNames", !lj_ini_geti(lj_ctx_get()->forms_ini, "GROUPS", "ShowUserNames", 0));
     lj_fixture_groups_refresh();
 }
 static void on_add_group(lj_widget *w, void *ud) { (void)w; (void)ud; add_dialog(0); }

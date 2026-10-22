@@ -1354,7 +1354,7 @@ static int rp_at(rp *p, char **argv, int argc)
         else if (argc == 5 && !rp_slotword(argv[3], &n) && !rp_num(argv[4], 0, 255, &v)) { c.a = (uint32_t)n; c.b = (uint32_t)v; }
         else return rp_fail(p, "seq_int: expected `seq_int slot<k> <0..255>` or `seq_int mode <word>`");
     } else if (!strcmp(w, "macro_ctl")) {
-        if (argc != 5 || rp_num(argv[3], 0, 100, &n) || rp_num(argv[4], 0, 100, &v)) return rp_fail(p, "macro_ctl: expected `macro_ctl <amp 0..100> <speed 0..100>`");
+        if (argc != 5 || rp_num(argv[3], 0, LJ_MOVEMACRO_PCT_MAX, &n) || rp_num(argv[4], 0, LJ_MOVEMACRO_PCT_MAX, &v)) return rp_fail(p, "macro_ctl: expected `macro_ctl <amp 0..999> <speed 0..999>`");   /* ME-109 / LORD_ENGINE-10 */
         c.kind = LJ_CMD_MACRO_CTL; c.a = (uint32_t)n; c.b = (uint32_t)v;
     } else if (!strcmp(w, "sacn_cfg")) {
         if (argc != 3) return rp_fail(p, "sacn_cfg takes no arguments");

@@ -208,6 +208,7 @@ static void lj_engine_freeze(lj_engine *e, int on, uint64_t now)
         if (!lj_runner_active(r)) continue;                    /* ME-80: every active runner, a pinned static with a fade included */
         r->fade_t0_us = r->fade_t0_us < e->frozen_since_us ? r->fade_t0_us + (now - e->frozen_since_us) : now;
     }
+    if (e->mmc.fade) e->mmc.t0_us = e->mmc.t0_us < e->frozen_since_us ? e->mmc.t0_us + (now - e->frozen_since_us) : now;   /* ME-115: the cue macro control fade keeps its remaining time (design 3.3) */
     /* the GM Fade runner is not shifted: it kept running while frozen (LJ_GM_FADE_RUNS_FROZEN, ME-71) */
 }
 

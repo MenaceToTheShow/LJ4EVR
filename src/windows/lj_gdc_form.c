@@ -35,7 +35,6 @@
 #define GDC_CAPTION "Generic DMX Control"
 #define FORMS_SEC "GENERIC"     /* forms.ini section, exe 0x1E5AC4 */
 
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static const char *menu_item_name(lj_window *win) { const lj_menu_item_desc *it = win ? lj_window_menu_item(win) : NULL; return it && it->name ? it->name : ""; }
 static void set_caption(lj_window *win, const char *name, const char *text) { lj_widget *w = win ? lj_window_find(win, name) : NULL; if (w) { lj_w_set_caption(w, text); lj_widget_invalidate(w); } }
 static void set_enabled(lj_window *win, const char *name, int on) { lj_widget *w = win ? lj_window_find(win, name) : NULL; if (w && (int)w->enabled != (on != 0)) { w->enabled = on != 0; lj_widget_invalidate(w); } }
@@ -278,7 +277,6 @@ static void on_grid_move(lj_widget *w, void *ud)
     lj_widget_invalidate(g.grid); caption_update();
 }
 static void on_grid_up(lj_widget *w, void *ud) { (void)w; (void)ud; g.down = 0; }
-static void on_grid_pop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 /* our TDrawGrid emits OnDrawCell / OnSelectCell / OnClick but not the DG1MouseDown/Move/Up the DFM binds; the grid's
  * mouse entry forwards them (ponytail: per-window vt copy, until lj_w_grid emits LJ_WEV_MOUSE_*) */
 static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
@@ -332,7 +330,7 @@ static void on_state_down(lj_widget *w, void *ud)                        /* pOff
 static void on_clear_sel(lj_widget *w, void *ud) { (void)w; (void)ud; memset(gst()->sel, 0, LJ_CHANS); if (g.grid) lj_widget_invalidate(g.grid); caption_update(); }   /* SpeedButton3 "Clear" */
 
 /* ---- groups ---- */
-static int lv_group(void) { lj_widget *lv = g.win ? lj_window_find(g.win, "lv1") : NULL; int i = lv ? ((lj_w_listview *)lv)->index : -1; return i >= 0 && i < g.nrows ? g.row_group[i] : -1; }
+static int lv_group(void) { lj_widget *lv = g.win ? lj_window_find(g.win, "lv1") : NULL; int i = lv ? lj_w_listview_index(lv) : -1; return i >= 0 && i < g.nrows ? g.row_group[i] : -1; }
 static void on_lv_change(lj_widget *w, void *ud)                         /* a highlighted group selects its channels */
 {
     int gi = lv_group();
@@ -414,7 +412,7 @@ static void create_ok(lj_widget *w, int ev, void *ud)
 static void create_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) create_close(); }
 static void create_open(int gi)
 {
-    static const lj_binding b[] = { { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     lj_ctx *c = lj_ctx_get();
     lj_widget *w;
     char t[12];   /* any int (gcc -Wformat-truncation) */
@@ -532,20 +530,20 @@ static void on_resize(lj_widget *w, void *ud) { (void)w; (void)ud; cells_build()
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gdc_form_refresh(); }
 
 static const lj_binding lj_gdc_bindings[] = {
-    { "FormClose", on_gdc_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormKeyDown", noop, NULL } /* the keys reach eCommand (cmd_key) */,
-    { "FormResize", on_resize, NULL }, { "FormShow", noop, NULL },
+    { "FormClose", on_gdc_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL } /* the keys reach eCommand (cmd_key) */,
+    { "FormResize", on_resize, NULL }, { "FormShow", lj_handler_noop, NULL },
     { "pb1MouseDown", on_fader_down, NULL }, { "pb1MouseMove", on_fader_move, NULL }, { "pb1MouseUp", on_fader_up, NULL }, { "pb1Paint", on_fader_paint, NULL },
-    { "pOffMouseDown", on_state_down, NULL }, { "pOffMouseUp", noop, NULL }, { "sbMouseDown", on_sb_down, NULL }, { "sbMouseUp", noop, NULL },
-    { "SpeedButton3Click", on_clear_sel, NULL }, { "lv1Change", on_lv_change, NULL }, { "lv1Enter", noop, NULL }, { "lv1MouseDown", on_lv_down, NULL },
-    { "Panel5Resize", noop, NULL }, { "eCommandChange", noop, NULL }, { "eCommandKeyDown", noop, NULL } /* cmd_key */,
+    { "pOffMouseDown", on_state_down, NULL }, { "pOffMouseUp", lj_handler_noop, NULL }, { "sbMouseDown", on_sb_down, NULL }, { "sbMouseUp", lj_handler_noop, NULL },
+    { "SpeedButton3Click", on_clear_sel, NULL }, { "lv1Change", on_lv_change, NULL }, { "lv1Enter", lj_handler_noop, NULL }, { "lv1MouseDown", on_lv_down, NULL },
+    { "Panel5Resize", lj_handler_noop, NULL }, { "eCommandChange", lj_handler_noop, NULL }, { "eCommandKeyDown", lj_handler_noop, NULL } /* cmd_key */,
     { "DG1DrawCell", on_draw_cell, NULL }, { "DG1MouseDown", on_grid_down, NULL }, { "DG1MouseMove", on_grid_move, NULL }, { "DG1MouseUp", on_grid_up, NULL },
     { "DeleteAllGroups1Click", on_delete_all, NULL }, { "ClearallGroups1Click", on_clear_all, NULL }, { "HideSelectedChannels1Click", on_hide, NULL },
     { "ShowAllChannels1Click", on_show_all, NULL }, { "PrefsClick", on_prefs, NULL }, { "GridSize1Click", on_grid_size, NULL }, { "GridFont1Click", on_grid_font, NULL },
-    { "GridColors1Click", on_grid_colors, NULL }, { "Help1Click", noop, NULL }, { "Timer1Timer", on_timer, NULL }, { "FontDialog1Apply", noop, NULL },
-    { "GridPopPopup", on_grid_pop, NULL }, { "PopClick", on_pop_click, NULL }, { "GroupPopPopup", on_group_pop, NULL },
+    { "GridColors1Click", on_grid_colors, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "Timer1Timer", on_timer, NULL }, { "FontDialog1Apply", lj_handler_noop, NULL },
+    { "GridPopPopup", lj_handler_noop, NULL }, { "PopClick", on_pop_click, NULL }, { "GroupPopPopup", on_group_pop, NULL },
     { "P_CreateGroupClick", on_create_group, NULL }, { "P_RenameGroupClick", on_rename_group, NULL }, { "P_DeleteGroupClick", on_delete_group, NULL },
     { "P_AddSelectedtoGroupClick", on_add_sel, NULL }, { "P_RemoveSelectedFromGroupClick", on_rem_sel, NULL }, { "P_SetGroupClick", on_set_group, NULL },
-    { "P_ClearGroupClick", on_clear_group, NULL }, { "CaptureTimerTimer", noop, NULL },
+    { "P_ClearGroupClick", on_clear_group, NULL }, { "CaptureTimerTimer", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
 lj_window *lj_gdc_form_open(void)
@@ -560,10 +558,10 @@ lj_window *lj_gdc_form_open(void)
     }
     if ((g.win = lj_window_create(&lj_form_TGENERICMEGAFORM, lj_gdc_bindings)) == NULL) { lj_log("generic dmx: cannot create TGenericMegaForm"); return NULL; }
     g.grid = lj_window_find(g.win, "DG1"); g.fader = lj_window_find(g.win, "pb1"); g.cmd = lj_window_find(g.win, "eCommand");
-    for (i = 0; i < GP_COUNT; i++) g.pref[i] = gp_rows[i].key && c->forms_ini ? lj_ini_geti(c->forms_ini, FORMS_SEC, gp_rows[i].key, gp_rows[i].dflt) : gp_rows[i].dflt;
+    for (i = 0; i < GP_COUNT; i++) g.pref[i] = gp_rows[i].key && lj_ini_geti(c->forms_ini, FORMS_SEC, gp_rows[i].key, gp_rows[i].dflt);
     for (i = 0; i < GC_COUNT; i++) g.color[i] = c->forms_ini ? (uint32_t)lj_ini_geti(c->forms_ini, FORMS_SEC, gc_keys[i], (int)gc_default[i]) : gc_default[i];
-    g.cw = c->forms_ini ? lj_ini_geti(c->forms_ini, FORMS_SEC, "CellWidth", 32) : 32;       /* DG1 DefaultColWidth 32 */
-    g.rh = c->forms_ini ? lj_ini_geti(c->forms_ini, FORMS_SEC, "CellHight", 26) : 26;       /* two text rows; measured from genericcontrol.gif (reduced), PROPOSAL rig F35 */
+    g.cw = lj_ini_geti(c->forms_ini, FORMS_SEC, "CellWidth", 32);       /* DG1 DefaultColWidth 32 */
+    g.rh = lj_ini_geti(c->forms_ini, FORMS_SEC, "CellHight", 26);       /* two text rows; measured from genericcontrol.gif (reduced), PROPOSAL rig F35 */
     if (g.cw < 16 || g.cw > 64) g.cw = 32;
     if (g.rh < 16 || g.rh > 48) g.rh = 26;
     g.cols = 0; g.down = 0; g.rel = 0; g.relaid = 0;
@@ -625,8 +623,8 @@ static void sf_toggle(lj_widget *w, void *ud)                                   
 }
 static void sf_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_seq_fades_close(); }
 static const lj_binding lj_sf_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", sf_close, NULL }, { "bOkClick", sf_ok, NULL }, { "sbToggleClick", sf_toggle, NULL },
-    { "cbIntensityClick", noop, NULL }, { "help1Click", noop, NULL }, { NULL, NULL, NULL } };
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", sf_close, NULL }, { "bOkClick", sf_ok, NULL }, { "sbToggleClick", sf_toggle, NULL },
+    { "cbIntensityClick", lj_handler_noop, NULL }, { "help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_seq_fades_open(void)
 {
@@ -752,10 +750,10 @@ static void fs_form_close(lj_widget *w, void *ud)
 }
 static void fs_resize(lj_widget *w, void *ud) { (void)w; (void)ud; fs_cols(); }
 static const lj_binding lj_fs_bindings[] = {
-    { "FormClose", fs_form_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormResize", fs_resize, NULL },
+    { "FormClose", fs_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", fs_resize, NULL },
     { "bSaveClick", fs_save_click, NULL }, { "bApplySceneClick", fs_apply, NULL }, { "bClearClick", fs_clear, NULL },
-    { "sg1GetEditMask", noop, NULL }, { "sg1MouseDown", noop, NULL }, { "sg1SelectCell", fs_select, NULL },
-    { "ClearAllFollowspotSettings1Click", fs_clear_all, NULL }, { "Help1Click", noop, NULL }, { "popPopup", fs_pop, NULL },
+    { "sg1GetEditMask", lj_handler_noop, NULL }, { "sg1MouseDown", lj_handler_noop, NULL }, { "sg1SelectCell", fs_select, NULL },
+    { "ClearAllFollowspotSettings1Click", fs_clear_all, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "popPopup", fs_pop, NULL },
     { "M_ApplyCurrentSceneClick", fs_apply, NULL }, { "ClearEntry1Click", fs_clear, NULL }, { "M_RemoveStaticClick", fs_static_clear, NULL },
     { "M_AutoClearStaticClick", fs_static_autoclr, NULL }, { NULL, NULL, NULL } };
 
@@ -775,7 +773,7 @@ lj_window *lj_followspot_form_get(void) { return fs.win; }
 void lj_followspot_form_refresh(void) { }
 
 /* TFollowListForm "Select Followspot Setting": the used settings by name; OK / double-click activates, Clear releases */
-static int fl_setting(void) { lj_widget *lv = fs.list ? lj_window_find(fs.list, "lv1") : NULL; int i = lv ? ((lj_w_listview *)lv)->index : -1; return i >= 0 && i < fs.nitems ? fs.item_set[i] + 1 : 0; }
+static int fl_setting(void) { lj_widget *lv = fs.list ? lj_window_find(fs.list, "lv1") : NULL; int i = lv ? lj_w_listview_index(lv) : -1; return i >= 0 && i < fs.nitems ? fs.item_set[i] + 1 : 0; }
 static void fl_ok(lj_widget *w, void *ud) { int n = fl_setting(); (void)w; (void)ud; if (n) { lj_desktop_run_action(LJ_ACT_FOLLOWSPOT_APPLY, n); lj_followspot_list_close(); } }
 static void fl_clear(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_FOLLOWSPOT_APPLY, 0); }
 static void fl_change(lj_widget *w, void *ud) { (void)w; (void)ud; set_enabled(fs.list, "bOk", fl_setting() != 0); }
@@ -792,9 +790,9 @@ static void fl_presel(lj_widget *w, void *ud)
 }
 static void fl_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_followspot_list_close(); }
 static const lj_binding lj_fl_bindings[] = {
-    { "FormClose", fl_close, NULL }, { "FormCreate", noop, NULL }, { "bOkClick", fl_ok, NULL }, { "bClearClick", fl_clear, NULL },
+    { "FormClose", fl_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "bOkClick", fl_ok, NULL }, { "bClearClick", fl_clear, NULL },
     { "lv1Change", fl_change, NULL }, { "lv1DblClick", fl_ok, NULL }, { "FollowspotSetttings1Click", fl_edit, NULL },
-    { "Preferences1Click", noop, NULL }, { "M_PreselClick", fl_presel, NULL }, { "Help1Click", noop, NULL }, { NULL, NULL, NULL } };
+    { "Preferences1Click", lj_handler_noop, NULL }, { "M_PreselClick", fl_presel, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_followspot_list_open(void)
 {

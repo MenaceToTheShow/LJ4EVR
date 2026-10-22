@@ -51,7 +51,7 @@ int  lj_fixture_config_tree_id(int i) { return (i >= 0 && i < fc.tree_n) ? fc.tr
 int  lj_fixture_config_tree_available(int i) { int id = lj_fixture_config_tree_id(i); return id >= 0 && lj_fixlib_by_id((uint16_t)id) != NULL; }
 
 static lj_show *show(void) { return lj_ctx_get()->show; }
-static lj_widget *find(const char *name) { return fc.win ? lj_window_find(fc.win, name) : NULL; }
+static lj_widget *find(const char *name) { return lj_window_find(fc.win, name); }
 static const lj_exe_row *row_by_id(int id) { int i, n = lj_fixlib_count(); for (i = 0; i < n; i++) { const lj_exe_row *r = lj_fixlib_row(i); if (r && r->id == id) return r; } return NULL; }
 static int footprint_of(const lj_fixture *f) { const lj_profile *p = lj_fixlib_by_id(f->profile_id); return p && p->footprint ? p->footprint : 1; }
 static int used(const lj_fixture *f) { return f->link != 0 || f->profile_id != 0 || f->kind == LJ_FX_GS2; }
@@ -81,7 +81,7 @@ static void tree_build(void)
 {
     static int order[LJ_FC_TREE_MAX];
     lj_ini *ini = lj_ctx_get()->main_ini;
-    int total = lj_fixlib_count(), n = 0, i, j, extras = ini ? lj_ini_geti(ini, "FIXTURES", "ShowExtraProfiles", 0) : 0;
+    int total = lj_fixlib_count(), n = 0, i, j, extras = lj_ini_geti(ini, "FIXTURES", "ShowExtraProfiles", 0);
     char leaf[LJ_FC_TEXT];
     fc.tree_n = 0; fc.tree_leaves = 0;
     if (total > LJ_FC_TREE_MAX) total = LJ_FC_TREE_MAX;
@@ -309,7 +309,6 @@ int lj_fixture_config_save(void)
 }
 
 /* ---- handlers (DFM names) ---- */
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void na(lj_widget *w, void *ud) { (void)ud; lj_log("fixture config: %s: " LJ_FC_NA, w && w->name ? w->name : "menu"); }
 
 static void on_tree_change(lj_widget *w, void *ud)
@@ -321,8 +320,7 @@ static void on_tree_change(lj_widget *w, void *ud)
     set_enabled("bAdd", fc.sel_profile >= 0 && lj_fixture_config_tree_available(i));
 }
 static void on_add(lj_widget *w, void *ud) { (void)w; (void)ud; if (fc.sel_profile >= 0) lj_fixture_config_add((uint16_t)fc.sel_profile, 1, 0); }
-static void on_list_change(lj_widget *w, void *ud) { (void)ud; lj_fixture_config_select(((lj_w_listview *)w)->index); }
-static void on_list_key(lj_widget *w, void *ud) { (void)w; (void)ud; }
+static void on_list_change(lj_widget *w, void *ud) { (void)ud; lj_fixture_config_select(lj_w_listview_index(w)); }
 
 static void remove_result(int yes, void *ud) { (void)ud; if (yes) remove_fixture(fc.sel); }
 static void on_remove(lj_widget *w, void *ud)
@@ -485,10 +483,9 @@ static void export_save(lj_widget *w, void *ud)                       /* "Save t
     else if (lj_library_path(ctx->lib, "Configuration.txt", path, sizeof path) != 0) return;
     if (lj_fixture_config_export_save(path) != 0) lj_log("fixture config: %s not written", path); else lj_log("fixture config: %s written", path);
 }
-static void export_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void export_open(void)
 {
-    static const lj_binding b[] = { { "FormCreate", export_noop, NULL }, { "FormDestroy", export_noop, NULL }, { "FormResize", export_noop, NULL }, { "BitBtn1Click", export_save, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "BitBtn1Click", export_save, NULL }, { NULL, NULL, NULL } };
     lj_widget *bt;
     char *p;
     int nl = 0;
@@ -554,18 +551,18 @@ static void on_form_close(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_fc_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_form_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FormKeyDown", noop, NULL },
-    { "lvConfigChange", on_list_change, NULL }, { "lvConfigColumnClick", noop, NULL }, { "lvConfigCompare", noop, NULL }, { "lvConfigDragDrop", noop, NULL },
-    { "lvConfigDragOver", noop, NULL }, { "lvConfigKeyDown", on_list_key, NULL },
-    { "tvAvailableChange", on_tree_change, NULL }, { "tvAvailableMouseDown", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL },
+    { "lvConfigChange", on_list_change, NULL }, { "lvConfigColumnClick", lj_handler_noop, NULL }, { "lvConfigCompare", lj_handler_noop, NULL }, { "lvConfigDragDrop", lj_handler_noop, NULL },
+    { "lvConfigDragOver", lj_handler_noop, NULL }, { "lvConfigKeyDown", lj_handler_noop, NULL },
+    { "tvAvailableChange", on_tree_change, NULL }, { "tvAvailableMouseDown", lj_handler_noop, NULL },
     { "sbFindClick", na, NULL }, { "sbLocateClick", on_locate, NULL }, { "sbCollapseClick", on_collapse, NULL }, { "bAddClick", on_add, NULL },
-    { "bSaveClick", on_save, NULL }, { "bRemoveClick", on_remove, NULL }, { "bRemoveDragDrop", noop, NULL }, { "bRemoveDragOver", noop, NULL }, { "bClearClick", on_clear, NULL },
+    { "bSaveClick", on_save, NULL }, { "bRemoveClick", on_remove, NULL }, { "bRemoveDragDrop", lj_handler_noop, NULL }, { "bRemoveDragOver", lj_handler_noop, NULL }, { "bClearClick", on_clear, NULL },
     { "LinkMouseDown", on_link, NULL }, { "eAdrExit", on_addr_exit, NULL }, { "eAdrKeyUp", on_addr_key, NULL }, { "UdButton1Change", on_ud, NULL }, { "bAutoAddressClick", on_auto, NULL },
     { "cbInvPanClick", on_flag, NULL }, { "cbIntensitySpecialClick", on_flag, NULL }, { "EUserNameKeyUp", on_username, NULL },
-    { "M_PrintClick", on_print, NULL }, { "M_ImportProfileClick", on_gs2, NULL }, { "LocalHelpClick", noop, NULL }, { "M_ExportAllClick", on_gs2, NULL },
-    { "WarningsClick", on_warnings, NULL }, { "PrefsClick", on_warnings, NULL }, { "Help2Click", noop, NULL },
-    { "popAvailablePopup", noop, NULL }, { "M_CreateExportFileClick", on_gs2, NULL }, { "M_CreateOVExportClick", na, NULL }, { "M_DeleteProfileClick", na, NULL },
-    { "ConfiguredPopPopup", noop, NULL }, { "P_FixtureNotesClick", on_notes, NULL }, { "P_CloneClick", na, NULL }, { "P_ClearClick", na, NULL }, { "P_ReloadProfileDataClick", on_gs2, NULL },
+    { "M_PrintClick", on_print, NULL }, { "M_ImportProfileClick", on_gs2, NULL }, { "LocalHelpClick", lj_handler_noop, NULL }, { "M_ExportAllClick", on_gs2, NULL },
+    { "WarningsClick", on_warnings, NULL }, { "PrefsClick", on_warnings, NULL }, { "Help2Click", lj_handler_noop, NULL },
+    { "popAvailablePopup", lj_handler_noop, NULL }, { "M_CreateExportFileClick", on_gs2, NULL }, { "M_CreateOVExportClick", na, NULL }, { "M_DeleteProfileClick", na, NULL },
+    { "ConfiguredPopPopup", lj_handler_noop, NULL }, { "P_FixtureNotesClick", on_notes, NULL }, { "P_CloneClick", na, NULL }, { "P_ClearClick", na, NULL }, { "P_ReloadProfileDataClick", on_gs2, NULL },
     { NULL, NULL, NULL }
 };
 
@@ -587,7 +584,7 @@ lj_window *lj_fixture_config_open(void)
     if ((tv = find("tvAvailable")) != NULL) lj_w_treeview_set_items(tv, fc.tree_items, fc.tree_n);
     m = lj_window_menus(fc.win);
     for (i = 0; i < LJ_COUNT_OF(greyed); i++) lj_menu_set_enabled(m, greyed[i], 0);
-    for (i = 0; i < LJ_COUNT_OF(checks); i++) lj_menu_set_checked(m, checks[i][0], ctx->forms_ini ? lj_ini_geti(ctx->forms_ini, "FIXTURECONF", checks[i][1], 1) : 1);
+    for (i = 0; i < LJ_COUNT_OF(checks); i++) lj_menu_set_checked(m, checks[i][0], lj_ini_geti(ctx->forms_ini, "FIXTURECONF", checks[i][1], 1));
     notes_show(-1);
     lj_w_tabs_select(find("PCNotes"), 0);                             /* LJ Profile Notes in front, as fixtureconfiguration.jpg shows (the DFM's ActivePage is the O/V page) */
     set_enabled("bAdd", 0);

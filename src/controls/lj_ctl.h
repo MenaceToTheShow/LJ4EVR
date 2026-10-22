@@ -30,6 +30,7 @@ void       lj_ctl_close_all(void);
 void       lj_ctl_toggle(enum lj_ctl_kind kind);           /* the toolbar button / hotkey: open if closed, else close */
 void       lj_ctl_open_only(enum lj_ctl_kind kind);        /* right-click rule F9: open this one, close the others */
 lj_window *lj_ctl_window_get(enum lj_ctl_kind kind);       /* NULL when closed */
+unsigned   lj_ctl_drop_profiles(const lj_profile *lo, int n);   /* ME-110: close every control built from a profile in lo[0..n) (a GS2 array about to be freed); returns the mask (1u << kind) of the closed ones, for lj_ctl_open after the swap */
 void       lj_ctl_refresh(void);                           /* the 100 ms hook: master changed -> rebuild from the new table; else repaint values/states from the current scene */
 const char *lj_ctl_caption(enum lj_ctl_kind kind, const lj_profile *p);   /* the table's caption ("Intensity", "Movement 16 Bit" ...) */
 

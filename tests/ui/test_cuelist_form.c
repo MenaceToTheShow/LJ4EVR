@@ -7,6 +7,7 @@
  * toolbar with the Background Cue LED on and the Statics LED off (LORD_FIDELITY-16).
  * `test_cuelist_form --shot <dir>` also writes <dir>/cuelist-form.png and <dir>/cuelist-toolbar-leds.png (docs/screenshots/w3). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC (as test_desktop_w2.c) */
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -101,6 +102,14 @@ static int row_has(lj_window *win, lj_widget *lv, int row, uint32_t rgb)   /* an
     const lj_w_listview *v = (const lj_w_listview *)lv;
     int x, y, top = 2 + v->header_h + row * v->row_h;
     for (y = top + 1; y < top + v->row_h - 1; y++) for (x = 4; x < lv->w - 20; x++) if (px(win, lv, x, y) == rgb) return 1;
+    return 0;
+}
+static int cell_ink(lj_window *win, lj_widget *lv, int row, int col, uint32_t rgb)   /* ME-111: a pixel of one cell in rgb */
+{
+    const lj_w_listview *v = (const lj_w_listview *)lv;
+    int x, y, x0 = 2, top = 2 + v->header_h + row * v->row_h;
+    for (x = 0; x < col; x++) x0 += v->col_w[x];
+    for (y = top + 1; y < top + v->row_h - 1; y++) for (x = x0; x < x0 + v->col_w[col] - 1; x++) if (px(win, lv, x, y) == rgb) return 1;
     return 0;
 }
 static int same_file(const char *a, const char *b)
@@ -250,6 +259,14 @@ int lj_test_cuelist_form(int argc, char **argv)
     CHECK(lj_cuelist_form_row(4, row, sizeof row) == 0 && strcmp(row, "4\tAuto\tHotkey Command\tCuelist Stop\t\t") == 0);
     CHECK(lj_cuelist_form_row(5, row, sizeof row) == 0 && strcmp(row, "5\tAuto\tGoto Line\t1\t\tagain") == 0);
     CHECK(strcmp(lj_w_caption(lj_window_find(win, "lTotalLines")), "5 Lines") == 0);
+    /* ME-119 (D6): the Flash Sequence time uses the host decimal separator */
+    l = mk(0, LJ_CL_FLASH_SEQUENCE, 1500, NULL, 0, NULL, 0); l.ref = 1; lj_cuelist_insert(cl, cl->n, &l);
+    CHECK(lj_cuelist_form_row(6, row, sizeof row) == 0 && strstr(row, "\t0001 1.5 s\t") != NULL);
+    if (setlocale(LC_NUMERIC, "de-DE") || setlocale(LC_NUMERIC, "German") || setlocale(LC_NUMERIC, "de_DE.UTF-8") || setlocale(LC_NUMERIC, "da_DK.UTF-8")) {
+        CHECK(lj_cuelist_form_row(6, row, sizeof row) == 0 && strstr(row, "\t0001 1,5 s\t") != NULL);
+    } else printf("SKIP: no comma locale on this host, the ME-119 comma row not run here\n");
+    setlocale(LC_NUMERIC, "C");
+    lj_cuelist_delete(cl, cl->n - 1);
 
     /* ME-11 / design 8.5: time-code sources, recent commands and ListPop families greyed with the hint */
     CHECK(en(win, "sbCDTime") == 0 && en(win, "sbDATime") == 0 && en(win, "sbMPTime") == 0);
@@ -260,6 +277,8 @@ int lj_test_cuelist_form(int argc, char **argv)
     CHECK(strcmp(lj_w_caption(lj_window_find(win, "sbCMD3")), "Wait CD") == 0 && en(win, "sbCMD3") == 0);
     CHECK(menu_en(win, "Pop_CDCommands") == 0 && menu_en(win, "pop_DACommands") == 0 && menu_en(win, "Pop_MPCommands") == 0);
     CHECK(menu_en(win, "MediaPlayer1") == 0 && menu_en(win, "CueMediaFile1") == 0 && menu_en(win, "popWaitCD") == 0);
+    /* ME-120: no live-but-dead items: Offset MIDI Timecodes, Offset PC Time, Sort MIDI wait times, Import Old Format Cuelist */
+    CHECK(menu_en(win, "OffsetMIDITimecodes1") == 0 && menu_en(win, "OffsetPCTime1") == 0 && menu_en(win, "OffsetMIDITimecodes2") == 0 && menu_en(win, "M_ImportOldCuelist") == 0);
     CHECK(menu_en(win, "MPLoadFile1") == 1 && menu_en(win, "Pop_MTCCommands") == 1);   /* MPLoadFile1 carries aHotkeyCommand (D13) */
 
     /* the command list in note 03 s6.3 order, verbatim (the ListPop commands = lj_cl_cmd_caption 1..Hotkey Command) */
@@ -321,6 +340,7 @@ int lj_test_cuelist_form(int argc, char **argv)
     CHECK(row_has(win, lv, 1, 0x0000FFu));
     CHECK(row_has(win, lv, 2, 0xFF0000u));
     CHECK(!row_has(win, lv, 3, 0xFF0000u) && !row_has(win, lv, 3, 0x0000FFu));
+    CHECK(cell_ink(win, lv, 3, 2, 0x000000u));   /* ME-111: "Hotkey Command" is wider than its column: clipped at the cell edge, not blank */
     golden(win, "WIN_CUELIST_FORM");
     shot(win, dir, "cuelist-form.png");
     st.state = LJ_CL_IDLE; st.last = st.next = 0; lj_cuelist_form_refresh();

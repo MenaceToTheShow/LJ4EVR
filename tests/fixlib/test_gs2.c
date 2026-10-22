@@ -159,9 +159,17 @@ int lj_test_gs2(int argc, char **argv)
     }
 
     /* RTF stripper (LORD_FIDELITY-17): bytes kept in notes_rtf, shown stripped */
-    CHECK(lj_str_rtf_strip(txt, sizeof txt, (const char *)p.notes_rtf) == 0 && strcmp(txt, "Line one\nCaf\xe9 {x}") == 0);
-    CHECK(lj_str_rtf_strip(txt, sizeof txt, "{\\rtf1{\\*\\generator Riched20;}{\\colortbl ;\\red0\\green0\\blue0;}A\\tab B\\line C}") == 0 && strcmp(txt, "A\tB\nC") == 0);
-    CHECK(lj_str_rtf_strip(txt, 4, "{\\rtf1 abcdef}") == -1 && strcmp(txt, "abc") == 0);
+    CHECK(lj_str_rtf_strip(txt, sizeof txt, (const char *)p.notes_rtf, sizeof p.notes_rtf) == 0 && strcmp(txt, "Line one\nCaf\xe9 {x}") == 0);
+    {   static const char r1[] = "{\\rtf1{\\*\\generator Riched20;}{\\colortbl ;\\red0\\green0\\blue0;}A\\tab B\\line C}", r2[] = "{\\rtf1 abcdef}";
+        CHECK(lj_str_rtf_strip(txt, sizeof txt, r1, sizeof r1) == 0 && strcmp(txt, "A\tB\nC") == 0);
+        CHECK(lj_str_rtf_strip(txt, 4, r2, sizeof r2) == -1 && strcmp(txt, "abc") == 0);
+        CHECK(lj_str_rtf_strip(txt, sizeof txt, r2, 9) == 0 && strcmp(txt, "ab") == 0);   /* ME-122: len bounds the read (9 bytes, "{\\rtf1 ab") */
+    }
+    {   /* ME-122: an accepted record's notes field with no NUL (all 0x01, LORD_C's probe): the strip stops at 4097 bytes (ASan: no over-read) */
+        char *n1 = (char *)malloc(LJ_GS2_NOTES), *big = (char *)malloc(LJ_GS2_NOTES + 1);
+        if (n1 && big) { memset(n1, 0x01, LJ_GS2_NOTES); CHECK(lj_str_rtf_strip(big, LJ_GS2_NOTES + 1, n1, LJ_GS2_NOTES) == 0 && strlen(big) == LJ_GS2_NOTES); }
+        free(n1); free(big);
+    }
 
     free(rec); free(out); free(bad);
     printf("test_gs2: %s (%d failures)\n", fails ? "FAIL" : "ok", fails);

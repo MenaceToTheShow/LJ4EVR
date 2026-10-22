@@ -1,7 +1,7 @@
 /* lj_cuepage.h - cue pages (W2; 03 s5.8, F28): up to LJ_CUE_PAGES user-ordered tabs
  * of cues from the global list, the same cue any number of times per page, stored
  * in Cues\CuePageInfo.Dat ("LJ4 cuepages 1", "page n name= cues=1,5,5,9"; the W1
- * reader/writer lj_cue_pages_load/save in lj_cue.h stays the file layer). This
+ * reader/writer lj_cue_pages_load/save, declared here since ME-101, is the file layer). This
  * header is the in-memory set the List of Cues' page tabs, the Pages menu (Add New
  * Page, Insert New Page, Delete Current Page, Edit Current Page Name, Clear Current
  * Page, Re-order Pages, Clear All Pages, Delete All Pages) and the Cue Page hotkeys
@@ -14,6 +14,8 @@
 
 typedef struct { lj_cue_page page[LJ_CUE_PAGES]; int n; int current; int cursor; } lj_cuepages;   /* current = the shown tab (0-based), cursor = the selected cue index on it (-1 none) */
 
+int lj_cue_pages_load(const char *path, lj_cue_page *out, int max);              /* CuePageInfo.Dat: returns the count, -1 on error (W2 consumer) */
+int lj_cue_pages_save(const char *path, const lj_cue_page *in, int n);
 void lj_cuepages_init(lj_cuepages *p);                                          /* no pages, current 0, cursor -1 */
 int  lj_cuepages_load(const char *path, lj_cuepages *out, char *err, size_t cap);   /* CuePageInfo.Dat through lj_cue_pages_load; a missing file = no pages (0); -1 only when the file exists and is bad */
 int  lj_cuepages_save(const char *path, const lj_cuepages *in);

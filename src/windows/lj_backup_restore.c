@@ -27,7 +27,6 @@ static struct {
 
 static int exists(const char *path) { FILE *f = fopen(path, "rb"); if (f) fclose(f); return f != NULL; }
 static void label(lj_window *w, const char *name, const char *text) { lj_w_set_caption(w ? lj_window_find(w, name) : NULL, text); }
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 
 /* the library Backup works on: the one picked in User Libraries while that window is open, else the open one */
 static int backup_lib(lj_library *out)
@@ -81,7 +80,7 @@ static void on_create(lj_widget *w, void *ud)
 }
 static void on_bk_close(lj_widget *w, void *ud) { (void)w; (void)ud; bk.close_pending = 1; }
 static const lj_binding lj_bk_bindings[] = {
-    { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "bCreateClick", on_create, NULL }, { "bCloseClick", on_bk_close, NULL }, { NULL, NULL, NULL } };
+    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bCreateClick", on_create, NULL }, { "bCloseClick", on_bk_close, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_backup_open(void)
 {
@@ -189,11 +188,11 @@ static void fill_files(void)
     if (rs.files) lj_w_list_set_items(rs.files, rs.items, rs.n);
 }
 
-static void on_file_change(lj_widget *w, void *ud) { (void)w; (void)ud; }   /* the stub FileList never fires; the code-built list does (on_pick) */
+/* on_file_change = lj_handler_noop: the stub FileList never fires; the code-built list does (on_pick) */
 static void on_rs_restore(lj_widget *w, void *ud) { (void)w; (void)ud; lj_restore_run(); }
 static void on_rs_close(lj_widget *w, void *ud) { (void)w; (void)ud; rs.close_pending = 1; }
 static const lj_binding lj_rs_bindings[] = {
-    { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL }, { "FileListChange", on_file_change, NULL }, { "bRestoreClick", on_rs_restore, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FileListChange", lj_handler_noop, NULL }, { "bRestoreClick", on_rs_restore, NULL },
     { "bCloseClick", on_rs_close, NULL }, { NULL, NULL, NULL } };
 
 lj_window *lj_restore_open(void)

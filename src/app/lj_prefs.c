@@ -9,7 +9,7 @@
 
 int lj_prefs_tick_hz(lj_ini *main_ini)
 {
-    int hz = main_ini ? lj_ini_geti(main_ini, "ENGINE", "TickHz", LJ_TICK_HZ_DEFAULT) : LJ_TICK_HZ_DEFAULT;
+    int hz = lj_ini_geti(main_ini, "ENGINE", "TickHz", LJ_TICK_HZ_DEFAULT);
     if (hz < LJ_TICK_HZ_MIN) hz = LJ_TICK_HZ_MIN;
     if (hz > LJ_TICK_HZ_MAX) hz = LJ_TICK_HZ_MAX;
     return hz;

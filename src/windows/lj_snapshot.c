@@ -34,7 +34,7 @@ static struct {
 
 lj_window *lj_snapshot_window(void) { return sn.win; }
 int lj_snapshot_recording(void) { return sn.rec ? sn.rec_k : -1; }
-static lj_widget *find(const char *n) { return sn.win ? lj_window_find(sn.win, n) : NULL; }
+static lj_widget *find(const char *n) { return lj_window_find(sn.win, n); }
 static int checked(const char *n) { return find(n) ? lj_w_checkbox_checked(find(n)) : 0; }
 
 unsigned lj_snapshot_filters(void)
@@ -170,7 +170,6 @@ void lj_snapshot_tick(uint64_t now_us)
 void lj_snapshot_refresh(void) { if (sn.win) lj_snapshot_tick(lj_clock_us()); }
 
 /* ---- handlers ---- */
-static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void save_settings(void)
 {
     lj_ctx *ctx = lj_ctx_get();
@@ -204,7 +203,7 @@ static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_snapshot_cl
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("snapshot: Help: no help file is shipped (D2)"); }
 
 static const lj_binding lj_sn_bindings[] = {
-    { "FormActivate", noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", noop, NULL }, { "FormDestroy", noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "cbOptionsClick", on_options, NULL }, { "bStaticMouseDown", on_static, NULL }, { "RealtimeParamsChange", on_params, NULL },
     { "Panel3MouseDown", on_realtime, NULL }, { "Help1Click", on_help, NULL }, { NULL, NULL, NULL } };
 
@@ -219,11 +218,11 @@ lj_window *lj_snapshot_open(void)
     if (!sn.win) { lj_log("snapshot: cannot create TSnapshotSceneForm"); return NULL; }
     bits = ctx->main_ini ? (unsigned)lj_ini_geti(ctx->main_ini, "MISC", "SNAPSHOTSETTINGS", 0) : 0u;
     if ((cb = find("cbSampleParam")) != NULL) {
-        int i = ctx->main_ini ? lj_ini_geti(ctx->main_ini, "MISC", "RTSNAPSHOTPARAM", 9) : 9;
+        int i = lj_ini_geti(ctx->main_ini, "MISC", "RTSNAPSHOTPARAM", 9);
         lj_w_combobox_set_items(cb, lj_snap_rates, LJ_SNAPSHOT_RATE_MAX_HZ);
         ((lj_w_combobox *)cb)->index = i >= 0 && i < LJ_SNAPSHOT_RATE_MAX_HZ ? i : 9;
     }
-    snprintf(t, sizeof t, "%d", ctx->main_ini ? lj_ini_geti(ctx->main_ini, "MISC", "RTSNAPSHOTSCENES", 10) : 10);
+    snprintf(t, sizeof t, "%d", lj_ini_geti(ctx->main_ini, "MISC", "RTSNAPSHOTSCENES", 10));
     {   /* restore the boxes without firing cbOptionsClick (it would write the half-restored state back) */
         static const char *const names[6] = { "cbSelectedOnly", "cbNonDefaultOnly", "cbDMXinOnly", "cbAsFade", "cbAddScene", "cbAutostartPlayback" };
         static const unsigned bit[6] = { LJ_SNAPF_SELECTED_ONLY, LJ_SNAPF_NON_DEFAULT_ONLY, LJ_SNAPF_DMXIN_ONLY, LJ_SNAPF_AS_FADE, 16u, 32u };

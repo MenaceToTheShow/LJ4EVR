@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include "fixlib/lj_profile.h"
+#include "model/lj_show.h"
 
 static uint8_t  lj_selected[LJ_FIXTURES];
 static int      lj_master = -1, lj_mode = LJ_SEL_INCLUSIVE, lj_solo;
@@ -112,7 +113,7 @@ const lj_profile *lj_sel_master_profile(void)
 {
     const lj_ctx *ctx = lj_ctx_get();
     if (!used(lj_master)) return NULL;
-    return lj_fixlib_by_id(ctx->show->fixture[lj_master].profile_id);   /* GS2 profiles: W3 */
+    return lj_show_profile(ctx->show, lj_master);                      /* built-in or GS2 (ME-110) */
 }
 
 int lj_sel_same_type(int a, int b)
