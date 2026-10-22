@@ -42,6 +42,14 @@ walked through in `docs/w1-integration.md`).
   9 control windows, `test_desktop` MAINWINDOW), CI runs `ctest` on the MSVC
   Debug tree too.
 
+### What v1.0.0 is not
+
+Unchanged from 0.0.1 (below) and the README: no Audio Analyzer / audio trig,
+no DMX-in over sACN input or `.vtr` tables, no RS-232/TCP remote protocol, no
+External Application string output, no `.LJB` importer, no LJ MediaPlayer, no
+Art-Net. All seven are W5; their menu items, cue-list commands and toolbar
+buttons stay present, greyed, hint `Not available in LJ4EVR`.
+
 ### Fix pass r1 (W1 code council, ME-67..ME-75)
 
 - ME-67: the seven code-built control windows were built to CHM captures that
@@ -72,7 +80,11 @@ walked through in `docs/w1-integration.md`).
   they validate; ME-78 `replay-frames.bin` is compared nowhere (the
   `determinism` job compares `dump-frames` only).
 - ME-50 design.md sentences (design owner); ME-21 the Mac run (Joey).
-- LOW: ME-79 O/S/F focus ring, ME-80 pinned-static unfreeze, ME-81
+- Carried from the design verdict for W2: the W2 rows of
+  `DESIGN_COUNCIL_MASTER_ELDER_VERDICT.md` section 5 (link-to-cue, statics,
+  chase, cue pages).
+- LOW: ME-64 F20 test row, ME-66 `test_golden.c` loop, ME-79 O/S/F focus
+  ring, ME-80 pinned-static unfreeze, ME-81
   `test_lock_hold`, ME-82 clock / log under the lock, ME-83 negative macro
   index, ME-84 UTF-8 name cut, ME-85 dead `LJ_NOOP` table, ME-86 orphan API,
   ME-87 status-bar and monitor PROPOSALs; hotkey dispatch, `lj_ctl_set_confirm`

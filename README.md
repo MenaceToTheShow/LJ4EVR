@@ -5,8 +5,10 @@ behavioural reference) for Windows and macOS, with sACN E1.31 output. One static
 executable per OS; SDL3 supplies the window, input, timers and a surface blit,
 every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 
-Status: **W0 Foundation** (version 0.0.1). Build skeleton, contracts (headers),
-widget tree, layering test. Nothing drives a light yet.
+Status: **W1 First light** (version 0.1.0). Fixtures configured, a sequence
+programmed, a cue running, DMX on the wire over sACN; the fixture controls,
+Sequence / Cue windows, DMX Output Monitor and the per-user installers
+(`CHANGELOG.md`, `docs/w1-integration.md`). Pre-release until W2 closes.
 
 ## Build
 
