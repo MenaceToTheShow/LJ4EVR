@@ -7,6 +7,7 @@
 #define LJ_MODEL_STATICS_H
 
 #include <stddef.h>
+#include "core/lj_ini.h"
 #include "model/lj_model.h"
 
 int         lj_statics_load(const char *path, lj_static_page **pages, int *npages, char *err, size_t cap);   /* allocates *pages (and each recorded slot's scene); 0 / -1 */
@@ -14,6 +15,13 @@ int         lj_statics_save(const char *path, const lj_static_page *pages, int n
 const char *lj_statics_validate(const lj_static_page *pages, int npages);
 void        lj_statics_free(lj_static_page *pages, int npages);                   /* scenes then the array */
 int         lj_statics_add_page(lj_static_page **pages, int *npages, const char *name);   /* returns the new page index or -1 at LJ_STATIC_PAGES_MAX */
+/* ME-91: the array is allocated for LJ_STATIC_PAGES_MAX pages by its first page and never reallocated, so a slot pointer the
+ * engine holds stays valid across an add. Insert / delete / swap move pages inside it: the caller releases every static
+ * (LJ_CMD_STATIC_DEACTIVATE all) in the same critical section first. */
+int         lj_statics_insert_page(lj_static_page **pages, int *npages, int at, const char *name);   /* at 0..npages; the index or -1 */
+int         lj_statics_delete_page(lj_static_page *pages, int *npages, int at);                     /* frees its scenes; 0 / -1 */
+int         lj_statics_swap_pages(lj_static_page *pages, int npages, int a, int b);                 /* 0 / -1 */
+int         lj_statics_ini_visible(lj_ini *main_ini);                                                /* Main.Ini [STATICS2] SlotsVisible: default 20, clamped 1..64 (ME-30) */
 int         lj_static_slot_record(lj_static_slot *slot, const lj_scene *scene);  /* "Record Current Scene": copies into an owned scene, kind = RECORDED */
 void        lj_static_slot_clear(lj_static_slot *slot);                          /* frees the scene, kind = EMPTY, name kept */
 

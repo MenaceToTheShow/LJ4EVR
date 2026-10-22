@@ -2,11 +2,13 @@
  * bound (ME-16); the W2/W3 leaves (Export to text file, Export All, Import Profile,
  * Reload profile data, Copy From Fixture, Clear Fixture Data, Find, the profile
  * export popup) are greyed or log "Not available in LJ4EVR". */
+#define _CRT_SECURE_NO_WARNINGS 1   /* fopen / localtime of the export (ME-92) */
 #include "windows/lj_fixture_config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
@@ -420,7 +422,96 @@ static void on_locate(lj_widget *w, void *ud)
     on_tree_change(tv, NULL);
 }
 static void on_notes(lj_widget *w, void *ud) { lj_show *sh = show(); (void)w; (void)ud; if (sh && fc.sel >= 0) notes_show(sh->fixture[fc.sel].profile_id); }
-static void on_print(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("fixture config: Print / Export: " LJ_FC_NA " (Export to text file: W2)"); }   /* W2 */
+/* ---- Export to text file (ME-31, ME-92): TEXPORTCONFIGFORM "Configuration Export" shows the text in re1, "Save to text file"
+ * writes it. Every literal is the exe pool block 0x1AFA18-0x1AFB64 (title, Date, User Library, the column header, the row
+ * format "%s %s %s %s (%s)", N/A, "- End of list", Configuration.txt). ---- */
+#define LJ_FC_EXPORT_CAP (LJ_FIXTURES * 160 + 1024)
+static struct { lj_window *win; char text[LJ_FC_EXPORT_CAP], lines_buf[LJ_FC_EXPORT_CAP]; const char *lines[LJ_FIXTURES + 8]; } fx_ex;
+static void pad(char *dst, size_t cap, const char *s, int width) { snprintf(dst, cap, "%-*.*s", width, width, s ? s : ""); }
+int lj_fixture_config_export_text(char *out, size_t cap)
+{
+    lj_ctx *ctx = lj_ctx_get();
+    lj_show *sh = show();
+    time_t now = time(NULL);
+    struct tm *tm = localtime(&now);
+    char date[64] = "", num[12], no[8], type[48], user[24], addr[24], fp[16], full[112];
+    size_t n = 0;
+    int i, k;
+    if (!out || !cap) return -1;
+    if (tm) snprintf(date, sizeof date, "%04d-%02d-%02d %02d:%02d", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);   /* PROPOSAL rig: LJ2's date format (host short date) */
+#define LJ_FC_PUT(...) do { k = snprintf(out + n, cap - n, __VA_ARGS__); if (k < 0 || (size_t)k >= cap - n) return -1; n += (size_t)k; } while (0)
+    LJ_FC_PUT("LightJockey fixture configuration export\r\n");
+    LJ_FC_PUT("Date        : %s\r\n", date);
+    LJ_FC_PUT("User Library: %s     (Location: %s)\r\n", ctx->lib ? ctx->lib->name : "", ctx->lib ? ctx->lib->root : "");
+    LJ_FC_PUT("\r\n");                                                    /* PROPOSAL rig: the blank line before the header */
+    LJ_FC_PUT("No   Fixture Type                             User Name            DMX Address\r\n");
+    for (i = 0; sh && i < LJ_FIXTURES; i++) {
+        const lj_fixture *f = &sh->fixture[i];
+        const lj_exe_row *r;
+        int foot;
+        if (!used(f)) continue;
+        r = row_by_id(f->profile_id); foot = footprint_of(f);
+        snprintf(num, sizeof num, "%d", i + 1);
+        if (r && r->mode && r->mode[0]) snprintf(full, sizeof full, "%s %s, %s", r->manufacturer, r->name, r->mode);
+        else snprintf(full, sizeof full, "%s %s", r ? r->manufacturer : "", r ? r->name : (f->kind == LJ_FX_GS2 ? f->gs2_file : "?"));
+        if (f->link) snprintf(addr, sizeof addr, "%d:%03d-%03d", f->link, f->address, f->address + foot - 1); else lj_str_copy(addr, sizeof addr, "N/A");
+        snprintf(fp, sizeof fp, "%d ch", foot);                           /* PROPOSAL rig: what the exe's "(%s)" holds */
+        pad(no, sizeof no, num, 4);                                       /* padded to the header's column starts: PROPOSAL rig, column padding from the header line */
+        pad(type, sizeof type, full, 40); pad(user, sizeof user, f->user_name, 20);
+        LJ_FC_PUT("%s %s %s %s (%s)\r\n", no, type, user, addr, fp);
+    }
+    LJ_FC_PUT("- End of list\r\n");
+#undef LJ_FC_PUT
+    return 0;
+}
+int lj_fixture_config_export_save(const char *path)
+{
+    char text[LJ_FC_EXPORT_CAP];
+    FILE *f;
+    if (!path || lj_fixture_config_export_text(text, sizeof text) != 0 || (f = fopen(path, "wb")) == NULL) return -1;
+    fputs(text, f);
+    return fclose(f) == 0 ? 0 : -1;
+}
+lj_window *lj_fixture_config_export_window(void) { return fx_ex.win; }
+static void export_close(void) { if (fx_ex.win) { lj_win_hide(fx_ex.win); lj_window_destroy(fx_ex.win); fx_ex.win = NULL; } }
+static void export_close_ev(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) export_close(); }   /* BitBtn2 bkClose has no OnClick */
+static void export_save(lj_widget *w, void *ud)                       /* "Save to text file": Configuration.txt in the user library (no TSaveDialog yet: PROPOSAL rig, the file name is the exe default) */
+{
+    lj_ctx *ctx = lj_ctx_get();
+    char path[LJ_PATH_CAP];
+    (void)w; (void)ud;
+    if (!ctx->lib) lj_str_copy(path, sizeof path, "Configuration.txt");
+    else if (lj_library_path(ctx->lib, "Configuration.txt", path, sizeof path) != 0) return;
+    if (lj_fixture_config_export_save(path) != 0) lj_log("fixture config: %s not written", path); else lj_log("fixture config: %s written", path);
+}
+static void export_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
+static void export_open(void)
+{
+    static const lj_binding b[] = { { "FormCreate", export_noop, NULL }, { "FormDestroy", export_noop, NULL }, { "FormResize", export_noop, NULL }, { "BitBtn1Click", export_save, NULL }, { NULL, NULL, NULL } };
+    lj_widget *bt;
+    char *p;
+    int nl = 0;
+    export_close();
+    if (lj_fixture_config_export_text(fx_ex.text, sizeof fx_ex.text) != 0) { lj_log("fixture config: export text too long"); return; }
+    if ((fx_ex.win = lj_window_create(&lj_form_TEXPORTCONFIGFORM, b)) == NULL) { lj_log("fixture config: cannot create TExportConfigForm"); return; }
+    memcpy(fx_ex.lines_buf, fx_ex.text, sizeof fx_ex.text);
+    for (p = fx_ex.lines_buf; *p && nl < (int)LJ_COUNT_OF(fx_ex.lines); ) {   /* re1: one memo line per CRLF line */
+        char *e = strstr(p, "\r\n");
+        fx_ex.lines[nl++] = p;
+        if (!e) break;
+        *e = 0; p = e + 2;
+    }
+    lj_w_memo_set_lines(lj_window_find(fx_ex.win, "re1"), fx_ex.lines, nl);
+    if ((bt = lj_window_find(fx_ex.win, "BitBtn2")) != NULL) { bt->on_event = export_close_ev; bt->ud = NULL; }
+    lj_win_show(fx_ex.win, 0);
+}
+static void on_print(lj_widget *w, void *ud)                          /* M_Print and M_ExportConfig share M_PrintClick (DFM) */
+{
+    const lj_menu_item_desc *it = lj_window_menu_item(fc.win);
+    (void)w; (void)ud;
+    if (it && it->name && !strcmp(it->name, "M_ExportConfig")) export_open();
+    else lj_log("fixture config: Print Configuration: " LJ_FC_NA);   /* ME-31: no printing path (docs/fidelity.md) */
+}
 static void on_warnings(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(fc.win);
@@ -472,7 +563,7 @@ lj_window *lj_fixture_config_open(void)
     lj_ctx *ctx = lj_ctx_get();
     lj_widget *tv;
     lj_menu *m;
-    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */, "M_ExportConfig" /* W2 */, "M_ImportProfile", "M_ExportAll", "P_ReloadProfileData" /* W3 */, "P_Clone", "P_Clear" /* W2 */,
+    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */, "M_ImportProfile", "M_ExportAll", "P_ReloadProfileData" /* W3 */, "P_Clone", "P_Clear" /* W2 */,
                                           "M_CreateExportfileOV", "M_CreateExportFile", "M_CreateOVExport", "M_DeleteProfile" /* W3 */ };
     static const char *const checks[][2] = { { "M_RemoveFixtures", "ConfirmRemove" }, { "M_OverwriteFixtures", "ConfirmOverwrite" }, { "M_ClearFixtures", "ConfirmClear" }, { "M_PrompClear", "PromtClearOnSave" }, { "M_ApplyDefault", "AlwaysApplyDefault" } };
     size_t i;
@@ -496,6 +587,7 @@ lj_window *lj_fixture_config_open(void)
 
 void lj_fixture_config_close(void)
 {
+    export_close();
     if (!fc.win) return;
     lj_win_hide(fc.win);
     lj_window_destroy(fc.win);

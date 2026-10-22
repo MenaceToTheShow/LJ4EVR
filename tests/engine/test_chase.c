@@ -3,9 +3,10 @@
  * absolute grid tap + 30 ms * n, each advance seen on the first 25 ms tick at or after its boundary (+-1 tick),
  * with no drift over 2 s; the period rounds to 1 ms, is not scaled by the cue time (F10), carries across a cue
  * load (global rate), and two manual TRIGs set it too. chase fade := period unless DisableChaseFade.
- * `lj4evr_tests test_lock_hold` (ME-81, design 3.1): one tick under lj_lock() with 4 cues loaded in turn, 20
- * statics and a 5-slot BG cue stays under LJ_LOCK_HOLD_TEST_US (a quarter tick); the "lock: held" lines lj_unlock
- * logs in Debug builds are counted and reported. */
+ * `lj4evr_tests test_lock_hold` (ME-81, ME-96, design 3.1): one tick under lj_lock() with 4 cues loaded in turn, 64
+ * statics, a 5-slot BG cue, a flash, the current sequence and a generic macro stays under LJ_LOCK_HOLD_TEST_US (2 ms,
+ * Release; Debug prints it). The "lock: held" lines lj_unlock logs in Debug builds are counted from the first lock:
+ * the setup (one lock per command, as the UI) must log none. CTest runs it RUN_SERIAL. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -139,11 +140,12 @@ int lj_test_chase(int argc, char **argv)
 
 static int s_held_lines;
 static void lj_t_sink(void *ud, const char *line) { (void)ud; if (strstr(line, "lock: held")) s_held_lines++; }
+static void lj_t_post(lj_engine *e, lj_cmd *cmd) { lj_lock(); lj_engine_cmd(e, cmd); lj_unlock(); }   /* one lock per command, as the UI does */
 
 int lj_test_lock_hold(int argc, char **argv);
 int lj_test_lock_hold(int argc, char **argv)
 {
-    enum { T_FOOT = 20, T_FIX = 100, T_SEQS = 4 * LJ_CUE_SLOTS + LJ_BG_SLOTS, T_STATICS = 20, T_TICKS = 120 };
+    enum { T_FOOT = 20, T_FIX = 100, T_SEQS = 4 * LJ_CUE_SLOTS + LJ_BG_SLOTS + 2, T_STATICS = LJ_STATIC_RUNNERS, T_TICKS = 120 };
     lj_show *show = lj_t_show(T_FIX, T_FOOT);
     lj_engine *e = lj_engine_create();
     lj_sequence *seq = (lj_sequence *)calloc(T_SEQS, sizeof *seq);
@@ -151,12 +153,14 @@ int lj_test_lock_hold(int argc, char **argv)
     lj_cue *cue = (lj_cue *)calloc(4, sizeof *cue);
     lj_static_slot *stat = (lj_static_slot *)calloc(T_STATICS, sizeof *stat);
     lj_scene *ssc = (lj_scene *)calloc(T_STATICS, sizeof *ssc);
+    lj_genmacro *gm = (lj_genmacro *)calloc(1, sizeof *gm);
     lj_bgcue bg;
     lj_cmd cmd;
     uint32_t max_us = 0;
-    int i, k, ch, fail = 0;
+    int i, k, ch, fail = 0, setup_lines;
     (void)argc; (void)argv;
-    if (!show || !e || !seq || !sc || !cue || !stat || !ssc) { printf("FAIL alloc\n"); fail = 1; goto out; }
+    if (!show || !e || !seq || !sc || !cue || !stat || !ssc || !gm) { printf("FAIL alloc\n"); fail = 1; goto out; }
+    lj_log_set_sink(lj_t_sink, NULL);                          /* ME-96: counted from the first lock on */
     for (i = 0; i < T_SEQS; i++) {
         seq[i].number = (uint32_t)i + 1; seq[i].n = 2; seq[i].scenes = &sc[2 * i];
         for (k = 0; k < 2; k++) {
@@ -172,22 +176,25 @@ int lj_test_lock_hold(int argc, char **argv)
     }
     for (i = 0; i < T_STATICS; i++) {
         stat[i].kind = LJ_STATIC_RECORDED; stat[i].level_pct = 80; stat[i].scene = &ssc[i];
-        for (ch = i * 100; ch < i * 100 + 100 && ch < LJ_CHANS; ch++) { ssc[i].val[ch] = 128; ssc[i].state[ch] = LJ_SNAP; }
+        for (ch = i * 32; ch < i * 32 + 100 && ch < LJ_CHANS; ch++) { ssc[i].val[ch] = 128; ssc[i].state[ch] = LJ_SNAP; }
     }
+    gm->number = 1;
+    for (ch = 0; ch < 512; ch++) { gm->ch[ch].shape = 7; gm->ch[ch].base_on = 1; gm->ch[ch].base = 100; gm->ch[ch].amp_pos = 45; gm->ch[ch].amp_neg = 45; gm->ch[ch].cycle_ds = 168; }
     for (ch = 0; ch < LJ_CHANS; ch++) show->patch[ch].htp_mask = 1u << (ch % LJ_HTP_GROUPS);
-    lj_lock();
-    lj_engine_bind(e, show);
-    for (i = 0; i < T_FIX; i++) lj_engine_bind_profile(e, i, &s_dim);
-    for (i = 0; i < T_STATICS; i++) { memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_STATIC_ACTIVATE; cmd.a = (uint32_t)i; cmd.b = 0xFFFF; cmd.c = 0xFF; cmd.st = &stat[i]; lj_engine_cmd(e, &cmd); }
-    lj_unlock();
-    lj_log_set_sink(lj_t_sink, NULL);
+    lj_lock(); lj_engine_bind(e, show); lj_unlock();
+    for (i = 0; i < T_FIX; i++) { lj_lock(); lj_engine_bind_profile(e, i, &s_dim); lj_unlock(); }
+    for (i = 0; i < T_STATICS; i++) { memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_STATIC_ACTIVATE; cmd.a = (uint32_t)i; cmd.b = 0xFFFF; cmd.c = 0xFF; cmd.st = &stat[i]; lj_t_post(e, &cmd); }
+    memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_FLASH; cmd.b = 1; cmd.seq[0] = &seq[T_SEQS - 2]; lj_t_post(e, &cmd);          /* LORD_ENGINE's stress: flash, current, generic macro */
+    memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_CURRENT_SEQ; cmd.seq[0] = &seq[T_SEQS - 1]; lj_t_post(e, &cmd);
+    memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = 1; cmd.gm = gm; lj_t_post(e, &cmd);
+    setup_lines = s_held_lines;
     for (i = 0; i < T_TICKS; i++) {
         uint64_t t0, t1;
         lj_lock();
         if (i % 30 == 0) {                                     /* the UI pins and posts the next of the 4 cues, BG latched */
             const lj_cue *c = &cue[(i / 30) % 4];
             memset(&cmd, 0, sizeof cmd);
-            cmd.kind = LJ_CMD_LOAD_CUE; cmd.a = c->number; cmd.cue = c; cmd.bg = &bg;
+            cmd.kind = LJ_CMD_LOAD_CUE; cmd.a = c->number; cmd.cue = c; cmd.bg = &bg; cmd.gm = gm;
             for (k = 0; k < LJ_CUE_SLOTS; k++) cmd.seq[k] = &seq[c->slot[k].seq - 1];
             for (k = 0; k < LJ_BG_SLOTS; k++) cmd.bgseq[k] = &seq[bg.slot[k].seq - 1];
             lj_engine_cmd(e, &cmd);
@@ -201,13 +208,15 @@ int lj_test_lock_hold(int argc, char **argv)
     lj_log_set_sink(NULL, NULL);
     { lj_engine_status st; lj_engine_view(e, &st);
       if (!st.statics_any || !st.bg_any || st.cue_number != 4 || st.slot_status[11] != LJ_SLOT_RUNNING) { printf("FAIL load: statics %u bg %u cue %u\n", st.statics_any, st.bg_any, st.cue_number); fail = 1; } }
-    printf("test_lock_hold: max tick under the lock %u us (limit %d us = tick / 4), %d \"lock: held\" line(s)\n", (unsigned)max_us, LJ_LOCK_HOLD_TEST_US, s_held_lines);
-#if !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
-    if (max_us >= (uint32_t)LJ_LOCK_HOLD_TEST_US) { printf("FAIL lock hold %u us >= %d us\n", (unsigned)max_us, LJ_LOCK_HOLD_TEST_US); fail = 1; }
+    printf("test_lock_hold: max tick under the lock %u us (limit %d us, design 3.1), \"lock: held\" lines: %d in the setup, %d in the ticks\n",
+           (unsigned)max_us, LJ_LOCK_HOLD_TEST_US, setup_lines, s_held_lines - setup_lines);
+    if (setup_lines != 0) { printf("FAIL the setup held the lock over 2 ms %d time(s)\n", setup_lines); fail = 1; }   /* one lock per command: none may log */
+#if defined(NDEBUG) && !defined(__SANITIZE_ADDRESS__) && !defined(__SANITIZE_THREAD__)
+    if (max_us >= (uint32_t)LJ_LOCK_HOLD_TEST_US) { printf("FAIL lock hold %u us >= %d us\n", (unsigned)max_us, LJ_LOCK_HOLD_TEST_US); fail = 1; }   /* Release only: Debug logs (ME-96) */
 #endif
 out:
-    if (e) lj_engine_bind(e, NULL);
+    if (e) { lj_lock(); lj_engine_bind(e, NULL); lj_unlock(); }
     lj_engine_destroy(e);
-    free(seq); free(sc); free(cue); free(stat); free(ssc); free(show);
+    free(seq); free(sc); free(cue); free(stat); free(ssc); free(gm); free(show);
     return fail;
 }

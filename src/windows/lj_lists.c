@@ -13,6 +13,7 @@
 #include "ui/lj_menu.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_cue_form.h"
+#include "windows/lj_delete_files.h"
 #include "windows/lj_seq_form.h"
 #include "windows/lj_warnings.h"
 
@@ -178,9 +179,9 @@ static void lj_sl_delete_yes(int yes, void *ud)
     uint32_t no = (uint32_t)(uintptr_t)ud;
     lj_sequence *rec;
     if (!yes || !c->lib || !no) return;
-    if (lj_library_delete_record(c->lib, LJ_REC_SEQ, no) != 0) { lj_log("seqlist: delete %u failed", (unsigned)no); return; }
+    if (lj_delete_files_record(LJ_REC_SEQ, no) != 0) { lj_log("seqlist: delete %u failed", (unsigned)no); return; }   /* the app's deleter: runners and link statics handed NULL first (ME-90) */
     lj_lock();
-    rec = (lj_sequence *)lj_table_remove(&c->show->sequences, no);
+    rec = (lj_sequence *)lj_table_remove(&c->show->sequences, no);   /* only without the app (headless): the deleter already took it */
     lj_unlock();
     if (rec && !lj_sl_in_current_cue(no)) lj_sequence_free(rec);   /* ponytail: a record the current cue still pins is leaked, not freed (2.3 rule 6); lj_app_delete_record hands the engine NULL first and is the app's */
     lj_seqlist_rebuild();

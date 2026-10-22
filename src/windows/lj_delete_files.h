@@ -39,5 +39,6 @@ int      lj_delete_files_record_name(enum lj_rec_kind kind, uint32_t number, cha
 
 /* the app's deleter (lj_app_delete_record); NULL = file only */
 void     lj_delete_files_set_deleter(int (*fn)(int kind, uint32_t number));
+int      lj_delete_files_record(enum lj_rec_kind kind, uint32_t number);   /* through the app's deleter (file + table, engine handed NULL first), else the file only; 0 / -1 */
 
 #endif /* LJ_WINDOWS_DELETE_FILES_H */

@@ -552,18 +552,20 @@ static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void w2(lj_widget *w, void *ud) { (void)ud; lj_log("lj_cue_form: %s: W2", w->name ? w->name : "?"); }
 
 /* ---- menus ---- */
-static const struct { const char *item, *key; int main; } lj_cue_prefs[] = {
-    { "M_DragSequences", "DragSeq", 0 }, { "M_UseColors", "Use Colors", 0 }, { "M_DCSequenceEdit", "DBCLICKSEQ", 0 },
-    { "M_StickyFlashSequences", "StickyFlash", 0 }, { "M_FlashAutoRelease", "Flash Auto Release", 0 },
-    { "M_HotkeyChangeDirection", "HotkeyChangeSeqDir", 1 }, { "M_UseGlobalChaseRate", "UseGlobalChaseRate", 0 },
-    { "M_DisableBGCueLatch", "BGCueLatch", 0 }, { "M_AutoRelease", "Auto Release", 0 }, { "M_PreserveEnabledState", "PreserveEnabledState", 0 },
-    { "M_SaveChaseRates", "SaveChaseRate", 0 }, { "M_DisableChaseFade", "DisableChaseFade", 1 }, { "M_AllowRemoteOnOff", "AllowRemoteOnOff", 0 },
-    { "M_RestoreMacroScale", "RestoreMacroScale", 0 }, { "M_ViewAdvanced", "ViewAdvanced", 0 },
+/* main = Main.Ini [CUE] (else forms.ini [CUE]); pref = 1 + the enum lj_engine_pref the row posts on a toggle (ME-93), 0 none */
+static const struct { const char *item, *key; int main, dflt, pref; } lj_cue_prefs[] = {
+    { "M_DragSequences", "DragSeq", 0, 0, 0 }, { "M_UseColors", "Use Colors", 0, 0, 0 }, { "M_DCSequenceEdit", "DBCLICKSEQ", 0, 0, 0 },
+    { "M_StickyFlashSequences", "StickyFlash", 0, 0, 0 }, { "M_FlashAutoRelease", "Flash Auto Release", 0, 0, 0 },
+    { "M_HotkeyChangeDirection", "HotkeyChangeSeqDir", 1, 0, 1 + LJ_PREF_HOTKEY_TRIG_CHANGES_DIR },
+    { "M_UseGlobalChaseRate", "UseGlobalChaseRate", 1, LJ_CHASE_GLOBAL_RATE, 1 + LJ_PREF_USE_GLOBAL_CHASE_RATE },   /* exe inikey 0x34E59C, one store with the app (ME-93) */
+    { "M_DisableBGCueLatch", "BGCueLatch", 0, 0, 0 }, { "M_AutoRelease", "Auto Release", 0, 0, 0 }, { "M_PreserveEnabledState", "PreserveEnabledState", 0, 0, 0 },
+    { "M_SaveChaseRates", "SaveChaseRate", 0, 0, 0 }, { "M_DisableChaseFade", "DisableChaseFade", 1, 0, 1 + LJ_PREF_DISABLE_CHASE_FADE }, { "M_AllowRemoteOnOff", "AllowRemoteOnOff", 0, 0, 0 },
+    { "M_RestoreMacroScale", "RestoreMacroScale", 0, 0, 0 }, { "M_ViewAdvanced", "ViewAdvanced", 0, 0, 0 },
 };
 static const char *const lj_cue_trans_items[] = { "M_UseTransparentCues", "M_ForceTransparentCues", "M_IgnoreTransparenCues" };
 static const char *const lj_cue_int_items[] = { "M_CueIntDefault", "M_CueIntHTP", "M_CueIntLTP" };
 
-static int pref_get(int i) { return lj_cue_prefs[i].main ? main_geti(lj_cue_prefs[i].key, 0) : form_geti(lj_cue_prefs[i].key, 0); }
+static int pref_get(int i) { return lj_cue_prefs[i].main ? main_geti(lj_cue_prefs[i].key, lj_cue_prefs[i].dflt) : form_geti(lj_cue_prefs[i].key, 0); }
 static void pref_set(int i, int v) { if (lj_cue_prefs[i].main) main_seti(lj_cue_prefs[i].key, v); else form_seti(lj_cue_prefs[i].key, v); }
 
 static void apply_advanced(void)
@@ -600,7 +602,11 @@ static void prefs_click(lj_widget *w, void *ud)
     int i;
     (void)w; (void)ud;
     if (!it || !it->name) return;
-    for (i = 0; i < LJ_COUNT_OF(lj_cue_prefs); i++) if (!strcmp(it->name, lj_cue_prefs[i].item)) { pref_set(i, !pref_get(i)); break; }
+    for (i = 0; i < LJ_COUNT_OF(lj_cue_prefs); i++) if (!strcmp(it->name, lj_cue_prefs[i].item)) {
+        pref_set(i, !pref_get(i));
+        if (lj_cue_prefs[i].pref) post3(LJ_CMD_PREFS, (uint32_t)(lj_cue_prefs[i].pref - 1), (uint32_t)pref_get(i), 0);   /* the engine reads it from now on (ME-93) */
+        break;
+    }
     for (i = 0; i < 3; i++) if (!strcmp(it->name, lj_cue_trans_items[i])) { form_seti("Transparent", i); C()->transparent_mode = (uint8_t)i; post3(LJ_CMD_TRANSPARENT, 0, (uint32_t)i, 0); }   /* Use / Force / Ignore [03 s5.8] */
     if (!strcmp(it->name, "M_StickyFlashSequences")) C()->flash_latch = (uint8_t)(form_geti("StickyFlash", 0) != 0);   /* FLASH c = latch [03 s5.10] */
     for (i = 0; i < 3; i++) if (!strcmp(it->name, lj_cue_int_items[i])) { form_seti("SeqIntMode", i); post3(LJ_CMD_SEQ_INT, 0, (uint32_t)i, 0); }

@@ -1,6 +1,7 @@
 /* lj_user_palettes.c - see lj_user_palettes.h. TPRESETFORM + TSAVEPRESETFORM2 bound (ME-16). */
 #include "windows/lj_user_palettes.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,7 @@
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_w_edit.h"
 #include "ui/widgets/lj_w_radiogroup.h"
+#include "windows/lj_warnings.h"
 
 static const char *lj_up_title(enum lj_ctl_kind k)   /* "User Color Palette" (usercolorpalette.gif); the other five follow it, PROPOSAL rig */
 {
@@ -183,7 +185,8 @@ static void noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void on_save(lj_widget *w, void *ud) { (void)w; (void)ud; save_dialog(); }
 static void on_assign(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_assign(selected_row(), filter_now()); }
 static void on_clear(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_clear(selected_row(), filter_now()); }
-static void on_delete(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_delete(selected_row()); }   /* ponytail: the highlighted entry (single-select list) */
+static void on_delete_yes(int yes, void *ud) { if (yes) lj_user_palettes_delete((int)(intptr_t)ud); }
+static void on_delete(lj_widget *w, void *ud) { (void)w; (void)ud; if (selected_row() >= 0) lj_win_confirm("Please Confirm..", "Delete Selected Presets?", NULL, on_delete_yes, (void *)(intptr_t)selected_row()); }   /* exe 0x346794 (ME-97); ponytail: the highlighted entry (single-select list) */
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_close(); }
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("user palettes: Help: no help file is shipped (D2)"); }
 static const lj_binding lj_up_bindings[] = {

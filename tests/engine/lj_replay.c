@@ -199,6 +199,7 @@ static int rp_need_patched(rp *p, int code)
 }
 
 static int rp_run_to(rp *p, long k);
+static const lj_sequence *rp_link_seq(rp *p, const lj_static_slot *st) { return st->kind == LJ_STATIC_LINK ? (const lj_sequence *)lj_table_get(&p->show->sequences, st->link_seq) : NULL; }   /* NULL = link error */
 
 /* ---- build lines ---- */
 static void rp_copy_default_dmx(rp *p, int fx)
@@ -299,6 +300,22 @@ static int rp_default(rp *p, char **argv, int argc)
         if (rp_chval(argv[i], &code, 255, &v, NULL)) return rp_fail(p, "default: expected l:a=v, got \"%s\"", argv[i]);
     if (p->built && rp_run_to(p, p->edit_tick - 1)) return -1;   /* `at k default`: the UI edits show->default_out before tick k */
     for (i = 1; i < argc; i++) { rp_chval(argv[i], &code, 255, &v, NULL); p->show->default_out[code] = (uint8_t)v; }
+    return 0;
+}
+
+/* `at k scene_edit <seq> <scene> l:a=v:S ...`: the pinned sequence's scene (0-based) edited in place under the lock before tick k
+ * (14 sB.8 item 4: a link static follows later edits of its scene); posts nothing */
+static int rp_scene_edit(rp *p, char **argv, int argc)
+{
+    int i, code, st; long n, sc, v; lj_sequence *s;
+    if (argc < 4 || rp_num(argv[1], 1, LJ_NUMBER_MAX, &n) || rp_num(argv[2], 0, LJ_SCENES_MAX - 1, &sc)) return rp_fail(p, "scene_edit: expected `scene_edit <seq> <scene> l:a=v:S ...`");
+    if ((s = (lj_sequence *)lj_table_get(&p->show->sequences, (uint32_t)n)) == NULL || sc >= (long)s->n) return rp_fail(p, "scene_edit: seq %ld scene %ld is not defined", n, sc);
+    for (i = 3; i < argc; i++) {                    /* grammar first: a bad runtime line never runs ticks */
+        if (rp_chval(argv[i], &code, 255, &v, &st)) return rp_fail(p, "scene_edit: expected l:a=v:S, got \"%s\"", argv[i]);
+        if (rp_need_patched(p, code)) return -1;
+    }
+    if (p->built && rp_run_to(p, p->edit_tick - 1)) return -1;
+    for (i = 3; i < argc; i++) { rp_chval(argv[i], &code, 255, &v, &st); s->scenes[sc].val[code] = (uint8_t)v; s->scenes[sc].state[code] = (uint8_t)st; }
     return 0;
 }
 
@@ -733,10 +750,10 @@ static int rp_at(rp *p, char **argv, int argc)
         argc--;
     }
     w = argv[2];
-    if (!strcmp(w, "gpatch") || !strcmp(w, "default")) {    /* W2 runtime edits: no command; the htp_groups / global_patch / default_out line hands them over */
+    if (!strcmp(w, "gpatch") || !strcmp(w, "default") || !strcmp(w, "scene_edit")) {   /* W2 runtime edits: no command; the htp_groups / global_patch / default_out line hands them over */
         if (c.at_us != (uint64_t)k * p->tick_us) return rp_fail(p, "%s: at_us= does not apply to an edit", w);
         p->edit_tick = k;
-        return w[0] == 'g' ? rp_gpatch(p, argv + 2, argc - 2) : rp_default(p, argv + 2, argc - 2);
+        return w[0] == 'g' ? rp_gpatch(p, argv + 2, argc - 2) : w[0] == 'd' ? rp_default(p, argv + 2, argc - 2) : rp_scene_edit(p, argv + 2, argc - 2);
     }
     if (!strcmp(w, "load_cue")) {
         const lj_cue *cue; int nobg = 0;
@@ -833,6 +850,7 @@ static int rp_at(rp *p, char **argv, int argc)
         if (pg > p->show->npages || p->show->pages[pg - 1].slot[sl - 1].kind == LJ_STATIC_EMPTY) return rp_fail(p, "static %ld.%ld is not defined", pg, sl);
         c.kind = LJ_CMD_STATIC; c.a = (uint32_t)((pg - 1) * LJ_STATICS2_SLOTS_MAX + (sl - 1)); c.b = (uint32_t)v;   /* a = global slot index (page-1)*64 + slot-1 */
         c.st = v ? &p->show->pages[pg - 1].slot[sl - 1] : NULL;
+        if (c.st) c.seq[0] = rp_link_seq(p, c.st);
     } else if (!strcmp(w, "flash")) {
         if (argc != 5 || rp_num(argv[3], 1, LJ_NUMBER_MAX, &n) || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "flash: expected `flash <seq> 0|1`");
         c.kind = LJ_CMD_FLASH; c.b = (uint32_t)v;
@@ -871,6 +889,7 @@ static int rp_at(rp *p, char **argv, int argc)
         if (pg > p->show->npages || p->show->pages[pg - 1].slot[sl - 1].kind == LJ_STATIC_EMPTY) return rp_fail(p, "static %ld.%ld is not defined", pg, sl);
         c.kind = LJ_CMD_STATIC_ACTIVATE; c.a = (uint32_t)lj_static_global_index((int)pg, (int)sl); c.b = 0xFFFF; c.c = 0xFF;
         c.st = &p->show->pages[pg - 1].slot[sl - 1];
+        c.seq[0] = rp_link_seq(p, c.st);                       /* ME-88: a link slot carries its pinned sequence, as the Statics 2 window posts it */
         for (i = 4; i < argc; i++) {
             if (!strncmp(argv[i], "level=", 6)) { if (rp_num(argv[i] + 6, 0, 100, &v)) return rp_bad(p, "level", argv[i] + 6); c.b = (uint32_t)v; }
             else if (!strncmp(argv[i], "scope=", 6)) { int s = lj_word_index(lj_replace_words, argv[i] + 6); if (s < 0) return rp_bad(p, "scope", argv[i] + 6); c.c = (uint32_t)s; }

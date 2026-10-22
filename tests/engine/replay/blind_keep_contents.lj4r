@@ -1,0 +1,33 @@
+LJ4 replay 1
+# blind_keep_contents (LORD_ENGINE-13, 11 F21; [PREFS] KeepSeqBlind, exe inikey 0x32320C; LJ_KEEP_CONTENTS_BLIND 1):
+# the current sequence (rank 3) entering blind mode, with "Keep Contents When Entering Blind Mode" on and then off.
+# NOTE 11 F21 keep = 1 (the default): the output keeps the scene it had when blind began; a scene change while blind
+#      never reaches the output (tick 2); blind off shows the current scene (tick 3).
+# NOTE keep = 0: entering blind takes the current sequence off the output (ticks 6, 7 fall to rank 0); blind off brings
+#      the current scene back (tick 8).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+seq 1 name="cur"
+scene st=60000 ft=0 ch 1:1=50:S
+scene st=60000 ft=0 ch 1:1=99:S
+at 0 pref keep_seq_blind 1
+at 0 current 1 0
+expect 0 1:1=50 layer=3
+at 1 current 1 0 blind
+expect 1 1:1=50 layer=3
+at 2 current 1 1 blind
+expect 2 1:1=50 layer=3
+at 3 current 1 1
+expect 3 1:1=99 layer=3
+at 4 current 0
+expect 4 1:1=0 layer=0
+at 5 pref keep_seq_blind 0
+at 5 current 1 0
+expect 5 1:1=50 layer=3
+at 6 current 1 0 blind
+expect 6 1:1=0 layer=0
+at 7 current 1 1 blind
+expect 7 1:1=0 layer=0
+at 8 current 1 1
+expect 8 1:1=99 layer=3

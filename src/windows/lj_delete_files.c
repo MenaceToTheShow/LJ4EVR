@@ -146,6 +146,12 @@ int lj_delete_files_selected(enum lj_rec_kind k, int row) { return valid(k) && r
 int lj_delete_files_in_use(int row) { return row >= 0 && row < df[LJ_REC_SEQ].n && df[LJ_REC_SEQ].rows[row].used; }
 void lj_delete_files_select(enum lj_rec_kind k, int row, int on) { if (valid(k) && row >= 0 && row < df[k].n) { df[k].rows[row].sel = (uint8_t)(on != 0); show_rows(k); } }
 void lj_delete_files_set_deleter(int (*fn)(int kind, uint32_t number)) { lj_df_deleter = fn; }
+int lj_delete_files_record(enum lj_rec_kind kind, uint32_t number)
+{
+    lj_ctx *c = lj_ctx_get();
+    if (lj_df_deleter) return lj_df_deleter((int)kind, number);
+    return c->lib ? lj_library_delete_record(c->lib, kind, number) : -1;
+}
 
 /* ---- Check Used Sequences / Mark Unused Sequences: every cue slot and BG cue slot on disk (TSeqUsedForm "Checking Cues" / "Checking HouseLight Cues"; the second
  * pass is read as the BG cues, PROPOSAL rig: LJ2's "HouseLight" cue kind is undocumented) ---- */
@@ -208,7 +214,7 @@ static void on_confirm(int yes, void *ud)
     if (!yes || !valid(k) || !c->lib) return;
     for (i = 0; i < df[k].n; i++) {
         if (!df[k].rows[i].sel) continue;
-        if ((lj_df_deleter ? lj_df_deleter((int)k, df[k].rows[i].no) : lj_library_delete_record(c->lib, k, df[k].rows[i].no)) != 0) bad++;
+        if (lj_delete_files_record(k, df[k].rows[i].no) != 0) bad++;
     }
     if (bad) lj_log("delete files: %d record(s) not deleted", bad);
     if (df[k].win) rebuild(k);

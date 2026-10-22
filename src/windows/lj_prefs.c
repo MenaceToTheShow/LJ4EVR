@@ -99,24 +99,6 @@ void lj_startup_options_close(void)
     so.win = NULL;
 }
 
-/* ---- the four inert 2.209 boxes (ME-31): cbExternal01 cbExternal10 cbPrimary cbSecondary ---- */
-static const char *const lj_inert_box[4] = { "cbExternal01", "cbExternal10", "cbPrimary", "cbSecondary" };
-static const char *const lj_inert_key[4] = { "ExternalLinks01", "ExternalLinksMem10", "PrimaryInstance", "SecondaryInstance" };   /* [PREFS], ours: LJ2's keys are not in the catalogue */
-
-void lj_prefs_inert_load(lj_window *prefs, lj_ini *ini)
-{
-    int i;
-    if (!prefs) return;
-    for (i = 0; i < 4; i++) lj_w_checkbox_set_checked(lj_window_find(prefs, lj_inert_box[i]), ini ? lj_ini_geti(ini, "PREFS", lj_inert_key[i], 0) : 0);
-}
-
-void lj_prefs_inert_save(lj_window *prefs, lj_ini *ini)
-{
-    int i;
-    if (!prefs || !ini) return;
-    for (i = 0; i < 4; i++) lj_ini_seti(ini, "PREFS", lj_inert_key[i], lj_w_checkbox_checked(lj_window_find(prefs, lj_inert_box[i])));
-}
-
 /* ---- W2: lj_sysprefs (lj_prefs.h); the ini bodies are complete, the TSystemPrefsForm bodies are in lj_system_prefs.c (windows-d) ---- */
 typedef struct { const char *sec, *key; size_t off; int dflt; } lj_sp_key;
 #define LJ_SP(f, s, k, d) { s, k, offsetof(lj_sysprefs, f), d }

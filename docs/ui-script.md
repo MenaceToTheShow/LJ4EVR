@@ -107,7 +107,8 @@ smoke_control position_presets save_preset user_palettes fixture_groups intensit
 htp_groups global_patch default_output snapshot edit_hotkeys hotkey_function midi_in
 system_prefs delete_seq delete_cue delete_cl delete_bg delete_macro user_libraries user_lib_name
 backup restore notes about striking_lamps` (DFM classes in `docs/w2-contracts.md`), and `confirm` (or
-`TConfirmForm`) = the open "Please Confirm.." / message box (`lj_win_message_window`).
+`TConfirmForm`) = the open "Please Confirm.." / message box (`lj_win_message_window`), and
+`TExportConfigForm` = Fixture Configuration's export box (fix pass r1, ME-92; `shot` captures it too).
 
 | Line | Effect |
 |---|---|

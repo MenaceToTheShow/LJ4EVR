@@ -1,0 +1,29 @@
+LJ4 replay 1
+# pair16_static_bg (ME-22, 11 F24, rig M11; LORD_ENGINE-12's probe): a 16-bit pair stays one value through rank 4 (a
+# static) and rank 5 (a BG cue slot). MAC 500 Mode 2/4: pan 11/12, tilt 13/14. Static 1.1 fades tilt 0 -> 32768 at level
+# 50 % (16384) over 1000 ms with Use Fadetime; BG cue 1 slot 1 fades pan 0 -> 60000 over 1000 ms from tick 41.
+# NOTE 11 F24 / ME-22: the pair is scaled and faded as one 16-bit value: tick 3 tilt = 2458 x 50 % = 1229 (per byte it
+#      would be 1101 or 1357); BG tick 43 pan = 3000 (LSB 184, not 0).
+# NOTE 11 F17 [STATICS] Use Fadetime (`pref statics_fadetime 1`): the static fades over its ft instead of snapping.
+# NOTE design 3.4: BG (rank 5) programs only pan; tilt stays the static's (Off channels are transparent, 11 s3.4).
+tick_us=25000
+patch 1 profile=12 link=1 addr=1   # Martin / MAC 500 / Mode 2/4, pt16 pan_ofs 10 tilt_ofs 12
+default 1:11=0 1:12=0 1:13=0 1:14=0
+seq 2 name="pan" scene st=60000 ft=1000 ch 1:11=234:F 1:12=96:F
+bg 1 name="BG"
+bgslot 1 seq=2
+static 1.1 name="T" act=toggle rep=add ft=1000 level=50
+ch 1:13=128:F 1:14=0:F
+at 0 pref statics_fadetime 1
+at 0 static_act 1.1
+expect_pair 0 1:13=0
+expect_pair 3 1:13=1229
+expect_pair 10 1:13=4096
+expect_pair 20 1:13=8192
+expect_pair 30 1:13=12288
+expect_pair 40 1:13=16384
+at 41 load_bg 1
+expect_pair 41 1:11=0 1:13=16384
+expect_pair 43 1:11=3000 1:13=16384
+expect_pair 61 1:11=30000 1:13=16384
+expect_pair 81 1:11=60000 1:13=16384

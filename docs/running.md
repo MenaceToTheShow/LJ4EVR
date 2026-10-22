@@ -54,7 +54,7 @@ Start=Default\
 |---|---|
 | `--ms <n>` | quit after n milliseconds (what `tools/shot.ps1` uses) |
 | `--save <file.bmp>` | write the main window surface (frame + menu bar + client) as a 24-bit BMP |
-| `--selftest [ref.bmp]` | prints the startup line (`Please Wait..` caption and the status window seen, LORD_FIDELITY-20), then paints `TSEQUENCEFORM` on screen, reads the OS window surface back and compares it with the image `lj4evr_render` paints for the same form (or with `ref.bmp`); lines end `OK` or `FAIL`, exit 0/1 |
+| `--selftest [ref.bmp]` | prints the startup line (`Please Wait..` caption and the status window seen, LORD_FIDELITY-20), then paints `TSEQUENCEFORM` on screen, reads the OS window surface back and compares it with the image `lj4evr_render` paints for the same form (or with `ref.bmp`); W2 adds the MIDI line (`selftest MIDI-IN: <n> input device(s) listed, injected 90 3C 7F polled back: OK`: the OS backend lists its inputs and the inject path runs through the UI-thread queue); lines end `OK` or `FAIL`, exit 0/1 |
 | `--script <file>` | run a UI script (`docs/ui-script.md`) one line per loop pass; exit 0 on `quit` / EOF, 1 on the first failing line (`SCRIPT FAIL line n: ...` on stderr, nothing saved to `forms.ini`); `tests/ui/scripts/w1_acceptance.lj4s` is the W1 walkthrough |
 | `U:<folder>` | start in that user library instead of `Startup.ini`'s ([01 s6.2]) |
 | `--explode` | design 7.6: a container declared after the controls it covers (Panel1 on `TSEQUENCEFORM`) is moved below them and the client grows, so the covered rows are visible |

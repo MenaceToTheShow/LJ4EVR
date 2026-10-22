@@ -18,6 +18,7 @@
 #include "ui/lj_menu.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_dmx_monitor.h"
 #include "windows/lj_fixture_config.h"
 #include "windows/lj_hardware_setup.h"
@@ -105,6 +106,27 @@ static void test_warnings(void)
     CHECK(lj_win_message_window() == NULL);
 }
 
+/* a text file without CR and with its "Date        : " line blanked (ME-92) */
+static int read_masked(const char *path, char *out, size_t cap)
+{
+    FILE *f = fopen(path, "rb");
+    size_t n = 0;
+    int ch;
+    char *d;
+    if (!f) return -1;
+    while ((ch = fgetc(f)) != EOF && n + 1 < cap) if (ch != '\r') out[n++] = (char)ch;
+    fclose(f);
+    out[n] = 0;
+    if ((d = strstr(out, "Date        : ")) != NULL) { d += 14; while (*d && *d != '\n') *d++ = '#'; }
+    return 0;
+}
+static void click_menu(lj_window *w, const char *item)
+{
+    lj_menu_rt *rt = lj_menu_rt_named(lj_window_menus(w), item);
+    CHECK(rt && rt->fn);
+    if (rt && rt->fn) { lj_window_menus(w)->firing = rt->item; rt->fn(lj_window_root(w), rt->ud); lj_window_menus(w)->firing = NULL; }   /* as lj_menu's fire() */
+}
+
 static void test_fixture_config(void)
 {
     lj_ctx *ctx = lj_ctx_get();
@@ -166,6 +188,24 @@ static void test_fixture_config(void)
         remove(tmp);
         CHECK(header && got1 && got2);
     }
+    /* ME-92: Export to text file of the two-fixture show, through TEXPORTCONFIGFORM's "Save to text file", diffed against
+     * tests/ui/expected/Configuration.txt (the Date line masked, CR dropped); LJ_GOLDEN_UPDATE=1 rewrites the expected file */
+    {   lj_library lib;
+        lj_window *ex;
+        static char got[8192], want[8192];
+        memset(&lib, 0, sizeof lib); strcpy(lib.name, "Default"); strcpy(lib.root, "./");
+        ctx->lib = &lib;
+        click_menu(w, "M_ExportConfig");
+        CHECK((ex = lj_fixture_config_export_window()) != NULL && strcmp(lj_window_desc(ex)->caption, "Configuration Export") == 0);
+        remove("Configuration.txt");
+        if (ex) click(lj_window_find(ex, "BitBtn1"));
+        ctx->lib = NULL;
+        snprintf(tmp, sizeof tmp, "%s/tests/ui/expected/Configuration.txt", LJ_SOURCE_DIR);
+        if (getenv("LJ_GOLDEN_UPDATE") && getenv("LJ_GOLDEN_UPDATE")[0] == '1') { FILE *a = fopen("Configuration.txt", "rb"), *b = fopen(tmp, "wb"); int ch; while (a && b && (ch = fgetc(a)) != EOF) fputc(ch, b); if (a) fclose(a); if (b) fclose(b); }
+        CHECK(read_masked("Configuration.txt", got, sizeof got) == 0 && read_masked(tmp, want, sizeof want) == 0 && strcmp(got, want) == 0);
+        if (strcmp(got, want) != 0) printf("got:\n%s\nwant:\n%s\n", got, want);
+        remove("Configuration.txt");
+    }
     /* remove with the verbatim prompt: Cancel keeps, OK removes */
     lj_fixture_config_select(1);
     click(lj_window_find(w, "bRemove"));
@@ -176,9 +216,9 @@ static void test_fixture_config(void)
     click(lj_window_find(w, "bRemove"));
     click(lj_window_find(lj_win_message_window(), "BOk"));
     CHECK(sh->fixture[1].link == 0 && sh->fixture[1].profile_id == 0);
-    /* Print Configuration greyed (ME-31) */
+    /* Print Configuration greyed (ME-31: no printing path); Export to text file (ME-92) */
     CHECK(lj_menu_rt_named(lj_window_menus(w), "M_Print") && !lj_menu_rt_named(lj_window_menus(w), "M_Print")->enabled);
-    CHECK(lj_menu_rt_named(lj_window_menus(w), "M_ExportConfig") && !lj_menu_rt_named(lj_window_menus(w), "M_ExportConfig")->enabled);
+    CHECK(lj_menu_rt_named(lj_window_menus(w), "M_ExportConfig") && lj_menu_rt_named(lj_window_menus(w), "M_ExportConfig")->enabled);
     lj_fixture_config_close();
     CHECK(lj_fixture_config_window() == NULL);
 }
@@ -293,15 +333,19 @@ static void test_prefs(void)
     lj_w_checkbox_set_checked(lj_window_find(w, "cbRunMinimized"), 1);
     click(lj_window_find(w, "BOk"));                                     /* Ok = save + close */
     CHECK(lj_startup_options_window() == NULL && lj_ini_geti(ctx->main_ini, "STARTUP", "Cue", 0) == -1 && lj_ini_geti(ctx->main_ini, "STARTUP", "Minimized", 0) == 1);
-    /* the four inert 2.209 boxes (ME-31): present, persisted, nothing else */
-    sp = lj_window_create(&lj_form_TSYSTEMPREFSFORM, NULL);
-    CHECK(sp && lj_window_find(sp, "cbExternal01") && lj_window_find(sp, "cbSecondary"));
-    lj_w_checkbox_set_checked(lj_window_find(sp, "cbPrimary"), 1);
-    lj_prefs_inert_save(sp, ctx->main_ini);
-    lj_w_checkbox_set_checked(lj_window_find(sp, "cbPrimary"), 0);
-    lj_prefs_inert_load(sp, ctx->main_ini);
-    CHECK(lj_w_checkbox_checked(lj_window_find(sp, "cbPrimary")) == 1 && lj_w_checkbox_checked(lj_window_find(sp, "cbSecondary")) == 0);
-    lj_window_destroy(sp);
+    /* the four inert 2.209 boxes (ME-31, ME-92): present on the live dialog and persisted under the shipped keys, nothing else */
+    {   lj_sysprefs p, q;
+        sp = lj_window_create(&lj_form_TSYSTEMPREFSFORM, NULL);
+        CHECK(sp && lj_window_find(sp, "cbExternal01") && lj_window_find(sp, "cbExternal10") && lj_window_find(sp, "cbPrimary") && lj_window_find(sp, "cbSecondary"));
+        lj_window_destroy(sp);
+        lj_sysprefs_defaults(&p);
+        p.ext_links_01 = 1; p.ext_links_mem_10 = 0; p.primary_instance = 1; p.secondary_instance = 0;
+        lj_sysprefs_save(ctx->main_ini, &p);
+        CHECK(lj_ini_geti(ctx->main_ini, "PREFS", "ExtMem", -1) == 1 && lj_ini_geti(ctx->main_ini, "PREFS", "ExtMem10", -1) == 0);
+        CHECK(lj_ini_geti(ctx->main_ini, "PREFS", "Primary", -1) == 1 && lj_ini_geti(ctx->main_ini, "PREFS", "Secondary", -1) == 0);
+        lj_sysprefs_load(ctx->main_ini, &q);
+        CHECK(q.ext_links_01 == 1 && q.ext_links_mem_10 == 0 && q.primary_instance == 1 && q.secondary_instance == 0);
+    }
 }
 
 /* ---- W2 windows-c (docs/w2-gates.md, the brief's five rows): groups round trip, Global Patch Apply = one swap with the
@@ -513,6 +557,14 @@ static void test_w2(void)
             sc->val[ch] = 5;
             CHECK(lj_user_palettes_assign(0, 0) >= 1 && sc->val[ch] == 123);
             CHECK(lj_user_palettes_clear(0, 0) >= 1 && sc->state[ch] == LJ_OFF);
+            {   /* ME-97: P_DeletePalettes asks "Delete Selected Presets?" (exe 0x346794); Cancel keeps the entry */
+                lj_menu_rt *rt = lj_menu_rt_named(lj_window_menus(lj_user_palettes_window()), "P_DeletePalettes");
+                lj_w_listview_select(lj_window_find(lj_user_palettes_window(), "lv"), 0);
+                if (rt && rt->fn) rt->fn(lj_window_root(lj_user_palettes_window()), rt->ud);
+                CHECK(lj_win_message_window() && strcmp(lj_w_caption(lj_window_find(lj_win_message_window(), "Label1")), "Delete Selected Presets?") == 0);
+                if (lj_win_message_window()) click(lj_window_find(lj_win_message_window(), "BCancel"));
+                CHECK(lj_win_message_window() == NULL && lj_user_palettes_count() == 1);
+            }
             CHECK(lj_user_palettes_delete(0) == 0 && lj_user_palettes_count() == 0);
             lj_user_palettes_close();
         }

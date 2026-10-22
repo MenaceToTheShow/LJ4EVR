@@ -6,6 +6,7 @@
 #include "ui/widgets/lj_widgets_lists.h"
 
 #include <string.h>
+#include "ui/widgets/lj_widgets_basic.h"
 
 #define MM_BORDER 2
 #define MM_PADX   3
@@ -27,14 +28,20 @@ static void fit_sb(lj_w_memo *m)
 void lj_w_memo_paint(lj_widget *w, lj_surface *s)
 {
     lj_w_memo *m = (lj_w_memo *)w;
-    int ax, ay, i, vis, b = m->border ? MM_BORDER : 0;
+    int ax, ay, i, vis, b = m->border ? MM_BORDER : 0, avail = w->w - 2 * b - 2 * MM_PADX - (m->vscroll ? LJ_SB_W : 0);
+    char line[256];
     lj_widget_abs(w, &ax, &ay);
     if (m->border) lj_edge_sunken(s, ax, ay, w->w, w->h, w->color);
     else lj_fill(s, ax, ay, w->w, w->h, w->color);
     fit_sb(m);
     vis = visible_lines(m);
-    for (i = 0; i < vis && m->sb.pos + i < m->n; i++)
-        lj_w_text(s, w, ax + b + MM_PADX, ay + b + MM_PADY + i * m->line_h, m->lines[m->sb.pos + i], LJ_CLR_3DDKSHADOW);
+    for (i = 0; i < vis && m->sb.pos + i < m->n; i++) {   /* the desc's Font.Color (ME-89: About is white on black), cut at the last glyph that fits left of the scrollbar */
+        size_t n = strlen(m->lines[m->sb.pos + i]);
+        if (n >= sizeof line) n = sizeof line - 1;
+        memcpy(line, m->lines[m->sb.pos + i], n); line[n] = 0;
+        while (n && lj_text_width(lj_w_font_of(w), line) > avail) line[--n] = 0;
+        lj_w_text(s, w, ax + b + MM_PADX, ay + b + MM_PADY + i * m->line_h, line, lj_w_fg(w));
+    }
     if (m->vscroll) lj_w_sbar_paint(s, &m->sb, ax, ay, w->enabled);
 }
 

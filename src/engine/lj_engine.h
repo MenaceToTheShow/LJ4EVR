@@ -42,6 +42,7 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
        LJ_RUN_STATIC0 = LJ_RUN_BG0 + LJ_BG_SLOTS,      /* active static slots, LJ_STATIC_RUNNERS of them */
        LJ_RUN_COUNT = LJ_RUN_STATIC0 + LJ_STATIC_RUNNERS,
        LJ_RUN_ALL = 0xFFFF };                          /* a = every cue slot (All Sequences Stop/Go, Trig All) */
+#define LJ_STATIC_REPIN 0xFEu                          /* STATIC_ACTIVATE c: re-pin a held LINK slot's sequence only (ME-88) */
 
 /* ---- commands (design 3.2 step 1) ----
  * kind                 a                         b                          c            pointers
@@ -71,7 +72,7 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
  *
  * ---- W2 kinds (design 10 W2; appended, never reordered) ----
  * BG_ON                bg runner id or LJ_RUN_ALL  0/1                      -            BGCue Toggle slot n / All Slots Off/On [03 s7]: enables or disables a loaded bg slot (its pointer stays pinned)
- * STATIC_ACTIVATE      global slot (lj_static_global_index)  level_pct 0..100 (0xFFFF = the slot's)  scope: enum lj_replace (0xFF = the slot's)   st = the pinned lj_static_slot; the engine applies the scope (the lj_static_scope_hits rule, evaluated on the slots it holds pinned, never show->pages), then LTP-tops this one [03 s8, 14 sB.7]; a LINK slot carries its sequence in seq[0]
+ * STATIC_ACTIVATE      global slot (lj_static_global_index)  level_pct 0..100 (0xFFFF = the slot's)  scope: enum lj_replace (0xFF = the slot's)   st = the pinned lj_static_slot; the engine applies the scope (the lj_static_scope_hits rule, evaluated on the slots it holds pinned, never show->pages), then LTP-tops this one [03 s8, 14 sB.7]; a LINK slot carries its sequence in seq[0] (NULL = link error); c = LJ_STATIC_REPIN: only hands a held LINK slot the new seq[0] (the UI re-saved or deleted that sequence, ME-88), no activation, no reorder
  * STATIC_DEACTIVATE    global slot                 -                          -            -        (release: snap back, LJ_STATIC_RELEASE_SNAPS; st not needed); a = LJ_RUN_ALL releases every static ("Release All"), c = page 1..64 releases that page ("Release Page")
  * SMOKE                enum lj_smoke_ctl           value (level 0..255, or 0/1 for the button and the timer)   duration ms (button toggle X seconds; 0 = while held)   rank 7 [11 C12, 04 s12]: button/timer fire SMOKE class channels at the level; haze/fan levels > 0 override HAZE / HAZE_FAN channels
  * TRANSPARENT          -                           enum lj_transparent_mode   -            -        Preferences > Transparent Cues: Use (honour the cue's flag) / Force / Ignore [03 s5.8]; applied at the next LOAD_CUE / LOAD_BG

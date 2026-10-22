@@ -5,10 +5,12 @@ behavioural reference) for Windows and macOS, with sACN E1.31 output. One static
 executable per OS; SDL3 supplies the window, input, timers and a surface blit,
 every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 
-Status: **W1 First light** (version 0.1.0). Fixtures configured, a sequence
-programmed, a cue running, DMX on the wire over sACN; the fixture controls,
-Sequence / Cue windows, DMX Output Monitor and the per-user installers
-(`CHANGELOG.md`, `docs/w1-integration.md`). Pre-release until W2 closes.
+Status: **W2 Playback** (version 0.2.0). Everything an operator uses to run a
+show beyond one cue: loop options, chase, cue time, cue pages, transparent and
+flash cues, the Background Cue, Statics 2, groups, presets and palettes, Global
+Patch, Smoke Control, snapshots, Edit Hotkeys with 8 setups, MIDI-IN with Learn,
+System Preferences, backup / restore (`CHANGELOG.md`, `docs/w2-integration.md`).
+Pre-release until v1.0.0.
 
 ## Build
 
@@ -52,18 +54,22 @@ may pull any of them forward before W3; the default is the list above.
 - `docs/fonts.md` - the clean-room bitmap faces and the width corpus
 - `docs/generated-files.md` - every committed generated file, its tool and its check
 - `docs/hotkeys.md` - the hotkey function table and the `.Hot` setups
+- `docs/midi.md` - MIDI-IN: the backends, the map, Learn and the UI-thread dispatch
 - `docs/msvc-sdl-build.md` - why the CMake file carries two MSVC workarounds
 - `docs/releasing.md` - tagging, `release.yml`, the installers
 - `docs/replay-grammar.md` - the `.lj4r` engine replay scenarios
 - `docs/running.md` - running the app, `Main.Ini`, `--selftest` and the other flags
 - `docs/sacn.md` - the sACN sender, `Hardware.Ini [SACN]`, the LAN capture
-- `docs/screenshots/` - the W0 and W1 acceptance captures
+- `docs/screenshots/` - the W0, W1 and W2 acceptance captures
 - `docs/ui-script.md` - the `--script` driver behind the acceptance walkthrough
 - `docs/w0-contracts.md` - map of the W0 headers and the three rules for tracks
 - `docs/w0-integration.md` - the W0 integration log
 - `docs/w1-contracts.md` - the W1 seams between tracks
 - `docs/w1-gates.md` - the W1 gate table with the council's status column
 - `docs/w1-integration.md` - the W1 integration log, CI rounds, acceptance walkthrough and fix pass
+- `docs/w2-contracts.md` - the W2 seams between the eleven tracks
+- `docs/w2-gates.md` - the W2 gate table with the council's status column
+- `docs/w2-integration.md` - the W2 integration log, CI rounds, acceptance walkthrough and fix pass
 
 Licence: MIT (`LICENSE`). Third-party notices: `NOTICE`. LightJockey is a
 trademark of Martin Professional; LJ4EVR is not affiliated.

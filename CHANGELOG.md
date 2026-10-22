@@ -5,6 +5,54 @@ single source of the number.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-22 - W2 Playback
+
+Everything an operator uses to run a show beyond one cue (design section 10 W2; acceptance walked through in
+`docs/w2-integration.md`, gates in `docs/w2-gates.md`).
+
+- Engine (`src/engine/`): the twelve W2 command kinds; ranks 2-7 (flash, current sequence, Statics 2 with
+  Add / Replace / Solo scopes and levels, the Background Cue, generic macros, Smoke); loop options and every 03 s5.5
+  rule (bounce, random without repeat, limits, end actions incl. Link to Cue through `pending_link_cue`); chase
+  mode on one 1 ms tap timer; cue time scaling; transparent cues; HTP groups, Global Patch and default output swaps;
+  the `test_lock_hold` and `test_chase` rows.
+- Replay (`tests/engine/replay/`): the nine W2 acceptance scenarios plus the 10-minute wire run
+  (`replay_wire_drift`); the `determinism` job compares `replay-frames.bin` on the three OSes.
+- Model (`src/model/`): cue pages, BG cues, Statics 2 pages / slots / groups (`Statics.dat`), HTP group names,
+  `.GPA` patch, default output, presets, palettes, notes, generic macros; every numeric key range-checked (ME-77);
+  user libraries, Delete Files listing, `.lj4b` restore into a new library.
+- MIDI and hotkeys (`src/io/`): MIDI-IN on WinMM and CoreMIDI with Learn and the five tabs, posted to the UI
+  thread; Edit Hotkeys with 8 setups under the library.
+- Profiles (`src/fixlib/hand/`): the tier-1 hand profiles 15/02 MAC 600, 15/03 MAC 250 family, 15/04 MAC 2000
+  family, 15/05 Roboscan 518 / 812 / 218 (`profiles_ids`, `exe_profiles_check` in CI).
+- Windows A (`src/windows/`): Loop Options, Cue Time Control, cue pages, transparent and flash cues.
+- Windows B: Background Cue with Save, Statics 2 with Statics Preferences and Static entry properties, Smoke
+  Control, Position Presets.
+- Windows C: Global Patch, Fixture / Intensity / HTP groups, user palettes, Snapshot (static and real-time),
+  default DMX output, Fixture Configuration Export to text file.
+- Windows D: System Preferences (five tabs), About, Delete Files (five kinds), User Libraries, Backup / Restore,
+  Notes, Striking Lamps, Edit Hotkeys, MIDI-IN.
+- Desktop and app (`src/desktop/`, `src/app/`): toolbar LEDs and gates from System Preferences, the hotkey setup
+  menu, the memory gauge, pending loads serviced every idle pass, the W2 script verbs, the W2 walkthrough
+  `tests/ui/scripts/w2_acceptance.lj4s` with its captures in `docs/screenshots/w2/`.
+
+### Fix pass r1 (W2 code council, ME-88..ME-99)
+
+- ME-88: a Statics 2 link slot pins its sequence when activated and is re-pinned when the sequence is re-saved or
+  deleted (`statics_link.lj4r`).
+- ME-89: the About text paints in its DFM colour and stops at the scrollbar.
+- ME-90: Delete Files (and List of Sequences delete) reach the app's deleter: runners and link statics let go first.
+- ME-91: Statics Preferences, the page name box and Static entry properties; the pages array never moves; the nine
+  `[STATICS2]` keys.
+- ME-92: Fixture Configuration Export to text file in the exe's format; the four inert boxes on their shipped keys.
+- ME-93: Use Global Chase Rate is one `Main.Ini [CUE]` key, default on; the three engine menu rows post on toggle;
+  the Sequence window's Trig is no chase tap.
+- ME-94: the saved HTP-masters preference is posted at start.
+- ME-95: a MIDI device that fails to open keeps its `DeviceCode`.
+- ME-96: `test_lock_hold` runs serially, counts from the first lock, 2 ms bound in Release.
+- ME-97: `Min Limit:` / `Max Limit:`, the pool's Mode-column words (`Solo Alll`), `Delete Selected Presets?`.
+- ME-98: `pair16_static_bg.lj4r`, `blind_keep_contents.lj4r`; the replay-frames sha re-recorded.
+- ME-99: this changelog, the README status, `docs/file-formats.md` merged, the `w2-gates.md` Status column.
+
 ## [0.1.0] - 2026-10-21 - W1 First light
 
 The program runs a show: fixtures configured, a sequence programmed, a cue

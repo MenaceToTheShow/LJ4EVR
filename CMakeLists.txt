@@ -301,6 +301,7 @@ add_test(NAME test_uiscript_w2 COMMAND lj4evr_tests test_uiscript_w2)
 foreach(sub test_chase test_lock_hold test_engine_w2)
   add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
 endforeach()
+set_tests_properties(test_lock_hold PROPERTIES RUN_SERIAL TRUE)   # ME-96: a wall-clock bound; ctest -j must not load the CPU beside it
 
 # W2 windows-d (append-only): System Preferences, About, Delete Files, User Libraries, Backup/Restore, Notes, Striking Lamps, Edit Hotkeys, MIDI-IN
 add_test(NAME test_windows_d COMMAND lj4evr_tests test_windows_d)

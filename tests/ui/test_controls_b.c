@@ -15,6 +15,8 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "ui/lj_menu.h"
+#include "windows/lj_warnings.h"
 #include "vectors.h"
 
 static int fails;
@@ -298,7 +300,19 @@ int lj_test_controls_b(int argc, char **argv)
         click_widget(pw, "bClear", 1);
         CHECK(sc->preset[0] == 0);
         lv->index = 2;
-        CHECK(lj_ctl_movement_preset_delete(99) == 0 && !show->preset[0][98].used);
+        {   /* ME-97: Delete asks LJ2's "Delete Selected Presets?" (exe 0x346794); Cancel keeps the entry, OK deletes it */
+            lj_menu_rt *rt = lj_menu_rt_named(lj_window_menus(pw), "P_DeletePalettes");
+            lj_window *mb;
+            CHECK(rt && rt->fn);
+            if (rt && rt->fn) rt->fn(lj_window_root(pw), rt->ud);
+            mb = lj_win_message_window();
+            CHECK(mb && strcmp(lj_w_caption(lj_window_find(mb, "Label1")), "Delete Selected Presets?") == 0);
+            if (mb) click_widget(mb, "BCancel", 1);
+            CHECK(lj_win_message_window() == NULL && show->preset[0][98].used);
+            if (rt && rt->fn) rt->fn(lj_window_root(pw), rt->ud);
+            if ((mb = lj_win_message_window()) != NULL) click_widget(mb, "BOk", 1);
+            CHECK(lj_win_message_window() == NULL && !show->preset[0][98].used);
+        }
         lj_ctl_movement_presets_open(win);
         CHECK(lv->n == 2 && strcmp(lj_w_caption(lj_window_find(pw, "lentries")), "2 Entries") == 0);
     }

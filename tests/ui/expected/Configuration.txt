@@ -1,0 +1,8 @@
+LightJockey fixture configuration export
+Date        : 2026-10-22 12:50
+User Library: Default     (Location: ./)
+
+No   Fixture Type                             User Name            DMX Address
+1    Martin MAC 500, Mode 2/4                 MAC500               1:001-016 (16 ch)
+2    Generic DMX Dimmer,  1 Channel           DMX1                 1:017-017 (1 ch)
+- End of list

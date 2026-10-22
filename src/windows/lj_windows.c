@@ -17,6 +17,7 @@
 #include "windows/lj_warnings.h"
 #include "windows/lj_bgcue_form.h"       /* W2 windows-b */
 #include "windows/lj_statics2_form.h"
+#include "windows/lj_statics2_prefs.h"
 #include "windows/lj_smoke_control.h"
 #include "windows/lj_loop_options.h"      /* W2 windows-a */
 #include "windows/lj_cue_time.h"
@@ -82,6 +83,8 @@ static const lj_win_ops lj_win_table[LJ_WIN_COUNT] = {
     [LJ_WIN_BGCUE_FORM]      = { lj_bgcue_form_open, lj_bgcue_form_close, lj_bgcue_form_get, lj_bgcue_form_refresh },
     [LJ_WIN_SAVE_BGCUE]      = { lj_save_bg_open, lj_save_bg_close, lj_save_bg_get, NULL },
     [LJ_WIN_STATICS2_FORM]   = { lj_statics2_form_open, lj_statics2_form_close, lj_statics2_form_get, lj_statics2_form_refresh },
+    [LJ_WIN_STATICS2_PREFS]  = { lj_statics2_prefs_open, lj_statics2_prefs_close, lj_statics2_prefs_window, lj_statics2_prefs_refresh },   /* ME-91 */
+    [LJ_WIN_STATIC_PROPS]    = { lj_static_props_open, lj_static_props_close, lj_static_props_window, lj_static_props_refresh },
     [LJ_WIN_SMOKE_CONTROL]   = { lj_smoke_control_open, lj_smoke_control_close, lj_smoke_control_get, lj_smoke_control_refresh },
     /* W2 windows-a */
     [LJ_WIN_LOOP_OPTIONS]      = { lj_loop_options_open, lj_loop_options_close, lj_loop_options_get, lj_loop_options_refresh },

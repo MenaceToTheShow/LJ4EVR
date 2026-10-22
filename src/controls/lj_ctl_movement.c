@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 
 /* ---------------------------------------------------------------------------
@@ -702,7 +703,21 @@ static void presets_noop(lj_widget *w, void *ud) { (void)w; (void)ud; }
 static void presets_close(lj_widget *w, void *ud) { (void)w; ((lj_mv *)ud)->presets = NULL; }   /* the platform owns the lj_window after OnClose */
 static void presets_assign(lj_widget *w, void *ud) { lj_mv *mv = ud; int n = presets_selected(mv); (void)w; if (n > 0) lj_ctl_movement_preset_apply(mv->win, n); }
 static void presets_clear(lj_widget *w, void *ud) { (void)w; lj_ctl_movement_preset_clear(((lj_mv *)ud)->win); }
-static void presets_delete(lj_widget *w, void *ud) { lj_mv *mv = ud; int n = presets_selected(mv); (void)w; if (n > 0) { lj_ctl_movement_preset_delete(n); presets_fill(mv); } }
+static struct { lj_mv *mv; int n; } presets_del;                 /* the entry the open "Delete Selected Presets?" box acts on */
+static void presets_delete_yes(int yes, void *ud)
+{
+    (void)ud;
+    if (yes && presets_del.n > 0) { lj_ctl_movement_preset_delete(presets_del.n); if (presets_del.mv->presets) presets_fill(presets_del.mv); }
+    presets_del.n = 0;
+}
+static void presets_delete(lj_widget *w, void *ud)
+{
+    lj_mv *mv = ud;
+    (void)w;
+    if ((presets_del.n = presets_selected(mv)) <= 0) return;
+    presets_del.mv = mv;
+    lj_win_confirm("Please Confirm..", "Delete Selected Presets?", NULL, presets_delete_yes, NULL);   /* exe 0x346794 (ME-97) */
+}
 static void presets_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("presets: Help: no help file is shipped (D2)"); }
 
 static void presets_save(lj_widget *w, void *ud)

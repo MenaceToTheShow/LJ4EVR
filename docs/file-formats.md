@@ -80,13 +80,17 @@ fwd|rev|bounce|rnd, `end` stop|out|goto|link. Validator: cue time 1..999, slot t
 0..999 (0 = CUE), a slot with `seq=0` cannot be `on=1`, `first <= last`, no loop count
 in random mode (03 s5.5), chase <= 60000, spt/atpt >= 1.
 
-### `Cues\CuePageInfo.Dat` (`lj_cue.h`, kind `cuepages`)
+### `Cues\CuePageInfo.Dat` (`lj_cuepage.h` over the W1 `lj_cue_pages_load/save`, kind `cuepages`)
 
 ```
 LJ4 cuepages 1
 page 1 name="Page 1" cues=1,5,5,9
 page 2 name=Specials cues=
 ```
+
+`lj_cuepages` is the in-memory set with the current tab and cursor. Ranges: `n` 1..255, cue numbers
+1..99999999, at most 255 cues per page; a missing file is no pages. `lj_cuepages_add_cue` never
+adds a cue already on the page (03 s5.7); duplicates on a page still load from disk.
 
 ### `CueLists\NNNNNNNN.Cl2`, `CueLists\AutoSave.Cl2` (`lj_cuelist.h`, kind `cl`)
 
@@ -125,6 +129,7 @@ slot 3 seq=12 mode=noloop on=1
 
 ```
 LJ4 statics 1
+group 1 name=Strobes
 page 1 name="Page 1" n=20
 slot 1 name="Strobe A" type= act=flash rep=solo_group ft=300 level=80 transparent=0 groups=9223372036854775813 kind=recorded link=0,0
 scene st=1000 ft=50
@@ -133,9 +138,14 @@ slot 20 name=Link type= act=toggle rep=add ft=50 level=100 transparent=0 groups=
 ```
 
 `act` toggle|flash, `rep` add|slot|page|group|all|solo_slot|solo_page|solo_group|solo_all,
-`kind` empty|recorded|link, `groups` the 64-bit group mask, `link` sequence number and
-scene index. A recorded slot's scene follows its `slot` line as `scene`/`ch`/`fx` lines
-(the sequence grammar). Pages are 20 slots (14 sB.8 PROPOSAL); only slots that are
+`kind` empty|recorded|link, `groups` the decimal 64-bit group mask (digits only), `link`
+sequence number and scene index (0..998). A recorded slot's scene follows its `slot` line as
+`scene`/`ch`/`fx` lines (the sequence grammar). Slot indices are 1..64 (`LJ_STATICS2_SLOTS_MAX`,
+ME-30); `n=` on the page line is the Statics 2 "Visible Slots" 1..64, default 20 (PROPOSAL rig
+14 sB.8 item 2), which Statics Preferences sets on every page together with `Main.Ini [STATICS2]
+SlotsVisible`. `group n name=` (n 1..64, the bit of `groups=`) is written only for a name that
+differs from `Group n` [14 sB.3], before the pages; `lj_statics_save` (W1) writes no group lines,
+`lj_statics_groups_save` writes both. Ranges: `level` 0..100, `ft` 0..60000. Only slots that are
 recorded, linked or named are written.
 
 ### `Config.dat` (`lj_show.h`, kind `config`)
@@ -162,13 +172,22 @@ LJ4 defaultout 1
 ch 2:10=255 4:512=1
 ```
 
+`lj_defaultout.h` (over the W1 `lj_defaultout_load/save`). "Use Current Scene" merges every
+Snap/Fade channel of the current scene over it; a scene with a preset reference or an active
+movement macro is refused [01 s6.3].
+
 ### `GroupInfo.dat` (`lj_groups.h`, kind `groups`)
 
 ```
 LJ4 groups 1
 group 1 name=Front members=1,2
 group 7 name="SB 54 RBAW" members=
+htp 3 name="House warm"
 ```
+
+`htp n name=` for n in 1..24 is written only for a name that differs from `HTP group n`
+(PROPOSAL default) and follows the `group` lines; the W1 reader skips it. HTP membership stays in
+the patch (`htp=` mask of the `.GPA` file).
 
 ### `CueMacros\NNNNNNNN.CMA` (`lj_genmacro.h`, kind `macro`)
 
@@ -183,7 +202,7 @@ ch 1:17 shape=7 bon=1 base=100 amp=45,-45 cycle=168 dir=rev delay=3
 Per channel with a shape: shape index, base on/off and value, positive and negative
 amplitude, cycle in deciseconds, `dir` fwd|rev, delay.
 
-### The global patch file (`lj_patch.h`, kind `patch`; saved from the Global Patch dialog)
+### The global patch file `.GPA` (`lj_patch.h`, kind `patch`; saved from the Global Patch dialog)
 
 ```
 LJ4 patch 1
@@ -192,8 +211,12 @@ ch 4:512 src=out sl=4 sc=511 mode=abs inv=0 min=0 max=255 htp=0
 ```
 
 Only channels that differ from the default (`src=none mode=abs inv=0 min=0 max=255 htp=0`)
-are written. `src` none|out|in, `mode` abs|lotp|htp|gt0|lt255. Validator: source
-link:channel in range, min <= max, a channel is never patched from itself.
+are written. `src` none|out|in, `mode` abs|lotp|htp|gt0|lt255. Ranges (the loader, `lj_patch.c`):
+`sl` 0..4 and `sc` 0..512 (0 only with `src=none`), `inv` 0..1, `min` / `max` 0..255, `htp`
+0..16777215 (24 bits). Validator: with `src=out|in` the source is link 1..4, channel 1..512;
+min <= max; a channel is never patched from itself; no mask over 24 bits. The file is the one the
+user names from the Global Patch dialog's File menu (LJ2's `.GPA` extension; its binary layout is
+undecoded, D5); the live patch is written at show save as `<library>\GlobalPatch.GPA` (PROPOSAL rig).
 
 ### `Presets\fixtureNNN.pre` (`lj_presets.h`, kind `presets`; NNN = fixture index 1..100)
 
@@ -266,47 +289,6 @@ Sources for the LJ2 names: 07 s2, 01 s8, 11 E27, 18 s2 (design 5.1).
 Rules unchanged. Every numeric key of the kinds below is read through `lj_kv_range` (ME-77):
 a value outside its range rejects the line instead of aliasing into range.
 
-### `Cues\CuePageInfo.Dat` (`lj_cuepage.h` over the W1 `lj_cue_pages_load/save`, kind `cuepages`)
-
-Unchanged grammar (`page n name= cues=`); `lj_cuepages` is the in-memory set with the current
-tab and cursor. Ranges: `n` 1..255, cue numbers 1..99999999, at most 255 cues per page.
-
-### `GroupInfo.dat` (`lj_groups.h`, kind `groups`) gains HTP group names
-
-```
-LJ4 groups 1
-group 1 name=Front members=1,2
-htp 3 name="House warm"
-```
-
-`htp n name=` for n in 1..24 (absent = `HTP group n`, PROPOSAL); the W1 reader skips the key.
-Membership stays in the patch (`htp=` mask of the patch file).
-
-### `Statics.dat` (`lj_statics.h`, kind `statics`) gains groups and the visible-slot count
-
-```
-LJ4 statics 1
-group 1 name=Strobes
-page 1 name="Page 1" n=20
-slot 1 name="Strobe A" ... groups=1 kind=recorded link=0,0
-```
-
-`group n name=` for n in 1..64 (the bit of `groups=`; absent = `Group n` [14 sB.3]); `n=` on the
-page line is the Statics 2 "Visible Slots" 1..64 (ME-30, default 20 PROPOSAL rig 14 sB.8 item 2).
-Ranges: `level` 0..100, `ft` 0..60000, link scene 0..998.
-
-### The global patch file `.GPA` (`lj_patch.h`, kind `patch`)
-
-The W1 `LJ4 patch 1` grammar in a file the user names from the Global Patch dialog's File menu
-(LJ2's `.GPA` extension; its binary layout is undecoded, D5). The live patch is written at show
-save as `<library>\GlobalPatch.GPA` (PROPOSAL rig). Ranges: `sl` 1..4, `sc` 1..512, `min`/`max`
-0..255, `htp` 0..16777215.
-
-### `DefaultOut.dat` (`lj_defaultout.h` over the W1 `lj_defaultout_load/save`, kind `defaultout`)
-
-Unchanged grammar. "Use Current Scene" merges every Snap/Fade channel of the current scene over
-it; a scene with a preset reference or an active movement macro is refused [01 s6.3].
-
 ### `Notes.txt` (`lj_notes.h`)
 
 Plain CP1252 text, no header, at most 64 KB (PROPOSAL rig: LJ2's own notes file is undecoded;
@@ -352,9 +334,10 @@ Unchanged. W2 reads `notes.txt` and the per-kind counts back for the Restore dia
 | `Main.Ini` | `[MISC]` | `ShowHotkeyWarning ShowNoHardwareWarning SNAPSHOTSETTINGS RTSNAPSHOTPARAM RTSNAPSHOTSCENES SNAPSHOTINSETTINGSIN SANDNET` | app / windows (Snapshot) |
 | `Main.Ini` | `[OFFLINE]`, `[CAPTURE]` | `Enable43`, `Enable` (inert External Links boxes, ME-31) | app |
 | `Main.Ini` | `[RESTORE]` | `Password AtStartup PassOnRestore` (ours, PROPOSAL) | app |
-| `Main.Ini` | `[CUE]` | `DisableChaseFade CueMacroLinked MacroScaleRange MacroFadeIndex HotkeyChangeSeqDir` (the exe's; `DisableChaseFade` moves here from `forms.ini [CUE]`) | windows (Cue control) |
+| `Main.Ini` | `[CUE]` | `DisableChaseFade CueMacroLinked MacroScaleRange MacroFadeIndex HotkeyChangeSeqDir UseGlobalChaseRate` (the exe's; `DisableChaseFade` moves here from `forms.ini [CUE]`; `UseGlobalChaseRate` exe 0x34E59C, default 1 = `LJ_CHASE_GLOBAL_RATE`, the one store of the cue control's menu row and the app, ME-93) | windows (Cue control), app (posts `LJ_CMD_PREFS`) |
 | `Main.Ini` | `[SMOKE]` | `UseLevel TimerOnStart Level Duration Cycle HazerLevel HazerFan Reset Top` | windows (Smoke Control) |
-| `Main.Ini` | `[STATICS2]` | `Width Height LvlVisible ModeVisible SlotsVisible TabWidth TabHeight Multiline PRWidth` (the exe's Statics 2 keys, ME-30) | windows (Statics 2) |
+| `Main.Ini` | `[STATICS2]` | `Width Height LvlVisible ModeVisible SlotsVisible TabWidth TabHeight Multiline PRWidth` (the exe's Statics 2 keys, ME-30, ME-91): the window size, View Levels / Modes, Visible Slots 1..64 (default 20; 65 clamps to 64), the page button size (0 = Auto) and multiline, the mode + level column width (202). View Slot# has no key among them and holds for the session | windows (Statics 2, Statics Preferences) |
+| `Main.Ini` | `[GLOBALPATCH]` | `HTPMasters` (Enable HTP group master intensity control, 11 P8; PROPOSAL key: LJ2's is not in the shipped Main.Ini); the app posts it at start (ME-94) | windows (Global Patch, HTP Groups), app |
 | `Main.Ini` | `[STATICS]` | `Use Fadetime LevelAutoEnable LevelAutoDisable DefaultLevel` (W1 row; now read) | windows |
 | `Main.Ini` | `[LOOPFORM]`, `[CUETIMEFORM]` | `Top` / `Top Expanded` | windows |
 | `Main.Ini` | `[GLOBALINTENSITY]` | `Sub1..Sub8 MasterOnly SyncBump SyncFlags` (the exe's, beside the W1 keys) | windows |
@@ -373,17 +356,6 @@ or `test_model_w2_library`.
   `link`/`seq` 0..99999999, `time` 0..999, `chase` 0..60000, flags 0..1) and `Config.dat` (`link`
   0..4, `addr` 0..512, `id` 0..65535, `x`/`y` int16, `tab` 0..255, `sub` 0..8). `Config.dat`
   `link=9` is now a load error, not a validator error.
-- **Statics.dat.** `group n name=` lines are written only for names that differ from `Group n`
-  and come before the pages; `lj_statics_save` (W1) writes no group lines, `lj_statics_groups_save`
-  writes both. `n=` is 1..64 (ME-30); slot indices on disk stay 1..20 (`lj_static_page` holds
-  `LJ_STATICS2_SLOTS_PER_PAGE` slots; ME-30 storage beyond 20 is open). `groups=` is the decimal 64-bit mask, digits only.
-- **GroupInfo.dat.** `htp n name=` lines are written only for names that differ from
-  `HTP group n` (PROPOSAL default) and follow the `group` lines.
-- **The `.GPA` patch.** `htp=` is 0..16777215 (24 bits); `inv` 0..1; `sl` 0..4, `sc` 0..512
-  (0 when `src=none`); the validator also rejects a mask over 24 bits.
-- **CuePageInfo.Dat.** Cue numbers 1..99999999 and at most 255 per page; a missing file is no
-  pages. `lj_cuepages_add_cue` never adds a cue already on the page (03 s5.7, the header contract);
-  duplicates on a page still load from disk.
 - **Notes.txt.** Binary read and write: the bytes as typed, CR LF kept, no conversion; over
   64 KB - 1 loads truncated with -1.
 - **`.lj4b`.** The backup's own notes are the archive entry `notes.txt` (case-sensitive) and are

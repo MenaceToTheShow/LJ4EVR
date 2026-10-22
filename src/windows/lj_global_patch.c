@@ -70,7 +70,7 @@ static void row_text(int c)
 static void counts(void)
 {
     static const char *const lbl[6] = { "lPatchedOut", "lPatchedIn", "lInverted", "lMin", "lMax", "lHTPGroups" };
-    static const char *const fmt[6] = { "Source Out:%d", "Source In:%d", "Inverted:%d", "Min Count:%d", "Max Count:%d", "HTP Groups:%d" };   /* exe 0x1BD6CC.. formats; Min/Max Count from the DFM captions */
+    static const char *const fmt[6] = { "Source Out:%d", "Source In:%d", "Inverted:%d", "Min Limit:%d", "Max Limit:%d", "HTP Groups:%d" };   /* exe 0x1BD6CC.. formats; Min Limit 0x1BD6FC, Max Limit 0x1BD714 (ME-97) */
     int n[6] = { 0 }, c, i;
     for (c = 0; c < LJ_CHANS; c++) {
         const lj_patch_ch *p = &gp->work[c];

@@ -144,7 +144,7 @@ cue's slots are the pinned records the W2 forms point at, as the windows do.
 | Form | Command |
 |---|---|
 | `at k bg_on bg<1..5>\|all 0\|1` | `LJ_CMD_BG_ON` (BGCue Toggle slot n / All Slots Off/On) |
-| `at k static_act p.s [level=<0..100>] [scope=add\|slot\|page\|group\|all\|solo_slot\|solo_page\|solo_group\|solo_all]` | `LJ_CMD_STATIC_ACTIVATE` with `st` = the pinned slot; `level` / `scope` default to the slot's own (b 0xFFFF / c 0xFF) |
+| `at k static_act p.s [level=<0..100>] [scope=add\|slot\|page\|group\|all\|solo_slot\|solo_page\|solo_group\|solo_all]` | `LJ_CMD_STATIC_ACTIVATE` with `st` = the pinned slot; `level` / `scope` default to the slot's own (b 0xFFFF / c 0xFF); a `link=` slot carries its sequence in `seq[0]` (NULL when no `seq` line defines it: the link error), as the Statics 2 window posts it (ME-88; the W1 `static p.s 1` form does the same) |
 | `at k static_deact p.s` / `at k static_deact all` / `at k static_deact page <p>` | `LJ_CMD_STATIC_DEACTIVATE` (release one, Release All, Release Page) |
 | `at k smoke button 0\|1 [ms]` / `smoke timer 0\|1` / `smoke level\|duration\|cycle\|haze\|fan <v>` / `smoke reset` | `LJ_CMD_SMOKE` with `a` = `enum lj_smoke_ctl`; `[ms]` after `button` = the toggle-for-X-seconds preference |
 | `at k flash_latch <seq> 0\|1` | `LJ_CMD_FLASH` with `c` = 1 (Latch Flash Sequences); `flash_latch 0 0` = Release latched Flash |
@@ -169,6 +169,7 @@ chase_tap_us cue bg snapshot_tick`.
 | `at k ack_bg` | the harness services `pending_bg` the way `lj_app_service_pending` does: `LJ_CMD_LOAD_BG` of that number with `bgseq[]` pinned (fails when nothing is pending after tick k-1); the twin of `at k link` |
 | `at k gpatch l:a key=value ...` | a runtime Global Patch edit: the `gpatch` build line applied to `show->patch` before tick k (the UI edits under `lj_lock`); posts nothing, so the `htp_groups` / `global_patch` line that follows hands it over; `lj_patch_validate` runs after it |
 | `at k default l:a=v ...` | a runtime Default Output edit of `show->default_out` before tick k; posts nothing (`at k default_out` hands it over) |
+| `at k scene_edit <seq> <scene> l:a=v:S ...` | fix pass r1 (ME-88): the pinned sequence's scene (0-based) edited in place before tick k, as the UI edits under `lj_lock`; posts nothing. A link static (and any runner on that sequence) shows the edit from tick k |
 | `# NOTE <rule ids> ...` | a comment by convention: every W2 scenario names the note / rule / rig ids each block of expects asserts, and the first W1-engine failure it records |
 
 A runtime edit's grammar is checked before the clock runs to k-1, so a bad edit runs no tick (`at_us=` on an edit is an
@@ -201,3 +202,11 @@ failing line of each:
 600 s: boundaries on ticks 24000, 23990, 24003) sits outside the `replay_all` / `replay_dump` glob;
 CTest runs it headless as `replay_wire_drift`, and the acceptance integrator repeats it beside a
 live sACN capture (acceptance 3). It passes on the W1 engine (11 E10 is W1 code).
+
+## Fix pass r1 scenarios (W2 code council, 2026-10-22)
+
+| Scenario | ticks | expects | What it pins |
+|---|---|---|---|
+| `statics_link` | 7 | 8 | ME-88: a link slot outputs its sequence's scene, follows an in-place scene edit, a link to a missing sequence outputs nothing, the level scales it |
+| `pair16_static_bg` | 82 | 10 | ME-22 (LORD_ENGINE-12's probe): a 16-bit pair faded through a static at level 50 % with Use Fadetime and through a BG cue slot stays one value (tick 3: 1229, not a per-byte 1101 / 1357) |
+| `blind_keep_contents` | 9 | 9 | LORD_ENGINE-13, 11 F21: `[PREFS] KeepSeqBlind` both ways (`pref keep_seq_blind 1` keeps the output while blind, `0` takes the current sequence off it) |

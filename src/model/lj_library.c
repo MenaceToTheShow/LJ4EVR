@@ -12,7 +12,7 @@
 #define LJ_SEP '\\'
 #else
 #include <dirent.h>
-#include <sys/stat.h>   /* mkdir; not yet on tools/test_layering.py's OS_ALLOW for this file (reported) */
+#include <sys/stat.h>   /* mkdir */
 #define LJ_SEP '/'
 #endif
 #include "model/lj_library.h"

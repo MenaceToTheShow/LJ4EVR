@@ -97,7 +97,7 @@
 #define LJ_SMOKE_CYCLE_DEFAULT_MS 35000   /* measured from smokecontrol.gif ("35s"), rig 04 s12 */
 #define LJ_SMOKE_RELEASE_ENDS_HELD    1   /* 04 s12: "smoke while held"; a timed press (c = toggle ms) ignores the release; PROPOSAL rig */
 #define LJ_SNAPSHOT_WHOLE_FRAME       1   /* 03 s4.7: SNAPSHOT_REQ copies the whole post-S9 lj_frame (out[], merged[], layer_of[], tick_no); a = enum lj_snapshot_src tells the UI which half to map back */
-#define LJ_LOCK_HOLD_TEST_US (LJ_TICK_US_DEFAULT / 4)   /* ME-81: test_lock_hold asserts one tick under lj_lock stays below a quarter tick (4 cues, 20 statics, BG loaded) */
+#define LJ_LOCK_HOLD_TEST_US 2000   /* ME-81, ME-96: test_lock_hold asserts (Release) one tick under lj_lock stays below design 3.1's 2 ms (4 cues, 64 statics, BG, flash, current, generic macro) */
 
 /* Layer ranks (design 3.4, 11 s3.4; 2-4, 6-7 PROPOSAL rig M12-M15). layer_of[ch] carries the rank that won. */
 enum lj_layer { LJ_L_DEFAULT = 0, LJ_L_CUE, LJ_L_FLASH, LJ_L_CURRENT, LJ_L_STATICS, LJ_L_BGCUE, LJ_L_GENMACRO, LJ_L_SMOKE, LJ_L_COUNT };

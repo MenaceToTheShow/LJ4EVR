@@ -32,6 +32,7 @@
 #include "model/lj_sequence.h"
 #include "model/lj_show.h"
 #include "ui/widgets/lj_widgets_basic.h"
+#include "ui/widgets/lj_widgets_lists.h"
 #include "version.h"
 #include "windows/lj_about_form.h"
 #include "windows/lj_backup_restore.h"
@@ -170,6 +171,18 @@ static void test_about(void)
     CHECK(w && strcmp(lj_w_caption(in(w, "Label4")), LJ_ABOUT_NOTICES) == 0);
     lj_win_about_text(text, sizeof text);
     CHECK(strstr(text, ver) != NULL && strstr(text, LJ_ABOUT_NOTICES) != NULL);
+    {   /* ME-89: RichEdit1 (clBlack, Font.Color clWhite) carries white ink, and none in the 3 px pad left of its scrollbar (the long lines are cut) */
+        lj_widget *re = in(w, "RichEdit1");
+        const lj_surface *sf;
+        int ax = 0, ay = 0, x, y, ink = 0, spill = 0;
+        if (w) lj_window_paint(w);
+        sf = w ? lj_window_surface(w) : NULL;
+        if (re) lj_widget_abs(re, &ax, &ay);
+        for (y = ay + 2; re && sf && y < ay + re->h - 2 && y < sf->h; y++)
+            for (x = ax + 2; x < ax + re->w - 2 - LJ_SB_W && x < sf->w; x++)
+                if (sf->px[y * sf->w + x] == 0xFFFFFFu) { if (x >= ax + re->w - 2 - LJ_SB_W - 3) spill++; else ink++; }
+        CHECK(re && sf && ink > 200 && spill == 0);
+    }
     lj_about_form_close();
     CHECK(lj_about_form_window() == NULL);
 }

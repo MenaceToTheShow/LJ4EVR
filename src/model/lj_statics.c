@@ -135,18 +135,47 @@ void lj_statics_free(lj_static_page *pages, int npages)
     free(pages);
 }
 
-int lj_statics_add_page(lj_static_page **pages, int *npages, const char *name)
+int lj_statics_add_page(lj_static_page **pages, int *npages, const char *name) { return lj_statics_insert_page(pages, npages, *npages, name); }
+
+/* ponytail: the first page allocates all LJ_STATIC_PAGES_MAX pages (about 10 KB each) and the array never moves again: the
+ * engine holds &pages[p].slot[s] of every active static (ME-91, LORD_ENGINE-10). Shrink on load if memory ever matters. */
+int lj_statics_insert_page(lj_static_page **pages, int *npages, int at, const char *name)
 {
     lj_static_page *p;
-    if (*npages >= LJ_STATIC_PAGES_MAX) return -1;
-    p = (lj_static_page *)realloc(*pages, (size_t)(*npages + 1) * sizeof *p);
-    if (!p) lj_fatal("lj_statics_add_page: out of memory");
-    *pages = p;
-    p += *npages;
-    memset(p, 0, sizeof *p);
-    lj_str_copy(p->name, sizeof p->name, name ? name : "");
-    p->n = LJ_STATICS2_SLOTS_PER_PAGE;
-    return (*npages)++;
+    if (*npages >= LJ_STATIC_PAGES_MAX || at < 0 || at > *npages) return -1;
+    if (!*pages && (*pages = (lj_static_page *)calloc(LJ_STATIC_PAGES_MAX, sizeof **pages)) == NULL) lj_fatal("lj_statics_insert_page: out of memory");
+    p = *pages;
+    memmove(p + at + 1, p + at, (size_t)(*npages - at) * sizeof *p);
+    memset(p + at, 0, sizeof *p);
+    lj_str_copy(p[at].name, sizeof p[at].name, name ? name : "");
+    p[at].n = LJ_STATICS2_SLOTS_PER_PAGE;
+    (*npages)++;
+    return at;
+}
+
+int lj_statics_delete_page(lj_static_page *pages, int *npages, int at)
+{
+    int i;
+    if (!pages || at < 0 || at >= *npages) return -1;
+    for (i = 0; i < LJ_STATICS2_SLOTS_MAX; i++) free(pages[at].slot[i].scene);
+    memmove(pages + at, pages + at + 1, (size_t)(*npages - at - 1) * sizeof *pages);
+    (*npages)--;
+    memset(pages + *npages, 0, sizeof *pages);
+    return 0;
+}
+
+int lj_statics_swap_pages(lj_static_page *pages, int npages, int a, int b)
+{
+    static lj_static_page tmp;                       /* ponytail: one UI thread; 10 KB off the stack */
+    if (!pages || a < 0 || b < 0 || a >= npages || b >= npages) return -1;
+    tmp = pages[a]; pages[a] = pages[b]; pages[b] = tmp;
+    return 0;
+}
+
+int lj_statics_ini_visible(lj_ini *main_ini)
+{
+    int n = main_ini ? lj_ini_geti(main_ini, "STATICS2", "SlotsVisible", LJ_STATICS2_SLOTS_PER_PAGE) : LJ_STATICS2_SLOTS_PER_PAGE;
+    return n < 1 ? 1 : n > LJ_STATICS2_SLOTS_MAX ? LJ_STATICS2_SLOTS_MAX : n;   /* ME-30: 1..64, 65 clamps to 64 */
 }
 
 int lj_static_slot_record(lj_static_slot *slot, const lj_scene *scene)

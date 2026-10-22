@@ -94,8 +94,9 @@ Replay (`lj4evr_tests replay`, 24 globbed + the wire row), every scenario 0 fail
 | | | | | stop_holds | 311 | 6 |
 
 Rule ids arbitrated: 03 s5.5 Goto end action + F14 (engine side, `loop_bounce_random_limits`), design 3.4 rank
-order with 03 s8 / 11 C5 (scenario side, `bgcue_over_statics`), LORD_ENGINE-13 KeepContentsBlind
-(`layer_flash_current_statics`), `LJ_RANDOM_NO_REPEAT` PROPOSAL (`loop_bounce_random_limits`, 12 expects
+order with 03 s8 / 11 C5 (scenario side, `bgcue_over_statics`), LORD_ENGINE-13 `[PREFS] KeepSeqBlind`
+(`blind_keep_contents`, fix pass r1; this line first cited `layer_flash_current_statics`, which has no blind line:
+corrected per ME-98), `LJ_RANDOM_NO_REPEAT` PROPOSAL (`loop_bounce_random_limits`, 12 expects
 depend on it).
 
 Determinism (ME-78 local): `--dump-frames` of the 24 scenarios twice in Release and once in Debug:
@@ -365,3 +366,38 @@ contract rows touched by W2": F8, F20, F25, F30, F48, F51, F52, I2, each with it
                                          windows-msvc (Release and Debug): the same line, 0 devices on the hosted runner
                                          replay-frames.bin linux / macos / windows 776cf859abfbb8f418003a944ca7261f1fca89f8eb337a817a5af7ed2c4a5474
                                          (unchanged by this pass: no engine output changed)
+
+## Fix pass r1 (W2 code council, `W2_CODE_MASTER_ELDER_VERDICT.md` section 4, ME-88..ME-99)
+
+Fix-pass engineer, 2026-10-22, work PC (MSVC 19.44, Ninja). Base `9453525`. Each item as the verdict's section 4 line, with
+its runnable check.
+
+| ME | What changed | Check |
+|---|---|---|
+| ME-88 | `activate()` pins a LINK slot's sequence (`seq[0]`) under the lock of the post; a sequence on disk only is loaded first through the new `LJ_ACT_PIN_SEQ`; `Link Error (Seq %d Scene %d)` logged when absent. The app re-pins every link slot on a re-save or delete (`lj_app_repin_statics`, `STATIC_ACTIVATE` with `c = LJ_STATIC_REPIN`: the engine hands a held link slot the new record, no activation, no reorder). Replay `static_act` and `static p.s 1` carry `seq[0]`; new runtime edit `at k scene_edit` | `statics_link.lj4r` 7 ticks / 8 expects / 0 fails; `test_uiscript_w2` section 8 (link, activate, re-save, delete under the debug heap) |
+| ME-89 | `lj_w_memo_paint`: the desc's `Font.Color`, each line cut at the last glyph left of the scrollbar | `test_windows_d` ink row (white ink in RichEdit1, none in the 3 px left of its scrollbar); `docs/screenshots/w2/about-TAboutForm2.png` |
+| ME-90 | `lj_app_seam_start` installs `lj_delete_files_set_deleter(lj_app_delete_record)`; the List of Sequences delete goes through the same `lj_delete_files_record` | `grep -c lj_delete_files_set_deleter src/app/*.c` = 1; `test_uiscript_w2` section 8: Delete Sequences on the loaded sequence, slot 1 `LJ_SLOT_LOAD_ERROR`, table and file gone, the link static outputs nothing |
+| ME-91 | `windows/lj_statics2_prefs.c`: TStatics2PrefsForm (four tabs), TGetStaticsPageNameForm, TStaticEntryPropertiesForm; `show->pages` allocated for 64 pages by its first page and never reallocated (`lj_statics_insert/delete/swap_page`; Insert / Delete / Up / Down release every static first); the nine `[STATICS2]` keys; View Modes / Levels / Slot# hide their columns | `test_model_w2_records` (SlotsVisible 64 kept, 65 clamps to 64; 64 pages, the array never moves); `test_uiscript_w2` section 9 (add page 2 with a static on page 1 running, Visible Slots 30, client 58 + 30 x 16 + 30, two page buttons, nine keys, Properties OK); Debug script opening `statics2_prefs` and `static_props`: rc 0 |
+| ME-92 | Fixture Configuration `Export to text file` from the exe pool block, TEXPORTCONFIGFORM, `Save to text file` writes `<library>\Configuration.txt`; `lj_prefs_inert_*` deleted, the four boxes tested on `ExtMem ExtMem10 Primary Secondary`; two `docs/fidelity.md` rows | `test_windows_c` diff against `tests/ui/expected/Configuration.txt` (Date masked); `grep -c lj_prefs_inert src tests` = 0 |
+| ME-93 | `UseGlobalChaseRate` in `Main.Ini [CUE]` only, default `LJ_CHASE_GLOBAL_RATE`; the three engine rows of the cue menu post `LJ_CMD_PREFS` on toggle; `TRIG` taps the chase timer only for the cue's slots or All | `test_uiscript_w2` section 8: the menu toggles the key and the engine pref; two taps on slot 1 300 ms apart give slot 2 `chase_us` 300000; two Sequence-window trigs leave the period |
+| ME-94 | `LJ_CMD_HTP_GROUPS` posted once at seam start from `[GLOBALPATCH] HTPMasters`; the `[PATCH]` read and the unbound `LJ_ACT_GLOBAL_PATCH_APPLY` body deleted (the enum row stays, noted) | `test_uiscript_w2`: `HTPMasters=1` in Main.Ini, `post.htp_masters` 1 after the first tick with no HTP edit |
+| ME-95 | `lj_app_midi_open` keeps the requested index, `midi_open` tracks the open | `test_uiscript_w2`: `DeviceCode=200` (no backend has it), the log names 200, `LJ_ACT_MIDI_SAVE` writes `DeviceCode=200` |
+| ME-96 | `test_lock_hold`: `RUN_SERIAL`, sink before setup, one lock per command, 64 statics + flash + current + generic macro, setup lines asserted 0, `LJ_LOCK_HOLD_TEST_US` 2000 asserted in Release only | Release 624 us, Debug 1348 us, 0 lines; five consecutive Debug `ctest -j8` runs 78/78 |
+| ME-97 | `Min Limit:%d` / `Max Limit:%d`; the Mode column's pool words (`Release Page`, `Solo Alll`); `Delete Selected Presets?` in User Palette and Position Presets | goldens `WIN_GLOBAL_PATCH`, `WIN_STATICS2_FORM` regenerated (REVIEWED.tsv rows); `test_windows_c` and `test_controls_b` assert the confirm box, Cancel keeps, OK deletes |
+| ME-98 | `pair16_static_bg.lj4r` (82 / 10), `blind_keep_contents.lj4r` (9 / 9); the section 4 citation corrected | `replay_all` 27 scenarios 0 fails; the sha below |
+| ME-99 | CHANGELOG `[0.2.0]`, README status and docs rows, `generated-files.md`, `running.md` MIDI line, `file-formats.md` merged (one `.GPA` range: `sl` 0..4, `sc` 0..512, 0 only with `src=none`), `w2-gates.md` Status column, the KeepSeqBlind gate text, the `lj_library.c` comment | this commit |
+
+Builds: `build-int-nosdl`, `build-ninja-msvc`, `build-debug-win`, `build-msvc` Release and Debug: 0 warnings, each
+`100% tests passed, 0 tests failed out of 78` (the new rows live inside existing CTest rows; the replays are globbed into
+`replay_all` / `replay_dump`). Debug `--selftest` rc 0, no `no binding`, `unknown event` or `has no behaviour file yet`.
+
+Replay frames, local (Release, Debug, no-SDL equal): 116,941,104 bytes, sha256
+`4999049952535575a8588d37fa1d1fa34175cd325fb28569995188990b509646` (the three new scenarios; was `776cf859...4a5474`).
+
+Acceptance re-run: `w2_acceptance.lj4s` (now with About, Statics Preferences and the export box) on a fresh `Default`
+library (the old `User\Default` moved aside first), Release and Debug, both rc 0; every capture under
+`docs/screenshots/w2/` re-taken, new: `about-*`, `statics-prefs-*`, `export-config-*` (`Configuration.txt` written).
+
+Recorded, not changed: the exe pool also has a `Rows` key beside the nine `[STATICS2]` keys; which one holds the slot count
+is rig item 14 sB.8 item 2 (this pass follows the verdict: `SlotsVisible`). The design 2.3 rule 3 sentence for the
+Statics 2 link pin is the design owner's (ME-50 list).

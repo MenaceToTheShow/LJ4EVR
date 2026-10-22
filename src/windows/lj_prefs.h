@@ -21,9 +21,6 @@ void       lj_startup_options_close(void);
 lj_window *lj_startup_options_window(void);
 int        lj_startup_options_apply(void);                           /* the Ok button: page -> ctx->main_ini; 0 / -1 */
 
-/* the four inert boxes: the System Preferences owner calls these at open / Ok */
-void lj_prefs_inert_load(lj_window *system_prefs, lj_ini *main_ini);  /* [PREFS] ExternalLinks01 ExternalLinksMem10 PrimaryInstance SecondaryInstance (ours) */
-void lj_prefs_inert_save(lj_window *system_prefs, lj_ini *main_ini);
 
 
 /* ---- W2: System Preferences (TSystemPrefsForm, five tabs [01 s6.1, 07 s12]) as one record ----

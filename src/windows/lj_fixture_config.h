@@ -6,7 +6,7 @@
  * blackout/GM, link strobe/GM, user name), remove with the verbatim prompt, Save
  * through the model (Config.dat) + lj_engine_rebind + the Unassigned list.
  * Greyed rows (no profile bound) report "Not available in LJ4EVR" (ME-29 wording);
- * Print Configuration greyed (ME-31), Export to text file W2. */
+ * Print Configuration greyed (ME-31: no printing path), Export to text file (ME-92). */
 #ifndef LJ_WINDOWS_FIXTURE_CONFIG_H
 #define LJ_WINDOWS_FIXTURE_CONFIG_H
 
@@ -35,5 +35,10 @@ int  lj_fixture_config_calculate(int fixture);                 /* first free ran
 int  lj_fixture_config_dip_text(int address, char *out, size_t cap);     /* "1000100000" for 17: switch i (left to right) = bit i-1, '1' = thrown down */
 int  lj_fixture_config_save(void);                             /* lj_config_validate -> Config.dat through the model -> lj_engine_rebind -> Unassigned list; 0 / -1 (message shown) */
 int  lj_fixture_config_modified(void);
+
+/* Export to text file (ME-31, ME-92): the exe's format, CRLF lines; the window is TEXPORTCONFIGFORM "Configuration Export" */
+int        lj_fixture_config_export_text(char *out, size_t cap);   /* 0 / -1 (cap too small) */
+int        lj_fixture_config_export_save(const char *path);        /* the text into a file; 0 / -1 */
+lj_window *lj_fixture_config_export_window(void);                  /* the open export window, NULL when none */
 
 #endif /* LJ_WINDOWS_FIXTURE_CONFIG_H */

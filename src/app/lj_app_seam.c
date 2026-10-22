@@ -30,6 +30,8 @@
 #include "model/lj_statics.h"
 #include "windows/lj_bgcue_form.h"
 #include "windows/lj_cue_form.h"
+#include "windows/lj_delete_files.h"
+#include "windows/lj_global_patch.h"
 #include "windows/lj_master_intensity.h"
 #include "windows/lj_prefs.h"
 #include "windows/lj_snapshot.h"
@@ -43,6 +45,7 @@ static struct {
     int cue_edit;
     lj_sysprefs prefs;
     lj_midi_map midi;
+    int midi_open;                       /* the device in midi.device opened (ME-95: a failed open keeps the operator's DeviceCode) */
     lj_frame snap;                       /* the UI-owned frame LJ_CMD_SNAPSHOT_REQ fills (seam: read only after view.snapshot_tick == snap.tick_no) */
     struct { uint64_t at_us; uint64_t clear_us[LJ_FIXTURES]; } strike;   /* Auto LampOn due time; per fixture, when its lamp-on overwrite is released */
     lj_bgcue *bg_unsaved;                /* the Background Cue window's record before its first save (number 0: no table entry); ponytail: not freed at exit, one record */
@@ -139,6 +142,36 @@ static void lj_app_repin_cue(uint32_t exclude)
 }
 
 void lj_app_repin_current_cue(void) { lj_lock(); lj_app_repin_cue(0); lj_unlock(); }
+
+/* Caller holds lj_lock: every Statics 2 link slot on `number` gets the table's record now (NULL once deleted) before the old one
+ * is freed (rule 6, ME-88). The engine acts only on the slots it holds; the rest ignore it. ponytail: one post per linking slot. */
+static void lj_app_repin_statics(uint32_t number)
+{
+    lj_show *show = lj_ctx_get()->show;
+    lj_cmd cmd;
+    int p, i;
+    if (!lj_ctx_get()->engine) return;
+    memset(&cmd, 0, sizeof cmd);
+    cmd.kind = LJ_CMD_STATIC_ACTIVATE; cmd.c = LJ_STATIC_REPIN; cmd.at_us = lj_clock_us();
+    cmd.seq[0] = (const lj_sequence *)lj_table_get(&show->sequences, number);
+    for (p = 0; p < show->npages; p++)
+        for (i = 0; i < LJ_STATICS2_SLOTS_MAX; i++)
+            if (show->pages[p].slot[i].kind == LJ_STATIC_LINK && show->pages[p].slot[i].link_seq == number) {
+                cmd.a = (uint32_t)lj_static_global_index(p + 1, i + 1); cmd.st = &show->pages[p].slot[i];
+                lj_engine_cmd(lj_ctx_get()->engine, &cmd);
+            }
+}
+
+/* LJ_ACT_PIN_SEQ: a Statics 2 link slot's sequence into the table when it is on disk only (the window then pins it under the lock) */
+static void lj_app_pin_seq(uint32_t number)
+{
+    lj_app_fresh fresh;
+    memset(&fresh, 0, sizeof fresh);
+    if (!lj_ctx_get()->show || !lj_app_seq_for(number, &fresh) || !fresh.n) return;
+    lj_lock();
+    lj_table_put(&lj_ctx_get()->show->sequences, fresh.seq[0]->number, fresh.seq[0]);
+    lj_unlock();
+}
 
 int lj_app_load_cue(uint32_t number, int edit)
 {
@@ -302,6 +335,7 @@ int lj_app_save_sequence(int as_new)
     old = (lj_sequence *)lj_table_get(&c->show->sequences, number);
     lj_table_put(&c->show->sequences, number, copy);
     lj_app_repin_cue(0);                                          /* editing a sequence changes every cue [03 s5.1]: every runner on this number gets the new pointer */
+    lj_app_repin_statics(number);                                 /* and every Statics 2 slot linked to it (ME-88) */
     lj_unlock();
     if (old && old != copy) lj_sequence_free(old);
     c->modified[LJ_MOD_SEQ] = 0; c->seq_saved = 1;
@@ -345,6 +379,7 @@ int lj_app_delete_record(int kind, uint32_t number)
         lj_lock();
         rec = lj_table_remove(&show->sequences, number);
         if (show->current_cue) lj_app_repin_cue(number);                 /* its slots show load error from now on */
+        lj_app_repin_statics(number);                                    /* a linked static outputs nothing (link error, ME-88) */
         if (show->current_seq && show->current_seq->number == number) show->current_seq->number = 0;   /* a number is never reused [F28] */
         lj_unlock();
         lj_sequence_free((lj_sequence *)rec);
@@ -407,10 +442,11 @@ static void lj_app_midi_cb(void *ud, const uint8_t msg[3]) { (void)ud; lj_midi_p
 int lj_app_midi_open(int device)
 {
     lj_midi_close();
-    lj_s.midi.device = -1;
+    lj_s.midi_open = 0;
+    lj_s.midi.device = device < 0 ? -1 : device;                      /* kept on a failed open: a load-in with the interface unplugged saves the same DeviceCode (ME-95) */
     if (device < 0) return 0;
     if (lj_midi_open(device, lj_app_midi_cb, NULL) != 0) return -1;
-    lj_s.midi.device = device;
+    lj_s.midi_open = 1;
     return 0;
 }
 
@@ -542,15 +578,13 @@ static void lj_app_post_pref(enum lj_engine_pref k, int v)
 int lj_app_prefs_load(void)
 {
     lj_ctx *c = lj_ctx_get();
-    int n;
     c->prefs = &lj_s.prefs;
     lj_sysprefs_load(c->main_ini, &lj_s.prefs);
     /* ME-29 / LORD_FIDELITY-11: LJ2 defaults the Freeze / OnLine-OffLine gates ON [01 s6.1]; the shipped Main.Ini's AllowBlind=0
      * AllowOffline=0 is a PROPOSAL mapping (docs/w2-contracts.md s6), so a library that never saved System Preferences keeps them ON. */
     if (lj_ini_geti(c->main_ini, "PREFS", "AllowBlind", -1) < 0) lj_s.prefs.allow_freeze = 1;
     if (lj_ini_geti(c->main_ini, "PREFS", "AllowOffline", -1) < 0) lj_s.prefs.allow_offline = 1;
-    n = lj_ini_geti(c->main_ini, "STATICS2", "SlotsVisible", LJ_STATICS2_SLOTS_PER_PAGE);   /* ME-30 */
-    c->static_visible = n < 1 ? 1 : n > LJ_STATICS2_SLOTS_MAX ? LJ_STATICS2_SLOTS_MAX : n;
+    c->static_visible = lj_statics_ini_visible(c->main_ini);       /* ME-30: [STATICS2] SlotsVisible 1..64 */
     lj_app_prefs_apply();
     return c->main_ini ? 0 : -1;
 }
@@ -576,7 +610,7 @@ void lj_app_prefs_apply(void)
     lj_desktop_toolbar_gates(p);
     lj_desktop_hotkey_setup_set(p->hotkey_setup, p->hotkeys_enabled);
     lj_app_post_pref(LJ_PREF_KEEP_SEQ_BLIND, p->keep_seq_blind);                                          /* LORD_ENGINE-13 */
-    lj_app_post_pref(LJ_PREF_USE_GLOBAL_CHASE_RATE, lj_ini_geti(c->main_ini, "CUE", "UseGlobalChaseRate", 0));   /* PROPOSAL rig: key of TCurrentCue M_UseGlobalChaseRate */
+    lj_app_post_pref(LJ_PREF_USE_GLOBAL_CHASE_RATE, lj_ini_geti(c->main_ini, "CUE", "UseGlobalChaseRate", LJ_CHASE_GLOBAL_RATE));   /* exe inikey 0x34E59C; the one store the cue form's menu writes (ME-93) */
     lj_app_post_pref(LJ_PREF_DISABLE_CHASE_FADE, lj_ini_geti(c->main_ini, "CUE", "DisableChaseFade", 0));
     lj_app_post_pref(LJ_PREF_STATICS_USE_FADETIME, lj_ini_geti(c->main_ini, "STATICS", "Use Fadetime", 0));
     lj_app_post_pref(LJ_PREF_HOTKEY_TRIG_CHANGES_DIR, lj_ini_geti(c->main_ini, "CUE", "HotkeyChangeSeqDir", 0));
@@ -664,7 +698,6 @@ static void lj_app_select_library(int index)
 static void lj_app_w2_action(enum lj_desktop_action a, int arg, void *ud)
 {
     lj_ctx *c = lj_ctx_get();
-    lj_cmd cmd;
     (void)ud;
     switch (a) {
     case LJ_ACT_USER_LIBRARIES:  lj_win_open(LJ_WIN_USER_LIBRARIES); break;
@@ -704,19 +737,11 @@ static void lj_app_w2_action(enum lj_desktop_action a, int arg, void *ud)
         lj_app_default_out_apply();
         break;
     case LJ_ACT_DEFAULT_OUT_APPLY: if (c->show) lj_app_default_out_apply(); break;
-    case LJ_ACT_GLOBAL_PATCH_APPLY: {
-        char path[LJ_PATH_CAP];
-        if (!c->show) break;
-        memset(&cmd, 0, sizeof cmd);
-        cmd.kind = arg ? LJ_CMD_HTP_GROUPS : LJ_CMD_GLOBAL_PATCH; cmd.patch = c->show->patch;
-        cmd.b = (uint32_t)lj_ini_geti(c->main_ini, "PATCH", "HTPMasters", LJ_HTP_MASTERS_DEFAULT);   /* PROPOSAL rig: where M_HTPgroupsaffectedgyGM persists */
-        lj_ctx_post(&cmd);
-        if (!lj_lib() || lj_library_path(lj_lib(), LJ_PATCH_FILE, path, sizeof path) != 0 || lj_patch_save(path, c->show->patch) != 0) lj_log("app: %s not saved", LJ_PATCH_FILE);
-        break; }
     case LJ_ACT_MIDI_SAVE:       lj_app_midi_save(); break;
     case LJ_ACT_MIDI_OPEN_DEVICE: if (lj_app_midi_open(arg) != 0) lj_log("MIDI-IN: device %d did not open", arg); break;
     case LJ_ACT_LOAD_BGCUE:      if (arg > 0) lj_app_load_bgcue((uint32_t)arg); else lj_app_bgcue_clear(); break;   /* 0 = New / Clear BGCue */
     case LJ_ACT_BGCUE_APPLY:     lj_app_bgcue_apply(lj_bgcue_form_work()); break;
+    case LJ_ACT_PIN_SEQ:         if (arg > 0) lj_app_pin_seq((uint32_t)arg); break;
     case LJ_ACT_STATIC_CLEAR:    if (arg >= 0) lj_app_static_clear(arg / LJ_STATICS2_SLOTS_MAX + 1, arg % LJ_STATICS2_SLOTS_MAX + 1); break;
     default: break;
     }
@@ -730,7 +755,7 @@ void lj_app_seam_start(void)
         LJ_ACT_USER_LIBRARIES, LJ_ACT_DELETE_FILES, LJ_ACT_GLOBAL_PATCH, LJ_ACT_SYSTEM_PREFS, LJ_ACT_EDIT_HOTKEYS, LJ_ACT_ABOUT, LJ_ACT_FIXTURE_GROUPS,
         LJ_ACT_MIDI_IN, LJ_ACT_BGCUE_FORM, LJ_ACT_STATICS2_FORM, LJ_ACT_SMOKE_CONTROL, LJ_ACT_NOTES, LJ_ACT_BACKUP, LJ_ACT_RESTORE_LIBRARY,
         LJ_ACT_STRIKING_LAMPS, LJ_ACT_SELECT_LIBRARY, LJ_ACT_SYSTEM_PREFS_APPLY, LJ_ACT_HOTKEY_SETUP, LJ_ACT_HOTKEYS_ENABLED, LJ_ACT_SNAPSHOT,
-        LJ_ACT_DEFAULT_OUT, LJ_ACT_DEFAULT_OUT_APPLY, LJ_ACT_GLOBAL_PATCH_APPLY, LJ_ACT_MIDI_SAVE, LJ_ACT_MIDI_OPEN_DEVICE, LJ_ACT_LOAD_BGCUE, LJ_ACT_STATIC_CLEAR, LJ_ACT_BGCUE_APPLY };
+        LJ_ACT_DEFAULT_OUT, LJ_ACT_DEFAULT_OUT_APPLY, LJ_ACT_MIDI_SAVE, LJ_ACT_MIDI_OPEN_DEVICE, LJ_ACT_LOAD_BGCUE, LJ_ACT_STATIC_CLEAR, LJ_ACT_BGCUE_APPLY, LJ_ACT_PIN_SEQ };
     lj_ctx *c = lj_ctx_get();
     char ini[LJ_PATH_CAP], map[LJ_PATH_CAP], err[128];
     int i, n;
@@ -747,6 +772,13 @@ void lj_app_seam_start(void)
     lj_fn_bind(LJ_FN_VIEW_DMX_OUTPUT, lj_app_fn, NULL); lj_fn_bind(LJ_FN_TOGGLE_LIST_OF_CUES, lj_app_fn, NULL);
     lj_fn_bind(LJ_FN_FREEZE_OUTPUT_TOGGLE, lj_app_fn, NULL); lj_fn_bind(LJ_FN_DMX_ONLINE_OFFLINE_TOGGLE, lj_app_fn, NULL);
     for (i = 0; i < LJ_COUNT_OF(acts); i++) lj_desktop_bind_action(acts[i], lj_app_w2_action, NULL);
+    lj_delete_files_set_deleter(lj_app_delete_record);                /* ME-90: Delete Files hands the engine NULL and drops the table record (rule 6) */
+    if (c->show) {                                                    /* ME-94: the saved 11 P8 preference is in force from the start, not from the first HTP edit */
+        lj_cmd hc;
+        memset(&hc, 0, sizeof hc);
+        hc.kind = LJ_CMD_HTP_GROUPS; hc.patch = c->show->patch; hc.b = (uint32_t)lj_global_patch_htp_masters();
+        lj_ctx_post(&hc);
+    }
     lj_cue_form_set_view(&c->view);                                   /* seam 3: the windows paint from the app's one copy */
     lj_master_intensity_set_view(&c->view);
     if ((n = lj_ini_geti(c->main_ini, "STARTUP", "AutoLampOn", 0)) > 0 && n <= 5) lj_s.strike.at_us = lj_clock_us() + (uint64_t)n * 60000000u;   /* [01 s6.2] after n minutes */
@@ -754,7 +786,8 @@ void lj_app_seam_start(void)
 
 void lj_app_seam_stop(void)
 {
-    lj_midi_close();                                                  /* ME-23: the MIDI thread is gone before the engine thread stops */
+    if (lj_s.midi_open) lj_midi_close();                              /* ME-23: the MIDI thread is gone before the engine thread stops */
+    lj_s.midi_open = 0;
     if (lj_ctx_get()->midi && lj_s.midi.auto_save) lj_app_midi_save();
     lj_ctx_get()->midi = NULL;
     if (lj_ctx_get()->main_ini && lj_ctx_get()->prefs) {               /* Setup > Hotkeys choices outlive the run (Main.Ini is written after this by lj_app.c) */

@@ -1,0 +1,34 @@
+LJ4 replay 1
+# statics_link (ME-88, 14 sB.6; design 2.3 rule 3: the link is a UI-side pin): a Statics 2 slot made with "Link to current
+# Sequence/Scene" outputs its sequence's scene. 1.1 links seq 1 scene index 1 (1:1=180); 1.2 links seq 9, which no `seq`
+# line defines (the link error case).
+# NOTE ME-88: STATIC_ACTIVATE carries the pinned sequence in seq[0] (the Statics 2 window pins it under the lock); before
+#      the fix the LED went green and 1:1 stayed 0 (tick 0).
+# NOTE 14 sB.8 item 4 (PROPOSAL): a link slot follows a later edit of its scene (tick 2: `scene_edit`, the pinned record
+#      edited in place under the lock).
+# NOTE 14 sB.6 "Link Error (Seq %d Scene %d)": a link to a missing sequence holds a runner and outputs nothing (tick 4).
+# NOTE 03 s8 levels scale the linked scene as a recorded one (LJ_STATIC_LEVEL_SCALES_ALL): 60 x 50 % = 30, 77 x 50 % = 39.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+seq 1 name="linked"
+scene st=60000 ft=0 ch 1:1=40:S 1:2=40:S
+scene st=60000 ft=0 ch 1:1=180:S
+static 1.1 name="L" act=toggle rep=add ft=50 level=100 link=1,1
+static 1.2 name="E" act=toggle rep=add ft=50 level=100 link=9,0
+at 0 static_act 1.1
+expect 0 1:1=180 layer=4
+expect 0 1:2=0 layer=0
+expect_view 0 statics_any=1
+at 2 scene_edit 1 1 1:1=60:S 1:2=77:S
+expect 2 1:1=60 1:2=77 layer=4
+at 3 static_deact 1.1
+expect 3 1:1=0 1:2=0 layer=0
+expect_view 3 statics_any=0
+at 4 static_act 1.2
+expect 4 1:1=0 1:2=0 layer=0
+at 5 static_deact all
+at 6 static_act 1.1 level=50
+expect 6 1:1=30 1:2=39 layer=4

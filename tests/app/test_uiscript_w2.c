@@ -40,6 +40,15 @@ static unsigned long long lj_t_tid(void) { return (unsigned long long)(uintptr_t
 #include "model/lj_show.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "windows/lj_cue_form.h"
+#include "windows/lj_delete_files.h"
+#include "windows/lj_statics2_form.h"
+#include "windows/lj_statics2_prefs.h"
+#include "ui/widgets/lj_widgets_lists.h"
+#include "ui/widgets/lj_w_edit.h"
+#include "windows/lj_warnings.h"
+#include "windows/lj_windows.h"
+#include "model/lj_statics.h"
+#include "ui/widgets/lj_widgets_basic.h"
 
 static int fails;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
@@ -58,6 +67,7 @@ static lj_window *seq_win;
 static lj_window *resolve(void *ud, const char *form) { (void)ud; return (seq_win && strcmp(form, "TSequenceForm") == 0) ? seq_win : lj_uiscript_resolve_default(form); }
 
 static int write_file(const char *path, const char *text) { FILE *f = fopen(path, "wb"); if (!f) return -1; fputs(text, f); fclose(f); return 0; }
+static int file_has(const char *path, const char *text) { char buf[4096]; size_t n; FILE *f = fopen(path, "rb"); if (!f) return 0; n = fread(buf, 1, sizeof buf - 1, f); fclose(f); buf[n] = 0; return strstr(buf, text) != NULL; }
 
 static int run_script(const char *path)
 {
@@ -154,6 +164,7 @@ int lj_test_uiscript_w2(int argc, char **argv)
     memset(&lib, 0, sizeof lib);
     if (lj_library_open("lj_w2_app/", "W2App", &lib) != 0 && lj_library_create("lj_w2_app/", "W2App", &lib) != 0) { printf("FAIL: no library under lj_w2_app/\n"); return 1; }
     show = lj_show_new();
+    show->fixture[0].kind = LJ_FX_BUILTIN; show->fixture[0].profile_id = 19; show->fixture[0].link = 1; show->fixture[0].address = 1;   /* one DMX dimmer at 1:001: section 8 reads its frame */
     e = lj_engine_create();
     lj_hotkeys_init(&hk);
     memset(c, 0, sizeof *c);
@@ -173,9 +184,21 @@ int lj_test_uiscript_w2(int argc, char **argv)
     memset(&k, 0, sizeof k); k.key = 0x70; k.fn = LJ_FN_PROG_CUE; k.prog_num = 1;
     { lj_hotkeys h2; lj_hotkeys_init(&h2); lj_hotkeys_assign(&h2, &k); CHECK(lj_hotkeys_setup_path(lib.root, 2, path, sizeof path) == 0 && lj_hotkeys_save(path, &h2) == 0); }
     CHECK(lj_library_path(&lib, "w2.txt", path, sizeof path) == 0 && write_file(path, "[X]\r\nkey=1\r\nkey=2\r\n") == 0);
+    /* ME-95: the operator's DeviceCode on an interface that is not plugged in (no backend has an input 200) */
+    CHECK(lj_library_path(&lib, "MIDIIn/MIDIIn.Ini", path, sizeof path) == 0 && write_file(path, "[SETUP]\r\nDeviceCode=200\r\n") == 0);
+    lj_ini_seti(c->main_ini, "GLOBALPATCH", "HTPMasters", 1);   /* ME-94: the saved 11 P8 preference */
 
+    logged[0] = 0;
+    lj_log_set_sink(sink, NULL);
     lj_app_seam_start();
+    lj_log_set_sink(NULL, NULL);
     CHECK(c->prefs != NULL && c->midi != NULL);
+    CHECK(c->midi && c->midi->device == 200 && strstr(logged, "MIDI-IN: device 200 did not open") != NULL);   /* ME-95: kept, and the log names the requested index */
+    lj_desktop_run_action(LJ_ACT_MIDI_SAVE, 0);
+    CHECK(lj_library_path(&lib, "MIDIIn/MIDIIn.Ini", path, sizeof path) == 0 && file_has(path, "DeviceCode=200"));
+    lj_lock(); lj_engine_tick(e, lj_clock_us()); lj_unlock();
+    CHECK(lj_engine_post_ctx(e)->htp_masters == 1);          /* ME-94: posted at start, before any HTP edit */
+    CHECK(lj_engine_post_ctx(e)->patch == show->patch);
     CHECK(c->allow_freeze == 1 && c->allow_offline == 1);   /* ME-29: a Main.Ini without the keys keeps LJ2's gates ON */
     lj_fn_bind(LJ_FN_PROG_CUE, record, NULL);                /* after the seam bound its own: every path below ends here */
 
@@ -285,6 +308,115 @@ int lj_test_uiscript_w2(int argc, char **argv)
         CHECK(lj_app_load_cue(9, 0) == 0);                      /* frees the unsaved working record, not cue 0007's */
         CHECK(lj_table_get(&show->cues, 7) == loaded && loaded->number == 7 && show->current_cue == lj_table_get(&show->cues, 9));
         lj_lock(); lj_engine_tick(e, lj_clock_us() + 175000u); lj_unlock();
+    }
+
+    /* ---- 8. W2 fix pass r1 (ME-88, ME-90, ME-93) ---- */
+    {   lj_cue *ten = lj_cue_new_rec();
+        lj_sequence *cur = NULL;
+        const lj_frame *f;
+        lj_engine_status v;
+        lj_window *w;
+        int row, i;
+        uint64_t t = lj_clock_us() + 200000u;
+        ten->number = 10; ten->slot[0].seq = 3; ten->slot[0].enabled = 1;
+        CHECK(lj_library_record_path(&lib, LJ_REC_CUE, 10, path, sizeof path) == 0 && lj_cue_save(path, ten) == 0);
+        lj_cue_free(ten);
+        CHECK(lj_app_load_cue(10, 0) == 0);
+        lj_desktop_run_action(LJ_ACT_LOAD_BGCUE, 0);             /* section 5's latched BG cue (rank 5) would cover the static */
+        lj_lock(); lj_engine_tick(e, t); r = lj_engine_runner(e, LJ_RUN_SLOT0); lj_unlock();
+        CHECK(r && r->seq_no == 3 && r->seq == lj_table_get(&show->sequences, 3));
+
+        /* ME-88: a link slot (Link to current Sequence/Scene) outputs its sequence's scene from the pinned record */
+        CHECK(lj_statics2_form_open() != NULL && show->npages >= 1);
+        lj_lock(); CHECK(lj_static_slot_link(&show->pages[0].slot[0], 3, 0) == 0); show->pages[0].slot[0].level_pct = 100; lj_unlock();
+        CHECK(lj_statics2_press(1, 1) == 0);
+        lj_lock(); lj_engine_tick(e, t += 25000u); f = lj_engine_frame(e); CHECK(f->merged[0] == 200 && f->layer_of[0] == 4); lj_unlock();
+        /* re-saved (Quick Save of the loaded sequence): the table record is replaced and freed; the static reads the new one */
+        CHECK(lj_app_load_sequence(3) == 0 && (cur = show->current_seq) != NULL);
+        if (cur) { lj_lock(); cur->scenes[0].val[0] = 150; lj_unlock(); }
+        CHECK(lj_app_save_sequence(0) == 0);
+        lj_lock(); lj_engine_tick(e, t += 25000u); f = lj_engine_frame(e); CHECK(f->merged[0] == 150 && f->layer_of[0] == 4); lj_unlock();
+
+        /* ME-90: Delete Files through the dialog reaches the app's deleter: the slot shows load error, the static goes dark */
+        w = lj_win_open(LJ_WIN_DELETE_SEQ);
+        for (row = -1, i = 0; i < lj_delete_files_count(LJ_REC_SEQ); i++) if (lj_delete_files_number(LJ_REC_SEQ, i) == 3) row = i;
+        CHECK(w && row >= 0);
+        if (w && row >= 0) {
+            lj_delete_files_select(LJ_REC_SEQ, row, 1);
+            lj_w_click(lj_window_find(w, "BDelete"));
+            if (lj_win_message_window()) lj_w_click(lj_window_find(lj_win_message_window(), "BOk"));
+        }
+        lj_win_close(LJ_WIN_DELETE_SEQ);
+        CHECK(lj_table_get(&show->sequences, 3) == NULL);
+        CHECK(lj_library_record_path(&lib, LJ_REC_SEQ, 3, path, sizeof path) == 0 && !file_has(path, ""));
+        lj_lock(); lj_engine_tick(e, t += 25000u); f = lj_engine_frame(e); CHECK(f->layer_of[0] == 3);   /* the static adds nothing: the current sequence (rank 3, the editing copy) is what is left */ lj_engine_view(e, &v); lj_unlock();
+        CHECK(v.slot_status[0] == LJ_SLOT_LOAD_ERROR && v.statics_any == 1);
+        lj_statics2_release(0);
+        lj_statics2_form_close();
+
+        /* ME-93: Use Global Chase Rate is one Main.Ini key, on by default, posted when the menu toggles; a tap on slot 1 sets slot 2 */
+        lj_lock(); lj_engine_tick(e, t += 25000u); lj_engine_view(e, &v); lj_unlock();
+        CHECK(v.prefs[LJ_PREF_USE_GLOBAL_CHASE_RATE] == 1);
+        CHECK(lj_cue_form_open() != NULL);
+        write_file("lj_w2_chase.lj4s", "click TCurrentCue.M_UseGlobalChaseRate\nquit\n");
+        CHECK(run_script("lj_w2_chase.lj4s") == 0 && lj_ini_geti(c->main_ini, "CUE", "UseGlobalChaseRate", -1) == 0);
+        lj_lock(); lj_engine_tick(e, t += 25000u); lj_engine_view(e, &v); lj_unlock();
+        CHECK(v.prefs[LJ_PREF_USE_GLOBAL_CHASE_RATE] == 0);
+        CHECK(run_script("lj_w2_chase.lj4s") == 0 && lj_ini_geti(c->main_ini, "CUE", "UseGlobalChaseRate", -1) == 1);
+        lj_cue_form_close();
+        for (i = 0; i < 2; i++) { memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_CHASE; cmd.a = (uint32_t)i; cmd.b = 1; cmd.at_us = t; lj_ctx_post(&cmd); }
+        for (i = 0; i < 2; i++) { memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_CHASE_TAP; cmd.a = 0; cmd.at_us = t + 1000u + (uint64_t)i * 300000u; lj_ctx_post(&cmd); }
+        lj_lock(); lj_engine_tick(e, t += 325000u); lj_engine_view(e, &v); r = lj_engine_runner(e, LJ_RUN_SLOT0 + 1); lj_unlock();
+        CHECK(v.prefs[LJ_PREF_USE_GLOBAL_CHASE_RATE] == 1 && v.chase_tap_us == 300000u && r && r->chase_us == 300000u);
+        for (i = 0; i < 2; i++) { memset(&cmd, 0, sizeof cmd); cmd.kind = LJ_CMD_TRIG; cmd.a = LJ_RUN_CURRENT; cmd.b = 0xFF; cmd.at_us = t + (uint64_t)i * 100000u; lj_ctx_post(&cmd); }
+        lj_lock(); lj_engine_tick(e, t += 125000u); lj_engine_view(e, &v); lj_unlock();
+        CHECK(v.chase_tap_us == 300000u);                       /* the Sequence window's Trig is no chase tap (11 F10) */
+    }
+
+    /* ---- 9. ME-91: Statics Preferences adds page 2 and shows 30 slots while a static on page 1 runs; Static entry properties ---- */
+    {   static const char *const keys[9] = { "Width", "Height", "LvlVisible", "ModeVisible", "SlotsVisible", "TabWidth", "TabHeight", "Multiline", "PRWidth" };
+        lj_scene sc2;
+        lj_window *pw, *nw, *sw;
+        const lj_frame *f;
+        lj_static_page *before;
+        int i;
+        uint64_t t = lj_clock_us() + 2000000u;
+        CHECK((sw = lj_statics2_form_open()) != NULL);
+        lj_scene_init(&sc2); sc2.val[0] = 77; sc2.state[0] = LJ_SNAP;
+        lj_lock(); CHECK(lj_static_slot_record(&show->pages[0].slot[1], &sc2) == 0); show->pages[0].slot[1].level_pct = 100; lj_unlock();
+        CHECK(lj_statics2_press(2, 1) == 0);
+        before = show->pages;
+        CHECK((pw = lj_win_open(LJ_WIN_STATICS2_PREFS)) != NULL);
+        lj_w_click(lj_window_find(pw, "sbAddPage"));
+        CHECK((nw = lj_statics2_page_name_window()) != NULL && strcmp(lj_window_caption(nw)->text, "Add Page") == 0);
+        if (nw) { lj_w_edit_set_text(lj_window_find(nw, "eName"), "Second"); lj_w_click(lj_window_find(nw, "BitBtn1")); }
+        CHECK(lj_statics2_page_name_window() == NULL && show->npages == 2 && strcmp(show->pages[1].name, "Second") == 0 && show->pages == before);
+        lj_lock(); lj_engine_tick(e, t); f = lj_engine_frame(e); CHECK(f->merged[0] == 77 && f->layer_of[0] == 4); lj_unlock();   /* the held slot is still the engine's (ASan: no realloc under it) */
+        lj_w_edit_set_text(lj_window_find(pw, "eRows"), "30");
+        lj_w_click(lj_window_find(pw, "bOk"));
+        lj_statics2_prefs_refresh();
+        CHECK(lj_win_get(LJ_WIN_STATICS2_PREFS) == NULL && c->static_visible == 30 && show->pages[0].n == 30 && show->pages[1].n == 30);
+        CHECK((sw = lj_statics2_form_get()) != NULL && lj_window_root(sw)->h == 58 + 30 * LJ_S2_ROW_H + 30);
+        CHECK(sw && ((lj_w_tabs *)lj_window_find(sw, "tbPages"))->ntabs == 2);
+        for (i = 0; i < 9; i++) if (!lj_ini_gets(c->main_ini, "STATICS2", keys[i], NULL)) { fails++; printf("FAIL Main.Ini [STATICS2] %s missing\n", keys[i]); }
+        CHECK(lj_ini_geti(c->main_ini, "STATICS2", "SlotsVisible", 0) == 30 && lj_ini_geti(c->main_ini, "STATICS2", "PRWidth", 0) == 202);
+        /* Static entry properties of slot 2 (the slot of the last popup; Add Page made page 2 current) */
+        CHECK(lj_statics2_page() == 2 && lj_statics2_set_page(1) == 0);
+        lj_statics2_popup(2, 10, 10);
+        CHECK((pw = lj_win_open(LJ_WIN_STATIC_PROPS)) != NULL);
+        if (pw) {
+            CHECK(strcmp(lj_w_caption(lj_window_find(pw, "lSlot")), "Entry: ") == 0 && ((lj_w_combobox *)lj_window_find(pw, "cbReplaceMode"))->n == 9);
+            lj_w_edit_set_text(lj_window_find(pw, "eName"), "Haze");
+            ((lj_w_combobox *)lj_window_find(pw, "cbReplaceMode"))->index = LJ_REP_PAGE;
+            lj_w_click(lj_window_find(pw, "sbSetGrpAll"));
+            CHECK(strcmp(lj_w_caption(lj_window_find(pw, "lGroupCount")), "64 Groups") == 0);
+            lj_w_click(lj_window_find(pw, "bOk"));
+            lj_static_props_refresh();
+            CHECK(lj_win_get(LJ_WIN_STATIC_PROPS) == NULL && strcmp(show->pages[0].slot[1].name, "Haze") == 0 && show->pages[0].slot[1].replace == LJ_REP_PAGE && show->pages[0].slot[1].groups == UINT64_MAX);
+        }
+        lj_statics2_release(0);
+        lj_lock(); lj_engine_tick(e, t + 25000u); lj_unlock();
+        lj_statics2_form_close();
     }
 
     /* ---- teardown ---- */

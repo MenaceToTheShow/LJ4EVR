@@ -3,6 +3,7 @@
 #include <string.h>
 #include "windows/lj_statics2_form.h"
 
+#include "core/lj_clock.h"
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
 #include "desktop/lj_desktop.h"
@@ -21,11 +22,14 @@
 #define LJ_S2_N           LJ_STATICS2_SLOTS_MAX   /* ME-30: Visible Slots up to 64 rows */
 
 /* enum lj_replace order: the TAction captions (DFM ActionList1) */
-static const char *const lj_s2_rep_word[] = { "Add", "Replace Slot", "Replace Page", "Replace Group", "Replace All", "Solo Slot", "Solo Page", "Solo Group", "Solo All" };
+/* the Mode column: the exe's word list at 0x2137F4 (Add, Release All/Page/Slot/Group, Solo Alll/Page/Slot/Group; "Solo Alll"
+ * 0x21385C verbatim, D13, design 7.6), put in enum lj_replace order. Which word shows for which mode: PROPOSAL rig 14 sB.8 item 12 */
+static const char *const lj_s2_rep_word[] = { "Add", "Release Slot", "Release Page", "Release Group", "Release All", "Solo Slot", "Solo Page", "Solo Group", "Solo Alll" };
 static const char *const lj_s2_rep_action[] = { "rpAdd", "rpSlot", "rpPage", "rpGroup", "rpAll", "rpSoloSlot", "rpSoloPage", "rpSoloGroup", "rpSoloAll" };
 static const lj_ctl_desc lj_s2_label_desc = { LJ_K_LABEL, "lj_s2_number", 0, 0, 0, 0, .alignment = LJ_TA_RIGHT };   /* lj_w_label paints from a desc */
 
 static int lj_s2_cur_page = 1;          /* survives close: the hotkeys address the current page */
+static int lj_s2_slot_no = 1;           /* View Slot#: no Main.Ini key among the exe's nine, so it holds for the session */
 static struct {
     lj_window *win;
     lj_widget *num[LJ_S2_N], *btn[LJ_S2_N], *mode[LJ_S2_N], *lvl[LJ_S2_N];
@@ -73,11 +77,19 @@ int lj_statics2_slot_active(int slot)
 static void post(lj_cmd *cmd) { s.last = *cmd; s.has_last = 1; lj_ctx_post(cmd); }
 static void activate(int slot, lj_static_slot *st, int scope)
 {
+    lj_ctx *c = lj_ctx_get();
+    int link = st->kind == LJ_STATIC_LINK && c->show;
     lj_cmd cmd;
     memset(&cmd, 0, sizeof cmd);
     cmd.kind = LJ_CMD_STATIC_ACTIVATE; cmd.a = (uint32_t)lj_static_global_index(lj_s2_cur_page, slot);
-    cmd.b = st->level_pct; cmd.c = (uint32_t)scope; cmd.st = st;
-    post(&cmd);
+    cmd.b = st->level_pct; cmd.c = (uint32_t)scope; cmd.st = st; cmd.at_us = lj_clock_us();
+    if (link && !lj_table_get(&c->show->sequences, st->link_seq)) lj_desktop_run_action(LJ_ACT_PIN_SEQ, (int)st->link_seq);   /* on disk only: the app loads it into the table */
+    lj_lock();
+    if (link) cmd.seq[0] = (const lj_sequence *)lj_table_get(&c->show->sequences, st->link_seq);   /* ME-88: pinned in the critical section of the post (rule 6); the app re-pins on a re-save or delete */
+    if (c->engine) lj_engine_cmd(c->engine, &cmd);
+    lj_unlock();
+    if (link && !cmd.seq[0]) lj_log("statics: Link Error (Seq %u Scene %u)", (unsigned)st->link_seq, (unsigned)st->link_scene + 1u);   /* exe "Link Error (Seq %d Scene %d)" 0x215A04 */
+    s.last = cmd; s.has_last = 1;
 }
 static void deactivate(int slot)
 {
@@ -220,7 +232,7 @@ static void open_menu(const char *name, int slot, int x, int y)
 }
 void lj_statics2_popup(int slot, int x, int y) { if (s.win) open_menu("popStaticEntry", slot, x, y); }
 
-static void save_statics(void)
+void lj_statics2_save(void)
 {
     lj_ctx *c = lj_ctx_get();
     char path[LJ_PATH_CAP];
@@ -259,7 +271,7 @@ static void menu_action(lj_widget *w, void *ud)
         return;
     }
     if (rc != 0) lj_log("statics: %s failed", it->caption);
-    save_statics();
+    lj_statics2_save();
     fill_rows();
 }
 
@@ -322,9 +334,45 @@ static lj_widget *mk_cell(lj_widget *parent, int y, uint32_t rgb, void (*ev)(lj_
     return b;
 }
 
+#define LJ_S2_W_DFM    510   /* TStatics2Form Width / Height in the DFM */
+#define LJ_S2_H_DFM    356
+#define LJ_S2_MODE_W    82   /* pMode, pLvl: the DFM widths inside pRight (202) */
+#define LJ_S2_LVL_W    120
+static int s2_geti(const char *key, int dflt, int lo, int hi)
+{
+    lj_ctx *c = lj_ctx_get();
+    int v = c->main_ini ? lj_ini_geti(c->main_ini, "STATICS2", key, dflt) : dflt;
+    return v < lo ? lo : v > hi ? hi : v;
+}
+void lj_statics2_view_get(lj_statics2_view *v)
+{
+    v->width = s2_geti("Width", LJ_S2_W_DFM, 150, 4096); v->height = s2_geti("Height", LJ_S2_H_DFM, 200, 4096);   /* DFM Constraints.MinWidth 150, min height 200 [14 sB.3] */
+    v->lvl_visible = s2_geti("LvlVisible", 1, 0, 1); v->mode_visible = s2_geti("ModeVisible", 1, 0, 1);
+    v->slots_visible = lj_statics_ini_visible(lj_ctx_get()->main_ini);
+    v->tab_width = s2_geti("TabWidth", 0, 0, 1023); v->tab_height = s2_geti("TabHeight", 0, 0, 1023);   /* udTabsWidth / udTabsHeight 0..1023, 0 = Auto */
+    v->multiline = s2_geti("Multiline", 1, 0, 1);                                                           /* tbPages MultiLine = True in the DFM */
+    v->pr_width = (v->mode_visible ? LJ_S2_MODE_W : 0) + (v->lvl_visible ? LJ_S2_LVL_W : 0);               /* ponytail: no splitter drag yet, so PRWidth follows the two columns */
+    v->slot_no_visible = lj_s2_slot_no;
+}
+void lj_statics2_view_set(const lj_statics2_view *v)
+{
+    static const char *const key[9] = { "Width", "Height", "LvlVisible", "ModeVisible", "SlotsVisible", "TabWidth", "TabHeight", "Multiline", "PRWidth" };   /* exe 0x214F2C.. verbatim */
+    lj_ctx *c = lj_ctx_get();
+    int val[9], i, n = v->slots_visible < 1 ? 1 : v->slots_visible > LJ_STATICS2_SLOTS_MAX ? LJ_STATICS2_SLOTS_MAX : v->slots_visible;
+    val[0] = v->width; val[1] = v->height; val[2] = v->lvl_visible != 0; val[3] = v->mode_visible != 0; val[4] = n;
+    val[5] = v->tab_width; val[6] = v->tab_height; val[7] = v->multiline != 0;
+    val[8] = (val[3] ? LJ_S2_MODE_W : 0) + (val[2] ? LJ_S2_LVL_W : 0);
+    for (i = 0; c->main_ini && i < 9; i++) lj_ini_seti(c->main_ini, "STATICS2", key[i], val[i]);
+    lj_s2_slot_no = v->slot_no_visible != 0;
+    c->static_visible = n;
+    if (c->show) { lj_lock(); for (i = 0; i < c->show->npages; i++) c->show->pages[i].n = (uint16_t)n; lj_unlock(); }   /* Visible Slots is one setting for every page */
+    if (s.win) { lj_statics2_form_close(); lj_statics2_form_open(); }   /* the rows are built at open */
+}
+
 lj_window *lj_statics2_form_open(void)
 {
     lj_widget *pnum, *pst, *pmode, *plvl;
+    lj_statics2_view v;
     lj_menu *m;
     int i;
     if (s.win) return s.win;
@@ -341,10 +389,18 @@ lj_window *lj_statics2_form_open(void)
     if ((m = lj_window_menus(s.win)) != NULL)
         for (i = 0; i < m->nrt; i++) if (m->rt[i].item->action && !m->rt[i].item->on_click) { m->rt[i].fn = menu_action; m->rt[i].ud = NULL; }   /* Action = acX items: the TAction's OnExecute */
     s.n = lj_statics2_visible();
-    lj_window_resize(s.win, lj_form_TSTATICS2FORM.client_width, 58 + s.n * LJ_S2_ROW_H + 30);   /* pPages + n rows + pBottom; PROPOSAL rig 14 sB.8 item 12 (LJ2 sizes it at runtime) */
     pnum = lj_window_find(s.win, "pNumber"); pst = lj_window_find(s.win, "pStatic");
     pmode = lj_window_find(s.win, "pMode"); plvl = lj_window_find(s.win, "pLvl");
     if (!pnum || !pst || !pmode || !plvl) { lj_statics2_form_close(); return NULL; }
+    lj_statics2_view_get(&v);                                   /* View Slot# / Modes / Levels (ME-91): hidden columns give their width to the slot buttons */
+    if (!v.slot_no_visible || !v.mode_visible || !v.lvl_visible) {
+        lj_widget *pr = lj_window_find(s.win, "pRight"), *sp = lj_window_find(s.win, "Splitter1");
+        pnum->visible = v.slot_no_visible != 0; pmode->visible = v.mode_visible != 0; plvl->visible = v.lvl_visible != 0;
+        if (pr) { pr->visible = v.mode_visible || v.lvl_visible; pr->w = v.pr_width; }
+        if (sp) sp->visible = v.mode_visible || v.lvl_visible;
+    }
+    lj_window_resize(s.win, lj_form_TSTATICS2FORM.client_width, 58 + s.n * LJ_S2_ROW_H + 30);   /* pPages + n rows + pBottom; PROPOSAL rig 14 sB.8 item 12 (LJ2 sizes it at runtime) */
+    lj_widget_layout(lj_window_root(s.win));
     for (i = 0; i < s.n; i++) {
         int y = i * LJ_S2_ROW_H;
         s.idx[i] = i;
@@ -365,7 +421,12 @@ lj_window *lj_statics2_form_open(void)
 
 void lj_statics2_form_close(void)
 {
+    lj_ctx *c = lj_ctx_get();
     if (!s.win) return;
+    if (c->main_ini && lj_window_surface(s.win)) {             /* Width / Height of the exe's [STATICS2] keys: the window as it closes */
+        lj_ini_seti(c->main_ini, "STATICS2", "Width", lj_window_surface(s.win)->w);
+        lj_ini_seti(c->main_ini, "STATICS2", "Height", lj_window_surface(s.win)->h);
+    }
     lj_win_hide(s.win);
     lj_window_destroy(s.win);
     memset(&s, 0, sizeof s);

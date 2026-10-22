@@ -12,6 +12,7 @@
 #include <string.h>
 #include "model/lj_cuepage.h"
 #include "model/lj_statics.h"
+#include "core/lj_ini.h"
 #include "model/lj_bgcue.h"
 #include "model/lj_groups.h"
 #include "model/lj_presets.h"
@@ -139,6 +140,28 @@ static void lj_test_statics2(void)
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 65 name=s\n");                     CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\ngroup 65 name=x\n");                                   CHECK(lj_statics_groups_load(P1, &gb, err, sizeof err) == -1);
     lj_statics_free(pages, n);
+
+    /* ME-91 / ME-30: Main.Ini [STATICS2] SlotsVisible 64 is taken, 65 clamps to 64 (recorded), absent = 20 */
+    {   lj_ini *ini = lj_ini_new();
+        lj_static_page *pg = NULL, *at0;
+        lj_static_slot *pinned;
+        int np = 0, k;
+        CHECK(lj_statics_ini_visible(ini) == 20 && lj_statics_ini_visible(NULL) == 20);
+        lj_ini_seti(ini, "STATICS2", "SlotsVisible", 64); CHECK(lj_statics_ini_visible(ini) == 64);
+        lj_ini_seti(ini, "STATICS2", "SlotsVisible", 65); CHECK(lj_statics_ini_visible(ini) == 64);
+        lj_ini_seti(ini, "STATICS2", "SlotsVisible", 0);  CHECK(lj_statics_ini_visible(ini) == 1);
+        lj_ini_free(ini);
+        /* the pages array never moves after its first page (a slot the engine holds stays valid); insert / delete / swap move pages inside it */
+        CHECK(lj_statics_add_page(&pg, &np, "A") == 0);
+        at0 = pg; pinned = &pg[0].slot[3];
+        for (k = 1; k < LJ_STATIC_PAGES_MAX; k++) CHECK(lj_statics_add_page(&pg, &np, "x") == k);
+        CHECK(pg == at0 && pinned == &pg[0].slot[3] && np == LJ_STATIC_PAGES_MAX && lj_statics_add_page(&pg, &np, "y") == -1);
+        CHECK(lj_statics_delete_page(pg, &np, 1) == 0 && np == LJ_STATIC_PAGES_MAX - 1);
+        CHECK(lj_statics_insert_page(&pg, &np, 0, "B") == 0 && !strcmp(pg[0].name, "B") && !strcmp(pg[1].name, "A") && pg[0].n == 20);
+        CHECK(lj_statics_swap_pages(pg, np, 0, 1) == 0 && !strcmp(pg[0].name, "A") && lj_statics_swap_pages(pg, np, 0, np) == -1);
+        CHECK(lj_statics_insert_page(&pg, &np, np + 1, "z") == -1 && lj_statics_delete_page(pg, &np, np) == -1);
+        lj_statics_free(pg, np);
+    }
 }
 
 static void lj_test_bgcue(void)

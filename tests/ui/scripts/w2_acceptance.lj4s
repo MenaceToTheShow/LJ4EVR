@@ -287,5 +287,23 @@ click TSystemPrefsForm.Bok
 wait 300
 assert_visible main.tb_fixture_17 1
 
+log "W2 fix pass r1: About (ME-89), Statics Preferences (ME-91), Export to text file (ME-92)"
+open about
+shot docs/screenshots/w2/about.png                # RichEdit1 white on black, cut left of its scrollbar
+close about
+open statics2_form
+open statics2_prefs
+shot docs/screenshots/w2/statics-prefs.png
+click TStatics2PrefsForm.bCancel
+wait 200
+close statics2_form
+open fixture_config
+click TLinkConfigForm3.M_ExportConfig             # TExportConfigForm "Configuration Export"
+wait 200
+shot docs/screenshots/w2/export-config.png
+click TExportConfigForm.BitBtn1                   # "Save to text file": Configuration.txt in the library
+assert_file Configuration.txt exists
+close fixture_config
+
 shot docs/screenshots/w2/end.png
 quit

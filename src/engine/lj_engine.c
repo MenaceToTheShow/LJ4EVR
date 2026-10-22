@@ -229,7 +229,7 @@ static void lj_engine_tap(lj_engine *e, uint64_t t, int lo, int n, int rearm)
 
 /* Statics 2 scopes (14 sB.3 reading, PROPOSAL rig 14 sB.8 item 3; LJ_STATIC_SOLO_BLOCKS_LATER 0 = Solo reads as Replace):
  * the rule of model lj_static_scope_hits, evaluated on the pinned slots the engine holds rather than show->pages (the
- * UI may reallocate the pages array with lj_statics_add_page; the engine never follows that pointer). */
+ * engine never follows show->pages; the UI keeps the slots it pinned in place, lj_statics.h ME-91). */
 static int lj_engine_static_hits(int scope, uint32_t a, const lj_static_slot *sa, uint32_t o, const lj_static_slot *so)
 {
     switch (scope) {
@@ -384,7 +384,7 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_TRIG: {
         int lo = 0, n = LJ_CUE_SLOTS;
         if (c->a != LJ_RUN_ALL) { if (c->a >= LJ_RUN_COUNT) break; lo = (int)c->a; n = 1; }
-        lj_engine_tap(e, t, lo, n, 0);                         /* F10: chase period = the last two manual trigs (E9: 1 ms) */
+        if (c->a == LJ_RUN_ALL || c->a < LJ_CUE_SLOTS) lj_engine_tap(e, t, lo, n, 0);   /* F10: the cue's trigs only (the Sequence window's Trig is no chase tap, ME-93); period = the last two (E9: 1 ms) */
         for (k = lo; k < lo + n; k++) {
             if (e->st.prefs[LJ_PREF_HOTKEY_TRIG_CHANGES_DIR] && c->b <= LJ_DIR_RANDOM && k < LJ_CUE_SLOTS) e->run[k].dir = (uint8_t)c->b;   /* [CUE] HotkeyChangeSeqDir: a trig with a direction sets the slot's */
             uint32_t link = lj_runner_trig(&e->run[k], (int)c->b, (int)c->c, t, e->tick_us, e->frame.merged, k < LJ_CUE_SLOTS ? e->cue_pct : 100, &e->rng, e->cue_edit);
@@ -439,7 +439,14 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_BG_ON:
         for (k = 0; k < LJ_BG_SLOTS; k++) if (c->a == LJ_RUN_ALL || c->a == (uint32_t)(LJ_RUN_BG0 + k)) e->run[LJ_RUN_BG0 + k].enabled = (c->b != 0);
         break;
-    case LJ_CMD_STATIC_ACTIVATE: lj_engine_static_on(e, c->a, c->st, c->seq[0], c->b, c->c, t); break;
+    case LJ_CMD_STATIC_ACTIVATE:
+        if (c->c == LJ_STATIC_REPIN) {                         /* the UI replaced or removed the linked sequence: the held slot reads the new record (or nothing) */
+            for (k = 0; k < LJ_STATIC_RUNNERS; k++)
+                if (e->static_slot[k] && e->st.static_slot_of[k] == c->a && e->static_slot[k]->kind == LJ_STATIC_LINK) e->run[LJ_RUN_STATIC0 + k].seq = c->seq[0];
+            break;
+        }
+        lj_engine_static_on(e, c->a, c->st, c->seq[0], c->b, c->c, t);
+        break;
     case LJ_CMD_STATIC_DEACTIVATE:                             /* one slot; a = LJ_RUN_ALL: Release All (c 0) or Release Page c */
         for (k = 0; k < LJ_STATIC_RUNNERS; k++) {
             uint32_t o = e->st.static_slot_of[k];
