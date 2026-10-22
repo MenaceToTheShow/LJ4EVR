@@ -447,3 +447,11 @@ owner, in the vault. It is not in this commit; the design.md revision line is qu
     w3_acceptance.lj4s on a fresh Default library (the user folder copied aside and restored after): Release rc 0,
         Debug rc 0; the eleven re-shot captures in docs/screenshots/w3/ differ from the previous run only in the main
         window's memory gauge (x 13..48, y 590..598) and the live movement trace
+
+### CI (fix pass r1)
+
+    70e6670 (W3: council fix pass r1)  run 39867308177: green, all six jobs, after one re-run of linux-clang
+                                        (first attempt: test_lock_hold "lock hold 3210 us >= 2000 us" on the shared
+                                        runner, a preemption; the re-run passed, no code touched)
+                                        fuzz_gs2 DONE cov 708; fuzz_udf DONE cov 1463 (ME-114, was 175)
+                                        https://github.com/UnbannableGT/LJ4EVR/actions/runs/39867308177

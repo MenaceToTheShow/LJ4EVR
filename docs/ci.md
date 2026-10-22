@@ -117,7 +117,9 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
   byte-exact. `fuzz_udf` (ME-114) rewrites the footer CRC with `mz_crc32` of the body
   before parsing, so mutations reach the inflate and record paths, starts from
   `udf-corpus/` (the `lj_w3_synthetic.Udf` that `test_uiscript_w3` exports in the ctest
-  step) and runs with `-max_len=32768`.
+  step) and runs with `-max_len=32768`. Run 39867308177 (fix pass r1): `fuzz_gs2` DONE cov 708 (1,303,376
+  runs); `fuzz_udf` INITED cov 1216 from the seed, DONE cov 1463, 164 corpus entries in 8,156 runs
+  (was cov 175 without the CRC rewrite), above `fuzz_gs2`'s 708.
 - The 66 generic-macro shapes (`src/engine/lj_shapes_gen.c`) are checked by the CTest rows
   `gen_vectors_shapes_check` (`gen_vectors --shapes --check`) and `gen_vectors_shapes_mutated`
   (WILL_FAIL) in every ctest job; `generate-check` keeps `gen_vectors --check` for
