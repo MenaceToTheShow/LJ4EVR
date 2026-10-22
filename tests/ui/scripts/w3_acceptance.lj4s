@@ -5,10 +5,9 @@
 #   build-ninja-msvc\lj4evr.exe --script tests\ui\scripts\w3_acceptance.lj4s
 # Fixtures: MAC 500 Mode 2/4 at 1:001 (fixture 1), Generic DMX Dimmer at 1:017 (fixture 2, as W2), four more
 # MAC 500 at 1:033 / 1:049 / 1:065 / 1:081 (fixtures 3-6) for Fan Out.
-# Widget names: DFM object names (ui/forms/lj_forms_gen.c). Lines marked RECONCILE name widgets or values of a
-# W3 window whose behaviour file had not landed when this was written; the integrator checks them against the
-# landed windows (the W2 precedent, docs/w2-integration.md section 9). Every line parses at load
-# (tests/app/test_uiscript_w3.c loads this file in CI).
+# Widget names: DFM object names (ui/forms/lj_forms_gen.c). The RECONCILE lines of the first draft were checked
+# against the landed windows by W3 integrator 2 (docs/w3-integration.md, Acceptance). Every line parses at load
+# (tests/app/test_uiscript_w3.c loads this file in CI). Release and Debug runs: rc 0.
 # Generic macro frame values at given ticks are asserted at synthetic time by replay genmacro_sine_amp186 (design 3.7);
 # a live run cannot name the tick the macro started on, so this walkthrough asserts the editor's Min/Max readout
 # and the view fields, and freezes the movement macro (speed 0) to assert positions at two ticks.
@@ -80,6 +79,7 @@ close fixture_config
 wait 300
 close cue_form
 close seq_form
+move TUnassignedForm 1800 1600                  # the stay-on-top list opens centred over the desktop; drops 3-6 landed on it
 drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -300 -120
 wait 300
 drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -230 -120
@@ -166,7 +166,7 @@ cl_goto 20
 click TCuelist2Form.Pop_SetCurrentCue
 cl_goto 2
 click TCuelist2Form.popWaitTimeOut             # ListPop > PC Time Commands > Wait Elapsed (aWaitElapsed)
-click TCuelist2Form.eElapsedSec               # RECONCILE: the TclEditPanels edit inside pEdit
+click TCuelist2Form.eElapsedSec               # the TclEditPanels edit inside pEdit
 key End
 key BS 2
 type "1"
@@ -301,6 +301,7 @@ cl_goto 10
 click TCuelist2Form.AdvanceManual1               # ListPop > Set Advance > Manual (aAdvanceManual)
 cl_goto 15
 click TCuelist2Form.AdvanceManual1               # ListPop > Set Advance > Manual (aAdvanceManual)
+click TCuelist2Form.M_UseColor                   # Preferences > Use Color Codes (cuelist1.gif colours)
 shot docs/screenshots/w3/cuelist-20-lines.png
 click TCuelist2Form.sbSave
 wait 300
@@ -343,6 +344,7 @@ shot docs/screenshots/w3/cuelist-run.png
 # ---- acceptance 2: a .Cl2 with an MP Play line loads with that line red and runs the rest ----
 log "W3 acceptance: MP Play line"
 cl_load tests/ui/scripts/w3_mp_play.Cl2
+wait 300                                        # the window's 100 ms timer shows the new list
 cl_assert_line 2 error
 shot docs/screenshots/w3/cuelist-mp-play.png
 cl_execute
@@ -351,17 +353,42 @@ assert_view cue_number 2                         # line 1 cue 0001, line 2 skipp
 cl_assert_line 2 error
 cl_assert_line 3 done
 
+# ---- 12 Q9: the two cue list prompts (exe 0x188D9C / 0x17FD7C, 0x17DF50) ----
+log "W3 acceptance: cue list prompts"
+cl_goto 1
+click TCuelist2Form.AdvanceManual1               # a change: CueList Modified
+click TCuelist2Form.sbNew
+assert_prompt "Current CueList was modified"
+assert_prompt "This will clear the current cuelist"
+shot docs/screenshots/w3/cuelist-new-prompt.png
+click TConfirmForm.BCancel
+cl_assert_line 2 error                           # Cancel kept the list
+cl_load tests/ui/scripts/w3_link.Cl2             # line 2 = Link Cuelist 0001 ("twenty")
+wait 300
+cl_goto 1
+click TCuelist2Form.AdvanceManual1
+cl_execute                                       # Go on an idle list = Run from top
+assert_prompt "Modified cuelist includes link to other cuelist - run without saving first ?"
+shot docs/screenshots/w3/cuelist-link-prompt.png
+click TConfirmForm.BCancel
+cl_assert_line 1 plain                           # Cancel: not run
+
 # ---- acceptance 3 (live half): a generic macro, Sine at amplitude 186, on the MAC 500 ----
 log "W3 acceptance: generic macro amplitude 186"
 click main.icon1
 open genmacro_editor
-click TCueMacroControlForm.sbSelectAll                # RECONCILE: the master's channels in pChannels
-dblclick TCueMacroControlForm.lvBuiltIn.7.0           # 'Sine' (shape 7, the Macros.Mac order of 14 sA.6)
+click TCueMacroControlForm.sbSelectAll                # the master's channels in pChannels
+dblclick TCueMacroControlForm.lvBuiltIn 40 107        # row 7 'Sine' (14 sA.6 order): y = border 2 + 7 x 14 + 7; click takes no .row.col
+assert_text TCueMacroControlForm.lMacro "Sine"
 click TCueMacroControlForm.cbSym                      # Keep Amplitude Symmetrical
-click TCueMacroControlForm.pbAmpPos 93 6              # RECONCILE: the x of Amp+ 186 on the bar (186 / 255 of its width)
-assert_text TCueMacroControlForm.lMinMax "Min/Max -186/186"   # RECONCILE: lMinMax format (LJ_GENMACRO_AMP186_EXAMPLE)
+click TCueMacroControlForm.pbAmpPos 126 6             # x 126 of the 147-px -255..255 bar = 126 * 510 / 146 - 255 = 185
+click TCueMacroControlForm.sbPosAmpInc               # + 1 = 186 (no bar x gives 186 exactly)
+assert_text TCueMacroControlForm.lMinMax "Min/Max : -186/186"  # LJ_GENMACRO_AMP186_EXAMPLE, EXE 0x3399F8 "Min/Max : %d/%d"
 assert_view gm_engine_on=1 gm_slot_on=1
 shot docs/screenshots/w3/genmacro-amp186.png
+click TCueMacroControlForm.sbDisableMacros          # off again: rank 6 would move the MAC 500's pan / tilt under the movement macro below
+wait 200
+assert_view gm_engine_on=0
 close genmacro_editor
 
 # ---- acceptance 4 (live half): a movement macro, System Ellipse, frozen at index 0, at two ticks ----
@@ -392,9 +419,14 @@ click main.icon5
 click main.icon6
 click main.tb_fixture_9                          # home all five
 open fan_out
-drag TFanOutForm.pb1 TFanOutForm.pb1 60 60 40 0   # RECONCILE: a pan delta dragged on the paint box
+rclick TFanOutForm.DeltaPan 219 5                # right-click on the bar's right arrow = max 127: Delta Pan 127 x 256 = 32512
+wait 300
+assert_pos 1 -32512 0                            # 17 s5.2: round(32512 * (i - m) / m), m = 2, about the middle fixture (homed: 0)
+assert_pos 3 -16256 0
+assert_pos 4 0 0
+assert_pos 5 16256 0
+assert_pos 6 32512 0
 shot docs/screenshots/w3/fan-out.png
-# RECONCILE: assert_pos 1 -<d> 0 / assert_pos 6 <d> 0 once the delta the drag sets is known (lj_fan_out, 17 s5.2)
 close fan_out
 
 # ---- acceptance 5-7 (UI half): a synthetic .Udf imports; the profile editor's Q9 prompt ----
@@ -403,7 +435,7 @@ close fan_out
 log "W3 acceptance: .Udf import, profile editor"
 gs2_import tests/ui/scripts/w3_synthetic.Udf
 assert_file UserFixtureDef/w3_synthetic.GS2 exists
-open profile_editor                              # RECONCILE: the editor opens on the imported user profile
+open profile_editor                              # a New Profile record (no fixture selected)
 click TScanner2DefsForm.eAuthor
 type "W3"
 click TScanner2DefsForm.bCancel

@@ -682,10 +682,14 @@ static void fs_fill(void)
     snprintf(t, sizeof t, "&Clear Settings in %d", fs.row + 1); set_caption(fs.win, "bClear", t);           /* exe 0x1A2DB8 */
     lj_widget_invalidate(g1);
 }
-static void fs_cols(void)                     /* four equal columns: number, On/Off, name, static */
+static void fs_cols(void)                     /* number, On/Off, name, static: 20 (DFM DefaultColWidth) / 30 / 150 / rest, measured from editfollowspot.gif (reduced 0.69), rig item */
 {
+    static int cw[4];
     lj_widget *g1 = fs.win ? lj_window_find(fs.win, "sg1") : NULL;
-    if (g1) ((lj_w_grid *)g1)->def_cw = (g1->w - 4) / 4;   /* ponytail: editfollowspot.gif has 20 / 30 / 150 / rest; lj_w_grid has one column width (per-column widths are an src/ui field) */
+    if (!g1) return;
+    cw[0] = 20; cw[1] = 30; cw[2] = 150; cw[3] = g1->w - 4 - 20 - 30 - 150 - 4;   /* 2 x 2 border, 4 grid lines; the 20 rows fit (no scroll bar) */
+    if (cw[3] < 20) cw[3] = 20;
+    ((lj_w_grid *)g1)->col_w = cw;
 }
 
 int lj_followspot_form_apply_scene(void)

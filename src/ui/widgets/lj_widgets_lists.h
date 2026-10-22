@@ -159,6 +159,7 @@ typedef struct {
     unsigned row_select:1, vlines:1, hlines:1;
     int draw_col, draw_row; lj_rect draw_rect; lj_surface *draw_surf;   /* TDrawGrid: set before each OnDrawCell emit; draw_rect absolute */
     const char **cells;        /* TStringGrid: rows*cols pointers (one allocation with the struct), NULL = empty; TDrawGrid: NULL */
+    const int *col_w;          /* ColWidths[]: cols entries the owner keeps; NULL = def_cw for every column */
 } lj_w_grid;
 lj_widget *lj_w_stringgrid_create(lj_widget *parent, const lj_ctl_desc *d);
 lj_widget *lj_w_drawgrid_create(lj_widget *parent, const lj_ctl_desc *d);

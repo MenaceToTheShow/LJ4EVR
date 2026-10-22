@@ -155,3 +155,7 @@ built-in Generic DMX Dimmer; no Martin bytes). Lines marked RECONCILE name widge
 when the walkthrough was written. Generic macro frame values at given ticks are asserted at synthetic time by replay
 `genmacro_sine_amp186`; the live walkthrough asserts the editor's Min/Max readout, the view fields and, for movement
 macros, positions at two ticks with the macro frozen (speed 0).
+
+W3 integrator 2: `shot` also captures the open confirm / message box (`lj_win_message_window()`, the window `assert_prompt`
+reads) as `<stem>-TConfirmForm.png`. `tests/ui/scripts/w3_wire_circle.lj4s` (the wire half of W3 acceptance 4) and the
+persistence pair `w3_positions_1.lj4s` / `w3_positions_2.lj4s` run like the W2 pair (docs/w3-integration.md section 9).

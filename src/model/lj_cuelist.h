@@ -57,7 +57,7 @@ enum lj_cl_cmd {
  *   "Link Cuelist" (0x17A090 0x17A030 0x17A044); none = "".
  * lj_cl_cmd_grid = the Command column text the grid shows (exe pool 0x179F08-0x17A194: "Wait for CD at", "CD Play Track",
  *   "Wait PC-Clock at", "Wait PC date-change", "Goto Line", "Execute" ...); a command with no pool row shows its caption
- *   (PROPOSAL rig 03 s6: MP Load File, Auto Seek MTC, Hotkey Command). */
+ *   (PROPOSAL rig 03 s6: MP Load File, Auto Seek MTC, Hotkey Command); none = "<>" (0x179F14, cuelist1.gif lines 1 / 4). */
 extern const char *const lj_cl_cmd_caption[LJ_CL_CMD_COUNT];
 extern const char *const lj_cl_cmd_grid[LJ_CL_CMD_COUNT];
 extern const char *const lj_cl_adv_caption[2];   /* the Adv column: "Auto", "Man" (exe 0x179EF8, 0x179F08) */

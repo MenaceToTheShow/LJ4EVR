@@ -1,0 +1,62 @@
+# w3_positions_2.lj4s - after w3_positions_1.lj4s and a restart: every W3 window reopens where it was moved (forms.ini).
+log "W3 persistence 2: reopen at the saved positions"
+click main.tb_fixture_13
+click main.icon1
+wait 300
+open cuelist_form
+wait 200
+assert_pos cuelist_form 100 1600
+close cuelist_form
+open save_cuelist
+wait 200
+assert_pos save_cuelist 140 1620
+close save_cuelist
+open select_cuelist
+wait 200
+assert_pos select_cuelist 180 1640
+close select_cuelist
+open cl_set_cue_trig
+wait 200
+assert_pos cl_set_cue_trig 220 1660
+close cl_set_cue_trig
+open genmacro_editor
+wait 200
+assert_pos genmacro_editor 260 1680
+close genmacro_editor
+open save_genmacro
+wait 200
+assert_pos save_genmacro 300 1700
+close save_genmacro
+open select_genmacro
+wait 200
+assert_pos select_genmacro 340 1720
+close select_genmacro
+open movemacro_editor
+wait 200
+assert_pos movemacro_editor 380 1740
+close movemacro_editor
+open fan_out
+wait 200
+assert_pos fan_out 420 1760
+close fan_out
+open auto_delay
+wait 200
+assert_pos auto_delay 460 1780
+close auto_delay
+open cue_macro_control
+wait 200
+assert_pos cue_macro_control 500 1800
+close cue_macro_control
+open gdc_form
+wait 200
+assert_pos gdc_form 540 1820
+close gdc_form
+open followspot_list
+wait 200
+assert_pos followspot_list 580 1840
+close followspot_list
+open seq_fades
+wait 200
+assert_pos seq_fades 620 1860
+close seq_fades
+quit

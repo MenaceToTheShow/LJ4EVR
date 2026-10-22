@@ -245,7 +245,7 @@ int lj_test_cuelist_form(int argc, char **argv)
 
     /* grid rows */
     CHECK(lj_cuelist_form_row(1, row, sizeof row) == 0 && strcmp(row, "1\tAuto\tWait Elapsed\t01:02:50\t0003 \tIntro") == 0);
-    CHECK(lj_cuelist_form_row(2, row, sizeof row) == 0 && strcmp(row, "2\tMan\t\t\t0004 \t") == 0);
+    CHECK(lj_cuelist_form_row(2, row, sizeof row) == 0 && strcmp(row, "2\tMan\t<>\t\t0004 \t") == 0);   /* "<>": no command (exe 0x179F14, cuelist1.gif) */
     CHECK(lj_cuelist_form_row(3, row, sizeof row) == 0 && strcmp(row, "3\tAuto\tMP Play\t\t\tclip") == 0);
     CHECK(lj_cuelist_form_row(4, row, sizeof row) == 0 && strcmp(row, "4\tAuto\tHotkey Command\tCuelist Stop\t\t") == 0);
     CHECK(lj_cuelist_form_row(5, row, sizeof row) == 0 && strcmp(row, "5\tAuto\tGoto Line\t1\t\tagain") == 0);

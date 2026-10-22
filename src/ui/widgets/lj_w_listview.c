@@ -76,13 +76,13 @@ static void lv_paint(lj_widget *w, lj_surface *s)
         if (sel && v->row_select) lj_fill(s, x, ry, area_w, v->row_h, LJ_CLR_HIGHLIGHT);
         for (c = 0; c < v->ncols && x < ax + LV_BORDER + area_w; c++) {
             const char *t = subitem(v->items[item], c, buf, sizeof buf);
-            int tw = lj_text_width(f, t), tx = x + 2;
-            if (v->cols[c].alignment == LJ_TA_RIGHT) tx = x + v->col_w[c] - 2 - tw;
-            else if (v->cols[c].alignment == LJ_TA_CENTER) tx = x + (v->col_w[c] - tw) / 2;
-            if (c == 0 && sel && !v->row_select) lj_fill(s, x + 2, ry, tw + 4 < v->col_w[c] ? tw + 4 : v->col_w[c] - 2, v->row_h, LJ_CLR_HIGHLIGHT);
-            if (*t && tw + 4 <= v->col_w[c]) lj_w_text(s, w, tx, ty, t, sel && (v->row_select || c == 0) ? LJ_CLR_BTNHIGHLIGHT : LJ_CLR_3DDKSHADOW);
-            if (v->grid_lines) lj_vline(s, x + v->col_w[c] - 1, ry, v->row_h, LJ_CLR_BTNFACE);
-            x += v->col_w[c];
+            int tw = lj_text_width(f, t), tx = x + 2, cw = ax + LV_BORDER + area_w - x < v->col_w[c] ? ax + LV_BORDER + area_w - x : v->col_w[c];   /* the last column stops at the view's edge */
+            if (v->cols[c].alignment == LJ_TA_RIGHT) tx = x + cw - 2 - tw;
+            else if (v->cols[c].alignment == LJ_TA_CENTER) tx = x + (cw - tw) / 2;
+            if (c == 0 && sel && !v->row_select) lj_fill(s, x + 2, ry, tw + 4 < cw ? tw + 4 : cw - 2, v->row_h, LJ_CLR_HIGHLIGHT);
+            if (*t && tw + 4 <= cw) lj_w_text(s, w, tx, ty, t, sel && (v->row_select || c == 0) ? LJ_CLR_BTNHIGHLIGHT : LJ_CLR_3DDKSHADOW);
+            if (v->grid_lines && cw == v->col_w[c]) lj_vline(s, x + cw - 1, ry, v->row_h, LJ_CLR_BTNFACE);
+            x += cw;
         }
         if (v->grid_lines) lj_hline(s, ax + LV_BORDER, ry + v->row_h - 1, area_w, LJ_CLR_BTNFACE);
         if (sel && w->focused) lj_focus_rect(s, ax + LV_BORDER, ry, area_w, v->row_h);

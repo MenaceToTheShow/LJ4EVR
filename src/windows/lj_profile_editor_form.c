@@ -400,7 +400,13 @@ static void pe_bind_fixture(int f)   /* "Apply": the fixture now uses this profi
 static void pe_cancel_result(int yes, void *ud) { (void)ud; if (yes) lj_profile_editor_close(); }
 static void pe_on_cancel(lj_widget *w, void *ud)
 {
+    static uint8_t before[LJ_GS2_REC_SIZE];   /* a typed field is a change too: the TEdits have no OnChange (DFM), so compare the record */
+    uint8_t was = pe.ed.dirty;
     (void)w; (void)ud;
+    lj_pe_refresh(&pe.ed);
+    memcpy(before, pe.ed.raw, sizeof before);
+    pe_read();
+    pe.ed.dirty = (uint8_t)(was || memcmp(before, pe.ed.raw, sizeof before) != 0);
     if (pe.ed.dirty) lj_win_confirm("Please Confirm..", LJ_PE_ASK_UNAPPLIED, NULL, pe_cancel_result, NULL);
     else lj_profile_editor_close();
 }
@@ -869,7 +875,7 @@ static void cc_paint(void)
         const char *c = cc.cap[k][0] ? cc.cap[k] : p && p->level_caption[k][0] ? (const char *)p->level_caption[k] : "";
         char dflt[16];   /* "CH" + the full %d range (gcc -Wformat-truncation) */
         if (!c[0]) { snprintf(dflt, sizeof dflt, "CH%d", k + 1); c = dflt; }   /* the Levels window's default caption */
-        snprintf(cc.rows.t[k], sizeof cc.rows.t[k], "%d\t%s\t%s", k + 1, c, cc.gm_off >> k & 1u ? "Disabled" : "Enabled");   /* PROPOSAL rig: GM Control cell texts */
+        snprintf(cc.rows.t[k], sizeof cc.rows.t[k], "%d\t%s\t%s", k + 1, c, cc.gm_off >> k & 1u ? "No" : "Yes");   /* channelconfiguration.gif: "Yes"; "No" its pair (PROPOSAL rig) */
     }
     rows_set(ccfind("chList"), &cc.rows);
 }
@@ -926,9 +932,9 @@ lj_window *lj_channel_config_open(void)
     cc.gm_off = sh->fixture[f].ch_gm_off;
     if ((cc.win = lj_window_create(&lj_form_TCHANNELDEFFORM, lj_cc_bindings)) == NULL) { lj_log("channel configuration: cannot create TChannelDefForm"); return NULL; }
     set_bitbtn(cc.win, "BitBtn2", cc_ok); set_bitbtn(cc.win, "BitBtn1", cc_cancel);
-    lj_w_set_caption(ccfind("lFixType"), profile_text(p, buf, sizeof buf));
+    {   char t[112]; snprintf(t, sizeof t, "(%d) %s", f + 1, profile_text(p, buf, sizeof buf)); lj_w_set_caption(ccfind("lFixType"), t); }   /* "(2) Generic.." (channelconfiguration.gif; exe "(%d) %s") */
     lj_w_set_caption(ccfind("lUsername"), sh->fixture[f].user_name);
-    snprintf(buf, sizeof buf, "%d:%03d", sh->fixture[f].link, sh->fixture[f].address); lj_w_set_caption(ccfind("lDmxAdr"), buf);   /* the "1:013" form of 02 s2.12 */
+    snprintf(buf, sizeof buf, "%d/%d", sh->fixture[f].link, sh->fixture[f].address); lj_w_set_caption(ccfind("lDmxAdr"), buf);   /* "1/38" (channelconfiguration.gif) */
     if (ccfind("eChannelName")) { ((lj_w_edit *)ccfind("eChannelName"))->max_length = 5; edit_quiet(ccfind("eChannelName"), ""); }
     cc_paint();
     lj_win_show(cc.win, 0);

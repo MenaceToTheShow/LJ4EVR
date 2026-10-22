@@ -143,6 +143,18 @@ static lj_window *confirm_form(const char *caption, const char *line1, const cha
     lj_w_set_caption(lj_window_find(lj_msg_win, "Label2"), line2 ? line2 : "");
     if ((w = lj_window_find(lj_msg_win, "bSave")) != NULL) w->visible = 0;      /* the Save variant is the W2 "was modified" prompt */
     if ((w = lj_window_find(lj_msg_win, "BCancel")) != NULL) { w->visible = with_cancel != 0; w->on_event = on_bcancel; w->ud = NULL; }
+    {   /* a line wider than the 267-px DFM client widens the box, and Bevel1 (153 px in the DFM) grows to the text: PROPOSAL rig 12 Q9, the
+         * longer prompts of 12 Q9 do not fit the DFM as designed */
+        lj_widget *l1 = lj_window_find(lj_msg_win, "Label1"), *l2 = lj_window_find(lj_msg_win, "Label2"), *bv = lj_window_find(lj_msg_win, "Bevel1");
+        lj_rect r;
+        int need = 0, t;
+        if (l1 && line1) need = l1->x + lj_text_width(lj_w_font_of(l1), line1) + 8;
+        if (l2 && line2 && (t = l2->x + lj_text_width(lj_w_font_of(l2), line2) + 8) > need) need = t;
+        lj_window_client_rect(lj_msg_win, &r);
+        if (need > r.w) lj_window_resize(lj_msg_win, need, r.h);
+        lj_window_client_rect(lj_msg_win, &r);
+        if (bv && need > bv->w) bv->w = need < r.w ? need : r.w;   /* lines that fit the DFM's 153-px bevel keep it */
+    }
     show_centered(lj_msg_win, LJ_WIN_STAY_ON_TOP);
     return lj_msg_win;
 }

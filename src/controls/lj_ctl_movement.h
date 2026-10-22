@@ -61,6 +61,7 @@ void       lj_ctl_movement_refresh(lj_window *win);                     /* rerea
 int        lj_ctl_movement_position(lj_window *win, int32_t *pan, int32_t *tilt);   /* the master's readout; -1 without a master or scene */
 void       lj_ctl_movement_set(lj_window *win, int32_t pan, int32_t tilt);   /* move the master there, honouring Absolute/Relative and the locks (the grid, arrows and hotkeys end here) */
 void       lj_ctl_movement_home(lj_window *win);                        /* 0 : 0, always absolute, locks ignored */
+void       lj_ctl_movement_home_selected(void);                         /* the "Home Selected Fixtures" hotkey (04 s4.1): every selected fixture with pan / tilt to 0 : 0, fade state Snap, no window needed */
 int        lj_ctl_movement_resolution(lj_window *win);                  /* the Resolution bar, 1..256 */
 void       lj_ctl_movement_set_resolution(lj_window *win, int res);
 int        lj_ctl_movement_absolute(lj_window *win);                    /* 1 Absolute Position, 0 Relative Movement */

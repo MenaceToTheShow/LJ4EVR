@@ -257,7 +257,7 @@ static void trace_paint(lj_widget *w, lj_surface *s)
     int ax, ay, i, k;
     lj_widget_abs(w, &ax, &ay);
     lj_fill(s, ax, ay, w->w, w->h, 0x0000FFu);
-    lj_hline(s, ax, ay + w->h / 2, w->w, 0x4040FFu); lj_vline(s, ax + w->w / 2, ay, w->h, 0x4040FFu);
+    lj_hline(s, ax, ay + w->h / 2, w->w, 0xFF0000u); lj_vline(s, ax + w->w / 2, ay, w->h, 0xFF0000u);   /* red centre cross: movementmacro.gif (1:1) col 69 / row 107 */
     for (k = 0; sc && k < mm.nfx && (k == 0 || mm.show_all); k++) {
         int f = mm.fx[k];
         lj_movemacro m = sc->macro[f];
@@ -688,7 +688,7 @@ static void fo_paint_grid(lj_widget *w, void *ud)            /* pb1Paint: the pr
     if (!s || !fo.win) return;
     lj_widget_abs(w, &ax, &ay);
     lj_fill(s, ax, ay, w->w, w->h, 0x0000FFu);
-    lj_hline(s, ax, ay + w->h / 2, w->w, 0x4040FFu); lj_vline(s, ax + w->w / 2, ay, w->h, 0x4040FFu);
+    lj_hline(s, ax, ay + w->h / 2, w->w, 0xFF0000u); lj_vline(s, ax + w->w / 2, ay, w->h, 0xFF0000u);   /* red cross: fanoutdialog.gif (reduced) blends it with the blue to #AD004A */
     n = fo_order(order);
     for (i = 0; sc && i < n; i++) { int32_t p, t; if (pt_read(sc, order[i], &p, &t) == 0) dot(s, ax + px_of(p, w->w), ay + px_of(t, w->h), 2, 0xFF0000u); }
 }
@@ -819,9 +819,9 @@ static void ad_show(void)
     int f[LJ_FIXTURES], st = lj_w_radiogroup_index(lj_window_find(ad.win, "RGStyle"));
     lj_widget *w;
     snprintf(ad.t[0], sizeof ad.t[0], "%d", ad.max_delay); snprintf(ad.t[1], sizeof ad.t[1], "%d", ad.count); snprintf(ad.t[2], sizeof ad.t[2], "%d", ad.segments);
-    if (ad.vmax) lj_w_set_caption(ad.vmax, ad.t[0]);
-    if (ad.vcount) lj_w_set_caption(ad.vcount, ad.t[1]);
-    if (ad.vseg) lj_w_set_caption(ad.vseg, ad.t[2]);
+    if (ad.vmax) lj_w_edit_set_text(ad.vmax, ad.t[0]);
+    if (ad.vcount) { lj_w_edit_set_text(ad.vcount, ad.t[1]); ad.vcount->enabled = st == LJ_MMD_CIRCULAR; }
+    if (ad.vseg) { lj_w_edit_set_text(ad.vseg, ad.t[2]); ad.vseg->enabled = st == LJ_MMD_SEGMENTS; }
     snprintf(n, sizeof n, "%d ", sel_fixtures(f));           /* "N Fixtures Selected" (LFixMax, DFM '100 ') */
     if ((w = lj_window_find(ad.win, "LFixMax")) != NULL) lj_w_set_caption(w, n);
     if ((w = lj_window_find(ad.win, "UdIncrement")) != NULL) w->enabled = st == LJ_MMD_CIRCULAR;   /* CheckControls */
@@ -866,9 +866,10 @@ static const lj_binding lj_ad_bindings[] = {
     { "CheckControls", ad_check, NULL }, { "UdSegmentsChange", ad_seg, NULL }, { "UdIncrementChange", ad_inc, NULL }, { "udMaxDelayChange", ad_max, NULL },
     { "bOkClick", ad_ok, NULL }, { "Help1Click", help, NULL }, { NULL, NULL, NULL } };
 /* the value boxes between each label and its TUdButton (code-built in LJ2: autodelay.gif, PROPOSAL rig) */
-static const lj_ctl_desc d_ad_max = { LJ_K_LABEL, "AdMax", 60, 8, 34, 13, .caption = "256" };
-static const lj_ctl_desc d_ad_cnt = { LJ_K_LABEL, "AdCount", 226, 8, 28, 13, .caption = "3" };
-static const lj_ctl_desc d_ad_seg = { LJ_K_LABEL, "AdSegments", 331, 8, 28, 13, .caption = "3" };
+/* read-only edits left of each TUdButton (autodelay.gif: white boxes, greyed when the style does not use them); x / width PROPOSAL rig, the GIF is reduced */
+static const lj_ctl_desc d_ad_max = { LJ_K_EDIT, "AdMax", 58, 4, 40, 21, .max_length = 4, .font_inherited = 1 };
+static const lj_ctl_desc d_ad_cnt = { LJ_K_EDIT, "AdCount", 224, 4, 34, 21, .max_length = 4, .font_inherited = 1 };
+static const lj_ctl_desc d_ad_seg = { LJ_K_EDIT, "AdSegments", 329, 4, 34, 21, .max_length = 4, .font_inherited = 1 };
 
 lj_window *lj_auto_delay_open(void)
 {
@@ -876,7 +877,10 @@ lj_window *lj_auto_delay_open(void)
     if (ad.win) return ad.win;
     if ((ad.win = lj_window_create(&lj_form_TAUTODELAYFORM, lj_ad_bindings)) == NULL) { lj_log("movement: TAutoDelayForm failed to build"); return NULL; }
     if (!ad.max_delay) { ad.max_delay = 256; ad.count = 3; ad.segments = 3; ad.seed = 0x9E3779B9u; }   /* PROPOSAL defaults (the CHM examples) */
-    if ((p2 = lj_window_find(ad.win, "Panel2")) != NULL) { ad.vmax = lj_w_label_create(p2, &d_ad_max); ad.vcount = lj_w_label_create(p2, &d_ad_cnt); ad.vseg = lj_w_label_create(p2, &d_ad_seg); }
+    if ((p2 = lj_window_find(ad.win, "Panel2")) != NULL) {
+        ad.vmax = lj_w_edit_create(p2, &d_ad_max); ad.vcount = lj_w_edit_create(p2, &d_ad_cnt); ad.vseg = lj_w_edit_create(p2, &d_ad_seg);
+        ((lj_w_edit *)ad.vmax)->readonly = ((lj_w_edit *)ad.vcount)->readonly = ((lj_w_edit *)ad.vseg)->readonly = 1;   /* the arrows set them */
+    }
     ad_show();
     lj_win_show(ad.win, LJ_WIN_STAY_ON_TOP);
     return ad.win;

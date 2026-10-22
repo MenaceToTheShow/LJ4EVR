@@ -93,7 +93,6 @@ static struct {
     uint32_t lock_next;                    /* Lock: the next line last scrolled to */
     uint16_t log_base;                     /* Clear Logs: log entries before this index are spent */
 } s;
-static lj_cuelist *cl_fresh;               /* the list New / first open made (not a table record) */
 
 /* ---------------------------------------------------------------- the list and its lines */
 static lj_ctx *ctx(void) { return lj_ctx_get(); }
@@ -103,7 +102,7 @@ lj_cuelist *lj_cuelist_form_list(void)
 {
     lj_show *sh = ctx()->show;
     if (!sh) return NULL;
-    if (!sh->current_cl) sh->current_cl = cl_fresh = lj_cuelist_new_rec();
+    if (!sh->current_cl) sh->current_cl = lj_cuelist_new_rec();   /* the show owns it (lj_show_free) */
     return sh->current_cl;
 }
 static uint32_t sel_line(void)
@@ -170,14 +169,23 @@ int lj_cuelist_form_row(uint32_t n, char *dst, size_t cap)
 }
 
 /* ---------------------------------------------------------------- lv1 paint: the line states over the stock report view */
+/* Use Color Codes (07 s7, cuelist1.gif): waits green, other commands blue, the cue column blue; "<>" and the rest black.
+ * The two hues are PROPOSAL rig 07 s7 (the reduced GIF blends them: #7B7BFF, #73BD73). */
+static int main_pref(const char *key, int dflt);
+static uint32_t cell_rgb(const lj_cl_line *l, int col)
+{
+    if (col == 2 && l->cmd != LJ_CL_NONE) return lj_cl_cmd_is_wait(l->cmd) ? 0x008000u : 0x0000FFu;
+    return col == 4 ? 0x0000FFu : 0x000000u;
+}
 static void lv_paint(lj_widget *w, lj_surface *sf)
 {
     lj_w_listview *v = (lj_w_listview *)w;
     const lj_cl_status *st = ctx()->cl;
     lj_cuelist *cl = lj_cuelist_form_list();
-    int ax, ay, i, c, top, area_w;
+    int ax, ay, i, c, top, area_w, use_color;
     s.lv_orig->paint(w, sf);
     if (!cl) return;
+    use_color = main_pref("UseColor", 0);
     lj_widget_abs(w, &ax, &ay);
     top = ay + CL_LV_BORDER + (v->show_headers ? v->header_h : 0);
     area_w = w->w - 2 * CL_LV_BORDER - (v->n * v->row_h > w->h - (top - ay) - CL_LV_BORDER ? LJ_SB_W : 0);
@@ -185,19 +193,20 @@ static void lv_paint(lj_widget *w, lj_surface *sf)
         int item = v->sb.pos + i, state = lj_cl_line_state(st, cl, (uint32_t)item + 1), x = ax + CL_LV_BORDER, ry = top + i * v->row_h;
         uint32_t bg, fg;
         char buf[200];
-        if (state == LJ_CLL_PLAIN || (item == v->index && state != LJ_CLL_ERROR)) continue;   /* the selection paints as the stock view does */
+        int recolor = use_color && state == LJ_CLL_PLAIN && item != v->index && (uint32_t)item < cl->n;
+        if (!recolor && (state == LJ_CLL_PLAIN || (item == v->index && state != LJ_CLL_ERROR))) continue;   /* the selection paints as the stock view does */
         bg = state == LJ_CLL_NEXT ? CL_NEXT_RGB : state == LJ_CLL_DONE ? CL_DONE_RGB : item == v->index ? LJ_CLR_HIGHLIGHT : w->color;
         fg = state == LJ_CLL_ERROR ? CL_ERROR_RGB : state == LJ_CLL_NEXT ? 0xFFFFFFu : 0x000000u;
         lj_fill(sf, x, ry, area_w, v->row_h, bg);
         for (c = 0; c < v->ncols && x < ax + CL_LV_BORDER + area_w; c++) {
             const char *t = v->items[item];
-            int k = c, j = 0;
+            int k = c, j = 0, cw = ax + CL_LV_BORDER + area_w - x < v->col_w[c] ? ax + CL_LV_BORDER + area_w - x : v->col_w[c];   /* the last column stops at the view's edge */
             while (k > 0 && *t) if (*t++ == '\t') k--;
             while (t[j] && t[j] != '\t' && j < (int)sizeof buf - 1) { buf[j] = t[j]; j++; }
             buf[j] = 0;
-            if (buf[0] && lj_text_width(lj_w_font_of(w), buf) + 4 <= v->col_w[c]) lj_w_text(sf, w, x + 2, ry + (v->row_h - lj_w_font_of(w)->height) / 2, buf, fg);
-            if (v->grid_lines) lj_vline(sf, x + v->col_w[c] - 1, ry, v->row_h, LJ_CLR_BTNFACE);
-            x += v->col_w[c];
+            if (buf[0] && lj_text_width(lj_w_font_of(w), buf) + 4 <= cw) lj_w_text(sf, w, x + 2, ry + (v->row_h - lj_w_font_of(w)->height) / 2, buf, recolor ? cell_rgb(&cl->lines[item], c) : fg);
+            if (v->grid_lines && cw == v->col_w[c]) lj_vline(sf, x + cw - 1, ry, v->row_h, LJ_CLR_BTNFACE);
+            x += cw;
         }
         if (v->grid_lines) lj_hline(sf, ax + CL_LV_BORDER, ry + v->row_h - 1, area_w, LJ_CLR_BTNFACE);
     }
@@ -694,14 +703,11 @@ static const lj_binding cl_bindings[] = {
     { "Timer1Timer", on_timer, NULL }, { "ActionExecute", on_action, NULL },
     { NULL, NULL, NULL } };
 
-void lj_cuelist_form_new(void)
+void lj_cuelist_form_new(void)   /* the app replaces show->current_cl (the runner lets go of the old one first) and asks when it was modified */
 {
-    lj_show *sh = ctx()->show;
-    if (!sh) return;
-    if (sh->current_cl && sh->current_cl == cl_fresh) lj_cuelist_free(cl_fresh);   /* ours; a table record stays in show->cuelists */
-    sh->current_cl = cl_fresh = lj_cuelist_new_rec();
-    lj_ctx_set_modified(LJ_MOD_CL, 0);
+    if (!ctx()->show) return;
     if (s.lv) ((lj_w_listview *)s.lv)->index = -1;
+    lj_desktop_run_action(LJ_ACT_NEW_CUELIST, 0);
     lj_cuelist_form_refresh();
 }
 

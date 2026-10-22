@@ -1,0 +1,36 @@
+# w3_wire_circle.lj4s - design 10 W3 acceptance 4, the wire half: one MAC 500 (Mode 2/4) at 1:001 runs System Ellipse at
+# amplitude 100 (17-position_ref.py: radius 25802 readout units) while tools/ref/08-sacn_ref.py-style monitors decode
+# pan 11/12 and tilt 13/14 (docs/w3-integration.md, Acceptance item 4). Fresh Default library, as w3_acceptance.lj4s:
+#   build-ninja-msvc\lj4evr.exe --script tests\ui\scripts\w3_wire_circle.lj4s
+log "W3 wire: one MAC 500 at 1:001"
+open fixture_config
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "1"
+key Enter
+click TLinkConfigForm3.bSave
+close fixture_config
+wait 300
+close cue_form
+close seq_form
+move TUnassignedForm 1800 1600
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -300 -120
+wait 300
+assert_text main.icon1 "(1) MAC500"
+click main.icon1
+click main.tb_fixture_9                          # Home Selected Fixtures: 0 : 0
+mm_set 1 1 100 0                                 # System Ellipse, amplitude 100, frozen at index 0
+wait 300
+assert_pos 1 25802 0
+log "W3 wire: circle running"
+mm_set 1 1 100 50                                # running (Cycle 5.00 sec)
+wait 8000
+mm_set 1 0 0 0
+wait 500
+quit

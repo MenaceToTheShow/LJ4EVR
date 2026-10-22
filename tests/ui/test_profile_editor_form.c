@@ -111,7 +111,7 @@ static void test_channel_config(lj_show *sh)
     pick(in(w, "chList"), 1);
     lj_w_edit_set_text(in(w, "eChannelName"), "Inte");
     click(in(w, "bDisableGM"));
-    CHECK(strstr(((lj_w_listview *)in(w, "chList"))->items[1], "Inte\tDisabled") != NULL);
+    CHECK(strstr(((lj_w_listview *)in(w, "chList"))->items[1], "Inte\tNo") != NULL);
     click(in(w, "BitBtn2"));
     CHECK(lj_channel_config_get() == NULL);
     CHECK(strcmp(sh->fixture[0].ch_caption[1], "Inte") == 0 && sh->fixture[0].ch_gm_off == 2u);

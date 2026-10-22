@@ -1,0 +1,79 @@
+# w3_positions_1.lj4s - W3 acceptance, restart persistence (docs/w3-integration.md, Acceptance): opens every W3 window that
+# persists (poDesigned or code-built; the poOwnerFormCenter / poMainFormCenter ones are centred each time, design 7.10),
+# moves it, closes it; quit writes forms.ini. Run w3_positions_2.lj4s after it. Needs the end state of w3_acceptance.lj4s
+# (a MAC 500 as fixture 1). Positions on the acceptance PC's second display (y >= 1440), as w2_positions_1.lj4s.
+log "W3 persistence 1: open, move, close"
+click main.tb_fixture_13
+click main.icon1
+wait 300
+open cuelist_form
+wait 200
+move cuelist_form 100 1600
+wait 200
+close cuelist_form
+open save_cuelist
+wait 200
+move save_cuelist 140 1620
+wait 200
+close save_cuelist
+open select_cuelist
+wait 200
+move select_cuelist 180 1640
+wait 200
+close select_cuelist
+open cl_set_cue_trig
+wait 200
+move cl_set_cue_trig 220 1660
+wait 200
+close cl_set_cue_trig
+open genmacro_editor
+wait 200
+move genmacro_editor 260 1680
+wait 200
+close genmacro_editor
+open save_genmacro
+wait 200
+move save_genmacro 300 1700
+wait 200
+close save_genmacro
+open select_genmacro
+wait 200
+move select_genmacro 340 1720
+wait 200
+close select_genmacro
+open movemacro_editor
+wait 200
+move movemacro_editor 380 1740
+wait 200
+close movemacro_editor
+open fan_out
+wait 200
+move fan_out 420 1760
+wait 200
+close fan_out
+open auto_delay
+wait 200
+move auto_delay 460 1780
+wait 200
+close auto_delay
+open cue_macro_control
+wait 200
+move cue_macro_control 500 1800
+wait 200
+close cue_macro_control
+open gdc_form
+wait 200
+move gdc_form 540 1820
+wait 200
+close gdc_form
+open followspot_list
+wait 200
+move followspot_list 580 1840
+wait 200
+close followspot_list
+open seq_fades
+wait 200
+move seq_fades 620 1860
+wait 200
+close seq_fades
+quit

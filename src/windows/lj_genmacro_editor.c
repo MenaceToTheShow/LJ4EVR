@@ -41,6 +41,8 @@
 #define GM_C_LINE  0x00FFFFu
 #define GM_C_BASE  0xFF8000u
 #define GM_C_REF   0x00FF00u
+#define GM_C_BG    0x0000FFu   /* macrotrackingmacroout.gif / macrotrackingfixtureout.gif sample #0000FF */
+#define GM_C_BAR   0x808080u   /* macroparameterspanel.gif: the bar's track; the value fills white from the left (PROPOSAL rig 14 sA.7) */
 
 static const char *const gm_class[LJ_CH_COUNT] = { "", "Intensity", "Shutter", "Strobe", "Pan", "Tilt", "Color", "Gobo", "Beam", "Effect",
                                                    "Level", "Speed", "Lamp", "Special", "Switch", "Smoke", "Haze", "Haze fan" };   /* as the DMX Output Monitor; LJ2 shows the profile's function text (PROPOSAL rig 14 sA.7) */
@@ -228,11 +230,11 @@ void lj_genmacro_editor_refresh(void)
     snprintf(t, sizeof t, "%d", e.nfx); set_text(e.win, "lFixCount", t);
     snprintf(t, sizeof t, "%d", e.foot); set_text(e.win, "lChanCount", t);     /* PROPOSAL rig 14 sA.7: the offsets of the type */
     set_text(e.win, "lMacro", e.pan.shape < shapes()->n ? shapes()->name[e.pan.shape] : "");
-    if (e.pan.cycle_ds) { char v[16]; time_text(v, sizeof v, e.pan.cycle_ds); snprintf(t, sizeof t, "Cycle time: %s sec", v); }   /* EXE 0x33a8d0 "Cycle time: %.1f sec" */
-    else lj_str_copy(t, sizeof t, "Cycle time: never");                         /* EXE 0x33abc8 */
+    if (e.pan.cycle_ds) { char v[16]; time_text(v, sizeof v, e.pan.cycle_ds); snprintf(t, sizeof t, "Cycle time: %s seconds", v); }   /* EXE 0x33A8EC "Cycle time: %.1f seconds" (genericmacroeditor.gif) */
+    else lj_str_copy(t, sizeof t, "Cycle time: never");                         /* EXE 0x33A8D0 */
     set_text(e.win, "lTime", t);
     minmax(&e.pan, &lo, &hi);
-    snprintf(t, sizeof t, "Min/Max %d/%d", lo, hi); set_text(e.win, "lMinMax", t);   /* PROPOSAL rig 14 sA.7: the label's format string is not located */
+    snprintf(t, sizeof t, "Min/Max : %d/%d", lo, hi); set_text(e.win, "lMinMax", t);   /* EXE 0x3399F8 "Min/Max : %d/%d" (genericmacroeditor.gif) */
     if (c->engine && (lv = lj_window_find(e.win, "sbDisableMacros")) != NULL && lj_w_speedbutton_down(lv) != !c->view.gm_engine_on) lj_w_speedbutton_set_down(lv, !c->view.gm_engine_on);   /* the engine's state (hotkeys too); headless: as the DFM */
     if ((lv = lj_window_find(e.win, "sbRestart")) != NULL && gm() && lj_w_speedbutton_down(lv) != (gm()->restart_on_load != 0)) lj_w_speedbutton_set_down(lv, gm()->restart_on_load);
     lj_window_invalidate_all(e.win);
@@ -240,6 +242,11 @@ void lj_genmacro_editor_refresh(void)
 
 /* ---- painting (ours, ME-18) ---- */
 static void abs_of(lj_widget *w, int *x, int *y) { lj_widget_abs(w, x, y); }   /* surface coordinates: the paint origin and the mouse events' frame */
+static void span(lj_surface *s, int x, int y0, int y1, int t, uint32_t rgb)   /* one column of a trace: joins the previous sample, t px thick */
+{
+    int lo = y0 < y1 ? y0 : y1, hi = y0 < y1 ? y1 : y0;
+    lj_fill(s, x, lo - t / 2, 1, hi - lo + t, rgb);
+}
 static void on_pb1_paint(lj_widget *w, void *ud)                 /* PB1 129x129: Macro Out (raw grey, scaled white, cyan 0) or Fixture Out (255 / 50 % / 0, base / reference) */
 {
     lj_surface *s = lj_window_surface(e.win);
@@ -247,16 +254,20 @@ static void on_pb1_paint(lj_widget *w, void *ud)                 /* PB1 129x129:
     int ax, ay, x, h = w->h, mid = w->h / 2, ref = 128;
     (void)ud;
     abs_of(w, &ax, &ay);
-    lj_fill(s, ax, ay, w->w, h, 0x000000u);
+    lj_fill(s, ax, ay, w->w, h, GM_C_BG);
     if (e.nfx && e.cur >= 0 && fx_code(e.fx[0], e.cur) >= 0) ref = e.merged[fx_code(e.fx[0], e.cur)];
     if (!e.fixture_out) {
-        lj_hline(s, ax, ay + mid, w->w, GM_C_LINE);
+        int pr = 0, pd = 0;
+        lj_hline(s, ax, ay + mid, w->w, GM_C_LINE); lj_vline(s, ax + w->w / 2, ay, h, GM_C_LINE);   /* macrotrackingmacroout.gif: cyan 0 line and centre line */
         for (x = 0; x < w->w; x++) {
             int k = x * LJ_GM_SAMPLES / w->w, raw = lj_genmacro_shape_in(shapes(), p.shape, k), d;
             lj_gm_param q = p; q.delay = 0;
             d = lj_genmacro_delta(shapes(), &q, (uint32_t)k << 16);
-            lj_fill(s, ax + x, ay + mid - raw * (mid - 1) / LJ_GM_FULL, 1, 1, GM_C_RAW);
-            lj_fill(s, ax + x, ay + mid - d * (mid - 1) / 255, 1, 1, GM_C_OUT);
+            raw = ay + mid - raw * (mid - 1) / LJ_GM_FULL; d = ay + mid - d * (mid - 1) / 255;
+            if (!x) { pr = raw; pd = d; }
+            span(s, ax + x, pr, raw, 3, GM_C_RAW);                  /* the shape 3 px thick, the scaled output 1 px (measured from macrotrackingmacroout.gif, 1:1) */
+            span(s, ax + x, pd, d, 1, GM_C_OUT);
+            pr = raw; pd = d;
         }
     } else {
         lj_hline(s, ax, ay, w->w, GM_C_LINE); lj_hline(s, ax, ay + mid, w->w, GM_C_LINE); lj_hline(s, ax, ay + h - 1, w->w, GM_C_LINE);
@@ -277,15 +288,18 @@ static void on_bar_paint(lj_widget *w, void *ud)
     lj_surface *s = lj_window_surface(e.win);
     const lj_font *f = lj_w_font_of(w);
     int ax, ay, b = bar_of(w), x;
-    char t[16];
+    char t[40];
     (void)ud;
     abs_of(w, &ax, &ay);
-    lj_fill(s, ax, ay, w->w, w->h, 0x000000u);
-    if (b == 3) { x = cycle_pos(e.pan.cycle_ds, w->w); if (e.pan.cycle_ds) time_text(t, sizeof t, e.pan.cycle_ds); else lj_str_copy(t, sizeof t, "0"); }
-    else { int v = b == 1 ? e.pan.amp_pos : e.pan.amp_neg; x = (v + 255) * (w->w - 1) / 510; snprintf(t, sizeof t, "%d", v); }
-    if (b == 3) lj_fill(s, ax, ay + 1, x + 1, w->h - 2, 0x0000FFu);   /* blue level, as the Generic DMX Control fader (PROPOSAL rig 14 sA.7) */
-    else { int m = (w->w - 1) / 2; lj_fill(s, ax + (x < m ? x : m), ay + 1, (x < m ? m - x : x - m) + 1, w->h - 2, 0x0000FFu); lj_vline(s, ax + m, ay, w->h, GM_C_LINE); }   /* -255..255 from the centre */
-    lj_text(s, f, ax + (w->w - lj_text_width(f, t)) / 2, ay + (w->h - f->height) / 2, t, GM_C_OUT, 0);
+    lj_fill(s, ax, ay, w->w, w->h, GM_C_BAR);
+    if (b == 3) {
+        char v[16];
+        x = cycle_pos(e.pan.cycle_ds, w->w);
+        if (e.pan.cycle_ds) { time_text(v, sizeof v, e.pan.cycle_ds); snprintf(t, sizeof t, "Cycle time: %s sec", v); }   /* EXE 0x33ABC8 "Cycle time: %.1f sec" */
+        else lj_str_copy(t, sizeof t, "Cycle time: never");                                                                   /* EXE 0x33ABAC */
+    } else { int v = b == 1 ? e.pan.amp_pos : e.pan.amp_neg; x = (v + 255) * (w->w - 1) / 510; snprintf(t, sizeof t, "%s%d", b == 1 ? "Pos Amplitude " : "Neg Amplitude ", v); }   /* EXE 0x33AB7C / 0x33AB94 */
+    lj_fill(s, ax, ay + 1, x + 1, w->h - 2, 0xFFFFFFu);   /* white from the left: Pos 180 fills 86 %, Neg 82 66 % in macroparameterspanel.gif = (v + 255) / 510 */
+    lj_text(s, f, ax + 6, ay + (w->h - f->height) / 2, t, 0x000000u, 0);   /* PROPOSAL rig 14 sA.7: 6 px from the reduced macroparameterspanel.gif */
 }
 static void bar_mouse(lj_widget *w)
 {

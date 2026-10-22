@@ -185,7 +185,7 @@ const char *const lj_cl_cmd_caption[LJ_CL_CMD_COUNT] = {
     "Goto Line#", "Execute File", "Set Current Cue", "Set Cue Trig", "Hotkey Command",
     "Flash Seq", "Load BGCue", "Link Cuelist" };
 const char *const lj_cl_cmd_grid[LJ_CL_CMD_COUNT] = {
-    "", "Wait for CD at", "CD Play Track", "CD Play Time", "CD Stop",
+    "<>", "Wait for CD at", "CD Play Track", "CD Play Time", "CD Stop",
     "Wait for DA at", "DA Play File", "DA Cue File", "DA Stop", "DA Seek", "DA Play", "DA Timecode Factor",
     "MP Load File", "MP Play", "MP Seek", "MP Stop", "MP Pause", "Wait for MP at", "MP Close Clip", "MP Start", "MP Close",
     "Wait for MTC at", "Auto Seek MTC", "Wait Elapsed", "Wait PC-Clock at", "Wait PC date-change",

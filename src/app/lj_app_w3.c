@@ -11,6 +11,7 @@
 #include "app/lj_app_seam.h"
 #include "app/lj_cuelist_run.h"
 #include "controls/lj_ctl.h"
+#include "controls/lj_ctl_movement.h"
 #include "core/lj_clock.h"
 #include "core/lj_ini.h"
 #include "core/lj_lock.h"
@@ -33,6 +34,7 @@
 #include "model/lj_table.h"
 #include "windows/lj_gs2_dialogs.h"
 #include "windows/lj_prefs.h"
+#include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 
 #define LJ_GS2_FILE_MAX (16u << 20)   /* an import larger than this is not a profile (PROPOSAL bound; a .Udf with bitmaps is < 1 MB) */
@@ -201,11 +203,31 @@ int lj_app_load_cuelist(uint32_t number)
     return lj_app_load_cuelist_path(path, number);
 }
 
-static int cl_op(int op, uint32_t n)
+static int cl_op_now(int op, uint32_t n)
 {
     lj_show *show = lj_ctx_get()->show;
     return show ? lj_cl_run_op(&lj_w3.run, show->current_cl, op, n, lj_clock_us(), &lj_w3_host) : -1;
 }
+static int cl_held_op;
+static uint32_t cl_held_n;
+static void cl_link_yes(int yes, void *ud) { (void)ud; if (yes) cl_op_now(cl_held_op, cl_held_n); }
+/* a run started on a modified list with a Link Cuelist line asks first (12 Q9, exe 0x17DF50; the trigger is PROPOSAL rig 12 Q9: the
+ * link replaces the list, so unsaved edits would be dropped) */
+static int cl_op(int op, uint32_t n)
+{
+    lj_ctx *c = lj_ctx_get();
+    const lj_cuelist *cl = c->show ? c->show->current_cl : NULL;
+    uint32_t i;
+    int starts = op == LJ_CL_OP_TOP || op == LJ_CL_OP_RUN || op == LJ_CL_OP_MARK_RUN || (op == LJ_CL_OP_GO && lj_w3.run.st.state == LJ_CL_IDLE);
+    if (starts && cl && c->modified[LJ_MOD_CL] && lj_w3.run.st.state == LJ_CL_IDLE)
+        for (i = 0; i < cl->n; i++) if (cl->lines[i].cmd == LJ_CL_LINK_CUELIST) {
+            cl_held_op = op; cl_held_n = n;
+            lj_win_confirm(NULL, "Modified cuelist includes link to other cuelist - run without saving first ?", "", cl_link_yes, NULL);
+            return 0;
+        }
+    return cl_op_now(op, n);
+}
+static void cl_new_yes(int yes, void *ud) { lj_cuelist *cl; (void)ud; if (yes && lj_ctx_get()->show && (cl = lj_cuelist_new_rec()) != NULL) cl_replace(cl); }
 
 void lj_app_cuelist_prog(uint32_t number) { if (lj_app_load_cuelist(number) == 0) cl_op(LJ_CL_OP_TOP, 0); }
 
@@ -397,13 +419,15 @@ static int gm_editor_load(uint32_t number)
 static void act(enum lj_desktop_action a, int arg, void *ud)
 {
     lj_ctx *c = lj_ctx_get();
-    lj_cuelist *cl;
     char rel[64], path[LJ_PATH_CAP];
     (void)ud;
     switch (a) {
     case LJ_ACT_LOAD_CUELIST:    lj_app_load_cuelist((uint32_t)(arg < 0 ? 0 : arg)); break;
     case LJ_ACT_CUELIST_OP:      cl_op(LJ_CL_OP_OF(arg), LJ_CL_OP_N(arg)); break;
-    case LJ_ACT_NEW_CUELIST:     if (c->show && (cl = lj_cuelist_new_rec()) != NULL) cl_replace(cl); break;
+    case LJ_ACT_NEW_CUELIST:                                          /* toolbar, Cuelist window and File menu (12 Q9: exe 0x188D9C / 0x17FD7C; the pairing PROPOSAL rig 12 Q9) */
+        if (c->modified[LJ_MOD_CL] && (!c->prefs || c->prefs->warn_cl_modified)) lj_win_confirm(NULL, "Current CueList was modified", "This will clear the current cuelist", cl_new_yes, NULL);
+        else cl_new_yes(1, NULL);
+        break;
     case LJ_ACT_SAVE_CUELIST:    lj_win_open(LJ_WIN_SAVE_CUELIST); break;
     case LJ_ACT_LOAD_GENMACRO:   gm_editor_load((uint32_t)arg); break;
     case LJ_ACT_GENMACRO_APPLY:  gm_editor_post(NULL); break;
@@ -454,6 +478,7 @@ static void fn_row(enum lj_fn f, int edge, uint32_t prog, void *ud)
     else if (f == LJ_FN_QUICK_SAVE_CUELIST) { if (c->prefs && !c->prefs->quick_cl) lj_win_open(LJ_WIN_SAVE_CUELIST); else cl_save(); }   /* [PREFS] QuickCl */
     else if (f >= LJ_FN_FOLLOW_SPOT_1 && f <= LJ_FN_FOLLOW_SPOT_10) lj_app_followspot(f - LJ_FN_FOLLOW_SPOT_1 + 1);
     else if (f == LJ_FN_CLEAR_FOLLOWSPOT) lj_app_followspot(0);
+    else if (f == LJ_FN_HOME_SELECTED_FIXTURES) lj_ctl_movement_home_selected();   /* unbound before W3 acceptance ("fn: no binding" from Fixture toolbar button 9) */
 }
 
 void lj_app_w3_start(void)
@@ -466,7 +491,7 @@ void lj_app_w3_start(void)
         LJ_FN_CUELIST_START_TOP, LJ_FN_CUELIST_GO, LJ_FN_CUELIST_BACK, LJ_FN_CUELIST_STOP, LJ_FN_CUELIST_STOP_AND_CLEAR, LJ_FN_LOG_TIMECODE,
         LJ_FN_CUELIST_GOTO_MARK_1, LJ_FN_CUELIST_GOTO_MARK_2, LJ_FN_CUELIST_GOTO_MARK_3, LJ_FN_CUELIST_GOTO_MARK_4,
         LJ_FN_CUELIST_RUN_FROM_MARK_1, LJ_FN_CUELIST_RUN_FROM_MARK_2, LJ_FN_CUELIST_RUN_FROM_MARK_3, LJ_FN_CUELIST_RUN_FROM_MARK_4,
-        LJ_FN_QUICK_SAVE_CUELIST, LJ_FN_CLEAR_FOLLOWSPOT };
+        LJ_FN_QUICK_SAVE_CUELIST, LJ_FN_CLEAR_FOLLOWSPOT, LJ_FN_HOME_SELECTED_FIXTURES };
     lj_ctx *c = lj_ctx_get();
     char path[LJ_PATH_CAP], err[128];
     int i;

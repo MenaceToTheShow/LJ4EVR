@@ -183,3 +183,217 @@ sentence owed), ME-16 (Debug selftest and the open-every-window script), ME-2 / 
                                replay-frames.bin linux / windows / macos
                                977db5f89f81cbb4141213b116b01f866dfb32d101fabbb34951fb46d670e2dd (equal; ME-78, ME-103)
                                https://github.com/UnbannableGT/LJ4EVR/actions/runs/39850233302
+
+## 9. Acceptance (integrator 2, this PC, 2026-10-22)
+
+Design 10 W3, item by item, on Windows 11 (work PC, MSVC 19.44, the four-monitor layout of the W2 record). The walkthrough
+is `tests/ui/scripts/w3_acceptance.lj4s` (448 lines, 43 asserts) on a fresh `Default` library (`<userdir>User\Default`,
+`<userdir>forms.ini`, `<userdir>Default.lj4b` deleted first; the user folder was copied aside before the first run),
+run with `build-ninja-msvc\lj4evr.exe --script` (Release) and `build-debug-win\lj4evr.exe --script` (asserts, debug
+heap): both rc 0. Screenshots: `docs/screenshots/w3/<step>-<Class>.png`, one per open window (the confirm box is now
+captured too, see the app fixes). Every window shot was compared with its CHM GIF; the fixes are listed below the table.
+
+| # | Item (design 10 W3) | Result | Evidence |
+|---|---|---|---|
+| 1 | A 20-line cue list runs against PC elapsed time, manual lines ignoring waits; the same list as replay `cuelist_run` | tick | walkthrough sections "20-line cue list" and "run against PC elapsed" (below); replay `cuelist_run: 521 ticks, 33 expects, 0 fails` |
+| 2 | A `.Cl2` with an `MP Play` line loads with that line red and runs the rest | tick | `cuelist-mp-play-TCuelist2Form.png` (line 2 red, `<>` on line 1); log lines below; `cl_assert_line 2 error`, `cl_assert_line 3 done`, `assert_view cue_number 2` |
+| 3 | `genmacro_sine_amp186` and `genmacro_vs_bgcue` pass | tick | ctest lines below; live half: `genmacro-amp186-TCueMacroControlForm.png`, `assert_text lMinMax "Min/Max : -186/186"` |
+| 4 | Movement traces match `17-position_ref.py` through `vectors.h`; the circle shows on the wire | tick | `test_movemacro: 576 trace(s) vs 17-position_ref.py, 0 mismatch(es)`, `gen_vectors_check`; sACN capture on atlas-ci2 and on this PC (below): radius 25801..25802, 5.000 s/rev, 40.1 packets/s |
+| 5 | The 48 shipped `.GS2` import with every field equal to the oracle and round-trip byte-exact through `gs2_raw` | tick | `gs2_check.py` on the 48 files: `48 files, 0 with differences`; the whole reference set `260 files, 0 with differences` |
+| 6 | A `.Udf` with a corrupted footer CRC is rejected with the oracle's message | tick | both strings below; ctest `test_udf_crc: ok (0 failures)` |
+| 7 | The prompt texts of `[12 Q9]` appear verbatim | tick for the W3 prompts (four `assert_prompt` lines and shots); the Q9 rows of other waves listed below | below |
+| 8 | Every 15/06-15/09 id has a hand file (CI check by id) | tick | `profiles_ids_w3` lines below |
+| + | Restart persistence of every W3 window | tick (14 windows; the `poOwnerFormCenter` / `poMainFormCenter` ones are centred each time, design 7.10) | below |
+
+### Item 1: the 20-line list (walkthrough) and `cuelist_run`
+
+Cues 0001 `odd` and 0002 `even`; Cuelist window New, right-click Add twice (10 lines each), Set Current Cue on every
+line (odd lines 0001, even 0002), Wait Elapsed 1 s on lines 2-20 through the edit panel, lines 10 and 15 Set Advance >
+Manual, Preferences > Use Color Codes, Save as `twenty` (`CueLists/00000001.Cl2` asserted). `sbPCElapsed`, Go:
+
+    assert_view cue_number 1   line 1 at 0 s           assert_view cue_number 2   line 2 at 1 s
+    assert_view cue_number 1   line 9 at 8 s           cl_assert_line 10 next / cl_assert_line 9 done
+    assert_view cue_number 1   10.5 s: the manual line ignored its 1 s wait
+    cl_execute -> assert_view cue_number 2   line 10 on Go !
+    assert_view cue_number 2   line 14 at Go + 4 s     cl_assert_line 15 next
+    cl_execute -> assert_view cue_number 1   line 15 on Go !
+    assert_view cue_number 2   line 20 at Go + 5 s     cl_assert_line 20 done
+
+Shots `cuelist-20-lines-*` and `cuelist-run-*` (line 20 grey = done, line 15 selected; waits green, cue column blue,
+`<>` on line 1, as `cuelist1.gif`). `cuelist_run` is the replay counterpart (a 20-line list against synthetic elapsed
+time through the same runner `lj_cl_run_step`): manual line 3 ignores its 5 s wait, `mp_play` line 5 skipped, Wait MTC
+held until Go, Goto beyond the end, Flash Seq, Load BGCue:
+
+    47: replay cuelist_run: 521 ticks, 33 expects, 0 fails
+
+### Item 2: MP Play
+
+`tests/ui/scripts/w3_mp_play.Cl2` (ours, 3 lines: cue 1; `mp_play`; Wait Elapsed 0.50 s with cue 2):
+
+    tests/ui/scripts/w3_mp_play.Cl2 line 2: mp_play not available, kept and skipped (load error)
+    cuelist: line 2 skipped (load error: MP Play)
+
+`cuelist-mp-play-TCuelist2Form.png`: line 2 `MP Play` in red, the rest black; Go, then `cue_number 2` and line 3 done.
+
+### Item 3: generic macros (ctest `replay_all -V`, `test_genmacro -V`, build-ninja-msvc)
+
+    47: replay genmacro_sine_amp186: 41 ticks, 23 expects, 0 fails
+    47: replay genmacro_vs_bgcue: 90 ticks, 15 expects, 0 fails
+    47: replay: 34 scenario(s), 0 failed
+    81: test_genmacro: 0 failure(s)
+
+Live: MAC 500 master, Generic Macro Editor, Select all, `Sine` (row 7 of the Macros.Mac order), Keep Amplitude
+Symmetrical, Amp+ bar to 185 and one Inc step: `lMacro "Sine"`, `lMinMax "Min/Max : -186/186"`, `gm_engine_on=1
+gm_slot_on=1`; then Disable Macros and `gm_engine_on=0` (rank 6 would otherwise move the pan / tilt under item 4).
+
+### Item 4: movement traces and the wire
+
+    82: test_movemacro: 576 trace(s) vs 17-position_ref.py, 0 mismatch(es)
+    50: 17-position_ref.py: all checks passed
+    50: gen_vectors --check: tests\vectors.h up to date
+    47: replay movemacro_six_shapes: 211 ticks, 27 expects, 0 fails
+    47: replay fanout_auto_delay: 101 ticks, 8 expects, 0 fails
+
+Walkthrough: Home Selected Fixtures, `mm_set 1 1 100 0` (System Ellipse, amplitude 100, frozen): `assert_pos 1 25802 0`
+twice, 500 ms apart (17-position_ref.py `macro_offset`); Fan Out over five MAC 500s with Delta Pan 127: `assert_pos` 1 / 3 /
+4 / 5 / 6 = -32512 / -16256 / 0 / 16256 / 32512 (17 s5.2).
+
+Wire: `tests/ui/scripts/w3_wire_circle.lj4s` (one MAC 500 at 1:001, the frozen check, then `mm_set 1 1 100 50` = Cycle
+5.00 sec for 8 s). Two monitors decoded pan (slots 11/12) and tilt (13/14) from the universe 1 multicast: a
+`08-sacn_ref.py`-style receiver (scratch, stdlib only) on `ssh <runner-host>` (<nic>, <lan-ip>) and the
+same on this PC (<lan-ip>). Release and Debug runs rc 0. atlas-ci2, the first 2 s of the circle, every third packet:
+
+    283886.6905 DATA <lan-ip> u1 seq   8 LJ4EVR <dev-pc> pan  25689 tilt   2411 r 25802 slots[11..14]=[228, 89, 137, 107]
+    283886.7655 DATA <lan-ip> u1 seq  11 LJ4EVR <dev-pc> pan  25351 tilt   4800 r 25801 slots[11..14]=[227, 7, 146, 192]
+    283886.8405 DATA <lan-ip> u1 seq  14 LJ4EVR <dev-pc> pan  24780 tilt   7186 r 25801 slots[11..14]=[224, 204, 156, 18]
+    283886.9152 DATA <lan-ip> u1 seq  17 LJ4EVR <dev-pc> pan  24001 tilt   9470 r 25802 slots[11..14]=[221, 193, 164, 254]
+    283886.9902 DATA <lan-ip> u1 seq  20 LJ4EVR <dev-pc> pan  22993 tilt  11707 r 25802 slots[11..14]=[217, 209, 173, 187]
+    283887.0652 DATA <lan-ip> u1 seq  23 LJ4EVR <dev-pc> pan  21798 tilt  13804 r 25801 slots[11..14]=[213, 38, 181, 236]
+    283887.1403 DATA <lan-ip> u1 seq  26 LJ4EVR <dev-pc> pan  20389 tilt  15812 r 25802 slots[11..14]=[207, 165, 189, 196]
+    283887.2158 DATA <lan-ip> u1 seq  29 LJ4EVR <dev-pc> pan  18823 tilt  17647 r 25802 slots[11..14]=[201, 135, 196, 239]
+    283887.2906 DATA <lan-ip> u1 seq  32 LJ4EVR <dev-pc> pan  17091 tilt  19329 r 25801 slots[11..14]=[194, 195, 203, 129]
+    283887.3655 DATA <lan-ip> u1 seq  35 LJ4EVR <dev-pc> pan  15178 tilt  20864 r 25801 slots[11..14]=[187, 74, 209, 128]
+    283887.4405 DATA <lan-ip> u1 seq  38 LJ4EVR <dev-pc> pan  13163 tilt  22191 r 25801 slots[11..14]=[179, 107, 214, 175]
+
+    wire_remote.log circle packets 320 span 7.975 s r 25801..25802 swept 574.2 deg -> 5.000 s/rev max gap 0.026 s pps 40.1
+    wire_local.log  circle packets 320 span 7.985 s r 25801..25802 swept 574.2 deg -> 5.006 s/rev max gap 0.032 s pps 40.1
+
+The radius is the oracle's 25802 within the integer tables' 1 unit; the figure starts at index 0 (25802 : 0, the frozen
+assert) and turns in the window's 5.00 s; 3 TERM on quit.
+
+### Item 5: the 48 shipped `.GS2`
+
+    python -I tools/gs2_check.py --tests D:\lj4evr\build-ninja-msvc\lj4evr_tests.exe reference/installer/extracted_2.209/app/User/UserFixtures/*.GS2
+    OK   reference/installer/extracted_2.209/app/User/UserFixtures/_Setup.GS2
+    OK   reference/installer/extracted_2.209/app/User/UserFixtures/Generic PanTilt (16bit A).GS2
+    ... (48 OK lines)
+    48 files, 0 with differences
+    ctest gs2_check (build-int3-nosdl, LJ4EVR_REFERENCE_DIR): 260 files, 0 with differences
+    84: test_gs2: ok (0 failures)
+
+Each line compares every field of `lj4evr_tests gs2_dump` with `tools/ref/16-gs2_ref.py` and requires `roundtrip ok`
+(our `gs2_raw` write equals the file) and the oracle's own `serialize(parse(x)) == x`.
+
+### Item 6: a corrupted `.Udf` footer CRC
+
+`tests/ui/scripts/w3_synthetic.Udf` (ours, 214 bytes) with byte 178 (the first footer byte, the CRC) XOR 0xFF:
+
+    oracle  python -I tools/ref/16-gs2_ref.py dump w3_badcrc.Udf  -> AssertionError: footer CRC mismatch
+    ours    lj4evr_tests gs2_dump w3_badcrc.Udf                   -> error footer CRC mismatch
+    85: test_udf_crc: ok (0 failures)
+
+`gs2_import` (the UI verb) and Import Fixture Profile fail with the importer's message, `LJ_GS2_ERR_CRC`.
+
+### Item 7: the `[12 Q9]` prompt texts
+
+Live, each with `assert_prompt` and a shot of the box (`*-TConfirmForm.png`):
+
+| Prompt | Where | Shot |
+|---|---|---|
+| `Current CueList was modified` / `This will clear the current cuelist` (exe 0x188D9C / 0x17FD7C) | Cuelist New on a modified list | `cuelist-new-prompt-TConfirmForm.png` |
+| `Modified cuelist includes link to other cuelist - run without saving first ?` (0x17DF50) | Go on a modified list holding a Link Cuelist line (`w3_link.Cl2`) | `cuelist-link-prompt-TConfirmForm.png` |
+| `Any unapplied profile changes will be lost ?` (0x319674) | Generic Fixture Profile, Cancel after typing in Author | `profile-editor-prompt-TConfirmForm.png` |
+
+`Followspot settings changed but not saved - save now?` and `Clear all followspot settings, are you sure ?` are asserted
+by `test_gdc_fades_fs`, `Error : Maximum number of Macros exceeded` by `test_genmacro`. A grep of every Q9 literal
+against `src/` finds 66 of 86. The 20 absent ones belong to other waves' windows: Fixture Configuration (`Clear Selected
+Fixtures ?`, `Do you wish to change the fixtures DMX address ?`, `Clear data for new fixtures ?`, `Apply Default DMX
+values to new/modified fixtures ?`, `Copy fixture, are you sure?`, `Clear selected fixtures, are you sure?`, `Place all
+Fixtures on this tab ?`), Delete Files (`Delete All Custom Selections ?`, `Deleting Files. Please Wait..`), cue slots
+(`No free sequence slots in cue - sequence not added to cue`, `No priority slots available - add sequence as
+non-priority sequence ?`), Statics 2 (`Get Page Error !`, `Page Error (Idx = %d)`, `Error!`), lasers, format updates,
+restart, patch, snapshot, password and startup status (`%s emitting!`, `Enable laser output ?`, the three update strings,
+`Do you wish to restart LightJockey now ?`, `Clear All Inverted Channels ?`, `Cancel will loose any recorded data - do you
+wish to Cancel ?`, `Does your momma kow you are doing this ?`, `This window will selfdestruct ...`); and the note's
+`Close LightJockey ?` (the code has the DFM's `Close Lightjockey ?`). Design 10 W4's caption diff owns them.
+
+### Item 8: profiles_ids (ctest `profiles_ids_w3 -V`)
+
+    88: check_profiles: tier 6 15/06 Atomic 3000: 3 of 3 ids have a matching hand file
+    88: check_profiles: tier 7 15/07 MiniMAC: 5 of 5 ids have a matching hand file
+    88: check_profiles: tier 8 15/08 RoboColor: 8 of 8 ids have a matching hand file
+    88: check_profiles: tier 9 15/09 MAC 550 / 575 / 700: 4 of 4 ids have a matching hand file
+    (tiers 1-5 as in W2: 4 / 2 / 8 / 11 / 9 ids, every one matched)
+
+### Persistence (forms.ini, Main.Ini)
+
+`tests/ui/scripts/w3_positions_1.lj4s` (open, `move`, close the 14 persisting W3 windows, on the walkthrough's end state)
+then `w3_positions_2.lj4s` (reopen, `assert_pos`): both rc 0. After the pair:
+
+    forms.ini [CUELIST2] Left=100 Top=1600 Width=545 Height=506   [SAVECUELIST2FORM] Left=140 Top=1620
+    [SELECTCUELIST2FORM] Left=180 Top=1640 Width=377 Height=318   [CLSETCUETRIGFORM] Left=220 Top=1660
+    [SAVEMACRODIALOG] Left=300 Top=1700   [LOADMACROLIST] Left=340 Top=1720 Width=200 Height=200
+    [MOVEMENTMACROFORM] Left=380 Top=1740   [FANOUTFORM] Left=420 Top=1760 Width=539 Height=255
+    [AUTODELAYFORM] Left=460 Top=1780   [CUEMACROFORM] Left=500 Top=1800   [GENERICMEGAFORM] Left=540 Top=1820 Width=750 Height=500
+    [FOLLOWLISTFORM] Left=580 Top=1840 Width=200 Height=230   [DEFAULT2FORM] Left=620 Top=1860
+    Main.Ini [MACRO] Left=260 Top=1680   (the Generic Macro Editor)
+
+Centred each time and never persisted (DFM `Position`): Log TimeCode, Delete Macros, Edit FollowSpot Settings, Generic
+Fixture Profile, Customize Fixture, Import, Export (`poOwnerFormCenter`), Channel Configuration (`poMainFormCenter`).
+
+### What the walkthrough and the GIF comparison found (fixed in the app)
+
+| Where | Found | Fix |
+|---|---|---|
+| `LJ_FN_HOME_SELECTED_FIXTURES` | `fn: no binding for LJ_FN_HOME_SELECTED_FIXTURES`: the hotkey and Fixture toolbar button 9 did nothing, so Home left pan / tilt at DMX 0 (-32768) | `lj_ctl_movement_home_selected()` (`controls/lj_ctl_movement.c`): every selected fixture with pan / tilt to 0 : 0, state Snap, no window needed (04 s4.1); bound in `lj_app_w3.c` |
+| Cuelist New (toolbar, window, File menu) | no `Current CueList was modified` prompt; the window's own New freed its list without the runner letting go of it (a stopped run keeps the list pinned) and leaked an app-loaded one | one path: the form runs `LJ_ACT_NEW_CUELIST`; the app asks (`[PREFS] WarnCueList`) and replaces through `cl_replace` (unpin, then free) |
+| Cuelist run with a Link line | `Modified cuelist includes link to other cuelist - run without saving first ?` missing | `cl_op` asks before Top / Run / Run from mark / Go-on-idle on a modified list holding `link_cuelist`; OK runs the op |
+| Generic Fixture Profile Cancel | a typed field never prompted: the TEdits have no OnChange, so `dirty` stayed 0 | Cancel reads the controls into the record and compares it with the record before |
+| TConfirmForm | the longer Q9 lines ran past the 153-px bevel and the 267-px client (`Modified cuelist ...` cut at the edge) | the box widens to its longest line and the bevel grows to the text; short prompts keep the DFM geometry (PROPOSAL) |
+| Cue list grid | `<>` missing on lines without a command (cuelist1.gif lines 1 / 4; exe 0x179F14 beside Auto / Man); Use Color Codes did nothing | `lj_cl_cmd_grid[none] = "<>"`; colour codes: waits green, other commands blue, the Cue/Trig column blue (07 s7; hues PROPOSAL) |
+| TListView (every report view) and the cue grid | a last column wider than the view drew its grid line past the view edge: a 1-px clBtnFace line down the Cuelist command panel (x 495) | the last column stops at the view edge (`lj_w_listview.c`, `lj_cuelist_form.c` lv_paint) |
+| Header sections | a caption wider than its clipped section was dropped (`Comment/Exe Parameter` blank; Intensity Groups `UserName` blank) | clipped per glyph at the section edge (`cuelistactive.gif` shows `Comme`) |
+| Generic Macro Editor | `Min/Max -186/186` (the format called unlocated), lTime `... sec`, a black preview, black bars with a blue centre fill and bare numbers | exe formats `Min/Max : %d/%d` (0x3399F8) and `Cycle time: %.1f seconds` (0x33A8EC); preview #0000FF with the cyan 0 line and centre line, raw shape grey 3 px (macrotrackingmacroout.gif, 1:1); bars #808080 filled white from the left with `Pos Amplitude n` / `Neg Amplitude n` / `Cycle time: n sec` / `Cycle time: never` (0x33AB7C-0x33ABC8) |
+| Movement Macro trace, Fan Out preview | centre cross #4040FF | red (movementmacro.gif 1:1 col 69 / row 107; fanoutdialog.gif) |
+| Pan/Tilt Macro Auto Delay | the three values were bare labels | read-only white edits, greyed unless their style is chosen (autodelay.gif) |
+| Edit FollowSpot Settings | four equal 107-px columns (the grid had one width) | `lj_w_grid.col_w` (ColWidths) and 20 / 30 / 150 / rest (editfollowspot.gif) |
+| Channel Configuration | GM Control `Enabled`, lFixType without the fixture number, lDmxAdr `1:001` | `Yes` / `No`, `(n) <profile>`, the `1/38` form (channelconfiguration.gif) |
+| `--script` `shot` | the open confirm box was never captured | `lj_win_message_window()` captured once |
+
+Script-side corrections (the app was right): the stay-on-top Unassigned list opens centred over the desktop and took
+drops 3-6 (`move TUnassignedForm 1800 1600` first); `click` takes no `.row.col`, so `Sine` is row 7 by coordinates; no
+bar x gives exactly 186 (x 126 = 185, then one Inc step); the Cuelist window shows a loaded list on its 100 ms timer
+(`wait 300` after `cl_load`); the `RECONCILE` lines resolved (`eElapsedSec`, `sbSelectAll`, the Fan Out `DeltaPan` bar
+right-click = max 127 instead of a drag on pb1, the profile editor on a New Profile record).
+
+Goldens re-rendered and reviewed (REVIEWED.tsv rows): `WIN_CUELIST_FORM`, `WIN_INTENSITY_GROUPS`, `W3GM_EDITOR`,
+`W3MM_MOVEMACRO`, `W3MM_BEZIER`, `W3MM_FANOUT`, `W3MM_AUTODELAY`, `W3GDC_EDIT_FOLLOWSPOT`, `W3PE_CHANNELCONFIG`.
+Compared and left as they are: `W3GDC_GENERIC_DMX` (genericcontrol.gif: map colours and fader match),
+`W3GDC_SET_FADE_STATUS` (sequencefadecontrol.gif), `W3GDC_SELECT_FOLLOWSPOT` (selectfollowspotsetting.gif),
+`W3MM_CUEMACRO` (cuemacrocontrol.gif), `W3PE_PROFILE_EDITOR` (userdeffixtureinfotab.gif), `W3PE_CUSTOMIZE` (no LJ2
+capture of the window; customizepop.gif is the popup). Button glyphs (arrows, check marks, CW / CCW, Top / Run) stay W4 art.
+
+### Tests after the fixes
+
+    ctest build-int3-nosdl (all rows, LJ4EVR_REFERENCE_DIR): 100% tests passed, 0 tests failed out of 98
+        test_layering: 398 file(s) checked, 190 header(s) compiled alone, 0 finding(s)
+        gs2_check: 260 files, 0 with differences
+    ctest -E test_layering, build-ninja-msvc and build-debug-win: 100% tests passed, 0 tests failed out of 97 (each)
+    0 warnings under /W4 /WX in the three trees
+    build-debug-win lj4evr --selftest: rc 0, 5 OK lines; no "no binding for handler", "unknown event", "behaviour file",
+        "matches no DFM"
+
+Not fixed, recorded in docs/fidelity.md: the Cuelist `Elapsed` label (DFM caption form `Elapsed 0000:00:00`; the GIF
+reads `Elapsed:` and a time, exe 0x17891C, format not located), the Movement Macro trace density (128 points; the GIF's
+figure is denser), the Tweak row's O/S/F (the W1 model), header and cell text clipped per glyph or dropped where VCL clips
+per pixel.

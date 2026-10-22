@@ -13,6 +13,7 @@
 #include "core/lj_str.h"
 #include "desktop/lj_desktop.h"
 #include "gfx/lj_draw.h"
+#include "model/lj_show.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
@@ -567,6 +568,27 @@ int lj_ctl_movement_position(lj_window *win, int32_t *pan, int32_t *tilt)
 
 void lj_ctl_movement_set(lj_window *win, int32_t pan, int32_t tilt) { lj_mv *mv = mv_of(win); if (mv) move_to(mv, pan, tilt, 0); }
 void lj_ctl_movement_home(lj_window *win) { lj_mv *mv = mv_of(win); if (mv) move_to(mv, 0, 0, 1); }   /* "Click home to center" (CHM 3045); always absolute (CHM 3107) */
+
+void lj_ctl_movement_home_selected(void)
+{
+    lj_ctx *c = lj_ctx_get();
+    lj_scene *sc;
+    lj_mv mv;
+    int f, n = 0;
+    memset(&mv, 0, sizeof mv);
+    lj_lock();
+    sc = scene_of();
+    for (f = 0; sc && f < LJ_FIXTURES; f++) {
+        if (!lj_sel_is_selected(f) && f != lj_sel_master()) continue;
+        if (!(mv.p = lj_show_profile(c->show, f)) || (!mv.p->pt16 && !mv.p->pt8)) continue;
+        mv.bits16 = mv.p->pt16 != 0;
+        write_pos(&mv, sc, f, 0, 0, 3);
+        write_state(&mv, sc, f, 3, LJ_SNAP);
+        n++;
+    }
+    if (n) mark_modified();
+    lj_unlock();
+}
 int  lj_ctl_movement_resolution(lj_window *win) { lj_mv *mv = mv_of(win); return mv ? mv->res : -1; }
 
 void lj_ctl_movement_set_resolution(lj_window *win, int res)

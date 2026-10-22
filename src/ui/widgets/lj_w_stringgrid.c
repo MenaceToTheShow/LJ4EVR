@@ -25,6 +25,14 @@ static void fit_sb(lj_w_grid *g)
     g->top_row = g->sb.pos;
 }
 
+static int col_x(const lj_w_grid *g, int col)   /* left of col from the grid's inner edge */
+{
+    int i, x = 0;
+    if (!g->col_w) return col * (g->def_cw + GR_LINE);
+    for (i = 0; i < col; i++) x += g->col_w[i] + GR_LINE;
+    return x;
+}
+
 int lj_w_grid_cell_rect(const lj_widget *w, int col, int row, lj_rect *out)
 {
     const lj_w_grid *g = (const lj_w_grid *)w;
@@ -32,9 +40,9 @@ int lj_w_grid_cell_rect(const lj_widget *w, int col, int row, lj_rect *out)
     if (col < 0 || col >= g->cols || row < 0 || row >= g->rows) return -1;
     slot = row < g->fixed_rows ? row : row - g->top_row;
     if (row >= g->fixed_rows && (row - g->fixed_rows < g->top_row)) return -1;
-    out->x = GR_BORDER + col * (g->def_cw + GR_LINE);
+    out->x = GR_BORDER + col_x(g, col);
     out->y = GR_BORDER + slot * (g->def_rh + GR_LINE);
-    out->w = g->def_cw; out->h = g->def_rh;
+    out->w = g->col_w ? g->col_w[col] : g->def_cw; out->h = g->def_rh;
     return out->y + out->h <= w->h - GR_BORDER ? 0 : -1;
 }
 
@@ -43,7 +51,7 @@ int lj_w_grid_cell_at(const lj_widget *w, int x, int y, int *col, int *row)
     const lj_w_grid *g = (const lj_w_grid *)w;
     int c, r;
     if (x < GR_BORDER || y < GR_BORDER || x >= w->w - GR_BORDER || y >= w->h - GR_BORDER) return -1;
-    c = (x - GR_BORDER) / (g->def_cw + GR_LINE);
+    for (c = 0; c < g->cols && x - GR_BORDER >= col_x(g, c + 1); c++) { }
     r = (y - GR_BORDER) / (g->def_rh + GR_LINE);
     if (r >= g->fixed_rows) r += g->top_row;
     if (c >= g->cols || r >= g->rows) return -1;

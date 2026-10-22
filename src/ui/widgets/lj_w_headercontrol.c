@@ -4,6 +4,9 @@
  * with the TListView report header. */
 #include "ui/widgets/lj_widgets_lists.h"
 
+#include <string.h>
+#include "core/lj_str.h"
+
 #define HC_GRAB 3
 
 int lj_w_header_section_at(const int *widths, int n, int x)
@@ -29,11 +32,15 @@ void lj_w_header_paint(lj_surface *s, const lj_widget *w, int ax, int ay, int wi
         if (i == pressed) { lj_fill(s, x, ay, cw, h, LJ_CLR_BTNFACE); lj_bevel1(s, x, ay, cw, h, LJ_CLR_BTNSHADOW, LJ_CLR_BTNHIGHLIGHT); }
         else lj_button_raised(s, x, ay, cw, h);
         if (cols[i].caption) {
-            tw = lj_text_width(f, cols[i].caption);
+            char t[80];
+            size_t k;
+            (void)lj_str_copy(t, sizeof t, cols[i].caption);
+            k = strlen(t);
+            while (k > 0 && lj_text_width(f, t) + 4 > cw) t[--k] = 0;   /* clipped at the section / view edge (cuelistactive.gif "Comme"); ponytail: per glyph, lj_surface has no clip rect */
+            tw = lj_text_width(f, t);
             if (cols[i].alignment == LJ_TA_RIGHT) tx = x + cw - 4 - tw;
             else if (cols[i].alignment == LJ_TA_CENTER) tx = x + (cw - tw) / 2;
-            if (tw + 4 <= cw)   /* ponytail: no per-section clip, a caption wider than its section is dropped */
-                lj_w_text(s, w, tx + (i == pressed), ty + (i == pressed), cols[i].caption, LJ_CLR_3DDKSHADOW);
+            if (k) lj_w_text(s, w, tx + (i == pressed), ty + (i == pressed), t, LJ_CLR_3DDKSHADOW);
         }
         x += cw;
     }
