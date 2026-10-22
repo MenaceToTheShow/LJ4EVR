@@ -72,6 +72,29 @@ enum lj_win {
     LJ_WIN_NOTES,            /* TNoteForm           "Notes" (poScreenCenter, stay-on-top) [01 s4] */
     LJ_WIN_ABOUT,            /* TAboutForm2         "About LightJockey" 360x346: our product string, VERSION, THIRD_PARTY_NOTICES.txt; no logo (D2, LORD_FIDELITY-16) */
     LJ_WIN_STRIKING_LAMPS,   /* TAutoLampForm       "Striking Lamps" progress with Stop [01 s6.2] */
+    /* ---- W3 (appended; the TFORM class each binds, its file and owner: docs/w3-contracts.md section 4) ---- */
+    LJ_WIN_CUELIST_FORM,      /* TCuelist2Form */
+    LJ_WIN_SAVE_CUELIST,      /* TSaveCuelist2Form */
+    LJ_WIN_SELECT_CUELIST,    /* TSelectCuelist2Form */
+    LJ_WIN_CL_SET_CUE_TRIG,   /* TClSetCueTrigForm */
+    LJ_WIN_LOG_TIMECODE,      /* TLogTimeCodeForm */
+    LJ_WIN_GENMACRO_EDITOR,   /* TCueMacroControlForm */
+    LJ_WIN_SAVE_GENMACRO,     /* TSaveMacroDialog */
+    LJ_WIN_SELECT_GENMACRO,   /* TLoadMacroList */
+    LJ_WIN_MOVEMACRO_EDITOR,  /* TMovementMacroForm (code-built) */
+    LJ_WIN_DELETE_MOVEMACRO,  /* TDeleteMacrosForm */
+    LJ_WIN_FAN_OUT,           /* TFanOutForm */
+    LJ_WIN_AUTO_DELAY,        /* TAutoDelayForm */
+    LJ_WIN_CUE_MACRO_CONTROL, /* TCueMacroForm */
+    LJ_WIN_GDC_FORM,          /* TGenericMegaForm */
+    LJ_WIN_FOLLOWSPOT_FORM,   /* TFollowSpotForm */
+    LJ_WIN_FOLLOWSPOT_LIST,   /* TFollowListForm */
+    LJ_WIN_SEQ_FADES,         /* TDefault2Form */
+    LJ_WIN_PROFILE_EDITOR,    /* TScanner2DefsForm */
+    LJ_WIN_CUSTOMIZE_FIXTURE, /* TFixtureSetupForm */
+    LJ_WIN_CHANNEL_CONFIG,    /* TChannelDefForm */
+    LJ_WIN_GS2_IMPORT,        /* TFixtureImportForm */
+    LJ_WIN_GS2_EXPORT,        /* TExportFixtureForm */
     LJ_WIN_COUNT
 };
 

@@ -49,6 +49,7 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "model/lj_library.c": {"sys/stat.h"},   # POSIX mkdir for lj_library_create (Windows uses <direct.h>/<io.h>)
     "io/lj_midi_coremidi.c": {"CoreMIDI/CoreMIDI.h"},
     "app/lj_sysmem.c": {"windows.h", "unistd.h", "sys/sysctl.h"},   # W2 app: the memory gauge free-memory query (ME-87)
+    "core/lj_fsinfo.c": {"sys/types.h", "sys/stat.h"},   # W3 movement: file mtime (LORD_FIDELITY-12) and the MacroShapes mkdir
 }
 NAME_EXEMPT = {"app/main.c"}
 

@@ -91,7 +91,7 @@ const lj_midi_map_entry *lj_midi_match(const lj_midi_map *m, int kind_mask, int 
 
 void lj_midi_post(const uint8_t msg[3])
 {
-    if (msg[0] >= 0xF0) return;                                   /* system: clock, active sensing (no MIDI clock, 05 s7.2); MTC 0xF1 is W3 */
+    if (msg[0] >= 0xF0 && msg[0] != 0xF1) return;                /* system: clock, active sensing (no MIDI clock, 05 s7.2); 0xF1 = an MTC quarter frame, lj_mtc_feed on the UI thread (W3) */
     lj_lock();
     if (msg[0] < 0x80 || msg[1] > 0x7F || msg[2] > 0x7F || lj_mq.n >= LJ_MIDI_QUEUE) lj_mq.dropped++;   /* malformed or full: dropped, never dispatched */
     else { memcpy(lj_mq.msg[(lj_mq.head + lj_mq.n) % LJ_MIDI_QUEUE], msg, 3); lj_mq.n++; }
@@ -263,4 +263,65 @@ int lj_midi_save(const char *ini_path, const char *map_path, const lj_midi_map *
     }
     ok |= lj_rec_close(rec);
     return ok ? -1 : 0;
+}
+
+/* ---- W3: MIDI time code [03 s6.4, design 8.3] and the LORD_C-6 byte-stream parser (cuelist-core) ---- */
+#define LJ_MTC_TIMEOUT_US 500000u   /* = LJ_MTC_TIMEOUT_MS of engine/lj_engine_rules.h (io/ cannot include engine/) */
+
+void lj_mtc_reset(lj_mtc *t) { memset(t, 0, sizeof *t); }
+
+/* One quarter-frame data byte (0nnn dddd: piece n, nibble d). Pieces 0..7 = frames lo/hi, seconds lo/hi, minutes lo/hi,
+ * hours lo, hours hi + rate (0 = 24, 1 = 25, 2 = 30 drop, 3 = 30). A full set ends on piece 7; the time it carries is
+ * the one at piece 0, 2 frames behind the source, displayed as received like LJ2 (LJ_MTC_LATE_FRAMES). */
+int lj_mtc_feed(lj_mtc *t, uint8_t qf_data, uint64_t now_us)
+{
+    static const uint8_t rate_fps[4] = { 24, 25, 29, 30 };
+    int n = (qf_data >> 4) & 7, f, s, m, h, fps;
+    if (qf_data > 0x7F) return 0;
+    if (n == 0) t->have = 0;                                   /* a set starts at piece 0 */
+    t->piece[n] = (uint8_t)(qf_data & 0x0F);
+    t->have |= (uint8_t)(1u << n);
+    t->last_us = now_us;
+    if (n != 7 || t->have != 0xFF) return 0;
+    t->have = 0;
+    f = t->piece[0] | (t->piece[1] & 1) << 4; s = t->piece[2] | (t->piece[3] & 3) << 4;
+    m = t->piece[4] | (t->piece[5] & 3) << 4; h = t->piece[6] | (t->piece[7] & 1) << 4;
+    fps = rate_fps[(t->piece[7] >> 1) & 3];
+    if (f >= (fps == 29 ? 30 : fps) || s > 59 || m > 59 || h > 23) return 0;   /* a garbled set is dropped, the last good time stays */
+    t->fps = (uint8_t)fps;
+    t->ms = (uint32_t)(((h * 60 + m) * 60 + s) * 1000) + (uint32_t)((f * 1000 + (fps == 29 ? 30 : fps) - 1) / (fps == 29 ? 30 : fps));   /* lj_cl_hmsf_ms packing (model/lj_cuelist.h) */
+    t->running = 1;
+    return 1;
+}
+
+int lj_mtc_time(const lj_mtc *t, uint64_t now_us, uint32_t *ms)
+{
+    if (!t->running || now_us - t->last_us > LJ_MTC_TIMEOUT_US) return -1;   /* none yet, or time code stopped: the time-out preference acts on -1 */
+    *ms = t->ms;
+    return 0;
+}
+
+/* Raw MIDI bytes -> 3-byte messages: running status kept in run[0] across calls, real-time bytes (F8..FF) skipped where
+ * they sit, SysEx and system common other than F1 skipped up to the next status byte; F1 (MTC quarter frame) is
+ * emitted as {F1, data, 0} and, being system common, cancels running status. Returns the messages emitted. */
+int lj_midi_feed(const uint8_t *bytes, size_t n, uint8_t run[3], int *have, void (*msg)(const uint8_t m[3], void *ud), void *ud)
+{
+    size_t i;
+    int out = 0, need;
+    if (*have < 0 || *have > 1) *have = 0;
+    for (i = 0; i < n; i++) {
+        uint8_t b = bytes[i];
+        if (b >= 0xF8) continue;                                       /* real-time: clock, active sensing */
+        if (b & 0x80) { run[0] = (uint8_t)(b >= 0xF0 && b != 0xF1 ? 0 : b); *have = 0; continue; }
+        if (!run[0]) continue;                                         /* SysEx data, or data with no status */
+        need = (run[0] == 0xF1 || (run[0] & 0xE0) == 0xC0) ? 1 : 2;    /* F1, program change, channel pressure: 1 data byte */
+        run[1 + (*have)++] = b;
+        if (*have < need) continue;
+        if (need == 1) run[2] = 0;
+        *have = 0;
+        if (msg) msg(run, ud);
+        out++;
+        if (run[0] == 0xF1) run[0] = 0;
+    }
+    return out;
 }

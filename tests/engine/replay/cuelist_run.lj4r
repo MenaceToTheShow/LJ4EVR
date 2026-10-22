@@ -1,0 +1,94 @@
+LJ4 replay 1
+# cuelist_run (design 3.7 / 10 W3 acceptance 1-2; owner cuelist-core): a 20-line cue list driven by the harness's
+# UI-thread emulation of app/lj_cuelist_run.h (lj_cl_run_step every LJ_CL_STEP_MS of synthetic time between ticks)
+# against PC elapsed time. The same list as tests/app/test_cuelist_run.c (t_list20); expects are the frames of the cues
+# the list latches at the tick its wait elapses, and the runner's state (expect_cl).
+# NOTE design 2.3 rule 4 / ME-2: the cue list never runs in the engine; every effect here is a command the harness posts
+#      at the 10 ms step that executed the line (loads pinned the way the UI thread pins them).
+# NOTE 03 s6.3 "Command is ignored in Manual Mode" (LJ_CL_MANUAL_IGNORES_WAITS): line 3 waits 5 s but moves only on
+#      `cl_go` (tick 80 = 2000 ms, before its wait would have elapsed); line 12 has no wait and waits for Go too.
+# NOTE design 8.5 / ME-11: line 5 is `mp_play` (load_error, red): kept, skipped, its cue 4 never latches (tick 100).
+# NOTE 03 s6.4: no MTC source in the harness, so line 13's Wait MTC holds until Go (tick 320), as LJ2 with no MTC.
+# NOTE RN v2.6 b7 (LJ_CL_GOTO_BEYOND_IGNORED): line 17 Goto 19 skips line 18 (cue 4 at tick 440 would read 40), line 19
+#      Goto 2 loops: cue 2 again 1 s later (tick 480), then manual line 3 waits; STOP at tick 500.
+# NOTE Wait PC-Clock: the harness clock is synthetic midnight + t, so line 15's 00:00:10 is t = 10000 ms (tick 400).
+# NOTE Flash Seq 5 (line 8, 0.50 s) holds 1:2 = 200 from 3000 ms (tick 120) and releases at 3500 ms (tick 140);
+#      Load BGCue 1 (line 11) brings 1:3 = 77 at 4000 ms (tick 160).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+patch 3 profile=19 link=1 addr=3
+profile 3 class1=intensity use_gm=1
+seq 1 name="one" scene st=1000 ft=0 ch 1:1=10:S
+seq 2 name="two" scene st=1000 ft=0 ch 1:1=20:S
+seq 3 name="three" scene st=1000 ft=0 ch 1:1=30:S
+seq 4 name="four" scene st=1000 ft=0 ch 1:1=40:S
+seq 5 name="flash" scene st=1000 ft=0 ch 1:2=200:S
+seq 6 name="bg" scene st=1000 ft=0 ch 1:3=77:S
+cue 1 slot=1 seq=1
+cue 2 slot=1 seq=2
+cue 3 slot=1 seq=3
+cue 4 slot=1 seq=4
+bg 1 name="BG"
+bgslot 1 seq=6
+cl 1 name="Main show"
+clline adv=auto cmd=none cue=1
+clline adv=auto cmd=wait_elapsed param=1000 cue=2
+clline adv=manual cmd=wait_elapsed param=5000 cue=3
+clline adv=auto cmd=wait_elapsed param=500 trig=3
+clline adv=auto cmd=mp_play cue=4
+clline adv=auto cmd=hotkey_command param=7
+clline adv=auto cmd=wait_elapsed param=500
+clline adv=auto cmd=flash_sequence param=500 ref=5
+clline adv=auto cmd=wait_elapsed param=1000 cue=4
+clline adv=auto cmd=execute_file pstr="fog.exe"
+clline adv=auto cmd=load_background_cue ref=1
+clline adv=manual cmd=none cue=1
+clline adv=auto cmd=wait_mtc param=10000 pstr=25 cue=2
+clline adv=auto cmd=wait_elapsed param=1000 cue=3
+clline adv=auto cmd=wait_pc_clock param=10000 cue=4
+clline adv=auto cmd=wait_elapsed param=1000 cue=1
+clline adv=auto cmd=goto_line param=19
+clline adv=auto cmd=none cue=4
+clline adv=auto cmd=goto_line param=2
+clline adv=auto cmd=goto_line param=99
+at 0 cl_run 1 top
+expect 0 1:1=10 1:2=0 1:3=0
+expect_cl 0 state=running next=2 last=1
+expect 39 1:1=10
+expect 40 1:1=20
+expect_cl 40 state=wait_go next=3 last=2
+expect 79 1:1=20
+at 80 cl_go
+expect 80 1:1=30
+expect_cl 80 state=running next=4 last=3
+expect 100 1:1=30
+expect_cl 100 state=running next=7 last=6 fn=1
+expect 119 1:2=0
+expect 120 1:2=200
+expect 139 1:2=200
+expect 140 1:2=0
+expect 159 1:1=30 1:3=0
+expect 160 1:1=40 1:3=77
+expect_cl 160 state=wait_go next=12 last=11
+at 240 cl_go
+expect 240 1:1=10
+expect_cl 300 state=running next=13 last=12
+expect 300 1:1=10
+at 320 cl_go
+expect 320 1:1=20
+expect 359 1:1=20
+expect 360 1:1=30
+expect 399 1:1=30
+expect 400 1:1=40
+expect 439 1:1=40
+expect 440 1:1=10
+expect_cl 440 state=running next=2 last=19
+expect 479 1:1=10
+expect 480 1:1=20
+expect_cl 480 state=wait_go next=3 last=2
+at 500 cl_stop
+expect_cl 500 state=idle last=2
+expect 520 1:1=20 1:3=77

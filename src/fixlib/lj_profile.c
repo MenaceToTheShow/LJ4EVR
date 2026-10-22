@@ -12,10 +12,15 @@
 #include "fixlib/hand/lj_mac250.h"
 #include "fixlib/hand/lj_mac2000.h"
 #include "fixlib/hand/lj_roboscan.h"
+#include "fixlib/hand/lj_atomic.h"
+#include "fixlib/hand/lj_minimac.h"
+#include "fixlib/hand/lj_robocolor.h"
+#include "fixlib/hand/lj_mac550.h"
 
-/* W2 tier-1 families 15/02-15/05: one array per hand file. */
+/* W2 / W3 tier-1 families 15/02-15/09: one array per hand file. */
 static const struct { const lj_profile *const *p; int n; } lj_hand_w2[] = {
-    { lj_hand_mac600s, LJ_MAC600_COUNT }, { lj_hand_mac250s, LJ_MAC250_COUNT }, { lj_hand_mac2000s, LJ_MAC2000_COUNT }, { lj_hand_roboscans, LJ_ROBOSCAN_COUNT } };
+    { lj_hand_mac600s, LJ_MAC600_COUNT }, { lj_hand_mac250s, LJ_MAC250_COUNT }, { lj_hand_mac2000s, LJ_MAC2000_COUNT }, { lj_hand_roboscans, LJ_ROBOSCAN_COUNT },
+    { lj_hand_atomics, LJ_ATOMIC_COUNT }, { lj_hand_minimacs, LJ_MINIMAC_COUNT }, { lj_hand_robocolors, LJ_ROBOCOLOR_COUNT }, { lj_hand_mac550s, LJ_MAC550_COUNT } };
 
 static const lj_profile *lj_hand_by_id(uint16_t id)
 {

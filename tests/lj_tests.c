@@ -79,7 +79,25 @@ int lj_test_chase(int argc, char **argv);
 int lj_test_lock_hold(int argc, char **argv);
 int lj_test_engine_w2(int argc, char **argv);
 int lj_test_profiles_w2(int argc, char **argv);   /* W2 profiles track */
+/* W3 contracts (docs/w3-contracts.md section 7), appended */
+int lj_test_cuelist(int argc, char **argv);
+int lj_test_cuelist_run(int argc, char **argv);
+int lj_test_genmacro(int argc, char **argv);
+int lj_test_movemacro(int argc, char **argv);
+int lj_test_movement_w3(int argc, char **argv);   /* W3 movement: the five windows headless (tests/ui/test_movement_w3.c) */
+int lj_test_gdc_grammar(int argc, char **argv);
+int lj_test_gs2(int argc, char **argv);
+int lj_test_udf_crc(int argc, char **argv);
+int lj_test_gs2_dump(int argc, char **argv);
+int lj_test_profile_editor(int argc, char **argv);
+int lj_test_profile_editor_form(int argc, char **argv);   /* profile-editor: the three windows headless (tests/ui/test_profile_editor_form.c) */
+int lj_test_followspot(int argc, char **argv);
+int lj_test_gdc_fades_fs(int argc, char **argv);   /* W3 gdc-fades-followspot windows */
 
+int lj_test_cuelist_form(int argc, char **argv);   /* W3 cuelist-window */
+int lj_test_uiscript_w3(int argc, char **argv);    /* W3 desktop-app */
+int lj_test_profiles_w3(int argc, char **argv);   /* W3 profiles */
+int lj_test_genmacro_editor(int argc, char **argv);   /* W3 genmacro: the editor and its dialogs headless */
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
     { "font_cells", lj_test_font_cells },
@@ -154,6 +172,24 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_windows_b2", lj_test_windows_b2 },             /* windows-b W2: Background Cue, Statics 2 (popup verbatim, STATIC_ACTIVATE, LEDs), Smoke Control, goldens (tests/ui/test_windows_b.c) */
     { "test_windows_d", lj_test_windows_d },               /* W2 windows-d: System Preferences, About, Delete Files, User Libraries, Backup/Restore, Notes, Striking Lamps, Edit Hotkeys, MIDI-IN, W2D_* goldens (tests/ui/test_windows_d.c) */
     { "test_profiles_w2", lj_test_profiles_w2 },           /* profiles: every 15/02-15/05 id by lj_fixlib_by_id, footprints, MAC 2000 pan pair, 812 gobo slots, ME-25/27 (tests/fixlib/test_profiles_w2.c) */
+    /* W3 (appended) */
+    { "test_cuelist", lj_test_cuelist },   /* cuelist-core: command enum / captions / inert families / time code packing; .Cl2 load_error + ref= rows (tests/model/test_cuelist.c) */
+    { "test_cuelist_run", lj_test_cuelist_run },   /* cuelist-core: the UI-thread runner at 10 ms steps (tests/app/test_cuelist_run.c) */
+    { "test_genmacro", lj_test_genmacro },   /* genmacro: step / shapes vs vectors.h, ME-34 override, .CMA (tests/engine/test_genmacro.c) */
+    { "test_movemacro", lj_test_movemacro },   /* movement: positions vs 17-position_ref.py, Bezier, Fan Out, Auto Delay (tests/engine/test_movemacro.c) */
+    { "test_gdc_grammar", lj_test_gdc_grammar },   /* gdc-fades-followspot: the F35 command line (tests/model/test_gdc.c) */
+    { "test_gs2", lj_test_gs2 },   /* gs2: synthetic record + LJ4EVR_REFERENCE_DIR 48-file oracle compare, SKIP line when unset (tests/fixlib/test_gs2.c) */
+    { "test_udf_crc", lj_test_udf_crc },   /* gs2: .Udf container, footer CRC message verbatim, truncation (tests/fixlib/test_gs2.c) */
+    { "test_profile_editor", lj_test_profile_editor },   /* profile-editor: tab captions + field table bounds; editor rows (tests/fixlib/test_profile_editor.c) */
+    { "test_profile_editor_form", lj_test_profile_editor_form },   /* profile-editor: Generic Fixture Profile, Customize Fixture, Channel Configuration (ME-16, ME-32, NIT-26, goldens W3PE_*) */
+    { "test_followspot", lj_test_followspot },   /* gdc-fades-followspot: follow spot record / apply, sequence fades (tests/model/test_gdc.c) */
+    { "gs2_dump", lj_test_gs2_dump },   /* gs2: gs2_dump <file.GS2|.Udf|.Udo>, the flat field list tools/gs2_check.py compares with 16-gs2_ref.py */
+    { "test_cuelist_form", lj_test_cuelist_form },   /* cuelist-window: TCuelist2Form enable table, greyed CD / DA / MP rows, ListPop order, red load-error line, golden (tests/ui/test_cuelist_form.c) */
+    { "test_profiles_w3", lj_test_profiles_w3 },   /* profiles: every 15/06-15/09 id by lj_fixlib_by_id, footprints, Atomic classes, MAC 550 pan pair, RoboColor palettes, ME-25/27 (tests/fixlib/test_profiles_w3.c) */
+    { "test_uiscript_w3", lj_test_uiscript_w3 },   /* desktop-app: W3 script verbs parse + run headless, every W3 menu / toolbar leaf bound, runner step count, MP line red, ME-102 full-array paths (tests/app/test_uiscript_w3.c) */
+    { "test_gdc_fades_fs", lj_test_gdc_fades_fs },   /* gdc-fades-followspot: Generic DMX Control, Set Fade Status, follow spot windows headless, ME-16, W3GDC_* goldens (tests/ui/test_gdc_fades_fs.c) */
+    { "test_movement_w3", lj_test_movement_w3 },   /* movement: Movement Macro + Bezier, Delete Macros, Fan Out, Auto Delay, Cue Macro Control headless; ME-16, LORD_FIDELITY-12, goldens W3MM_* (tests/ui/test_movement_w3.c) */
+    { "test_genmacro_editor", lj_test_genmacro_editor },   /* genmacro: Generic Macro Editor + Save / Select Macro headless, ME-16, F19 caption, F39 shapes, golden W3GM_EDITOR (tests/ui/test_genmacro_editor.c) */
 };
 
 int main(int argc, char **argv)

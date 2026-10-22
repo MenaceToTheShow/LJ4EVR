@@ -13,4 +13,8 @@ int lj_cp1252_to_utf8(char *dst, size_t cap, const char *src);    /* the three O
 int lj_utf8_to_cp1252(char *dst, size_t cap, const char *src);    /* unmappable code point -> '?'; -1 when truncated or malformed */
 int lj_fmt_time(char *dst, size_t cap, uint32_t ms);              /* "ss:hh", seconds:hundredths [07 fact-check] */
 
+/* W3 (design 5.3, LORD_FIDELITY-17): the user's own RTF profile notes shown stripped: control words and {\*...}
+ * groups dropped, \par = newline, \'hh = that CP1252 byte; the raw bytes stay in the profile for export. 0 / -1 (truncated). gs2 track. */
+int lj_str_rtf_strip(char *dst, size_t cap, const char *rtf);
+
 #endif /* LJ_CORE_STR_H */

@@ -21,6 +21,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#ifdef _WIN32
+#include <sys/utime.h>
+static int lj_t_settime(const char *p, time_t t) { struct _utimbuf u; u.actime = u.modtime = t; return _utime(p, &u); }
+#else
+#include <utime.h>
+static int lj_t_settime(const char *p, time_t t) { struct utimbuf u; u.actime = u.modtime = t; return utime(p, &u); }
+#endif
 #include "core/lj_log.h"
 #include "fixlib/lj_profile.h"
 #include "gfx/lj_bmp.h"
@@ -203,6 +211,12 @@ static void test_delete_files(lj_library *lib)
     CHECK(lj_library_record_path(lib, LJ_REC_CUE, 1, path, sizeof path) == 0 && lj_cue_save(path, q) == 0);
     lj_cue_free(q);
 
+    {   /* W3 movement, LORD_FIDELITY-12: the Modified column is the file mtime; pin it to 22-10-2026 12:00 local so the golden is stable in any zone */
+        struct tm tm; time_t t; uint32_t n;
+        memset(&tm, 0, sizeof tm); tm.tm_year = 126; tm.tm_mon = 9; tm.tm_mday = 22; tm.tm_hour = 12; tm.tm_isdst = -1;
+        t = mktime(&tm);
+        for (n = 1; n <= 3; n++) { CHECK(lj_library_record_path(lib, LJ_REC_SEQ, n, path, sizeof path) == 0 && lj_t_settime(path, t) == 0); }
+    }
     w = lj_win_open(LJ_WIN_DELETE_SEQ);
     CHECK(w && strcmp(lj_window_desc(w)->caption, "Delete Sequences") == 0 && lj_delete_files_count(LJ_REC_SEQ) == 3);
     click(in(w, "BCheck"));

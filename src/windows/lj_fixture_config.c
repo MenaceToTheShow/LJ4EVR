@@ -1,7 +1,7 @@
 /* lj_fixture_config.c - see lj_fixture_config.h. Every OnXxx of TLINKCONFIGFORM3 is
  * bound (ME-16); the W2/W3 leaves (Export to text file, Export All, Import Profile,
- * Reload profile data, Copy From Fixture, Clear Fixture Data, Find, the profile
- * export popup) are greyed or log "Not available in LJ4EVR". */
+ * Reload profile data, Find, the profile export popup) are greyed or log "Not
+ * available in LJ4EVR"; Copy From Fixture / Clear Fixture Data are W4 (ME-105). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen / localtime of the export (ME-92) */
 #include "windows/lj_fixture_config.h"
 
@@ -563,7 +563,7 @@ lj_window *lj_fixture_config_open(void)
     lj_ctx *ctx = lj_ctx_get();
     lj_widget *tv;
     lj_menu *m;
-    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */, "M_ImportProfile", "M_ExportAll", "P_ReloadProfileData" /* W3 */, "P_Clone", "P_Clear" /* W2 */,
+    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */, "M_ImportProfile", "M_ExportAll", "P_ReloadProfileData" /* W3 */, "P_Clone", "P_Clear" /* ME-105: re-tagged W4, docs/fidelity.md row "Copy From Fixture / Clear Fixture Data" */,
                                           "M_CreateExportfileOV", "M_CreateExportFile", "M_CreateOVExport", "M_DeleteProfile" /* W3 */ };
     static const char *const checks[][2] = { { "M_RemoveFixtures", "ConfirmRemove" }, { "M_OverwriteFixtures", "ConfirmOverwrite" }, { "M_ClearFixtures", "ConfirmClear" }, { "M_PrompClear", "PromtClearOnSave" }, { "M_ApplyDefault", "AlwaysApplyDefault" } };
     size_t i;
@@ -580,6 +580,7 @@ lj_window *lj_fixture_config_open(void)
     notes_show(-1);
     lj_w_tabs_select(find("PCNotes"), 0);                             /* LJ Profile Notes in front, as fixtureconfiguration.jpg shows (the DFM's ActivePage is the O/V page) */
     set_enabled("bAdd", 0);
+    lj_w_set_caption(find("sbMartin"), "Martin");                  /* F42: the blank locate button captioned with text, no logo (D2; fidelity row) */
     lj_fixture_config_refresh();
     lj_win_show(fc.win, 0);
     return fc.win;

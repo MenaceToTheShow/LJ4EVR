@@ -124,3 +124,34 @@ Every W2 line is checked at load like the W1 verbs: unknown view fields, LED nam
 1..8, unknown key names, non-hex MIDI bytes and non-numeric ticks fail with `SCRIPT FAIL line n` before
 the first line runs (`tests/app/test_uiscript_w2.c`). The W2 walkthrough is
 `tests/ui/scripts/w2_acceptance.lj4s` (design 10 W2 acceptance, shots in `docs/screenshots/w2/`).
+
+## W3 verbs (contracts seat 2026-10-22; bodies by the desktop-app track in `src/app/lj_uiscript.c` + `src/app/lj_app_w3.c`)
+
+Window names gain the W3 ids of `lj_win_id_name()`: `cuelist_form save_cuelist select_cuelist cl_set_cue_trig
+log_timecode genmacro_editor save_genmacro select_genmacro movemacro_editor delete_movemacro fan_out auto_delay
+cue_macro_control gdc_form followspot_form followspot_list seq_fades profile_editor customize_fixture channel_config
+gs2_import gs2_export` (DFM classes in `docs/w3-contracts.md` section 4).
+
+| Line | Effect |
+|---|---|
+| `cl_load <path>` | loads a `.Cl2` (as given, else library-relative) as the current cue list through `lj_app_load_cuelist_path` (the runner lets go of the old list first); fails when the file is missing or does not load |
+| `cl_goto <n>` | while the list waits for Go: Jump to this (`LJ_CL_OP_JUMP`); otherwise selects row n of the Cuelist window's `lv1` (as a click); fails when the window is not open or the list has no line n |
+| `cl_execute` | Go ! (`LJ_CL_OP_GO` through `LJ_ACT_CUELIST_OP`): advances a waiting manual line, or runs from the top when idle |
+| `cl_assert_line <n> plain\|done\|next\|error` | `lj_cl_line_state` of line n of the current list (gray = done, blue = next, red = load error) |
+| `assert_pos <fixture> <pan> <tilt>` | a number first = the W3 form: fixture 1..100's pan / tilt readout (17 s1.3, -32768..32767) from the engine frame's `out[]` (16-bit = the pair through `lj_pos_patch16`, 8-bit = the MSB); fails for a fixture without a Movement window. A window name first = the W1 screen-position form |
+| `gs2_import <path>` | imports a `.GS2` / `.Udf` / `.Udo` (`lj_gs2_read` / `lj_udf_parse`) into `UserFixtureDef\<base>.GS2` and runs Reload profile data; fails with the importer's message (`not a GS2 record: n bytes`, `footer CRC mismatch`, ...) or when the profile is not listed after the reload |
+| `assert_prompt "text"` | the open confirm / message box (`lj_win_message_window`) shows the text verbatim as `Label1`, `Label2`, both joined by one space, or its caption (the 12 Q9 prompts, acceptance 7); fails when no box is open |
+| `mm_set <fixture> <shape> <amp> <speed>` | the current scene's movement macro of fixture 1..100: type = shape (0..6 or a Bezier slot), both amplitudes = amp, both cycles = speed (0 = frozen), every fade state Snap; under `lj_lock`, then `LJ_CMD_CURRENT_SEQ` (what the Movement Macro window does) |
+
+`assert_view` gains the W3 view fields `gm_engine_on gm_slot_on gm_cue_number gm_editor_number mm_amp_pct mm_speed_pct
+mm_fade mm_frozen pending_genmacro`.
+
+Every W3 line is checked at load like the W2 verbs (unknown states, fixtures outside 1..100, readouts outside
+-32768..32767, shapes / amplitudes / speeds outside 0..255, non-numeric values fail with `SCRIPT FAIL line n` before
+the first line runs; `tests/app/test_uiscript_w3.c`). The W3 walkthrough is `tests/ui/scripts/w3_acceptance.lj4s`
+(design 10 W3 acceptance, shots in `docs/screenshots/w3/`), with two committed inputs of ours: `w3_mp_play.Cl2`
+(cue 0001, an MP Play line, cue 0002 after 0.50 s) and `w3_synthetic.Udf` (written by `lj_udf_export` from the
+built-in Generic DMX Dimmer; no Martin bytes). Lines marked RECONCILE name widgets of W3 windows that had not landed
+when the walkthrough was written. Generic macro frame values at given ticks are asserted at synthetic time by replay
+`genmacro_sine_amp186`; the live walkthrough asserts the editor's Min/Max readout, the view fields and, for movement
+macros, positions at two ticks with the macro frozen (speed 0).

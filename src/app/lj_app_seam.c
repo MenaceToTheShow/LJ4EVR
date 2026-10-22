@@ -2,6 +2,7 @@
  * except that the library is ctx->lib and the view copy is ctx->view (the desktop LEDs, the cue and
  * master windows and the script read that one copy; w1-contracts seam 3). */
 #include "app/lj_app_seam.h"
+#include "app/lj_app_w3.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,25 +108,36 @@ static lj_genmacro *lj_app_gm_for(uint32_t number)
     return gm;
 }
 
-/* Caller holds lj_lock: the fresh records enter the tables and the command is appended in the same critical section (rule 6). */
-static void lj_app_commit(lj_app_fresh *fresh, lj_cmd *cmd)
+/* ME-102: caller holds lj_lock. 0 = posted (or no engine); -1 = the command array is full, so the engine still holds the
+ * record this post was meant to replace: the caller keeps it (a leak, logged once), never frees it under the engine. */
+int lj_app_post_locked(const lj_cmd *cmd)
+{
+    static int warned;
+    lj_ctx *c = lj_ctx_get();
+    if (!c->engine || lj_engine_cmd(c->engine, cmd) == 0) return 0;
+    if (!warned) { warned = 1; lj_log("app: engine command array full: the replaced record is kept, not freed (ME-102; logged once)"); }
+    return -1;
+}
+
+/* Caller holds lj_lock: the fresh records enter the tables and the command is appended in the same critical section (rule 6). 0 / -1 (ME-102) */
+static int lj_app_commit(lj_app_fresh *fresh, lj_cmd *cmd)
 {
     lj_ctx *c = lj_ctx_get();
     int i;
     for (i = 0; i < fresh->n; i++) lj_table_put(&c->show->sequences, fresh->seq[i]->number, fresh->seq[i]);
     if (cmd->at_us == 0) cmd->at_us = lj_clock_us();
-    if (c->engine) lj_engine_cmd(c->engine, cmd);
+    return lj_app_post_locked(cmd);
 }
 
 /* Caller holds lj_lock: re-pins the current cue from the tables (after a sequence was replaced or deleted); exclude = a number now gone (slot -> load error). */
-static void lj_app_repin_cue(uint32_t exclude)
+static int lj_app_repin_cue(uint32_t exclude)
 {
     lj_show *show = lj_ctx_get()->show;
     const lj_cue *cue = show->current_cue;
     lj_cmd cmd;
     lj_bgcue *bg;
     int i;
-    if (!cue) return;
+    if (!cue) return 0;
     memset(&cmd, 0, sizeof cmd);
     cmd.kind = LJ_CMD_LOAD_CUE; cmd.a = cue->number; cmd.b = (uint32_t)lj_s.cue_edit; cmd.cue = cue;
     for (i = 0; i < LJ_CUE_SLOTS; i++) {
@@ -138,19 +150,19 @@ static void lj_app_repin_cue(uint32_t exclude)
     }
     if (cue->gen_macro) cmd.gm = (const lj_genmacro *)lj_table_get(&show->macros, cue->gen_macro);
     cmd.at_us = lj_clock_us();
-    if (lj_ctx_get()->engine) lj_engine_cmd(lj_ctx_get()->engine, &cmd);
+    return lj_app_post_locked(&cmd);
 }
 
-void lj_app_repin_current_cue(void) { lj_lock(); lj_app_repin_cue(0); lj_unlock(); }
+void lj_app_repin_current_cue(void) { lj_lock(); (void)lj_app_repin_cue(0); lj_unlock(); }   /* nothing is freed after it */
 
 /* Caller holds lj_lock: every Statics 2 link slot on `number` gets the table's record now (NULL once deleted) before the old one
  * is freed (rule 6, ME-88). The engine acts only on the slots it holds; the rest ignore it. ponytail: one post per linking slot. */
-static void lj_app_repin_statics(uint32_t number)
+static int lj_app_repin_statics(uint32_t number)
 {
     lj_show *show = lj_ctx_get()->show;
     lj_cmd cmd;
-    int p, i;
-    if (!lj_ctx_get()->engine) return;
+    int p, i, rc = 0;
+    if (!lj_ctx_get()->engine) return 0;
     memset(&cmd, 0, sizeof cmd);
     cmd.kind = LJ_CMD_STATIC_ACTIVATE; cmd.c = LJ_STATIC_REPIN; cmd.at_us = lj_clock_us();
     cmd.seq[0] = (const lj_sequence *)lj_table_get(&show->sequences, number);
@@ -158,8 +170,9 @@ static void lj_app_repin_statics(uint32_t number)
         for (i = 0; i < LJ_STATICS2_SLOTS_MAX; i++)
             if (show->pages[p].slot[i].kind == LJ_STATIC_LINK && show->pages[p].slot[i].link_seq == number) {
                 cmd.a = (uint32_t)lj_static_global_index(p + 1, i + 1); cmd.st = &show->pages[p].slot[i];
-                lj_engine_cmd(lj_ctx_get()->engine, &cmd);
+                rc |= lj_app_post_locked(&cmd);
             }
+    return rc;
 }
 
 /* LJ_ACT_PIN_SEQ: a Statics 2 link slot's sequence into the table when it is on disk only (the window then pins it under the lock) */
@@ -183,7 +196,7 @@ int lj_app_load_cue(uint32_t number, int edit)
     lj_app_fresh fresh;
     lj_cmd cmd;
     char path[LJ_PATH_CAP], err[128];
-    int i;
+    int i, posted;
 
     if (!show || !number || lj_app_rec_path(LJ_REC_CUE, number, path, sizeof path) != 0) return -1;
     cue = lj_cue_new_rec();
@@ -204,7 +217,7 @@ int lj_app_load_cue(uint32_t number, int edit)
     show->current_cue = cue;
     if (bg) { oldbg = (lj_bgcue *)lj_table_get(&show->bgcues, bg->number); lj_table_put(&show->bgcues, bg->number, bg); }
     if (gm) { oldgm = (lj_genmacro *)lj_table_get(&show->macros, gm->number); lj_table_put(&show->macros, gm->number, gm); }
-    lj_app_commit(&fresh, &cmd);
+    posted = lj_app_commit(&fresh, &cmd) == 0;
     if (c->forms_ini && lj_ini_geti(c->forms_ini, "CUE", "Flash Auto Release", 0) && c->engine) {   /* "Release Flash on Load" (windows-a persists the box) [03 s5.10] */
         lj_cmd fr;
         memset(&fr, 0, sizeof fr);
@@ -212,7 +225,9 @@ int lj_app_load_cue(uint32_t number, int edit)
         lj_engine_cmd(c->engine, &fr);
     }
     lj_unlock();
-    /* freed after the engine was handed the replacement in the same critical section (rule 6); a never-saved current cue is not in the table */
+    /* freed after the engine was handed the replacement in the same critical section (rule 6); a never-saved current cue is not in the table;
+     * not freed at all when the post failed (ME-102: the engine still points at them) */
+    if (!posted) { old = oldcur = NULL; oldbg = NULL; oldgm = NULL; }
     if (old && old != cue) lj_cue_free(old);
     if (oldcur && oldcur != cue && oldcur != old && lj_table_get(&show->cues, oldcur->number) != oldcur) lj_cue_free(oldcur);
     if (oldbg && oldbg != bg) lj_bgcue_free(oldbg);
@@ -235,7 +250,7 @@ int lj_app_load_bgcue(uint32_t number)
     if (number && (bg = lj_app_bg_for(number, &cmd, &fresh)) == NULL) return -1;   /* number 0 = clear; a missing number logged its load error above */
     lj_lock();
     if (bg) { old = (lj_bgcue *)lj_table_get(&show->bgcues, number); lj_table_put(&show->bgcues, number, bg); }
-    lj_app_commit(&fresh, &cmd);
+    if (lj_app_commit(&fresh, &cmd) != 0) old = NULL;            /* ME-102 */
     lj_unlock();
     if (old && old != bg) lj_bgcue_free(old);                    /* unpinned: the engine got the new pointer in the critical section above, and drains it before its next read */
     return 0;
@@ -259,7 +274,7 @@ static int lj_app_bgcue_apply(const lj_bgcue *work)
     lj_lock();
     if (bg->number) { old = (lj_bgcue *)lj_table_get(&show->bgcues, bg->number); lj_table_put(&show->bgcues, bg->number, bg); old2 = lj_s.bg_unsaved; lj_s.bg_unsaved = NULL; }
     else { old = lj_s.bg_unsaved; lj_s.bg_unsaved = bg; }
-    lj_app_commit(&fresh, &cmd);
+    if (lj_app_commit(&fresh, &cmd) != 0) old = old2 = NULL;     /* ME-102 */
     lj_unlock();
     if (old && old != bg) lj_bgcue_free(old);
     lj_bgcue_free(old2);
@@ -273,11 +288,11 @@ int lj_app_load_genmacro(uint32_t number)
     lj_cmd cmd;
     if (!show) { free(gm); return -1; }
     memset(&cmd, 0, sizeof cmd);
-    cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = number; cmd.gm = gm;   /* NULL = engine off for this cue (load error logged) */
+    cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = number; cmd.gm = gm; cmd.c = LJ_GM_SRC_CUE;   /* NULL = engine off for this cue (load error logged); W3: the cue's rank-6 source */
     lj_lock();
     if (gm) { old = (lj_genmacro *)lj_table_get(&show->macros, number); lj_table_put(&show->macros, number, gm); }
     cmd.at_us = lj_clock_us();
-    if (lj_ctx_get()->engine) lj_engine_cmd(lj_ctx_get()->engine, &cmd);
+    if (lj_app_post_locked(&cmd) != 0) old = NULL;               /* ME-102 */
     lj_unlock();
     if (old && old != gm) free(old);
     return gm ? 0 : -1;
@@ -295,7 +310,7 @@ static lj_sequence *lj_app_set_current_seq(lj_sequence *s)
     old = c->show->current_seq;
     c->show->current_seq = s;
     c->current_scene = 0;
-    if (c->engine) lj_engine_cmd(c->engine, &cmd);
+    if (lj_app_post_locked(&cmd) != 0) old = NULL;               /* ME-102: the caller frees what this returns */
     lj_unlock();
     return old;
 }
@@ -334,8 +349,8 @@ int lj_app_save_sequence(int as_new)
     lj_lock();
     old = (lj_sequence *)lj_table_get(&c->show->sequences, number);
     lj_table_put(&c->show->sequences, number, copy);
-    lj_app_repin_cue(0);                                          /* editing a sequence changes every cue [03 s5.1]: every runner on this number gets the new pointer */
-    lj_app_repin_statics(number);                                 /* and every Statics 2 slot linked to it (ME-88) */
+    if ((lj_app_repin_cue(0)                                      /* editing a sequence changes every cue [03 s5.1]: every runner on this number gets the new pointer */
+         | lj_app_repin_statics(number)) != 0) old = NULL;        /* and every Statics 2 slot linked to it (ME-88); ME-102 */
     lj_unlock();
     if (old && old != copy) lj_sequence_free(old);
     c->modified[LJ_MOD_SEQ] = 0; c->seq_saved = 1;
@@ -357,7 +372,7 @@ int lj_app_save_cue(int as_new)
     if (lj_app_rec_path(LJ_REC_CUE, number, path, sizeof path) != 0 || lj_cue_save(path, cue) != 0) return -1;
     lj_lock();
     old = (lj_cue *)lj_table_get(&c->show->cues, number);
-    if (old != cue) { lj_table_put(&c->show->cues, number, cue); lj_app_repin_cue(0); }   /* the current cue record becomes the table's (and the engine's) */
+    if (old != cue) { lj_table_put(&c->show->cues, number, cue); if (lj_app_repin_cue(0) != 0) old = NULL; }   /* the current cue record becomes the table's (and the engine's); ME-102 */
     lj_unlock();
     if (old && old != cue) lj_cue_free(old);
     c->modified[LJ_MOD_CUE] = 0; c->cue_saved = 1;
@@ -378,8 +393,8 @@ int lj_app_delete_record(int kind, uint32_t number)
     case LJ_REC_SEQ:
         lj_lock();
         rec = lj_table_remove(&show->sequences, number);
-        if (show->current_cue) lj_app_repin_cue(number);                 /* its slots show load error from now on */
-        lj_app_repin_statics(number);                                    /* a linked static outputs nothing (link error, ME-88) */
+        if (((show->current_cue ? lj_app_repin_cue(number) : 0)          /* its slots show load error from now on */
+             | lj_app_repin_statics(number)) != 0) rec = NULL;           /* a linked static outputs nothing (link error, ME-88); ME-102 */
         if (show->current_seq && show->current_seq->number == number) show->current_seq->number = 0;   /* a number is never reused [F28] */
         lj_unlock();
         lj_sequence_free((lj_sequence *)rec);
@@ -391,7 +406,7 @@ int lj_app_delete_record(int kind, uint32_t number)
         if (show->current_cue == rec) {
             show->current_cue = blank; blank = NULL;
             cmd.kind = LJ_CMD_LOAD_CUE; cmd.a = 0; cmd.cue = NULL;        /* every runner handed NULL before the record goes (rule 6) */
-            if (c->engine) lj_engine_cmd(c->engine, &cmd);
+            if (lj_app_post_locked(&cmd) != 0) rec = NULL;                /* ME-102 */
         }
         lj_unlock();
         lj_cue_free((lj_cue *)rec);
@@ -400,14 +415,14 @@ int lj_app_delete_record(int kind, uint32_t number)
     case LJ_REC_BG:
         lj_lock();
         rec = lj_table_remove(&show->bgcues, number);
-        if (rec) { cmd.kind = LJ_CMD_LOAD_BG; cmd.a = 0; cmd.bg = NULL; if (c->engine) lj_engine_cmd(c->engine, &cmd); }
+        if (rec) { cmd.kind = LJ_CMD_LOAD_BG; cmd.a = 0; cmd.bg = NULL; if (lj_app_post_locked(&cmd) != 0) rec = NULL; }   /* ME-102 */
         lj_unlock();
         lj_bgcue_free((lj_bgcue *)rec);
         break;
     case LJ_REC_MACRO:                                                /* generic macros (W2): the running one is switched off first */
         lj_lock();
         rec = lj_table_remove(&show->macros, number);
-        if (rec) { cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = 0; cmd.gm = NULL; if (c->engine) lj_engine_cmd(c->engine, &cmd); }
+        if (rec) { cmd.kind = LJ_CMD_LOAD_GENMACRO; cmd.a = 0; cmd.gm = NULL; if (lj_app_post_locked(&cmd) != 0) rec = NULL; }   /* ME-102 (the cue source; the editor's record is ctx->gm_edit, never a table record) */
         lj_unlock();
         free(rec);
         break;
@@ -434,7 +449,10 @@ void lj_app_service_pending(void)
 void lj_app_midi_dispatch(void)
 {
     uint8_t m[3];
-    while (lj_midi_poll(m)) if (lj_ctx_get()->midi) lj_midi_dispatch(lj_ctx_get()->midi, m);   /* lj_fn_run on this (the UI) thread */
+    while (lj_midi_poll(m)) {
+        if (m[0] == 0xF1) { lj_app_mtc_feed(m[1]); continue; }       /* W3: MTC quarter-frames feed the cue list's MIDI time code (lj_app_w3.c) */
+        if (lj_ctx_get()->midi) lj_midi_dispatch(lj_ctx_get()->midi, m);   /* lj_fn_run on this (the UI) thread */
+    }
 }
 
 static void lj_app_midi_cb(void *ud, const uint8_t msg[3]) { (void)ud; lj_midi_post(msg); }   /* the OS MIDI thread: post only (ME-23) */
@@ -474,7 +492,7 @@ int lj_app_static_clear(int page, int slot)
     memset(&cmd, 0, sizeof cmd);
     cmd.kind = LJ_CMD_STATIC_DEACTIVATE; cmd.a = (uint32_t)g; cmd.at_us = lj_clock_us();
     lj_lock();
-    if (c->engine) lj_engine_cmd(c->engine, &cmd);                  /* the engine lets go of the slot before its scene is freed (rule 6) */
+    if (lj_app_post_locked(&cmd) != 0) { lj_unlock(); lj_log("app: Clear Slot %d/%d refused: the engine still holds the slot (ME-102)", page, slot); return -1; }   /* the engine lets go of the slot before its scene is freed (rule 6) */
     lj_static_slot_clear(&show->pages[page - 1].slot[slot - 1]);
     lj_unlock();
     if (lj_lib() && lj_library_path(lj_lib(), "Statics.dat", path, sizeof path) == 0 && lj_statics_groups_save(path, show->pages, show->npages, c->static_groups) == 0) return 0;
@@ -654,7 +672,7 @@ static void lj_app_fn(enum lj_fn fn, int edge, uint32_t prog_num, void *ud)
         break;
     case LJ_FN_QUICK_SAVE_SEQUENCE: if (edge) lj_app_save_sequence(0); break;
     case LJ_FN_QUICK_SAVE_CUE:      if (edge) lj_app_save_cue(0); break;
-    case LJ_FN_PROG_CUELIST:        if (edge) lj_log("cue list %u: cue lists are W3", (unsigned)prog_num); break;
+    case LJ_FN_PROG_CUELIST:        if (edge) lj_app_cuelist_prog(prog_num); break;   /* W3: load + Top (lj_app.h) */
     /* integrator: the toolbar / hotkey rows no window file owns */
     case LJ_FN_CTL_INTENSITY: case LJ_FN_CTL_MOVEMENT: case LJ_FN_CTL_COLOR: case LJ_FN_CTL_GOBO: case LJ_FN_CTL_BEAM: case LJ_FN_CTL_EFFECT: case LJ_FN_CTL_LAMP:
         if (edge) lj_ctl_toggle(fn == LJ_FN_CTL_LAMP ? LJ_CTL_LAMP : (enum lj_ctl_kind)(LJ_CTL_INTENSITY + (fn - LJ_FN_CTL_INTENSITY)));
@@ -803,3 +821,5 @@ void lj_app_seam_idle(uint64_t now_us)
     lj_snapshot_tick(now_us);                                        /* real-time recording samples at up to 20/s from here, not the 100 ms refresh */
     lj_app_strike_idle(now_us);
 }
+
+/* W3: the lj_app.h W3 block (cue-list runner, reloads, follow spot) lives in lj_app_w3.c */

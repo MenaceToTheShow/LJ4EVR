@@ -22,17 +22,17 @@ OUT = os.path.join(ROOT, "src", "fixlib", "lj_exe_profiles.c")
 HAND = os.path.join(ROOT, "src", "fixlib", "hand")
 MAP = os.path.join(ROOT, "tools", "qxf_map.tsv")
 ROWS = 201
-# Tier-1 ids a wave must cover by hand file (15-builtin-profiles-index.md, design 6.1 item 2).
-W1_IDS = [12, 31, 24, 30,                                    # 15/01 MAC 500, MAC 500 SCRL, 918, 918 SCRL
-          19, 70, 56, 71, 21, 72, 23, 20, 73, 22,            # 15/10 DMX Dimmer 1..32
-          92, 93, 94, 95, 96, 97, 98, 99, 100, 101,          # DMX Switch Pack 1..32
-          78, 135, 77, 76, 75,                               # RGB Pack x4 A/B, x6, x8, x10
-          18, 45, 27, 90, 42, 43, 46]                        # Smoke, Hazer, SwitchBox 6, External, GCS 1, GSC 1, USER2
-W2_IDS = [11, 67,                                            # 15/02 MAC 600, 600 NT
-          28, 47, 39, 105, 112, 133, 48, 118,                # 15/03 MAC 250 family
-          68, 84, 87, 88, 117, 161, 162, 188, 189, 190, 191, # 15/04 MAC 2000 family
-          3, 58, 1, 52, 2, 57, 41, 36, 33]                   # 15/05 Roboscan 518 / 812 / 218 + the DMX-interface entries
-WAVE_IDS = {1: W1_IDS, 2: W2_IDS}
+
+
+def wave_ids():
+    """{wave: [ids]} of the tier-1 families (ME-106: the one list is tools/check_profiles.py TIERS; tiers 1 and 10 = W1,
+    2-5 = W2, 6-9 = W3, design 6.1 item 2). Imported here, not at module top: check_profiles imports this module."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # python -I drops the script directory
+    import check_profiles
+    out = {}
+    for t, (_, ids) in sorted(check_profiles.TIERS.items()):
+        out.setdefault(1 if t in (1, 10) else 2 if t <= 5 else 3, []).extend(ids)
+    return out
 
 
 def hand_ids():
@@ -112,7 +112,7 @@ def main():
             want = "LJ_BIND_HAND" if int(i) in hand else "LJ_BIND_QXF" if int(i) in qmap else "LJ_BIND_NONE"
             if b != want:
                 print("id %s: binding %s, expected %s (regenerate: python -I tools/exe_profiles_check.py)" % (i, b, want)); bad += 1
-        for wave, ids in WAVE_IDS.items():
+        for wave, ids in wave_ids().items():
             for i in ids:
                 if i not in hand:
                     print("tier-1 id %d listed for W%d has no hand file under src/fixlib/hand/" % (i, wave)); bad += 1

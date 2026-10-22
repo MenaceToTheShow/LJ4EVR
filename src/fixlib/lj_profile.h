@@ -46,6 +46,15 @@ typedef struct {
     uint8_t lo, hi, reverse, dflt_state; const lj_ctl_button *buttons; int nbuttons; const char *const *items;
     uint8_t states_allowed;      /* ME-27: bitmask of (1 << lj_fstate) the O/S/F button may reach; 0 = all three (LJ_STATES_ALL); Lamp and Off/Snap-only specials = LJ_STATES_OFF_SNAP */
 } lj_ctl_row;
+/* Row conventions (LORD_FIXTURES-10), used by every hand file and by lj_layout_derive:
+ *   lo..hi       the Martin range in ascending DMX order; a bar's position 0 is lo, or hi when reverse = 1.
+ *   reverse      1 when the manual runs the range the other way to the caption (strobe fast -> slow, focus near = 255):
+ *                the bar shows the caption's sense, the DMX value runs hi -> lo.
+ *   LJ_W_ROTATION / LJ_W_WHEELSCROLL  buttons = { CW, CCW, Stop }, always three; a direction button's lo..hi is that
+ *                direction's speed band, its value the band's slow end (F47), the speed bar emits lo + pos * (hi - lo) / 255.
+ *   LJ_W_MODEPAIR  caption / caption2 = the two modes (Index | Rotate); the pair switches which palette value (Def | Rot)
+ *                the LJ_W_SCROLL row of the same window writes, it writes nothing itself; with buttons, a button's lo..hi
+ *                is the scroll channel's band for that mode (the live mode is read back from the value). */
 #define LJ_STATES_ALL      0x07u   /* (1<<LJ_OFF) | (1<<LJ_SNAP) | (1<<LJ_FADE) */
 #define LJ_STATES_OFF_SNAP 0x03u
 typedef struct { enum lj_ctl_kind kind; const char *caption; const char *const *menu; const lj_ctl_row *rows; int nrows;
@@ -72,6 +81,8 @@ typedef struct {
     const char *notes;                                             /* built-ins: our rewritten facts, never Martin's RTF [D2] */
     /* W1 additions (not in design 6.2): */
     uint8_t  pair_lsb[LJ_PROFILE_CH];                              /* non-pan/tilt 16-bit pairs (LJ_PAIR16_NON_PT_AS_ONE, rig M11): 0 = none, else 1 + offset of this MSB's LSB; hand files / qxf2c fill it */
+    /* W3 additions (fixlib/lj_gs2.h): */
+    char     gs2_file[64];                                         /* GS2 kind: the UserFixtureDef file name it was loaded from ("Generic_IRGB.GS2"); lj_fixture.gs2_file matches it */
 } lj_profile;
 
 /* ---- the exe row table (design 6.1): 201 rows, ids 0-200, LJ2's own Config.dat type code ---- */

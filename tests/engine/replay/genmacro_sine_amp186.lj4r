@@ -1,0 +1,59 @@
+LJ4 replay 1
+# genmacro_sine_amp186 (design 3.7, 14 sA.3 / LJ_GENMACRO_AMP186_EXAMPLE; owner genmacro): 'Sine' (shape 7) with
+# Amp+ = Amp- = 186 on a base of 128 reaches 128 + 186 -> 255 (clamp) at the positive peak and 128 - 186 -> 0 at the
+# negative one; on a base-off channel driven by a scene at 128 the same; one channel with Amp+ 186 / Amp- 0 and one
+# with Amp+ 0 / Amp- 186 so each half-wave is asserted on its own (LORD_ENGINE-14). Expects at the ticks where the
+# 16.16 index crosses 2048 and 6144 (cycle 1.0 s = 40 ticks: ticks 10 and 30), layer=6.
+# NOTE expectations computed from the 14 sA.3 arithmetic written out independently of the C code: index at tick n =
+#      floor(n * floor(8192 * 65536 * 25000 / 1000000) / 65536), Sine[k] = round(32640 sin(2 pi k / 8192)),
+#      delta = s * Amp+ / 32640 (s >= 0) or s * Amp- / 32640 (s < 0), nearest, out = clamp(ref + delta, 0, 255).
+#      The delta itself spans -186..186 over the cycle (the editor's Min/Max readout; test_genmacro asserts it per index).
+# NOTE LORD_ENGINE-14: 1:2 (186, 0) moves only on the positive half, 1:3 (0, 186) only on the negative half; 1:5
+#      (60, 20) is the unclamped asymmetric case (+60 at tick 10, -20 at tick 30); 1:6 (-60, 0) mirrors the positive
+#      half below the base (CHM 5819 "when the amplitudes are negative, the shape is mirrored").
+# NOTE ME-22: fixture 7 (MAC 500 Mode 2/4) pan 1:111/1:112 is a declared 16-bit pair: one value, base 128 = 32768,
+#      Amp 100 x LJ_GENMACRO_16BIT_SCALE (UNVERIFIED rig M14), MSB/LSB split bytewise (expect_pair).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+patch 2 profile=19 link=1 addr=2
+patch 3 profile=19 link=1 addr=3
+patch 4 profile=19 link=1 addr=4
+patch 5 profile=19 link=1 addr=5
+patch 6 profile=19 link=1 addr=6
+patch 7 profile=12 link=1 addr=101   # Martin / MAC 500 / Mode 2/4, pan 1:111/1:112
+seq 1 name="ref" scene st=60000 ft=0 ch 1:4=128:S
+cue 1
+slot 1 seq=1
+macro 1 name="sine186" restart=1
+mch 1:1 shape=7 base=128 amp=186,186 cycle=10 dir=fwd delay=0
+mch 1:2 shape=7 base=128 amp=186,0 cycle=10 dir=fwd delay=0
+mch 1:3 shape=7 base=128 amp=0,186 cycle=10 dir=fwd delay=0
+mch 1:4 shape=7 base=off amp=186,186 cycle=10 dir=fwd delay=0
+mch 1:5 shape=7 base=128 amp=60,20 cycle=10 dir=fwd delay=0
+mch 1:6 shape=7 base=128 amp=-60,0 cycle=10 dir=fwd delay=0
+mch 1:111 shape=7 base=128 amp=100,100 cycle=10 dir=fwd delay=0
+at 0 load_cue 1
+at 0 load_genmacro 1 restart
+expect 0 1:1=128 1:2=128 1:3=128 1:4=128 1:5=128 1:6=128 layer=6   # index 0, Sine 0
+expect_pair 0 1:111=32768
+expect 2 1:1=185 1:2=185 1:3=128 1:4=185 1:5=147 1:6=109 layer=6   # index 409, Sine 10072
+expect_pair 2 1:111=40704
+expect 5 1:1=255 1:2=255 1:3=128 1:4=255 1:5=170 1:6=86 layer=6   # index 1023, Sine 23062
+expect_pair 5 1:111=50944
+expect 10 1:1=255 1:2=255 1:3=128 1:4=255 1:5=188 1:6=68 layer=6   # index 2047, Sine 32640
+expect_pair 10 1:111=58368
+expect 15 1:1=255 1:2=255 1:3=128 1:4=255 1:5=170 1:6=86 layer=6   # index 3071, Sine 23098
+expect_pair 15 1:111=50944
+expect 20 1:1=128 1:2=128 1:3=128 1:4=128 1:5=128 1:6=128 layer=6   # index 4095, Sine 25
+expect_pair 20 1:111=32768
+expect 25 1:1=0 1:2=128 1:3=0 1:4=0 1:5=114 1:6=128 layer=6   # index 5119, Sine -23062
+expect_pair 25 1:111=14592
+expect 30 1:1=0 1:2=128 1:3=0 1:4=0 1:5=108 1:6=128 layer=6   # index 6143, Sine -32640
+expect_pair 30 1:111=7168
+expect 35 1:1=0 1:2=128 1:3=0 1:4=0 1:5=114 1:6=128 layer=6   # index 7167, Sine -23098
+expect_pair 35 1:111=14592
+expect 39 1:1=99 1:2=128 1:3=99 1:4=99 1:5=125 1:6=128 layer=6   # index 7987, Sine -5111
+expect_pair 39 1:111=28672
+expect 40 1:1=128 1:2=128 1:3=128 1:4=128 1:5=128 1:6=128 layer=6   # index 8191, Sine -25
+expect_pair 40 1:111=32768
+expect_view 40 gm_engine=1 gm_slot=1 gm_cue=1 gm_editor=0

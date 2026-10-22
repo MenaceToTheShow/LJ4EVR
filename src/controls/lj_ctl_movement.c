@@ -84,6 +84,9 @@ int lj_pos_scale_raw(int raw, int pct)
  * the control
  * ------------------------------------------------------------------------- */
 #define LJ_MV_NOT_AVAIL "Not available in LJ4EVR"
+/* LORD_FIDELITY-9: the Movement window caption, one tagged constant: "Movement 8 Bit" / "Movement 16 Bit" by the master's
+ * pan/tilt width (IMG joystickmovement / movement2; the exe also carries "Position 16 Bit", 17 s1.1, unverified) */
+static const char *const lj_mv_caption[2] = { "Movement 8 Bit", "Movement 16 Bit" };
 #define LJ_MV_SECTION   "MOVEMENT"
 
 typedef struct lj_mv lj_mv;
@@ -415,6 +418,8 @@ static void on_menu(lj_widget *w, void *ud)
     const char *n = it && it->name ? it->name : "";
     if (strcmp(n, "M_Presets") == 0) lj_ctl_movement_presets_open(mv->win);
     else if (strcmp(n, "M_Help") == 0) lj_log("movement: Help: no help file is shipped (D2)");
+    else if (strcmp(n, "M_Macro") == 0) lj_win_open(LJ_WIN_MOVEMACRO_EDITOR);   /* W3 movement [04 s4.4] */
+    else if (strcmp(n, "M_FanOut") == 0) lj_win_open(LJ_WIN_FAN_OUT);          /* W3 movement [04 s4.2] */
 }
 
 /* ---- the menu: top-level captions verbatim [04 s1.6]; accelerators and the children's captions follow the help text (PROPOSAL, the control is code-built) ---- */
@@ -424,13 +429,13 @@ static const lj_menu_item_desc mv_pref_items[] = {
 };
 static const lj_menu_item_desc mv_options_items[] = {
     { "M_PosOptions", "&Position Options", .on_click = "MenuClick", .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },   /* W2: TMOVEMENTOPTIONSFORM */
-    { "M_FanOut", "&Fan Out", .on_click = "MenuClick", .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },               /* W3: TFANOUTFORM */
+    { "M_FanOut", "&Fan Out", .on_click = "MenuClick" },                                                          /* W3 movement: TFANOUTFORM (lj_movemacro_editor.c) */
 };
 static const lj_menu_item_desc mv_menu_items[] = {
     { "M_Presets", "&Presets", .on_click = "MenuClick" },
     { "M_Preferences", "P&references", .children = mv_pref_items, .nchildren = 2 },
     { "M_Fades", "&Fades", .on_click = "MenuClick", .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },   /* W2: the sequence fades control [04 s1.4] */
-    { "M_Macro", "&Macro", .on_click = "MenuClick", .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },   /* W3: the Movement Macro window */
+    { "M_Macro", "&Macro", .on_click = "MenuClick" },                                             /* W3 movement: the Movement Macro window */
     { "M_Options", "&Options", .children = mv_options_items, .nchildren = 2 },
     { "M_Help", "&Help", .on_click = "MenuClick" },
 };
@@ -483,7 +488,7 @@ lj_window *lj_ctl_movement_create(const lj_profile *p)
     mv->absolute = ini ? lj_ini_geti(ini, LJ_MV_SECTION, "Abs", 1) != 0 : 1;
 
     mv->desc.name = "MovementControl"; mv->desc.class_name = "TMovement";   /* lj_formsini_section -> MOVEMENT, the section lj_ctl_common's chrome table names (LJ2 keeps it in Main.Ini, 7.10) */
-    mv->desc.caption = tab && tab->caption ? tab->caption : mv->bits16 ? "Movement 16 Bit" : "Movement 8 Bit";   /* IMG movement2 / joystickmovement; the exe also carries "Position 16 Bit" (17 s1.1, unverified) */
+    mv->desc.caption = tab && tab->caption ? tab->caption : lj_mv_caption[mv->bits16 != 0];
     mv->desc.client_width = LJ_MV_CLIENT_W; mv->desc.client_height = LJ_MV_CLIENT_H; mv->desc.text_height = 13;
     mv->desc.color = LJ_CLR(LJ_CLR_BTNFACE); mv->desc.font = LJ_FONT_SANS13; mv->desc.font_name = "MS Sans Serif"; mv->desc.font_height = -11;
     mv->desc.border = LJ_BS_SINGLE; mv->desc.icons = LJ_BI_GIVEN | LJ_BI_SYSMENU; mv->desc.style = LJ_FS_STAYONTOP; mv->desc.position = LJ_PO_DESIGNED;

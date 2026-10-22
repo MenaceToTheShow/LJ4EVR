@@ -60,10 +60,13 @@ typedef struct { uint32_t seq; uint8_t enabled, trig /*enum lj_trig*/, dir /*enu
                  uint8_t end_action /*enum lj_end_action*/; uint16_t goto_scene; uint32_t link_cue;
                  uint16_t time_pct /*0 = CUE, 1..999*/; uint32_t chase_ms; } lj_cue_slot;   /* 03 s5.5-5.6 */
 typedef struct { uint32_t number; char name[31], type[31]; lj_cue_slot slot[LJ_CUE_SLOTS]; uint16_t cue_time_pct;
-                 uint8_t macro_amp_pct, macro_speed_pct, save_macro_values, transparent; uint32_t bg_cue, gen_macro; } lj_cue;
+                 uint16_t macro_amp_pct, macro_speed_pct /* 0..999: the cue macro control's 1-999 % option [03 s5.11] (W3 movement, was uint8_t) */;
+                 uint8_t save_macro_values, transparent; uint32_t bg_cue, gen_macro; } lj_cue;
 
-typedef struct { uint32_t line; uint8_t manual /*enum lj_cl_adv*/; uint8_t cmd /*W3: the [03 s6.3] command enum*/; uint32_t param_ms; char param[128]; uint32_t cue;
-                 uint16_t trig_mask; char comment[64]; } lj_cl_line;    /* 03 s6.1 */
+typedef struct { uint32_t line; uint8_t manual /*enum lj_cl_adv*/; uint8_t cmd /*enum lj_cl_cmd, model/lj_cuelist.h*/; uint32_t param_ms; char param[128]; uint32_t cue;
+                 uint16_t trig_mask; char comment[64];
+                 uint32_t ref;            /* W3: the record a drag-only command names: flash_sequence = sequence, load_background_cue = bg cue, link_cuelist = cue list (model/lj_cuelist.h) */
+                 uint8_t  load_error; } lj_cl_line;    /* 03 s6.1; load_error (W3, design 8.5): a CD / DA / MP line, shown red, skipped at execution, written back unchanged */
 typedef struct { uint32_t number; char name[31]; uint32_t n, cap; lj_cl_line *lines; uint32_t mark[LJ_MARKS]; uint8_t tracking; } lj_cuelist;
 
 typedef struct { uint32_t number; char name[31]; uint8_t transparent;
@@ -80,18 +83,26 @@ typedef struct { uint8_t kind /*enum lj_fixture_kind*/; uint16_t profile_id;   /
                  uint8_t link; uint16_t address;            /* 1-4, 1-512 */
                  uint8_t invert_pan, invert_tilt, swap_pt, ignore_bo, ignore_gm, link_strobe_gm;
                  char user_name[31]; uint8_t placed, tab; int16_t icon_x, icon_y; uint8_t intensity_group /*0 or 1-8*/;
-                 lj_palette custom[6]; } lj_fixture;        /* 02 s2.4, s4.3; kind/profile_id 0 with link 0 = unused row */
+                 lj_palette custom[6];
+                 char ch_caption[LJ_PROFILE_CH][6]; uint32_t ch_gm_off;   /* W3 Channel Configuration (ME-32): per-offset caption ("" = the profile's), bit k = Disable Grand Master Control on offset k; Config.dat chcap n= / chgm= */
+               } lj_fixture;        /* 02 s2.4, s4.3; kind/profile_id 0 with link 0 = unused row */
 
 typedef struct { char name[31]; uint8_t member[LJ_FIXTURES]; } lj_group;                       /* 18 s8 */
 typedef struct { uint8_t used; int16_t pan, tilt; } lj_preset;                                  /* per fixture x 99, readout units 17 s1 */
 typedef struct { char name[31]; uint8_t val[LJ_CHANS], state[LJ_CHANS]; } lj_user_palette;     /* per control kind, growable */
 typedef struct { uint8_t src_kind /*enum lj_patch_src*/, src_link; uint16_t src_ch; uint8_t in_mode /*enum lj_in_mode*/, invert, min, max; uint32_t htp_mask; } lj_patch_ch;  /* 02 s7.1; min/max 0/255 = no limit */
+typedef struct { uint8_t shape, base_on, base; int16_t amp_pos, amp_neg; uint16_t cycle_ds; uint8_t dir; uint16_t delay; } lj_gm_param;   /* W3 named it (was anonymous): shape 0..65 = Macros.Mac index [14 sA.6], dir enum lj_dir FWD/REV/BOUNCE, delay 0..8191 */
 typedef struct { uint32_t number; char name[31]; uint8_t restart_on_load;
-                 struct { uint8_t shape, base_on, base; int16_t amp_pos, amp_neg; uint16_t cycle_ds; uint8_t dir; uint16_t delay; } ch[LJ_CHANS]; } lj_genmacro;
+                 lj_gm_param ch[LJ_CHANS]; } lj_genmacro;
 
 typedef struct { uint8_t used; char name[31]; uint8_t selected[LJ_FIXTURES];   /* the selection state is recorded too */
                  uint8_t val[LJ_CHANS], state[LJ_CHANS];                        /* "Apply Current Settings": every programmed channel, applied with all channels snapped */
                  uint8_t static_page, static_slot, static_auto_clear; } lj_followspot;   /* 04 s13: 20 settings; activation opens Intensity + Movement; static association since 2.6 */
+
+/* W3: Generic DMX Control channel groups [CHM genericdmxcontrol, F35]: 32 named groups, membership and the
+ * "Hide Selected Channels" map per address code (GenericGroups.dat, PROPOSAL name; model/lj_gdc.h). */
+typedef struct { char name[LJ_GEN_GROUPS][31]; uint8_t used[LJ_GEN_GROUPS]; uint32_t member[LJ_CHANS] /* bit g = group g+1 */; uint8_t hidden[LJ_CHANS]; } lj_gdc_groups;
+typedef struct lj_bez_set lj_bez_set;   /* W3: the Bezier movement shapes, sampled (model/lj_movemacro.h) */
 
 typedef struct {
     lj_fixture fixture[LJ_FIXTURES]; lj_patch_ch patch[LJ_CHANS]; uint8_t default_out[LJ_CHANS];
@@ -99,6 +110,10 @@ typedef struct {
     lj_preset preset[LJ_FIXTURES][LJ_PRESETS]; lj_static_page *pages; int npages;
     lj_followspot followspot[LJ_FOLLOWSPOT]; lj_table sequences, cues, cuelists, bgcues, macros;   /* number -> record; loaded, inserted and freed by the UI thread only (2.3); in-memory lookup elsewhere */
     lj_sequence *current_seq; lj_cue *current_cue; lj_cuelist *current_cl;
+    /* ---- W3 (appended; docs/w3-contracts.md) ---- */
+    lj_profile *gs2; int ngs2;          /* the user's UserFixtureDef\*.GS2, parsed (fixlib/lj_gs2.h); a GS2 fixture's profile is lj_show_gs2(show, gs2_file); replaced whole under lj_lock (Reload profile data, ME-31) */
+    const lj_bez_set *bez;              /* Bezier movement shapes sampled to the 4096-point tables; the engine reads it per tick for macro types >= LJ_MM_TYPE_BEZ0; replaced whole under lj_lock */
+    lj_gdc_groups gdc;                  /* Generic DMX Control groups and hidden channels */
 } lj_show;   /* ~720 KB: always heap-allocated (lj_show_new), never on a stack */
 
 /* Rules kept from the inventory (design 4 last paragraph): programming data is keyed

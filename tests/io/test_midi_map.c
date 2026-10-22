@@ -87,6 +87,41 @@ static void lj_t_files(void)
     remove("test_midi_MIDIIn.Ini"); remove("test_midi_MIDIMap.dat"); remove("test_midi_bad.Ini"); remove("test_midi_bad.dat");
 }
 
+/* W3 (cuelist-core): LORD_C-6 lj_midi_feed rows and one MTC quarter-frame sequence through lj_mtc_feed */
+static uint8_t lj_t_fm[8][3]; static int lj_t_fn_count;
+static void lj_t_fmsg(const uint8_t m[3], void *ud) { (void)ud; if (lj_t_fn_count < 8) memcpy(lj_t_fm[lj_t_fn_count], m, 3); lj_t_fn_count++; }
+static void lj_t_feed_mtc(void)
+{
+    static const uint8_t running[] = { 0x90, 60, 100, 61, 0 };                 /* running status: two note ons */
+    static const uint8_t realtime[] = { 0x90, 0xF8, 62, 0xFE, 90 };            /* clock / active sensing inside a message */
+    static const uint8_t sysex[] = { 0xF0, 0x7E, 0x10, 0xF7, 0xC3, 5, 0xD0, 7 };   /* SysEx skipped; program change, pressure 1 byte */
+    static const uint8_t qf_then[] = { 0x90, 64, 1, 0xF1, 0x35, 65, 2 };        /* F1 emitted, then cancels running status */
+    uint8_t run[3] = { 0, 0, 0 }; int have = 0, k;
+    lj_mtc t; uint32_t ms = 0;
+    /* 01:02:03:04 at 25 fps, the eight pieces 0..7 (rate 1 = 25 in piece 7 bits 1-2) */
+    const uint8_t qf[8] = { 0x04, 0x10, 0x23, 0x30, 0x42, 0x50, 0x61, 0x72 };
+    lj_t_fn_count = 0;
+    CHECK(lj_midi_feed(running, sizeof running, run, &have, lj_t_fmsg, NULL) == 2 && lj_t_fm[1][0] == 0x90 && lj_t_fm[1][1] == 61 && lj_t_fm[1][2] == 0);
+    lj_t_fn_count = 0; memset(run, 0, 3); have = 0;
+    CHECK(lj_midi_feed(realtime, sizeof realtime, run, &have, lj_t_fmsg, NULL) == 1 && lj_t_fm[0][1] == 62 && lj_t_fm[0][2] == 90);
+    lj_t_fn_count = 0; memset(run, 0, 3); have = 0;
+    CHECK(lj_midi_feed(sysex, sizeof sysex, run, &have, lj_t_fmsg, NULL) == 2 && lj_t_fm[0][0] == 0xC3 && lj_t_fm[0][1] == 5 && lj_t_fm[0][2] == 0 && lj_t_fm[1][0] == 0xD0);
+    lj_t_fn_count = 0; memset(run, 0, 3); have = 0;
+    CHECK(lj_midi_feed(qf_then, sizeof qf_then, run, &have, lj_t_fmsg, NULL) == 2 && lj_t_fm[1][0] == 0xF1 && lj_t_fm[1][1] == 0x35 && lj_t_fm[1][2] == 0);
+    lj_t_fn_count = 0; memset(run, 0, 3); have = 0;   /* a message split across two calls keeps its running state */
+    CHECK(lj_midi_feed(qf_then, 2, run, &have, lj_t_fmsg, NULL) == 0 && lj_midi_feed(qf_then + 2, 1, run, &have, lj_t_fmsg, NULL) == 1 && lj_t_fm[0][1] == 64);
+    lj_mtc_reset(&t);
+    CHECK(lj_mtc_time(&t, 0, &ms) == -1);
+    for (k = 0; k < 7; k++) CHECK(lj_mtc_feed(&t, qf[k], (uint64_t)k * 10000u) == 0);
+    CHECK(lj_mtc_feed(&t, qf[7], 70000u) == 1 && t.fps == 25);
+    CHECK(lj_mtc_time(&t, 80000u, &ms) == 0 && ms == 3723160u);              /* (1 h 2 m 3 s) + 4 frames at 25 fps = 3 723 160 ms */
+    CHECK(lj_mtc_time(&t, 70000u + 500001u, &ms) == -1);                      /* time code stopped: past the 0.5 s time-out */
+    CHECK(lj_mtc_feed(&t, 0x77, 80000u) == 0);                                /* piece 7 without a full set: nothing new */
+    for (k = 0; k < 8; k++) lj_mtc_feed(&t, (uint8_t)(k == 2 ? 0x2F : qf[k]), 90000u);   /* seconds lo 15 + hi 0 = 15: a valid set */
+    CHECK(lj_mtc_time(&t, 90000u, &ms) == 0 && ms == 3735160u);
+    { uint8_t m[3] = { 0xF1, 0x04, 0 }; uint8_t got[3]; while (lj_midi_poll(got)) {} lj_midi_post(m); CHECK(lj_midi_poll(got) == 1 && got[0] == 0xF1 && got[1] == 0x04); }   /* F1 rides the queue to the UI thread */
+}
+
 int lj_test_midi_map(int argc, char **argv);
 int lj_test_midi_map(int argc, char **argv)
 {
@@ -215,6 +250,7 @@ int lj_test_midi_map(int argc, char **argv)
     CHECK(lj_midi_unassign(&m, LJ_MIDI_CUE, 0, 60) == 0 && lj_midi_unassign(&m, LJ_MIDI_CUE, 0, 60) == -1);
     lj_fn_unbind_all();
     lj_t_files();
+    lj_t_feed_mtc();
     printf("test_midi_map: %d failure(s)\n", fails);
     return fails ? 1 : 0;
 }

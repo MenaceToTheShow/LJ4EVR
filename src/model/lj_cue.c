@@ -31,8 +31,8 @@ int lj_cue_load(const char *path, lj_cue *out, char *err, size_t cap)
         else if (strcmp(k, "cuetime") == 0) out->cue_time_pct = (uint16_t)lj_kv_range_lead(v, 100, 1, 999, &rbad);   /* ME-77: 65636 fails, never aliases to 100 */
         else if (strcmp(k, "macro") == 0) {
             uint32_t m[2];
-            if (lj_kv_list(v, m, 2) != 2 || m[0] > 100 || m[1] > 100) { bad = "macro= needs amp,speed 0..100"; break; }
-            out->macro_amp_pct = (uint8_t)m[0]; out->macro_speed_pct = (uint8_t)m[1];
+            if (lj_kv_list(v, m, 2) != 2 || m[0] > 999 || m[1] > 999) { bad = "macro= needs amp,speed 0..999"; break; }   /* 1-999 % option [03 s5.11] */
+            out->macro_amp_pct = (uint16_t)m[0]; out->macro_speed_pct = (uint16_t)m[1];
             out->save_macro_values = (uint8_t)lj_kv_range(v, "savemacro", 0, 0, 1, &rbad);
         } else if (strcmp(k, "transparent") == 0) out->transparent = (uint8_t)lj_kv_range_lead(v, 0, 0, 1, &rbad);
         else if (strcmp(k, "bgcue") == 0) {
@@ -100,7 +100,7 @@ const char *lj_cue_validate(const lj_cue *in)
     int i;
     if (!memchr(in->name, 0, sizeof in->name) || !memchr(in->type, 0, sizeof in->type)) return "name or type not NUL-terminated";
     if (in->cue_time_pct < 1 || in->cue_time_pct > 999) return "cue time not 1..999 %";
-    if (in->macro_amp_pct > 100 || in->macro_speed_pct > 100) return "macro amplitude or speed over 100 %";
+    if (in->macro_amp_pct > 999 || in->macro_speed_pct > 999) return "macro amplitude or speed over 999 %";   /* 1-999 % option [03 s5.11] */
     for (i = 0; i < LJ_CUE_SLOTS; i++) {
         const lj_cue_slot *s = &in->slot[i];
         if (!s->seq) {

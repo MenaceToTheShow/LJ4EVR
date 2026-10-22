@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "app/lj_app_seam.h"
+#include "app/lj_app_w3.h"
 #include "app/lj_prefs.h"
 #include "app/lj_startup.h"
 #include "app/lj_sysmem.h"
@@ -211,6 +212,7 @@ static void lj_app_idle(void *ud)
     lj_app_service_pending();
     lj_app_midi_dispatch();                                            /* seam 2: MIDI events run on this thread */
     now = lj_clock_us();
+    lj_app_cuelist_step(now);                                          /* W3: the cue list runs here, once per 10 ms wake, never in the engine (design 2.3 rule 4) */
     lj_app_seam_idle(now);
     if (now - lj_a.last_refresh >= 100000u) { lj_a.last_refresh = now; lj_app_refresh(); }   /* the 100 ms cadence [11 E24] */
     if (lj_a.run_ms > 0 && (now - lj_a.t0) / 1000u >= (uint64_t)lj_a.run_ms) lj_app_quit();
@@ -261,7 +263,8 @@ static void lj_app_startup_options(lj_ini *ini)
     }
     if ((n = lj_ini_geti(ini, "STARTUP", "Cue", 0)) != 0) lj_app_load_cue((uint32_t)n, 0);
     if ((n = lj_ini_geti(ini, "STARTUP", "PCUE", 0)) != 0) lj_app_load_bgcue((uint32_t)n);   /* PROPOSAL: PCUE = the BG Cue # row of [01 s6.2]; LJ2's key meaning UNVERIFIED */
-    if ((n = lj_ini_geti(ini, "STARTUP", "Cl", 0)) != 0) lj_log("startup: cue list %d (ClRun=%d) is W3", n, lj_ini_geti(ini, "STARTUP", "ClRun", 0));
+    if ((n = lj_ini_geti(ini, "STARTUP", "Cl", 0)) != 0 && lj_app_load_cuelist((uint32_t)n) == 0 && lj_ini_geti(ini, "STARTUP", "ClRun", 0))
+        lj_desktop_run_action(LJ_ACT_CUELIST_OP, LJ_CL_OP_ARG(LJ_CL_OP_TOP, 0));   /* W3: the cue list, Run = from the top */
     if (lj_ini_geti(ini, "STARTUP", "ShowNotes", 0)) lj_win_open(LJ_WIN_NOTES);   /* AutoLampOn: lj_app_seam_start schedules Striking Lamps */
     if (lj_ini_geti(ini, "STARTUP", "Minimized", 0) && lj_a.main) {
         struct lj_menu *m = lj_window_menus(lj_a.main);
@@ -302,6 +305,12 @@ static int lj_app_selftest(lj_window *seq, int startup_ok)
         ok = ndev >= 0 && lj_midi_poll(m) == 1 && memcmp(m, note, 3) == 0;
         printf("selftest MIDI-IN: %d input device(s) listed, injected 90 3C 7F polled back: %s\n", ndev, ok ? "OK" : "FAIL");
         if (!ok) startup_ok = 0;
+    }
+    {   /* W3 (ME-2): the cue-list runner is stepped once per idle pass of the UI loop, never by the engine */
+        uint32_t s0 = lj_app_cuelist_steps();
+        for (i = 0; i < 3; i++) lj_app_idle(NULL);
+        printf("selftest cue-list runner: %u step(s) over 3 idle passes: %s\n", (unsigned)(lj_app_cuelist_steps() - s0), lj_app_cuelist_steps() - s0 == 3 ? "OK" : "FAIL");
+        if (lj_app_cuelist_steps() - s0 != 3) startup_ok = 0;
     }
     if (!seq) { printf("selftest FAIL: TSEQUENCEFORM did not open\n"); return 1; }
     lj_window_set_active(seq, 0);
@@ -424,6 +433,7 @@ int lj_app_main(int argc, char **argv)
 
     /* 7. prefs + MIDI + hotkey setup + the lj_fn rows that need the disk + the W2 actions (lj_app_seam.c), the W1 windows, Startup Options */
     lj_app_seam_start();
+    lj_app_w3_start();                                               /* W3: cue-list runner, editor record, reloads, the W3 actions (lj_app_w3.c) */
     lj_ctl_set_host(&lj_app_host);                                   /* control windows reach the screen the way windows/ does */
     { static const enum lj_desktop_action acts[] = { LJ_ACT_CLOSE, LJ_ACT_FIXTURE_CONFIG, LJ_ACT_HARDWARE_SETUP, LJ_ACT_STARTUP_OPTIONS, LJ_ACT_SAVE_SEQUENCE, LJ_ACT_SAVE_CUE, LJ_ACT_CTL_OPEN_ONLY, LJ_ACT_RESTART };
       for (i = 0; i < LJ_COUNT_OF(acts); i++) lj_desktop_bind_action(acts[i], lj_app_action, NULL); }
@@ -463,6 +473,7 @@ out:
     c->engine = NULL;
     lj_unlock();
     lj_engine_destroy(engine);
+    lj_app_w3_stop();                                              /* the editor record and the shape override, now that no engine reads them */
     lj_lock(); lj_show_free(show); c->show = NULL; lj_unlock();
     if (!lj_a.no_save) { lj_app_save_ini(c->forms_ini, forms_path); lj_app_save_ini(c->main_ini, main_path); lj_app_save_ini(c->hardware_ini, hw_path); }
     lj_ini_free(c->forms_ini); lj_ini_free(c->main_ini); lj_ini_free(c->hardware_ini);

@@ -17,6 +17,10 @@
 
 static const uint8_t lj_engine_zero[LJ_CHANS] = { 0 };       /* rank 0 of an unbound engine */
 
+enum { LJ_MM_GAIN = 256 };   /* W3 movement: the Cue macro control's amplitude gain at 100 % (Q8) */
+struct lj_engine;
+static void lj_engine_mm_ctl(struct lj_engine *e, const lj_cmd *c, uint64_t now);
+
 struct lj_engine {
     lj_frame               frame;
     lj_cmd                 cmds[LJ_ENGINE_CMD_CAP];     /* design 2.3 rule 1: a plain array, appended under lj_lock */
@@ -29,9 +33,10 @@ struct lj_engine {
     const void            *sacn_cfg;                    /* parked by LJ_CMD_SACN_CFG until lj_engine_take_sacn_cfg (ME-23) */
     /* W1 state */
     lj_pairs               pairs;                       /* declared 16-bit pairs (ME-22) */
-    const lj_cue          *cue; uint8_t cue_edit; uint16_t cue_pct; uint8_t macro_amp_pct, macro_speed_pct;
+    const lj_cue          *cue; uint8_t cue_edit; uint16_t cue_pct; uint16_t macro_amp_pct, macro_speed_pct;   /* W3: 0..999 [03 s5.11] */
+    struct { uint16_t gain, from, to; uint8_t fade, frozen; uint64_t t0_us; uint32_t ms; } mmc;   /* W3 MACRO_FADE: amplitude gain 0..LJ_MM_GAIN (Fade out / in, Off / On), Freeze (movement track) */
     const lj_bgcue        *bg;
-    const lj_genmacro     *gm; lj_gm_ch gm_ch[LJ_CHANS];
+    lj_gm_rank6            gm;                          /* rank 6: the cue's and the editor's generic macro, shapes, engine / slot on (W3 genmacro) */
     const lj_static_slot  *static_slot[LJ_STATIC_RUNNERS];
     lj_mm_state            mm[LJ_FIXTURES];             /* movement-macro indexes, advanced once per tick (ME-35) */
     const lj_movemacro    *mm_src[LJ_FIXTURES]; uint8_t mm_cue[LJ_FIXTURES];   /* the macro the previous tick's merged[] carried per fixture, and whether a cue slot won it */
@@ -61,6 +66,7 @@ lj_engine *lj_engine_create(void)
         e->post.gm = 255; memset(e->post.sub, 255, sizeof e->post.sub);
         e->post.solo_fixture = -1;
         e->cue_pct = 100; e->macro_amp_pct = e->macro_speed_pct = 100;
+        e->mmc.gain = e->mmc.to = LJ_MM_GAIN;
         e->rng = LJ_RNG_SEED;
         e->transparent_mode = LJ_TRANSPARENT_DEFAULT;
         memset(e->st.static_slot_of, 0xFF, sizeof e->st.static_slot_of);
@@ -68,6 +74,7 @@ lj_engine *lj_engine_create(void)
         e->st.prefs[LJ_PREF_USE_GLOBAL_CHASE_RATE] = LJ_CHASE_GLOBAL_RATE;
         e->st.prefs[LJ_PREF_STATICS_USE_FADETIME] = LJ_STATICS_USE_FADETIME;
         e->smoke.level = LJ_SMOKE_LEVEL_DEFAULT; e->smoke.duration_ms = LJ_SMOKE_DURATION_DEFAULT_MS; e->smoke.cycle_ms = LJ_SMOKE_CYCLE_DEFAULT_MS;
+        e->st.gm_engine_on = e->st.gm_slot_on = 1; e->st.mm_amp_pct = e->st.mm_speed_pct = 100;   /* W3 view defaults (the engine track keeps them live) */
     }
     return e;
 }
@@ -169,7 +176,7 @@ static void lj_engine_load_cue(lj_engine *e, const lj_cmd *c, uint64_t t)
 #if LJ_FLASH_RELEASE_ON_LOAD
     lj_runner_clear(&e->run[LJ_RUN_FLASH]); e->flash_latch = 0;   /* Release Flash on Load */
 #endif
-    if (!cue) { for (k = 0; k < LJ_CUE_SLOTS; k++) lj_runner_clear(&e->run[k]); e->st.cue_number = 0; return; }   /* New cue: clears the cue control */
+    if (!cue) { for (k = 0; k < LJ_CUE_SLOTS; k++) lj_runner_clear(&e->run[k]); e->st.cue_number = 0; lj_gm_rank6_load_cue(&e->gm, NULL); return; }   /* New cue: clears the cue control, its macro slot too */
     e->cue_pct = cue->cue_time_pct ? (cue->cue_time_pct > LJ_TIME_PCT_MAX ? LJ_TIME_PCT_MAX : cue->cue_time_pct) : 100;
     transparent = lj_engine_transparent(e, cue->transparent);
     if (cue->save_macro_values) { e->macro_amp_pct = cue->macro_amp_pct; e->macro_speed_pct = cue->macro_speed_pct; }   /* W2: Restore Macro Control Values preference */
@@ -184,10 +191,10 @@ static void lj_engine_load_cue(lj_engine *e, const lj_cmd *c, uint64_t t)
     }
     e->st.cue_number = cue->number;
     if (cue->bg_cue) { if (c->bg) lj_engine_load_bg(e, c->bg, c->bgseq, t); else e->st.pending_bg = cue->bg_cue; }   /* latched bg cue: pinned here or requested (2.3 rule 3); W2: Disable BG Cue Latch preference, BG latch from the cue list / 2532 */
-    if (cue->gen_macro) {
-        if (c->gm) { e->gm = c->gm; if (c->gm->restart_on_load) lj_genmacro_restart(e->gm_ch); }   /* 14 sA.3 (7): restart on cue load if flagged */
-        else e->st.pending_genmacro = cue->gen_macro;
-    }
+    if (cue->gen_macro) {                                      /* latched generic macro: pinned here or requested (2.3 rule 3, ME-2) */
+        lj_gm_rank6_load_cue(&e->gm, c->gm);                   /* NULL until the UI answers pending_genmacro: the old cue's macro stops */
+        if (!c->gm) e->st.pending_genmacro = cue->gen_macro;
+    } else if (!transparent) lj_gm_rank6_load_cue(&e->gm, NULL);   /* a cue with an empty macro slot clears it (PROPOSAL rig 14 sA.9; a transparent cue keeps it) */
 }
 
 static void lj_engine_freeze(lj_engine *e, int on, uint64_t now)
@@ -349,7 +356,7 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     switch (c->kind) {
     case LJ_CMD_LOAD_CUE: lj_engine_load_cue(e, c, t); break;
     case LJ_CMD_LOAD_BG: lj_engine_load_bg(e, c->bg, c->bgseq, t); break;
-    case LJ_CMD_LOAD_GENMACRO: e->gm = c->gm; if (c->b || (c->gm && c->gm->restart_on_load)) lj_genmacro_restart(e->gm_ch); break;
+    case LJ_CMD_LOAD_GENMACRO: case LJ_CMD_GENMACRO_ON: case LJ_CMD_GENMACRO_RESTART: case LJ_CMD_GM_SHAPES: lj_gm_rank6_cmd(&e->gm, c); break;   /* W3 genmacro */
     case LJ_CMD_CURRENT_SEQ: {
         lj_runner *r = &e->run[LJ_RUN_CURRENT];
         int was_blind = r->blind;
@@ -370,7 +377,7 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_GO: case LJ_CMD_STOP: {
         int go = c->kind == LJ_CMD_GO;
         if (c->a == LJ_RUN_ALL) { for (k = 0; k < LJ_CUE_SLOTS; k++) { if (go) lj_runner_go(&e->run[k], t, e->tick_us, e->frame.merged, e->cue_pct); else lj_runner_stop(&e->run[k]); } break; }
-        if (c->a >= LJ_RUN_COUNT) break;
+        if (c->a >= LJ_RUN_STATIC0) break;                     /* LORD_ENGINE-7: static runners belong to STATIC / STATIC_ACTIVATE (the cue list posts GO / STOP / TRIG) */
         if (c->a == LJ_RUN_CURRENT) {
             lj_runner *r = &e->run[LJ_RUN_CURRENT];
             if (go) { r->trig = LJ_TRIG_AUTO; lj_runner_go(r, t, e->tick_us, e->frame.merged, 100); }
@@ -383,7 +390,7 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     }
     case LJ_CMD_TRIG: {
         int lo = 0, n = LJ_CUE_SLOTS;
-        if (c->a != LJ_RUN_ALL) { if (c->a >= LJ_RUN_COUNT) break; lo = (int)c->a; n = 1; }
+        if (c->a != LJ_RUN_ALL) { if (c->a >= LJ_RUN_STATIC0) break; lo = (int)c->a; n = 1; }   /* LORD_ENGINE-7 */
         if (c->a == LJ_RUN_ALL || c->a < LJ_CUE_SLOTS) lj_engine_tap(e, t, lo, n, 0);   /* F10: the cue's trigs only (the Sequence window's Trig is no chase tap, ME-93); period = the last two (E9: 1 ms) */
         for (k = lo; k < lo + n; k++) {
             if (e->st.prefs[LJ_PREF_HOTKEY_TRIG_CHANGES_DIR] && c->b <= LJ_DIR_RANDOM && k < LJ_CUE_SLOTS) e->run[k].dir = (uint8_t)c->b;   /* [CUE] HotkeyChangeSeqDir: a trig with a direction sets the slot's */
@@ -432,7 +439,8 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
         if (c->a == 0) e->seq_int_mode = (uint8_t)c->b;
         else if (c->a <= LJ_CUE_SLOTS) e->run[c->a - 1].seq_int = (uint8_t)(c->b > 255 ? 255 : c->b);
         break;
-    case LJ_CMD_MACRO_CTL: e->macro_amp_pct = (uint8_t)(c->a > 255 ? 255 : c->a); e->macro_speed_pct = (uint8_t)(c->b > 255 ? 255 : c->b); break;
+    case LJ_CMD_MACRO_CTL: e->macro_amp_pct = (uint16_t)(c->a > LJ_MOVEMACRO_PCT_MAX ? LJ_MOVEMACRO_PCT_MAX : c->a); e->macro_speed_pct = (uint16_t)(c->b > LJ_MOVEMACRO_PCT_MAX ? LJ_MOVEMACRO_PCT_MAX : c->b); break;   /* W3: 1-999 % */
+    case LJ_CMD_MACRO_FADE: lj_engine_mm_ctl(e, c, t); break;   /* W3 movement: the Cue macro control buttons [03 s5.11] */
     case LJ_CMD_DISABLE_FADE: e->run[LJ_RUN_CURRENT].disable_fade = (c->b != 0); break;   /* F15 */
     case LJ_CMD_SACN_CFG: e->sacn_cfg = c->sacn; break;       /* ME-23: collected by the engine thread after the tick */
     /* ---- W2 kinds ---- */
@@ -524,8 +532,9 @@ static void lj_engine_fill_view(lj_engine *e, uint64_t now)
     s->cur_scene = (uint16_t)(cur->seq ? cur->scene + 1 : 0); s->cur_scenes = (uint16_t)(cur->seq ? cur->seq->n : 0);
     if (cur->seq) {
         uint64_t el = now > cur->fade_t0_us ? now - cur->fade_t0_us : 0;
-        s->cur_scene_ms = (uint32_t)((cur->scene_due_us - cur->fade_t0_us) / 1000u);
-        s->cur_scene_elapsed_ms = (uint32_t)((el > cur->scene_due_us - cur->fade_t0_us ? cur->scene_due_us - cur->fade_t0_us : el) / 1000u);
+        uint64_t span = cur->scene_due_us > cur->fade_t0_us ? cur->scene_due_us - cur->fade_t0_us : 0;   /* LORD_ENGINE-9: an unfreeze moves fade_t0 past a held scene's due time */
+        s->cur_scene_ms = (uint32_t)(span / 1000u);
+        s->cur_scene_elapsed_ms = (uint32_t)((el > span ? span : el) / 1000u);
         s->cur_fade_ms = (uint32_t)(cur->fade_dur_us / 1000u);
         s->cur_fade_elapsed_ms = (uint32_t)((el > cur->fade_dur_us ? cur->fade_dur_us : el) / 1000u);
     } else s->cur_scene_ms = s->cur_scene_elapsed_ms = s->cur_fade_ms = s->cur_fade_elapsed_ms = 0;
@@ -554,6 +563,34 @@ static void lj_engine_fill_view(lj_engine *e, uint64_t now)
     s->smoke_cycle_elapsed_ms = e->smoke.elapsed_ms;
 }
 
+/* ---- W3 movement: the Cue macro control's Fade out / in, Macros Off / On, Freeze / Run [03 s5.11] (MACRO_FADE) ---- */
+static void lj_engine_mm_step(lj_engine *e, uint64_t now)
+{
+    uint64_t el;
+    if (!e->mmc.fade) return;
+    el = now > e->mmc.t0_us ? (now - e->mmc.t0_us) / 1000u : 0;
+    if (el >= e->mmc.ms) { e->mmc.gain = e->mmc.to; e->mmc.fade = 0; return; }
+    e->mmc.gain = (uint16_t)((int64_t)e->mmc.from + ((int64_t)e->mmc.to - e->mmc.from) * (int64_t)el / e->mmc.ms);   /* LJ_MOVEMACRO_FADE_LINEAR */
+}
+static void lj_engine_mm_ctl(lj_engine *e, const lj_cmd *c, uint64_t now)
+{
+    switch (c->a) {
+    case LJ_MM_FADE_OUT: case LJ_MM_FADE_IN:
+        lj_engine_mm_step(e, now);
+        e->mmc.from = e->mmc.gain; e->mmc.to = c->a == LJ_MM_FADE_IN ? LJ_MM_GAIN : 0;
+        e->mmc.t0_us = now; e->mmc.ms = c->b;
+        e->mmc.fade = (uint8_t)(c->b && e->mmc.from != e->mmc.to ? (c->a == LJ_MM_FADE_OUT ? 1 : 2) : 0);
+        if (!e->mmc.fade) e->mmc.gain = e->mmc.to;
+        break;
+    case LJ_MM_OFF: case LJ_MM_ON: e->mmc.fade = 0; e->mmc.gain = e->mmc.to = c->a == LJ_MM_ON ? LJ_MM_GAIN : 0; break;   /* instant */
+    case LJ_MM_FREEZE: e->mmc.frozen = 1; break;           /* speed 0 [03 s5.11] */
+    case LJ_MM_RUN: e->mmc.frozen = 0; break;
+    default: break;
+    }
+}
+static int lj_engine_mm_amp(const lj_engine *e) { return (int)((uint32_t)e->macro_amp_pct * e->mmc.gain / LJ_MM_GAIN); }   /* the scale in force: floor */
+static int lj_engine_mm_speed(const lj_engine *e) { return e->mmc.frozen ? 0 : e->macro_speed_pct; }
+
 void lj_engine_tick(lj_engine *e, uint64_t now_us)
 {
     lj_frame *f = &e->frame;
@@ -564,7 +601,8 @@ void lj_engine_tick(lj_engine *e, uint64_t now_us)
     e->ncmd = 0;
     lj_gm_fade_step(&e->gm_fade, now_us, &e->post.gm);         /* G11: the GM fade runner (a master move, not an S0 input) */
     if (!e->frozen) {                                          /* F20: freeze pauses fade and macro calculation */
-        for (k = 0; k < LJ_FIXTURES; k++) lj_movemacro_advance(&e->mm[k], e->mm_src[k], e->tick_us, e->mm_cue[k] ? e->macro_speed_pct : 100);   /* step 2: once per tick (ME-35) */
+        lj_engine_mm_step(e, now_us);                          /* W3: the cue macro control fade, frozen with the engine (F20) */
+        for (k = 0; k < LJ_FIXTURES; k++) lj_movemacro_advance(&e->mm[k], e->mm_src[k], e->tick_us, e->mm_cue[k] ? lj_engine_mm_speed(e) : 100);   /* step 2: once per tick (ME-35) */
     }
     for (i = 0; i < LJ_RUN_COUNT; i++) {                       /* step 2: trig scheduling, even when frozen (F20, E18) */
         uint32_t link;
@@ -578,11 +616,10 @@ void lj_engine_tick(lj_engine *e, uint64_t now_us)
             if (!lj_runner_active(r)) continue;
             if (r->stopped && !r->ended && i < LJ_RUN_STATIC0) continue;   /* F14 + LJ_STOP_HOLDS_FADE: a user Stop holds val[]/st[] (rig M8); an end-action stop keeps evaluating */
             if (i == LJ_RUN_CURRENT && r->blind) continue;     /* F21: the blind buffer */
-            lj_runner_eval(r, lj_engine_scene_of(e, i), now_us, &e->pairs, &e->post, i < LJ_RUN_STATIC0 ? e->mm : NULL, i < LJ_CUE_SLOTS ? e->macro_amp_pct : 100);
+            lj_runner_eval(r, lj_engine_scene_of(e, i), now_us, &e->pairs, &e->post, i < LJ_RUN_STATIC0 ? e->mm : NULL, i < LJ_CUE_SLOTS ? lj_engine_mm_amp(e) : 100);
         }
         lj_merge(e->default_out ? e->default_out : lj_engine_zero, e->run, &e->post, e->seq_int_mode, f->merged, f->layer_of);
-        if (e->gm && e->show) lj_genmacro_apply(e->gm, e->gm_ch, &e->post, f->merged, f->layer_of);   /* rank 6 */
-        if (e->gm) lj_genmacro_advance(e->gm, e->gm_ch, e->tick_us);   /* index for the next tick: a (re)started macro shows index 0 first [14 sA.3 (7)] */
+        lj_gm_rank6_tick(&e->gm, &e->post, f->merged, f->layer_of, e->tick_us);   /* rank 6 over ranks 0-5, then the index advance (lj_genmacro.c) */
         lj_engine_smoke(e, now_us, f->merged, f->layer_of);    /* rank 7 above rank 6 (LJ_SMOKE_RANK_ABOVE_GENMACRO, rig M15) */
         if (e->show) for (k = 0; k < LJ_FIXTURES; k++) {        /* remember the macro each fixture's output carried, for the next tick's index advance [17 s7.1] */
             int is_cue, w = lj_engine_pan_winner(e, k, &is_cue);
@@ -595,6 +632,10 @@ void lj_engine_tick(lj_engine *e, uint64_t now_us)
     f->tick_no++;                                              /* step 6: publish */
     if (e->snap_dst) { *e->snap_dst = *f; e->st.snapshot_tick = f->tick_no; e->snap_dst = NULL; }   /* SNAPSHOT_REQ: a copy, no I/O (LJ_SNAPSHOT_WHOLE_FRAME; snap_src is the UI's) */
     lj_engine_fill_view(e, now_us);
+    lj_gm_rank6_view(&e->gm, &e->st);                          /* W3 genmacro view: engine / slot on, the cue's and the editor's numbers */
+    e->st.mm_amp_pct = (uint16_t)lj_engine_mm_amp(e); e->st.mm_speed_pct = (uint16_t)lj_engine_mm_speed(e);   /* W3 movement view */
+    e->st.mm_fade = e->mmc.fade; e->st.mm_frozen = e->mmc.frozen;
+    for (k = 0; k < LJ_FIXTURES; k++) { e->st.mm_idx_pan[k] = (uint16_t)(e->mm[k].idx_pan >> 16); e->st.mm_idx_tilt[k] = (uint16_t)(e->mm[k].idx_tilt >> 16); }
     t_end = lj_clock_us();
     e->st.tick_us_last = (uint32_t)(t_end - t_start);
     if (e->st.tick_us_last > e->st.tick_us_max) e->st.tick_us_max = e->st.tick_us_last;

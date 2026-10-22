@@ -21,7 +21,10 @@
 #include "io/lj_hotkeys.h"
 #include "io/lj_midi.h"
 #include "io/lj_sacn.h"
+#include "model/lj_cuelist.h"
 #include "model/lj_cuepage.h"
+#include "model/lj_gdc.h"
+#include "model/lj_genmacro.h"
 #include "model/lj_groups.h"
 #include "model/lj_library.h"
 #include "model/lj_model.h"
@@ -55,6 +58,12 @@ typedef struct {
     uint8_t         transparent_mode;  /* enum lj_transparent_mode the cue control's Preferences hold (mirrors LJ_CMD_TRANSPARENT) */
     uint8_t         flash_latch;       /* "Latch Flash Sequences" (mirrors FLASH c) */
     int             static_visible;    /* Statics 2 "Visible Slots" 1..LJ_STATICS2_SLOTS_MAX (ME-30; Main.Ini [STATICS2] SlotsVisible) */
+    /* ---- W3 (appended; docs/w3-contracts.md) ---- */
+    const lj_cl_status *cl;            /* the cue list runner's published state (app/lj_cuelist_run.h owns it); the Cuelist window paints from it and acts through LJ_ACT_CUELIST_OP */
+    lj_genmacro    *gm_edit;           /* the Generic Macro Editor's working record; edits happen under lj_lock (the engine reads it pinned as LJ_GM_SRC_EDITOR) */
+    const lj_gm_shapes *gm_shapes;     /* the shape table in force: &lj_gm_shapes_builtin or the user's override (ME-34); the editor lists its names */
+    lj_gdc_state   *gdc;               /* Generic DMX Control selection and preferences */
+    uint8_t         followspot;        /* the active follow spot setting 1..20, 0 = none (tb_fixture_18 latches; LJ_FN_CLEAR_FOLLOWSPOT clears) */
 } lj_ctx;
 lj_ctx *lj_ctx_get(void);                                   /* the one context; zeroed until the app fills it */
 void    lj_ctx_set_modified(enum lj_modified which, int on); /* also repaints the status bar flag */
@@ -102,6 +111,18 @@ enum lj_desktop_action {
     LJ_ACT_LOAD_BGCUE /* arg = number: Select Background Cue / startup / hotkey */, LJ_ACT_STATIC_CLEAR /* arg = global slot: Clear Slot (engine handed NULL first) */,
     LJ_ACT_BGCUE_APPLY /* the Background Cue window edited or saved its record (lj_bgcue_form_work): the app pins a copy and posts LJ_CMD_LOAD_BG */,
     LJ_ACT_PIN_SEQ /* arg = sequence number: the app loads it from disk into show->sequences when absent (a Statics 2 link slot, ME-88) */,
+    /* W3 (appended; docs/w3-contracts.md): the windows' requests to the app */
+    LJ_ACT_LOAD_CUELIST /* arg = number: CueLists\NNNNNNNN.Cl2 into show->current_cl (the runner stops first); 0 = AutoSave.Cl2 (Options > Load Autosave) */,
+    LJ_ACT_CUELIST_OP /* arg = LJ_CL_OP_ARG(enum lj_cl_op, line or mark): the runner's transport (model/lj_cuelist.h) */,
+    LJ_ACT_LOAD_GENMACRO /* arg = number: Select Macro -> the editor's working record (ctx->gm_edit) + LOAD_GENMACRO c = EDITOR */,
+    LJ_ACT_GENMACRO_APPLY /* the editor changed ctx->gm_edit's channel set / restart flag: re-post LOAD_GENMACRO c = EDITOR (parameter edits under lj_lock need no post) */,
+    LJ_ACT_GENMACRO_TO_CUE /* arg = number: Add Macro to Cue (the working cue's gen_macro) and pin it as LJ_GM_SRC_CUE */,
+    LJ_ACT_GM_SHAPES_RELOAD /* Options > Update User Shapes: re-read the override folder (ME-34), post GM_SHAPES, free the old table after */,
+    LJ_ACT_BEZ_RELOAD /* a Bezier shape was saved / deleted: rebuild show->bez under lj_lock, free the old set after */,
+    LJ_ACT_GS2_RELOAD /* Reload profile data / after Import / Save Profile: show->gs2 rebuilt and every GS2 fixture re-bound (ME-31, lj_show.h) */,
+    LJ_ACT_GS2_EXPORT_ALL /* TLINKCONFIGFORM3 Export All: one .GS2 per user profile through lj_gs2_save (ME-31) */,
+    LJ_ACT_FOLLOWSPOT_APPLY /* arg = setting 1..20 (0 = Clear Followspot): lj_followspot_apply into the current scene, the associated static, Intensity + Movement opened */,
+    LJ_ACT_FIXTURE_APPLY /* arg = fixture index: Customize Fixture / Channel Configuration Ok: Config.dat + Setup.<slot>.pal saved, lj_engine_rebind */,
     LJ_ACT_COUNT
 };
 typedef void (*lj_desktop_action_fn)(enum lj_desktop_action a, int arg, void *ud);

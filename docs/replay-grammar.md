@@ -210,3 +210,62 @@ live sACN capture (acceptance 3). It passes on the W1 engine (11 E10 is W1 code)
 | `statics_link` | 7 | 8 | ME-88: a link slot outputs its sequence's scene, follows an in-place scene edit, a link to a missing sequence outputs nothing, the level scales it |
 | `pair16_static_bg` | 82 | 10 | ME-22 (LORD_ENGINE-12's probe): a 16-bit pair faded through a static at level 50 % with Use Fadetime and through a BG cue slot stays one value (tick 3: 1229, not a per-byte 1101 / 1357) |
 | `blind_keep_contents` | 9 | 9 | LORD_ENGINE-13, 11 F21: `[PREFS] KeepSeqBlind` both ways (`pref keep_seq_blind 1` keeps the output while blind, `0` takes the current sequence off it) |
+
+## W3 lines (contracts seat, 2026-10-22; parsed in `lj_replay.c` by the track that owns the rule)
+
+The engine never sees these forms. The UI-side ones (cue list, Fan Out, Auto Delay, follow spot, Generic DMX Control,
+Sequence Fades, `fx_edit`) do in the harness exactly what the window does on the UI thread: edit the pinned current
+scene under the lock, then post `LJ_CMD_CURRENT_SEQ`, so their frames are the windows' frames.
+
+Build lines:
+
+| Line | Meaning |
+|---|---|
+| `patch n ... gs2=<file>` | now accepted: `lj_gs2_load` of `<file>` relative to the scenario's folder (a synthetic record a test wrote, never Martin's), bound with `lj_engine_bind_profile` (gs2 track) |
+| `cl n [name="<name>"] [tracking=0\|1]` then `clline adv=auto\|manual cmd=<word> [param=<n>] [pstr="<s>"] [ref=<n>] [cue=<n>] [trig=<mask>] [comment="<s>"]` | a cue list in the `.Cl2` `line` grammar (the line number is the order); `cmd` words are `lj_cl_cmd_words`; a CD / DA / MP word gets `load_error = 1` as `lj_cuelist_load` sets it; validated with `lj_cuelist_validate` (cuelist-core) |
+| `bez n name="<name>"` then `node x= y= ix= iy= ox= oy= [line=1]` lines | Bezier shape n, sampled with `lj_bez_sample` into `show->bez` slot n-1 = macro type `LJ_MM_TYPE_BEZ0 + n - 1` (movement) |
+| `follow n [name="<name>"] sel=<f,f,...> [static=<p.s> autoclr=0\|1]` then `ch` lines | follow spot setting n into `show->followspot[n-1]` (gdc-fades-followspot) |
+| `gdcgroup g l:a [l:a ...]` | Generic DMX Control group g membership (`show->gdc`) |
+| `gm_shapes <file>` | `lj_gm_shapes_load` of a synthetic override (ME-34); `at k gm_shapes loaded` posts it |
+
+Command lines (`at <tick> ...`):
+
+| Form | Command / harness action |
+|---|---|
+| `at k load_genmacro <n> [restart] [editor]` | W2 form; `editor` = `c = LJ_GM_SRC_EDITOR` |
+| `at k genmacro_on engine\|slot 0\|1` | `LJ_CMD_GENMACRO_ON`, `a` = `LJ_GM_SRC_ENGINE` / `LJ_GM_SRC_CUE` |
+| `at k genmacro_restart [editor]` | `LJ_CMD_GENMACRO_RESTART` |
+| `at k load_cue <n> ... nogm` | genmacro track: the UI had no macro record to pin, so a latched `genmacro=` becomes `pending_genmacro` (the cue's old macro stops); twin of `nobg` |
+| `at k ack_genmacro` | services `pending_genmacro` as `lj_app_service_pending` does: `LJ_CMD_LOAD_GENMACRO` with the record pinned (fails when nothing is pending after tick k-1); twin of `ack_bg` |
+| `at k gm_shapes builtin\|loaded` | `LJ_CMD_GM_SHAPES` with NULL or the `gm_shapes` build table |
+| `at k macro_fade out\|in\|off\|on\|freeze\|run [ms]` | `LJ_CMD_MACRO_FADE` (`enum lj_mm_ctl`, b = ms) |
+| `at k fx_edit <seq> <scene> <fixture> macro=<...> [mst=<...>]` | runtime edit of a movement macro in the pinned sequence (the `fx` build syntax); posts nothing (the Movement Macro window's edit) |
+| `at k fanout <dpan> <dtilt> home=0\|1 order=<f,f,...>` | `lj_fan_out` on the current scene's pan / tilt (readout) of the listed fixtures, then `CURRENT_SEQ` |
+| `at k spread pan\|tilt order=<f,f,...>` | `lj_fan_spread`, then `CURRENT_SEQ` |
+| `at k autodelay linear\|circular\|segments\|random <max> [count=<n>] [segments=<n>] order=<f,f,...>` | `lj_mm_auto_delay` into the current scene's macro delay bytes (random uses the scenario `seed`), then `CURRENT_SEQ` |
+| `at k followspot <n>` / `at k followspot 0` | `lj_followspot_apply` into the current scene (all Snap), then `CURRENT_SEQ`; 0 = Clear |
+| `at k gdc "<command line>"` | `lj_gdc_parse` + `lj_gdc_run` on the current scene with the harness's one `lj_gdc_state`, then `CURRENT_SEQ`; a parse error fails the scenario naming the line |
+| `at k seqfades <attr,attr,...> <sfx> [all]` | `lj_seqfades_apply` on the selected fixtures (`sel=` of the last `fanout` / `follow`, else all), then `CURRENT_SEQ`; attrs = `intensity movement color gobo beam effects level movemacro`, sfx = `all_off all_snap all_fade off_snap off_fade snap_off snap_fade fade_off fade_snap` |
+| `at k cl_run <n> top\|line=<l>` | pins cue list n and runs `lj_cl_run_op(TOP / RUN)` |
+| `at k cl_go` / `cl_back` / `cl_stop [clear]` / `cl_jump <l>` / `cl_mark goto\|run <m>` / `cl_run_to <l>` | the other `enum lj_cl_op` |
+
+Cue list stepping: between tick k-1 and tick k the harness calls `lj_cl_run_step` at every `LJ_CL_STEP_MS` (10 ms) of
+synthetic time t in `((k-1) * tick_us, k * tick_us]`, now_us = t, before tick k runs: the 10 ms UI wake of design 2.3
+rule 4. Its `lj_cl_host`: `load_cue` = the `load_cue` form's pinned load, `post` = `lj_engine_cmd`, `clock` = synthetic
+midnight + t (day 0), `timecode` = PC elapsed only (MIDI / CD / DA / MP = -1), `exec` refuses, `fn` records the call.
+
+Expectations:
+
+| Form | Meaning |
+|---|---|
+| `expect_cl <tick> state=idle\|running\|wait_go [next=<l>] [last=<l>] [fn=<n>]` | the runner's `lj_cl_status` after that tick's steps; `fn` = Hotkey Command calls the harness host recorded so far (cuelist-core). An `at k cl_*` line first runs the 10 ms steps up to k * tick_us, then the click at exactly k * tick_us |
+| `expect_view <tick> ...` | gains `gm_engine gm_slot gm_cue gm_editor mm_amp mm_speed mm_fade mm_frozen` |
+| `expect_mm <tick> <fixture> pan=<idx> tilt=<idx>` | `mm_idx_pan` / `mm_idx_tilt` of the view (ME-35: two runners holding one fixture's macro advance it one step per tick) |
+
+## The five W3 scenarios (design 10 W3 acceptance 1, 3, 4)
+
+`cuelist_run` (cuelist-core), `genmacro_sine_amp186` and `genmacro_vs_bgcue` (genmacro), `movemacro_six_shapes` and
+`fanout_auto_delay` (movement). Committed by the contracts seat with their header comment and W2-grammar build lines
+only (0 expects, so `replay_all` stays green); each owning track adds the W3 lines and the expects with the rule ids in
+`# NOTE` lines, as W2 did.
+

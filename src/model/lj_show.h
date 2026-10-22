@@ -33,4 +33,20 @@ void        lj_show_remove_fixture(lj_show *show, int i);        /* clears the r
 
 int         lj_show_free_record(lj_show *show, enum lj_rec_kind kind, uint32_t number);   /* unlinks number from the kind's table and frees it; the app calls it under lj_lock after every runner was re-pinned (2.3 rule 6); -1 when absent */
 
+/* ---- W3 (appended; docs/w3-contracts.md seam 3) ----
+ * User profiles: every UserFixtureDef\*.GS2 is parsed once into show->gs2 (gs2_raw kept, the raw-record rule of
+ * design 5.3); a GS2 fixture finds its profile by gs2_file. Reload (Fixture Configuration "Reload profile data",
+ * ME-31) builds a new array outside the lock, swaps it in under lj_lock with lj_engine_bind_profile for every GS2
+ * fixture in the same critical section, then frees the old one (2.3 rule 6). */
+const lj_profile *lj_show_profile(const lj_show *show, int fixture);          /* built-in by profile_id, GS2 by gs2_file; NULL = unknown / unused row */
+const lj_profile *lj_show_gs2(const lj_show *show, const char *gs2_file);
+int  lj_show_gs2_load_all(const lj_library *lib, lj_profile **out, int *n);  /* bad files logged and skipped; 0 / -1 (no folder = 0 profiles) */
+void lj_show_gs2_free(lj_profile *p, int n);                                 /* lj_gs2_free on each, then the array; NULL is a no-op */
+/* Customize Fixture (TFixtureSetupForm [02 s4.3], design 6.5): the per-fixture palette overrides lj_fixture.custom[6]
+ * in UserFixtureDef\Setup.<slot>.pal, slot = fixture index + 1 ("LJ4 custompal 1", "pal p entry e rgb= bmp= ..."). */
+int  lj_fixture_custom_load(const char *path, lj_palette custom[6], char *err, size_t cap);
+int  lj_fixture_custom_save(const char *path, const lj_palette custom[6]);
+#define LJ_CUSTOM_PAL_FMT "UserFixtureDef\\Setup.%d.pal"   /* lj_library_path rel, %d = fixture index + 1 (profile-editor track; lj_show_load reads it) */
+#define LJ_CUSTOM_NO_RGB  0xFFFFFFFFu                        /* a custom entry overridden to "no colour" (Clear Entry); used = 0 = not overridden */
+
 #endif /* LJ_MODEL_SHOW_H */

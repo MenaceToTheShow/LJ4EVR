@@ -145,7 +145,13 @@ static void bind_window_fns(void)
 {
     static const struct { enum lj_fn f; enum lj_win w; } t[] = {
         { LJ_FN_TOGGLE_BGCUE_CONTROL, LJ_WIN_BGCUE_FORM }, { LJ_FN_STATICS_CONTROL, LJ_WIN_STATICS2_FORM },
-        { LJ_FN_SMOKE_CONTROL, LJ_WIN_SMOKE_CONTROL }, { LJ_FN_TOGGLE_NOTES, LJ_WIN_NOTES } };
+        { LJ_FN_SMOKE_CONTROL, LJ_WIN_SMOKE_CONTROL }, { LJ_FN_TOGGLE_NOTES, LJ_WIN_NOTES },
+        /* W3 (appended): View > Controls > Cuelist Control and tb_cuelist_1, tb_cuelist_4, Generics, the generic macro editor / list,
+         * Cue Macro Control, FanOut Control, P/T Macro (the Movement Macro window), Toggle BG Cue List (ME-104) */
+        { LJ_FN_CUELIST_CONTROL, LJ_WIN_CUELIST_FORM }, { LJ_FN_TOGGLE_LIST_OF_CUELISTS, LJ_WIN_SELECT_CUELIST }, { LJ_FN_GENERIC_CONTROLS, LJ_WIN_GDC_FORM },
+        { LJ_FN_GENMACRO_TOGGLE_EDITOR, LJ_WIN_GENMACRO_EDITOR }, { LJ_FN_GENMACRO_TOGGLE_LIST, LJ_WIN_SELECT_GENMACRO },
+        { LJ_FN_CUE_MACRO_CONTROL_TOGGLE, LJ_WIN_CUE_MACRO_CONTROL }, { LJ_FN_FANOUT_CONTROL, LJ_WIN_FAN_OUT }, { LJ_FN_PT_MACRO, LJ_WIN_MOVEMACRO_EDITOR },
+        { LJ_FN_TOGGLE_BG_CUE_LIST, LJ_WIN_SELECT_BGCUE } };
     int i;
     for (i = 0; i < LJ_COUNT_OF(t); i++) if (!lj_fn_bound(t[i].f)) lj_fn_bind(t[i].f, fn_toggle_win, (void *)(intptr_t)t[i].w);
 }

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "core/lj_fsinfo.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "gfx/lj_draw.h"
@@ -23,7 +24,7 @@
 enum { LJ_DF_MAX = 9999 };                                     /* the 4-digit record space [F28] */
 #define LJ_DF_CONFIRM "Please Confirm.."                       /* TCONFIRMFORM caption */
 
-typedef struct { uint32_t no; char name[31], type[31]; unsigned count; uint8_t sel, used; char line[112]; } lj_df_row;
+typedef struct { uint32_t no; char name[31], type[31]; unsigned count; uint8_t sel, used; char line[112]; char mtime[20]; } lj_df_row;   /* mtime: the Modified column (LORD_FIDELITY-12, W3 movement) */
 typedef struct { lj_window *win; lj_df_row *rows; const char **items; int n, anchor, sort_col, checked, close_pending; } lj_df_state;
 static lj_df_state df[LJ_REC_KIND_COUNT];
 static int (*lj_df_deleter)(int kind, uint32_t number);
@@ -48,7 +49,7 @@ static void row_line(enum lj_rec_kind k, lj_df_row *r)
     const char *type = r->type;
     unsigned count = r->count;
     switch (k) {
-    case LJ_REC_SEQ: snprintf(r->line, sizeof r->line, "%04u\t%s\t%s\t%u\t\t%s", (unsigned)r->no, r->name, type, count, r->used ? "Yes" : ""); break;   /* ponytail: Modified blank, no timestamp in the record */
+    case LJ_REC_SEQ: snprintf(r->line, sizeof r->line, "%04u\t%s\t%s\t%u\t%s\t%s", (unsigned)r->no, r->name, type, count, r->mtime, r->used ? "Yes" : ""); break;   /* Modified = the file mtime (LORD_FIDELITY-12, lj_fs_mtime_text) */
     case LJ_REC_CUE: snprintf(r->line, sizeof r->line, "%04u\t%s\t%s\t", (unsigned)r->no, r->name, type); break;
     case LJ_REC_CL:  snprintf(r->line, sizeof r->line, "%04u\t%s\t%u\t", (unsigned)r->no, r->name, count); break;
     default:         snprintf(r->line, sizeof r->line, "%04u\t%s", (unsigned)r->no, r->name); break;
@@ -63,6 +64,7 @@ static void read_row(enum lj_rec_kind k, lj_df_row *r)
     unsigned count = 0;
     r->name[0] = r->type[0] = 0;
     if (lj_library_record_path(c->lib, k, r->no, path, sizeof path) == 0) {
+        lj_fs_mtime_text(path, r->mtime, sizeof r->mtime);   /* W3 movement: LORD_FIDELITY-12 */
         if (k == LJ_REC_SEQ) {
             lj_sequence s; memset(&s, 0, sizeof s);
             if (lj_sequence_load(path, &s, err, sizeof err) == 0) { lj_str_copy(r->name, sizeof r->name, s.name); lj_str_copy(type, sizeof r->type, s.type); count = s.n; }

@@ -17,6 +17,7 @@
 #include "model/lj_words.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
+#include "fixlib/lj_gs2.h"
 
 lj_show *lj_show_new(void)
 {
@@ -44,6 +45,7 @@ void lj_show_free(lj_show *s)
     lj_table_free(&s->bgcues, lj_free_bg);
     lj_table_free(&s->macros, free);
     lj_statics_free(s->pages, s->npages);
+    lj_show_gs2_free(s->gs2, s->ngs2);   /* W3: show->bez belongs to the app (it builds and frees the sampled tables) */
     lj_sequence_free(s->current_seq);
     lj_cue_free(s->current_cue);
     lj_cuelist_free(s->current_cl);
@@ -73,6 +75,7 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
     char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP], *e;
     int fmt, r, item = 0, rbad = 0;
     const char *bad = NULL;
+    lj_fixture *cur = NULL;                                   /* W3 (ME-32): the fx record the chcap / chgm lines belong to */
     lj_rec *rec = lj_rec_open_read(path, "config", &fmt);
     if (!rec) { lj_kv_err(err, cap, path, 0, "not an LJ4 config file"); return -1; }
     memset(show->fixture, 0, sizeof show->fixture);
@@ -84,7 +87,7 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
             long i = strtol(v, &e, 10);
             lj_fixture *f;
             if (e == v || i < 1 || i > LJ_FIXTURES) { bad = "fixture index not 1..100"; break; }
-            f = &show->fixture[i - 1];
+            f = cur = &show->fixture[i - 1];
             f->kind = (uint8_t)lj_kv_word(v, "kind", lj_fixture_kind_words, LJ_FX_BUILTIN);
             f->profile_id = (uint16_t)lj_kv_range(v, "id", 0, 0, 65535, &rbad);
             if (lj_kv_get(v, "gs2", q, sizeof q) == 1) lj_str_copy(f->gs2_file, sizeof f->gs2_file, q);
@@ -102,6 +105,21 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
             f->icon_y = (int16_t)lj_kv_range(v, "y", 0, -32768, 32767, &rbad);
             f->tab = (uint8_t)lj_kv_range(v, "tab", 0, 0, 255, &rbad);
             f->intensity_group = (uint8_t)lj_kv_range(v, "sub", 0, 0, LJ_SUBMASTERS, &rbad);
+        } else if (strcmp(k, "chcap") == 0) {                 /* W3 (ME-32): "chcap 3 text=Inte": offset 1..32, caption <= 5 bytes */
+            long n = lj_kv_range_lead(v, 0, 1, LJ_PROFILE_CH, &rbad);
+            if (!cur) { bad = "chcap before fx"; break; }
+            if (!rbad) {
+                int got = lj_kv_get(v, "text", q, sizeof cur->ch_caption[0]);
+                if (got < 0) { bad = "chcap text longer than 5"; break; }
+                lj_str_copy(cur->ch_caption[n - 1], sizeof cur->ch_caption[0], got == 1 ? q : "");
+            }
+        } else if (strcmp(k, "chgm") == 0) {                  /* W3 (ME-32): "chgm=1,3": the offsets 1..32 with Grand Master control disabled */
+            uint32_t o[LJ_PROFILE_CH];
+            int n = lj_kv_list(v, o, LJ_PROFILE_CH), j;
+            if (!cur) { bad = "chgm before fx"; break; }
+            if (n < 0) { bad = "chgm list"; break; }
+            cur->ch_gm_off = 0;
+            for (j = 0; j < n; j++) { if (o[j] < 1 || o[j] > LJ_PROFILE_CH) { rbad = 1; break; } cur->ch_gm_off |= 1u << (o[j] - 1); }
         } else if (strcmp(k, "sub") == 0) {
             long i = strtol(v, &e, 10);
             if (e == v || i < 1 || i > LJ_SUBMASTERS) { bad = "submaster index not 1..8"; break; }
@@ -115,6 +133,20 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
     if (bad) { lj_kv_err(err, cap, path, item, bad); memset(show->fixture, 0, sizeof show->fixture); return -1; }
     if (err && cap) err[0] = 0;
     return 0;
+}
+
+static int lj_config_save_channels(lj_rec *rec, const lj_fixture *f)   /* W3 (ME-32): the chcap / chgm lines after their fx line */
+{
+    char q[16], list[LJ_PROFILE_CH * 3 + 1];
+    int k, n = 0;
+    for (k = 0; k < LJ_PROFILE_CH; k++) {
+        if (!f->ch_caption[k][0]) continue;
+        lj_kv_quote(q, sizeof q, f->ch_caption[k]);
+        if (lj_rec_write(rec, "chcap ", "%d text=%s", k + 1, q) != 0) return -1;
+    }
+    if (!f->ch_gm_off) return 0;
+    for (k = 0; k < LJ_PROFILE_CH; k++) if (f->ch_gm_off >> k & 1u) n += snprintf(list + n, sizeof list - (size_t)n, n ? ",%d" : "%d", k + 1);
+    return lj_rec_write(rec, "chgm", "%s", list);
 }
 
 int lj_config_save(const char *path, const lj_show *show)
@@ -131,6 +163,7 @@ int lj_config_save(const char *path, const lj_show *show)
         ok = lj_rec_write(rec, "fx ", "%d kind=%s id=%u gs2=%s link=%d addr=%u ipan=%d itilt=%d swap=%d ibo=%d igm=%d lsgm=%d user=%s placed=%d x=%d y=%d tab=%d sub=%d",
                           i + 1, lj_word(lj_fixture_kind_words, f->kind), f->profile_id, g, f->link, f->address, f->invert_pan, f->invert_tilt, f->swap_pt,
                           f->ignore_bo, f->ignore_gm, f->link_strobe_gm, u, f->placed, f->icon_x, f->icon_y, f->tab, f->intensity_group) == 0;
+        ok = ok && lj_config_save_channels(rec, f) == 0;     /* W3 (ME-32) */
     }
     for (i = 0; ok && i < LJ_SUBMASTERS; i++) {
         if (!show->submaster_name[i][0] && !show->submaster_mode[i]) continue;
@@ -237,6 +270,9 @@ int lj_show_load(lj_show *show, const lj_library *lib)
         snprintf(rel, sizeof rel, "Presets\\fixture%03d.pre", i + 1);
         lj_library_path(lib, rel, path, sizeof path);
         if (lj_file_exists(path)) lj_presets_load(path, show->preset[i], err, sizeof err);
+        snprintf(rel, sizeof rel, LJ_CUSTOM_PAL_FMT, i + 1);   /* W3: Customize Fixture overrides (design 6.5); a bad file logs and stays default */
+        lj_library_path(lib, rel, path, sizeof path);
+        if (lj_file_exists(path)) lj_fixture_custom_load(path, show->fixture[i].custom, err, sizeof err);
     }
     return 0;
 }
@@ -291,3 +327,83 @@ int lj_show_add_fixture(lj_show *show, const lj_fixture *fx)
 }
 
 void lj_show_remove_fixture(lj_show *show, int i) { if (i >= 0 && i < LJ_FIXTURES) memset(&show->fixture[i], 0, sizeof show->fixture[i]); }
+
+/* ---- W3 contracts (lj_show.h): profile lookup complete; the loaders are stubs for the gs2 / profile-editor tracks ---- */
+static int lj_ieq(const char *a, const char *b)   /* ASCII case fold: file names on Windows / macOS default volumes */
+{
+    for (;; a++, b++) {
+        int x = (*a >= 'A' && *a <= 'Z') ? *a + 32 : *a, y = (*b >= 'A' && *b <= 'Z') ? *b + 32 : *b;
+        if (x != y) return 0;
+        if (!x) return 1;
+    }
+}
+const lj_profile *lj_show_gs2(const lj_show *show, const char *gs2_file)
+{
+    int i;
+    if (!show || !gs2_file || !gs2_file[0]) return NULL;
+    for (i = 0; i < show->ngs2; i++)
+        if (lj_ieq(show->gs2[i].gs2_file, gs2_file)) return &show->gs2[i];
+    return NULL;
+}
+const lj_profile *lj_show_profile(const lj_show *show, int fixture)
+{
+    const lj_fixture *f;
+    if (!show || fixture < 0 || fixture >= LJ_FIXTURES) return NULL;
+    f = &show->fixture[fixture];
+    if (!f->link) return NULL;
+    return f->kind == LJ_FX_GS2 ? lj_show_gs2(show, f->gs2_file) : lj_fixlib_by_id(f->profile_id);
+}
+int lj_show_gs2_load_all(const lj_library *lib, lj_profile **out, int *n) { (void)lib; *out = NULL; *n = 0; return 0; }
+void lj_show_gs2_free(lj_profile *p, int n)
+{
+    int i;
+    if (!p) return;
+    for (i = 0; i < n; i++) lj_gs2_free(&p[i]);
+    free(p);
+}
+/* "LJ4 custompal 1" then one "pal p entry=e rgb=r bmp=name" line per overridden entry (p 1..6, e 1..20; rgb 0xRRGGBB
+ * or -1 = no colour, LJ_CUSTOM_NO_RGB); an entry without a line is not overridden (custom used = 0). */
+int lj_fixture_custom_load(const char *path, lj_palette custom[6], char *err, size_t cap)
+{
+    char k[16], v[512], q[64];
+    int fmt, r, item = 0, rbad = 0;
+    const char *bad = NULL;
+    lj_rec *rec = lj_rec_open_read(path, "custompal", &fmt);
+    memset(custom, 0, sizeof(lj_palette) * LJ_PALETTES);
+    if (!rec) { lj_kv_err(err, cap, path, 0, "not an LJ4 custompal file"); return -1; }
+    while ((r = lj_rec_next(rec, k, sizeof k, v, sizeof v)) == 1) {
+        long p, e, rgb;
+        int got;
+        item++;
+        if (strcmp(k, "pal") != 0) continue;                  /* unknown keys skipped (design 5.2) */
+        p = lj_kv_range_lead(v, 1, 1, LJ_PALETTES, &rbad);
+        e = lj_kv_range(v, "entry", 1, 1, LJ_PAL_ENTRIES, &rbad);
+        rgb = lj_kv_range(v, "rgb", -1, -1, 0xFFFFFF, &rbad);
+        got = lj_kv_get(v, "bmp", q, sizeof custom[0].e[0].bitmap);
+        if (rbad) { bad = "number out of range"; break; }
+        if (got < 0) { bad = "bmp longer than 30"; break; }
+        custom[p - 1].e[e - 1].used = 1;
+        custom[p - 1].e[e - 1].rgb = rgb < 0 ? LJ_CUSTOM_NO_RGB : (uint32_t)rgb;
+        lj_str_copy(custom[p - 1].e[e - 1].bitmap, sizeof custom[0].e[0].bitmap, got == 1 ? q : "");
+    }
+    lj_rec_close(rec);
+    if (!bad && r < 0) bad = "unreadable line";
+    if (bad) { lj_kv_err(err, cap, path, item, bad); memset(custom, 0, sizeof(lj_palette) * LJ_PALETTES); return -1; }
+    if (err && cap) err[0] = 0;
+    return 0;
+}
+int lj_fixture_custom_save(const char *path, const lj_palette custom[6])
+{
+    char q[2 * 31 + 2];
+    int p, e, ok = 1;
+    lj_rec *rec = lj_rec_open_write(path, "custompal", 1);
+    if (!rec) return -1;
+    for (p = 0; ok && p < LJ_PALETTES; p++)
+        for (e = 0; ok && e < LJ_PAL_ENTRIES; e++) {
+            const lj_pal_entry *x = &custom[p].e[e];
+            if (!x->used) continue;
+            lj_kv_quote(q, sizeof q, x->bitmap);
+            ok = lj_rec_write(rec, "pal ", "%d entry=%d rgb=%ld bmp=%s", p + 1, e + 1, x->rgb == LJ_CUSTOM_NO_RGB ? -1L : (long)(x->rgb & 0xFFFFFFu), q) == 0;
+        }
+    return lj_rec_close(rec) == 0 && ok ? 0 : -1;
+}

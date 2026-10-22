@@ -93,6 +93,7 @@ int lj_post_s3_masters(const lj_post_ctx *c, int link, int ch, int v)
     const lj_profile *p = lj_post_profile(c, ch, &ofs, &fx);
     (void)link;
     if (!p || fx->ignore_gm) return v;                         /* 11 G3: Ignore Grand Master */
+    if (fx->ch_gm_off >> ofs & 1u) return v;                   /* ME-32: Channel Configuration "Disable Grand Master Control" on this offset */
     cls = p->channel_class[ofs];
     sub = lj_post_sub(c, fx, &mode);
     if (cls == LJ_CH_SWITCH) return (c->gm == 0 || sub == 0) ? 0 : v;   /* ME-25 (S3): LJ_SWITCH_UNSCALED */

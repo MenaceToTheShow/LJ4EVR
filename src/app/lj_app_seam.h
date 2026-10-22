@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include "app/lj_app.h"
+#include "engine/lj_engine.h"
 #include "ui/lj_window.h"
 
 void lj_app_seam_start(void);              /* lj_ctx filled (show, engine, lib, main_ini, hotkeys): prefs, MIDI map + device, hotkey setup, lj_fn rows, W2 actions, window views */
@@ -18,5 +19,6 @@ void lj_app_seam_idle(uint64_t now_us);    /* every idle pass after lj_app_midi_
 void lj_app_key(const lj_key_ev *ev, lj_window *win);   /* the platform key hook: lj_desktop_key, in_dialog from lj_win_is_dialog of the window that has focus */
 void lj_app_repin_current_cue(void);       /* a slot of the working cue changed: under lj_lock the engine re-pins every runner from the tables (the Cue control's repin hook) */
 int  lj_app_hotkey_setup(int setup);       /* <library>Hotkeys/SetupN.Hot -> ctx->hotkeys (missing file: Setup 1 = lj_hotkeys_default, 2..8 empty, no log line); 0 / -1 */
+int  lj_app_post_locked(const lj_cmd *cmd);  /* W3 (ME-102): caller holds lj_lock; lj_engine_cmd, 0 / -1 when the array is full (logged once): the caller then keeps the record the post was to replace */
 
 #endif /* LJ_APP_APP_SEAM_H */

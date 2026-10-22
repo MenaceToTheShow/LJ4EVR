@@ -1,0 +1,35 @@
+LJ4 replay 1
+# fanout_auto_delay (04 s4.2 / s4.6, 17 s5-s6; owner movement): five homed MAC 500s in the current sequence fanned
+# with Delta Pan 95, Delta Tilt 0 and Center Delta on Home at tick 10 (`fanout` does what the Fan Out window does:
+# lj_fan_out on the current scene, then CURRENT_SEQ): pans 32768 -24320 .. +24320 (the 17 s5.2 example). At tick 20
+# the Movement Macro window puts System Ellipse amplitude 40 / 40, cycle 32 on all five (`fx_edit`, no post) and
+# Pan/Tilt Macro Auto Delay Linear max 256 writes delays 0, 51, 102, 153, 204 (a fifth of a cycle each, CHM 3275):
+# every expect_pair after 20 is 17-position_ref.py fixture_output(fanned centre, macro_offset(index - delay)).
+# NOTE ME-22: the fanned pan pairs are written as one 16-bit value (pan 8448 = 0x2100, LSB 0; 20608 = 0x5080).
+tick_us=25000
+patch 1 profile=12 link=1 addr=1
+patch 2 profile=12 link=1 addr=17
+patch 3 profile=12 link=1 addr=33
+patch 4 profile=12 link=1 addr=49
+patch 5 profile=12 link=1 addr=65
+seq 1 name="fan"
+scene st=60000 ft=0
+ch 1:11=128:S 1:12=0:S 1:13=128:S 1:14=0:S 1:27=128:S 1:28=0:S 1:29=128:S 1:30=0:S 1:43=128:S 1:44=0:S 1:45=128:S 1:46=0:S 1:59=128:S 1:60=0:S 1:61=128:S 1:62=0:S 1:75=128:S 1:76=0:S 1:77=128:S 1:78=0:S
+# spread over 1, 5, 3: first = fixture 1's pan, last = fixture 3's; the middle (fixture 5) moves to their mean
+at 0 current 1 0
+expect_pair 5 1:11=32768 1:27=32768 1:43=32768 1:59=32768 1:75=32768
+at 10 fanout 95 0 home=1 order=1,2,3,4,5
+expect_pair 10 1:11=8448 1:13=32768 1:27=20608 1:29=32768 1:43=32768 1:45=32768 1:59=44928 1:61=32768 1:75=57088 1:77=32768
+expect_pair 19 1:11=8448 1:13=32768 1:27=20608 1:29=32768 1:43=32768 1:45=32768 1:59=44928 1:61=32768 1:75=57088 1:77=32768
+at 20 fx_edit 1 0 1 macro=1,40,40,32,32,0,0,0,1 mst=S,S,S,S,S,S
+at 20 fx_edit 1 0 2 macro=1,40,40,32,32,0,0,0,1 mst=S,S,S,S,S,S
+at 20 fx_edit 1 0 3 macro=1,40,40,32,32,0,0,0,1 mst=S,S,S,S,S,S
+at 20 fx_edit 1 0 4 macro=1,40,40,32,32,0,0,0,1 mst=S,S,S,S,S,S
+at 20 fx_edit 1 0 5 macro=1,40,40,32,32,0,0,0,1 mst=S,S,S,S,S,S
+at 20 autodelay linear 256 order=1,2,3,4,5
+expect_pair 20 1:11=18769 1:13=32768 1:27=23845 1:29=22968 1:43=24478 1:45=26620 1:59=36490 1:61=38711 1:75=60084 1:77=42644
+expect_pair 21 1:11=18756 1:13=33274 1:27=24322 1:29=23139 1:43=24790 1:45=26221 1:59=36209 1:61=38289 1:75=59596 1:77=42779
+expect_pair 52 1:11=8448 1:13=43089 1:27=30408 1:29=36005 1:43=38916 1:45=24478 1:59=38985 1:61=24330 1:75=47212 1:77=35764
+expect_pair 84 1:11=0 1:13=32768 1:27=17371 1:29=42568 1:43=41058 1:45=38916 1:59=53366 1:61=26825 1:75=54092 1:77=22892
+at 100 spread pan order=1,5,3
+expect_pair 100 1:75=25473 1:77=23666

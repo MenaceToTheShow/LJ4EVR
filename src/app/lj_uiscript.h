@@ -38,4 +38,15 @@ void lj_uiscript_fail(const char *reason);   /* "SCRIPT FAIL line n: reason" and
  *   assert_file_line <path> "text"  the file (library-relative like assert_file) contains the line exactly once
  *   sleep_until_tick <n>            lets the loop run until the app's view copy reports tick_no >= n */
 
+/* ---- W3 verbs (docs/ui-script.md "W3 verbs"; parsed here, bodies by the desktop-app track; checked at load like W2) ----
+ *   cl_load <path>                  loads a .Cl2 (as given, else library-relative) into show->current_cl through lj_app_load_cuelist's path; opens nothing
+ *   cl_goto <n>                     selects line n (1-based) of the Cuelist window's list (a click on the row); while running and waiting = Jump to this
+ *   cl_execute                      Go ! (LJ_CL_OP_GO): advances a waiting manual line, or runs from the top when idle
+ *   cl_assert_line <n> <state>      lj_cl_line_state of line n: plain | done | next | error (gray / blue / red of RN v2.6 b7 and design 8.5)
+ *   assert_pos <fixture> <pan> <tilt>   fixture 1..100: the readout (17 s1.3, -32768..32767) of its pan / tilt in the last frame copy (out[], after S7, 8-bit = MSB)
+ *   gs2_import <path>               imports a .GS2 / .Udf / .Udo through lj_udf_parse / lj_gs2_read into UserFixtureDef and runs LJ_ACT_GS2_RELOAD; fails with the importer's message
+ *   assert_prompt "text"            the open confirm / message box (lj_win_message_window) shows text verbatim (12 Q9 prompts)
+ *   mm_set <fixture> <shape> <amp> <speed>   the current scene's movement macro of fixture 1..100: type = shape (0..6 or a Bezier slot), amp_pan = amp_tilt = amp,
+ *                                   cycle_pan = cycle_tilt = speed, every fade state Snap; under lj_lock, then LJ_CMD_CURRENT_SEQ (what the Movement Macro window does) */
+
 #endif /* LJ_APP_UISCRIPT_H */

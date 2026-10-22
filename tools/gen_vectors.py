@@ -177,12 +177,93 @@ def gen_vectors(sacn, mac, gs2, pos):
         out.append("    { %d, %d, %d, %d, %d, %d, { %s } },\n" % ((po, to) + keys + (", ".join(str(m[k]) for k in keys),)))
     out.append("};\n#define LJ_VEC_POS_HALF %d\n#define LJ_VEC_POS_N_TABLE %d\n#define LJ_VEC_POS_AMP_HALF %d\n"
                % (pos.HALF, pos.N_TABLE, pos.AMP_HALF_RANGE))
+    out.append(gen_movement_vectors(pos))          # W3 movement track (appended)
     out.append("\n#endif /* LJ_TESTS_VECTORS_H */\n")
     return "".join(out)
 
 
+
+# --- W3 movement track: the movement-macro traces of 17-position_ref.py section 7 (design 10 W3 acceptance 4) -------
+def mm_int_tables():
+    """The integer pan/tilt tables the engine evaluates (engine/lj_movemacro.c lj_mm_shape) for the six system types,
+    built from the lj_trig_gen.c tables with the C's nearest-integer products; gen_movement_vectors ties each entry
+    to the oracle's float formulas (17-position_ref.py system_tables): equal, within 2 for the product types 4 and 5."""
+    sin, cos = trig_tables()
+
+    def rnd(a, b):                     # nearest; b odd, so never a tie (lj_mm_round)
+        return (a + b // 2) // b if a >= 0 else -((-a + b // 2) // b)
+    return {1: (cos, sin), 2: (sin, cos), 6: (cos, sin),
+            3: ([cos[(2 * i) % N] for i in range(N)], sin),
+            4: (cos, [rnd(sin[i] * abs(sin[(2 * i) % N]), SCALE) for i in range(N)]),
+            5: (cos, [rnd(sin[i] ** 3, SCALE * SCALE) for i in range(N)])}
+
+
+def gen_movement_vectors(pos):
+    names = {1: "System Ellipse", 2: "System Ellipse 2", 3: "System Cos(2*a),Sin(a)", 4: "System Sin(a)*|Sin(2a)|",
+             5: "System Sin(a)^3", 6: "System Stepped Ellipse"}
+    tabs = mm_int_tables()
+    for ty, (pt, tt) in tabs.items():
+        fp, ft = pos.system_tables(names[ty])
+        tol = 2 if ty in (4, 5) else 0   # products of rounded tables: 3 * 0.5 + 0.5 at most; the plain sine / cosine types are exact
+        assert all(abs(pt[i] - round(SCALE * fp[i])) <= tol and abs(tt[i] - round(SCALE * ft[i])) <= tol for i in range(N)), ty
+    out = ["/* 17 sec. 7 movement-macro traces (W3 movement): lj_movemacro_pos(state, macro, NULL, pct, base) == the oracle's\n"
+           " * fixture_output(base, macro_offset(tables, effective_index(..), scale_raw(amp, pct), step)) on the engine's\n"
+           " * integer tables (gen_vectors.mm_int_tables, each entry within 2 of system_tables * 32767, the sine / cosine ones equal) */\n"
+           "static const struct { uint8_t type; uint16_t ip, it; uint8_t amp_pan, amp_tilt; uint16_t pct; uint8_t delay, tweak; uint16_t step;\n"
+           "                      int32_t base_pan, base_tilt, pan, tilt; } lj_vec_mm_trace[] = {\n"]
+    combos = ((127, 127, 100, 0, 0, 0, 0), (64, 100, 45, 64, 10, 20000, -30000), (1, 3, 490, 255, 0, -32000, 32000),
+              (127, 90, 0, 128, 200, 1234, -1234), (100, 127, 999, 16, 64, 32767, -32768), (37, 81, 73, 200, 1, -16256, 17120))
+    for ty in range(1, 7):
+        pt, tt = tabs[ty]
+        tables = ([x / SCALE for x in pt], [x / SCALE for x in tt])
+        for idx in (0, 1, 511, 512, 1023, 1024, 1500, 2048, 2730, 3072, 3584, 4095):
+            for ap, at, pct, delay, tweak, bp, bt in combos:
+                for step in ((1, 512, 300) if ty == 6 else (1,)):
+                    ip, it = idx, (idx * 2 + 7) % N              # separate indexes (tilt cycle = 2 x pan: the figure eight)
+                    pi = pos.effective_index(ip, delay)[0]
+                    ti = pos.effective_index(it, delay, pos.delay_to_index(tweak))[1]
+                    o = pos.macro_offset(tables, pi, ti, pos.scale_raw(ap, pct), pos.scale_raw(at, pct), step)
+                    p, t = pos.fixture_output((bp, bt), o)
+                    out.append("    { %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d },\n" % (ty, ip, it, ap, at, pct, delay, tweak, step, bp, bt, p, t))
+    out.append("};\n/* 17 sec. 5 fan_out (centre = home or the middle fixture(s)) and spread; fixture k = index k, order as listed */\n"
+               "static const struct { int n, dpan, dtilt, home; int order[6]; int32_t in_pan[6], in_tilt[6], pan[6], tilt[6]; } lj_vec_fan[] = {\n")
+    cases = ((3, 95, 86, 1, (0, 1, 2), ((5, 5), (6, 6), (7, 7))),
+             (5, 95, 0, 1, (0, 1, 2, 3, 4), ((0, 0),) * 5),
+             (5, 40, 20, 0, (4, 3, 2, 1, 0), ((-100, 50), (300, -7), (1001, 2001), (5, 6), (-32768, 32767))),
+             (4, 95, 127, 0, (1, 0, 3, 2), ((-3, 3), (8, -8), (20001, -20001), (30000, -30000))),
+             (6, 127, 127, 0, (0, 1, 2, 3, 4, 5), ((30000, -30000),) * 6),
+             (2, 10, 1, 0, (1, 0), ((-1, 1), (0, 0))))
+    for n, dp, dt, home, order, xy in cases:
+        r = pos.fan_out({k: xy[k] for k in range(n)}, list(order), dp, dt, center_on_home=bool(home))
+        pad = lambda v: ", ".join(str(x) for x in list(v) + [0] * (6 - n))
+        out.append("    { %d, %d, %d, %d, { %s }, { %s }, { %s }, { %s }, { %s } },\n" % (
+            n, dp, dt, home, pad(order), pad(p for p, _ in xy), pad(t for _, t in xy),
+            pad(r[k][0] for k in range(n)), pad(r[k][1] for k in range(n))))
+    out.append("};\nstatic const struct { int n, axis; int order[5]; int32_t in[5], out[5]; } lj_vec_spread[] = {\n")
+    for n, axis, order, vals in ((3, 0, (0, 1, 2), (-1000, 0, 2000)), (5, 1, (4, 2, 0, 1, 3), (7, -3, 32767, 0, -32768)),
+                                 (2, 0, (0, 1), (5, -5)), (4, 0, (3, 2, 1, 0), (0, 0, 0, 100))):
+        r = pos.spread({k: (vals[k], vals[k]) for k in range(n)}, list(order), axis)
+        pad = lambda v: ", ".join(str(x) for x in list(v) + [0] * (5 - n))
+        out.append("    { %d, %d, { %s }, { %s }, { %s } },\n" % (n, axis, pad(order), pad(vals), pad(r[k][axis] for k in range(n))))
+    out.append("};\n/* 17 sec. 6 delay_order: mode = enum lj_delay_order (number, number_rev, icon_h, icon_h_rev, icon_v, icon_v_rev); fixture f = index f-1 */\n"
+               "static const struct { int mode; int sel[5]; int16_t ix[5], iy[5]; int order[5]; } lj_vec_delay_order[] = {\n")
+    icons = {1: (50, 0), 2: (10, 9), 3: (10, 0), 4: (90, 9), 5: (10, 0)}
+    for mi, mode in enumerate(("number", "number_rev", "icon_h", "icon_h_rev", "icon_v", "icon_v_rev")):
+        sel = [4, 2, 5, 1, 3]
+        o = pos.delay_order(sel, mode, icons)
+        out.append("    { %d, { %s }, { %s }, { %s }, { %s } },\n" % (
+            mi, ", ".join(str(f - 1) for f in sel), ", ".join(str(icons[f][0]) for f in range(1, 6)),
+            ", ".join(str(icons[f][1]) for f in range(1, 6)), ", ".join(str(f - 1) for f in o)))
+    out.append("};\n/* 17 sec. 7 macro_tick: (idx + dir * incr) mod N */\nstatic const struct { int idx, incr, dir, out; } lj_vec_macro_tick[] = {\n")
+    for idx, incr, d in ((4095, 1, 1), (0, 1, -1), (100, 512, 1), (100, 512, -1), (4000, 200, 1)):
+        out.append("    { %d, %d, %d, %d },\n" % (idx, incr, d, pos.macro_tick(idx, incr, d)))
+    out.append("};\n")
+    return "".join(out)
+
 def main():
     check = "--check" in sys.argv
+    if "--shapes" in sys.argv:   # W3 genmacro track: src/engine/lj_shapes_gen.c (shapes_main below)
+        return shapes_main(check)
     mods = {n: load(n) for n in REFS}
     want = {OUT_TRIG: gen_trig(),
             OUT_VEC: gen_vectors(mods["08-sacn_ref.py"], mods["14-macros_mac_decode.py"],
@@ -202,6 +283,167 @@ def main():
                 f.write(text)
             print("wrote %s (%d bytes)" % (rel, len(text)))
     return rc
+
+
+# ---- W3 genmacro track (appended): --shapes -> src/engine/lj_shapes_gen.c (design 3.6, 9.2; 14 sec. A.6; ME-34) ----------
+# The 66 generic-macro shapes in Macros.Mac file order, as OUR integer samples at +-32640 full scale. The sine family is
+# exactly round(32640 * sin); every other shape is an authored piecewise definition below. Martin's Macros.Mac is never
+# read for emission: with the reference tree present, --shapes --compare prints how far each definition sits from the
+# decode of tools/ref/14-macros_mac_decode.py (the table in docs/generated-files.md); CI has no reference and needs none.
+OUT_SHAPES = os.path.join(ROOT, "src", "engine", "lj_shapes_gen.c")
+GM_N, GM_F = 8192, 32640
+GM_NAMES = ["2*Sine", "2*Sine^2", "2*Sine^4", "2*Sine^8", "1/3 Half Sine", "2/3 Half Sine", "2/3 Sine", "Sine", "1/2 Sine",
+            "1/3 Sine", "1/4 Sine", "1/8 Sine", "2*Sine^2", "Sine^3", "Sine^5", "Sine^11", "Heartbeat", "Bounce", "Bounce 2",
+            "Pulse 8<>", "Pulse 2", "Pulse 4", "Pulse 8", "Sqrt", "Sqrt 1", "Sqrt2", "Sqrt^3", "Sqrt*2", "Sqr", "Log",
+            "Inverted Log", "Swapped Log", "2*Triangle", "Triangle", "1/2 Triangle", "1/4 Triangle", "1/8 Triangle",
+            "2*SawTooth", "SawTooth", "1/2 SawTooth", "1/4 SawTooth", "1/8 SawTooth", "Square", "2/3 Square", "1/2 Square",
+            "1/4 Square", "1/8 Square", "Stair 2", "Stair 4", "Stair 8", "Stair 10", "Stair 16", "Stair 4*2", "Stair 8*2",
+            "Stair 10*2", "Stair 16*2", "Swapped Peak", "Swapped Peak^2", "Swapped Peak^4", "Ripple", "Grid", "Cliff 1",
+            "Ripple mirror", "Spiky", "Static", "Static 2"]   # 14 sec. A.6 table, verbatim, the duplicate 2*Sine^2 (#1 == #12) kept
+
+
+def gm_shapes():
+    """[(name, [8192 ints])] in file order. Each lambda is the authored definition of one shape, k = 0..8191."""
+    N, F, pi, sin = GM_N, GM_F, math.pi, math.sin
+    R = lambda v: int(round(F * v))
+    hu = lambda v: math.floor(v + 0.5)
+    clamp = lambda v: max(-F, min(F, v))
+    half = lambda k: sin(pi * k / N)                                     # one hump over the index space
+    full = lambda k: sin(2 * pi * k / N)                                 # one period
+    part = lambda m: (lambda k: R(sin(2 * pi * k * m / N)) if k * m < N else 0)       # 1/m Sine: a period in the first 1/m
+    tri = lambda m: (lambda k, L=N // m: (R(k / (L / 4)) if k < L / 4 else R((L / 2 - k) / (L / 4)) if k < 3 * L / 4
+                                          else R((k - L) / (L / 4))) if k < L else 0)
+    saw = lambda m: (lambda k, L=N // m: (R(k / (L / 2)) if k < L / 2 else R(-(k - L / 2) / (L / 2))) if k < L else 0)
+    sqr = lambda m: (lambda k, L=N // m: (F if k < L / 2 else -F) if k < L else 0)
+    pulse = lambda m: (lambda k, L=N // m: int(round(min(F, 32768 * (k // L + 1) / m) * sin(2 * pi * (k % L) / L))))
+    sqb = lambda k: min(255, int(round(4 * math.sqrt(k))))               # the 8-bit sqrt rise of 'Sqrt 1' (x 128 = 8.8)
+    LOG = 3621.28                                                        # 'Log' = LOG * ln k: 32631 at k = 8191
+    lg = lambda k: int(round(LOG * math.log(k))) if k > 0 else 0
+    sp = lambda k: 32766.5 * (k / 4096) ** 1.5                           # the Swapped Peak rise
+    W = {2: 2730, 4: 1638, 8: 910, 16: 482}                              # stair step widths (the last step takes the rest)
+    stair = lambda n: (lambda k: min(F, min(n, k // W[n]) * 32768 // n))
+    stair2 = lambda n: (lambda k: min(F, -F + min(n, k // W[n]) * (65536 // n)))
+    S102 = [-255, -229, -204, -179, -153, -127, -102, -77, -51, -25, 0, 25, 51, 77, 102, 127, 153, 179, 204, 229, 255]
+    alt = lambda k: -1 if k % 1024 <= 512 else 1                         # 'Ripple' / 'Grid': - on 1024j..1024j+512, + between
+    P8 = [8192, 16384, 24576, F, F, 24448, 16256, 8064]                 # 'Pulse 8<>' grows then shrinks
+
+    def rmir(k):                                                         # 'Ripple mirror': 16 sin^8 pulses, + growing, - shrinking
+        j = k // 512
+        a = min(F, 4096 * (j + 1)) if j < 8 else -(F - 4096 * (j - 8))
+        return int(round(a * sin(pi * (k % 512) / 512) ** 8))
+
+    def spiky(k):                                                        # 'Spiky': the Swapped Peak swept by a 512-sample ramp
+        o = 512 if (k % 1024 == 0 and k) else k % 512
+        f = 32768 * (k / 4096) ** 1.5 if k < 4096 else -32768 * ((N - k) / 4096) ** 1.5
+        return clamp(int(math.floor(-f * o / 512 + 0.5)))
+
+    def noise(seed, bipolar):                                            # 'Static': 512 held steps of 16 samples, ours (xorshift32)
+        x, out = seed, []
+        for _ in range(512):
+            x ^= (x << 13) & 0xFFFFFFFF
+            x ^= x >> 17
+            x ^= (x << 5) & 0xFFFFFFFF
+            b = (x % 511) - 255 if bipolar else x % 256
+            out += [b * 128] * 16
+        return out
+    st1, st2 = noise(0x4C4A3445, False), noise(0x45565221, True)
+    defs = [
+        lambda k: R(half(k)), lambda k: R(half(k) ** 2), lambda k: R(half(k) ** 4), lambda k: R(half(k) ** 8),
+        lambda k: R(sin(pi * k * 3 / N)) if k * 3 < N else 0,
+        lambda k: R(sin(pi * k * 3 / 2 / N)) if k < 2 * N // 3 else 0,
+        lambda k: R(sin(3 * pi * k / N)) if k < 2 * N // 3 else 0,
+        lambda k: R(full(k)), part(2), part(3), part(4), part(8),
+        lambda k: R(half(k) ** 2), lambda k: R(full(k) ** 3), lambda k: R(full(k) ** 5), lambda k: R(full(k) ** 11),
+        lambda k: R(sin(pi * k / 2048)) if k < 1324 else R(sin(pi * (k - 1024) / 2048)) if k < 3072 else 0,   # Heartbeat
+        lambda k: R(abs(sin(pi * (k / 4621.85) ** 2))) if k < 8000 else 0,                                    # Bounce
+        lambda k: R(abs(sin(pi * (k / 3819.05) ** 3))) if k < 8000 else 0,                                    # Bounce 2
+        lambda k: int(round(P8[k // 1024] * sin(2 * pi * (k % 1024) / 1024))),
+        pulse(2), pulse(4), pulse(8),
+        lambda k: int(round(360.96 * math.sqrt(k))),                                                          # Sqrt
+        lambda k: sqb(k) * 128 if k <= 4096 else 0,
+        lambda k: sqb(k) * 128 if k <= 4096 else 255,
+        lambda k: int(round(32660.05 * (k / N) ** 1.5)),                                                      # Sqrt^3
+        lambda k: sqb(k) * 128 if k <= 4096 else sqb(N - k) * 128,
+        lambda k: R((k / N) ** 2), lg,
+        lambda k: F if k <= 100 else F - lg(k - 99),
+        lambda k: (lg(2 * k) if k >= 50 else 0) if k <= 4096 else (-lg(2 * (N - k)) if N - k >= 50 else 0),
+        lambda k: R(k / 4096 if k < 4096 else (N - k) / 4096),
+        lambda k: R(k / 2048 if k < 2048 else (4096 - k) / 2048 if k < 6144 else (k - N) / 2048),
+        tri(2), tri(4), tri(8),
+        lambda k: R(k / N), lambda k: R(k / 4096 if k < 4096 else -(k - 4096) / 4096), saw(2), saw(4), saw(8),
+        lambda k: F if k <= 4096 else -F,
+        lambda k: F if k < 2730 else 0 if k < 5460 else -F,
+        sqr(2), sqr(4), sqr(8),
+        stair(2), stair(4), stair(8), lambda k: min(10, k * 11 // N) * 3264, stair(16),
+        stair2(4), stair2(8), lambda k: S102[min(20, k * 21 // N)] * 128, stair2(16),
+        lambda k: int(round(sp(k))) if k < 4096 else 1 - hu(sp(N - k)),                                      # Swapped Peak
+        lambda k: R((k / 4096) ** 3) if k < 4096 else F if k == 4096 else -R(((N - k) / 4096) ** 3),
+        lambda k: R((k / 4096) ** 6) if k < 4096 else 0 if k == 4096 else -R(((N - k) / 4096) ** 6),
+        lambda k: alt(k) * int(round(32660.05 * (k / N) ** 1.5)),                                             # Ripple
+        lambda k: alt(k) * R(half(k)),                                                                         # Grid
+        lambda k: R(half(k)) if k < 4096 else int(round(16384 * sin(pi * (k - 4096) / 4096))),                # Cliff 1
+        rmir, spiky, lambda k: st1[k], lambda k: st2[k]]
+    assert len(defs) == len(GM_NAMES) == 66
+    out = []
+    for name, f in zip(GM_NAMES, defs):
+        t = [f(k) for k in range(N)]
+        assert all(-32768 <= v <= 32767 for v in t), name
+        out.append((name, t))
+    return out
+
+
+def gen_shapes():
+    sh = gm_shapes()
+    rows = []
+    for i, (name, t) in enumerate(sh):
+        rows.append("    /* %d %s: %d..%d */\n" % (i, name, min(t), max(t)))
+        for j in range(0, GM_N, 32):
+            rows.append("    " + ",".join(str(v) for v in t[j:j + 32]) + ",\n")
+    return ("/* Generated by tools/gen_vectors.py --shapes; do not edit. The 66 generic-macro shapes of 14 sec. A.6 in Macros.Mac\n"
+            " * file order, OUR samples (+-32640 = 127.5 x 256): the sine family exactly round(32640 * sin), the others the authored\n"
+            " * definitions in gen_vectors.py gm_shapes(). No Martin bytes: tools/ref/14-macros_mac_decode.py is used only by\n"
+            " * --shapes --compare, on a developer PC, to measure each definition against the decode (docs/generated-files.md).\n"
+            " * Regenerate: python -I tools/gen_vectors.py --shapes; verify: --shapes --check. */\n"
+            '#include "engine/lj_shapes_gen.h"\n\n'
+            "static const int16_t lj_gm_samples[%d * %d] = {\n" % (len(sh), GM_N) + "".join(rows) + "};\n\n"
+            "const lj_gm_shapes lj_gm_shapes_builtin = { %d, %d, lj_gm_samples, {\n" % (len(sh), len(sh)) +
+            "".join('    "%s",\n' % n for n, _ in sh) + "} };\n")
+
+
+def shapes_compare():
+    """Developer PC only: each definition against the decode of the user's / reference Macros.Mac (never emitted)."""
+    path = os.environ.get("LJ4EVR_MACROS_MAC") or os.path.join(ROOT, "reference", "installer", "extracted_2.209", "app", "Macros.Mac")
+    if not os.path.exists(path):
+        print("gen_vectors --shapes --compare: no Macros.Mac at %s (set LJ4EVR_MACROS_MAC); skipped" % path)
+        return 0
+    recs = load("14-macros_mac_decode.py").decode(path)
+    assert len(recs) == 66
+    for i, ((name, t), (rname, _, rt)) in enumerate(zip(gm_shapes(), recs)):
+        assert name == rname, (i, name, rname)
+        d = [abs(a - b) for a, b in zip(t, rt)]
+        print("%2d %-15s max |diff| %5d  samples differing %4d" % (i, name, max(d), sum(1 for x in d if x)))
+    return 0
+
+
+def shapes_main(check):
+    if "--compare" in sys.argv:
+        return shapes_compare()
+    text = gen_shapes()
+    rel = os.path.relpath(OUT_SHAPES, ROOT)
+    if not check:
+        with open(OUT_SHAPES, "w", encoding="ascii", newline="\n") as f:
+            f.write(text)
+        print("wrote %s (%d bytes)" % (rel, len(text)))
+        return 0
+    have = open(OUT_SHAPES, encoding="ascii", newline="").read() if os.path.exists(OUT_SHAPES) else None
+    if have is not None and "--mutate" in sys.argv:                    # the failure row: flip sample 0 of '2*Sine' in the committed text
+        j = have.index("\n", have.index("/* 0 2*Sine: ")) + 5
+        have = have[:j] + ("1" if have[j] == "0" else "0") + have[j + 1:]
+    if have != text:
+        print("gen_vectors --shapes --check: %s differs from the generator output" % rel)
+        return 1
+    print("gen_vectors --shapes --check: %s up to date (66 shapes x %d samples)" % (rel, GM_N))
+    return 0
 
 
 if __name__ == "__main__":

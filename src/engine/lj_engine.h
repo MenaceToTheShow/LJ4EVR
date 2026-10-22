@@ -29,6 +29,7 @@
 #include "core/lj_types.h"
 #include "engine/lj_engine_rules.h"
 #include "model/lj_model.h"
+#include "model/lj_genmacro.h"
 
 typedef struct lj_engine lj_engine;
 
@@ -83,7 +84,21 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
  * GLOBAL_PATCH         -                           -                          -            patch = show->patch: S1/S6 source, DMX-in mode, invert, min/max re-read (Global Patch Ok / Load Global Patch)
  * DEFAULT_OUT          -                           -                          -            default_out = show->default_out (pinned): rank 0 re-read (Use Current Scene / Clear Default Output / Fixture Configuration save)
  * SNAPSHOT_REQ         enum lj_snapshot_src        -                          -            snapshot = a UI-owned lj_frame the engine fills at the end of the next tick (out[] and merged[] of that tick, tick_no set); the view's snapshot_tick echoes tick_no when done; no I/O, no allocation [03 s4.7]
- * PREFS                enum lj_engine_pref         value                      -            -        the engine-facing System / cue / statics preferences (seam 3 of docs/w2-contracts.md): KeepSeqBlind, UseGlobalChaseRate, DisableChaseFade, StaticsUseFadetime, HotkeyTrigChangesDir */
+ * PREFS                enum lj_engine_pref         value                      -            -        the engine-facing System / cue / statics preferences (seam 3 of docs/w2-contracts.md): KeepSeqBlind, UseGlobalChaseRate, DisableChaseFade, StaticsUseFadetime, HotkeyTrigChangesDir
+ *
+ * ---- W3 kinds (design 10 W3, docs/w3-contracts.md; appended, never reordered) ----
+ * LOAD_GENMACRO (W3 c)  as above; c = enum lj_gm_src: LJ_GM_SRC_CUE (the cue's macro slot, also what LOAD_CUE carries) or LJ_GM_SRC_EDITOR (the
+ *                      Generic Macro Editor's working record, which runs live while the editor is open [14 sA.7]); both are rank 6, the editor's
+ *                      applied after the cue's. A cue's latched gen_macro the UI could not pin arrives as gm NULL -> pending_genmacro (2.3 rule 3)
+ * GENMACRO_ON          enum lj_gm_src (CUE = "Generic Macro Slot On/Off", the cue control's Disable Macro) or LJ_GM_SRC_ENGINE (Generic Macro Engine
+ *                      Off/On: "disable ALL macros running - this includes any macro running from the cue" [14 sA.3 (8)])   b = 0/1   -   -
+ * GENMACRO_RESTART     enum lj_gm_src (CUE / EDITOR)  -                         -            -        Restart Macro: every channel index of that macro to 0 [14 sA.3 (7)]
+ * GM_SHAPES            -                           -                          -            gm_shapes = the pinned shape table (model/lj_genmacro.h): a user's Macros.Mac / UserMacros.Mac override (ME-34); NULL = the regenerated built-ins (engine/lj_shapes_gen.h)
+ * MACRO_FADE           enum lj_mm_ctl              fade ms (FADE_OUT / FADE_IN; the cue macro control's time list)   -   -   the Cue macro control's movement-macro amplitude moves [03 s5.11]: Fade out / Fade in over b ms, Macros Off / On (instant), Freeze / Run (speed 0 / restore);
+ *                      MACRO_CTL keeps setting the two scales (W3: a, b 0..999 % with the 1-999 % preference; still floored and clamped to 127 per macro, LJ_MOVEMACRO_AMP_MAX)
+ * Not engine commands (design 2.3 / 3.4; they write the CURRENT SCENE under lj_lock and post CURRENT_SEQ like every fixture control): Generic DMX
+ * Control (model/lj_gdc.h), Sequence Fades (model/lj_seqfades.h), Follow spot recall (model/lj_followspot.h), Fan Out / Auto Delay (model/lj_movemacro.h),
+ * the Movement Macro window (it edits lj_scene.macro[]). Bezier shapes reach the engine as show->bez (read per tick, swapped whole under lj_lock). */
 enum lj_cmd_kind {
     LJ_CMD_NONE = 0,
     LJ_CMD_LOAD_CUE, LJ_CMD_LOAD_BG, LJ_CMD_LOAD_GENMACRO, LJ_CMD_CURRENT_SEQ,
@@ -94,6 +109,8 @@ enum lj_cmd_kind {
     /* W2 (appended) */
     LJ_CMD_BG_ON, LJ_CMD_STATIC_ACTIVATE, LJ_CMD_STATIC_DEACTIVATE, LJ_CMD_SMOKE, LJ_CMD_TRANSPARENT, LJ_CMD_CHASE_TAP,
     LJ_CMD_LOOP_OPTS, LJ_CMD_HTP_GROUPS, LJ_CMD_GLOBAL_PATCH, LJ_CMD_DEFAULT_OUT, LJ_CMD_SNAPSHOT_REQ, LJ_CMD_PREFS,
+    /* W3 (appended) */
+    LJ_CMD_GENMACRO_ON, LJ_CMD_GENMACRO_RESTART, LJ_CMD_GM_SHAPES, LJ_CMD_MACRO_FADE,
     LJ_CMD_COUNT,
     LJ_CMD_CUE_TIME = LJ_CMD_TIME        /* the 13 faders are the W1 TIME command (design 10 W2 "cue time control") */
 };
@@ -104,6 +121,8 @@ enum lj_smoke_ctl { LJ_SMOKE_BUTTON = 0 /* b 0/1 (held), c = toggle seconds * 10
                     LJ_SMOKE_HAZE_LEVEL /* b 0..255 */, LJ_SMOKE_FAN_LEVEL /* b 0..255 */ };
 enum lj_transparent_mode { LJ_TRANSPARENT_USE = 0, LJ_TRANSPARENT_FORCE, LJ_TRANSPARENT_IGNORE };   /* TCurrentCue M_UseTransparentCues / M_ForceTransparentCues / M_IgnoreTransparenCues [D13 spelling] */
 enum lj_snapshot_src { LJ_SNAPSHOT_OUT = 0 /* out[] mapped back by address code: "Snapshot from DMX Out" */, LJ_SNAPSHOT_MERGED /* merged[] (before post-processing) */ };
+enum lj_gm_src { LJ_GM_SRC_CUE = 0, LJ_GM_SRC_EDITOR, LJ_GM_SRC_ENGINE /* GENMACRO_ON only */ };
+enum lj_mm_ctl { LJ_MM_FADE_OUT = 0, LJ_MM_FADE_IN, LJ_MM_OFF, LJ_MM_ON, LJ_MM_FREEZE, LJ_MM_RUN };   /* TCueMacroForm buttons; hotkeys Pan/Tilt Macro: Fadeout / Fade In / Macro Off / Macro On / Freeze / Run */
 enum lj_engine_pref { LJ_PREF_KEEP_SEQ_BLIND = 0 /* [PREFS] KeepSeqBlind, LORD_ENGINE-13 */, LJ_PREF_USE_GLOBAL_CHASE_RATE /* TCurrentCue M_UseGlobalChaseRate */,
                       LJ_PREF_DISABLE_CHASE_FADE /* [CUE] DisableChaseFade */, LJ_PREF_STATICS_USE_FADETIME /* [STATICS] Use Fadetime */,
                       LJ_PREF_HOTKEY_TRIG_CHANGES_DIR /* [CUE] HotkeyChangeSeqDir */, LJ_PREF_COUNT };
@@ -121,6 +140,8 @@ typedef struct {
     const lj_patch_ch *patch;                                              /* HTP_GROUPS / GLOBAL_PATCH: show->patch (LJ_CHANS entries) */
     const uint8_t *default_out;                                            /* DEFAULT_OUT: show->default_out (LJ_CHANS bytes) */
     lj_frame *snapshot;                                                    /* SNAPSHOT_REQ: filled by the engine, read by the UI after snapshot_tick == its tick_no */
+    /* W3 (appended) */
+    const lj_gm_shapes *gm_shapes;                                         /* GM_SHAPES: UI-owned, pinned until the next GM_SHAPES (ME-34) */
 } lj_cmd;
 
 /* ---- runner state (design 3.2) ---- */
@@ -186,6 +207,13 @@ typedef struct {
     uint32_t smoke_cycle_elapsed_ms;     /* the Smoke Control progress bar (04 s12) */
     uint64_t snapshot_tick;              /* the tick_no of the last SNAPSHOT_REQ served (the UI compares with its lj_frame.tick_no) */
     uint8_t  prefs[LJ_PREF_COUNT];       /* the LJ_CMD_PREFS values in force */
+    /* ---- W3 (appended) ---- */
+    uint8_t  gm_engine_on, gm_slot_on;   /* Generic Macro Engine / the cue's macro slot (GENMACRO_ON); 1 at create */
+    uint32_t gm_cue_number, gm_editor_number;   /* the generic macros running at rank 6 (0 = none): the cue's and the editor's (the Cue control's eMacro field, the editor caption) */
+    uint16_t mm_amp_pct, mm_speed_pct;   /* the cue macro control scales in force, live during a MACRO_FADE (0..999) */
+    uint8_t  mm_fade;                    /* 0 none, 1 fading out, 2 fading in (the Cue macro control buttons) */
+    uint8_t  mm_frozen;                  /* Freeze = speed 0 [03 s5.11] */
+    uint16_t mm_idx_pan[LJ_FIXTURES], mm_idx_tilt[LJ_FIXTURES];   /* movement-macro phase per fixture: the integer table index 0..LJ_MOVEMACRO_N_TABLE-1 after this tick (the Movement Macro trace window) */
 } lj_engine_status;   /* design 2.3 names this struct lj_engine_view; C puts typedef and function names in one namespace, so the TYPE is lj_engine_status and the FUNCTION keeps the design name */
 
 /* ---- post-processing context (design 3.5): what S1-S9 read, rebuilt at bind and by commands ---- */

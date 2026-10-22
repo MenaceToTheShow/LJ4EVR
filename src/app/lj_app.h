@@ -85,4 +85,21 @@ enum { LJ_SNAP_SELECTED_ONLY = 1, LJ_SNAP_NON_DEFAULT_ONLY = 2, LJ_SNAP_DMXIN_ON
 /* Striking Lamps [01 s6.2]: Lamp On one fixture at a time ~1 s apart with the TAutoLampForm progress; Stop cancels. */
 int  lj_app_strike_lamps(int from_startup);
 
+/* ---- W3 (appended; docs/w3-contracts.md; desktop-app track unless noted) ----
+ * Idle pass order (design 2.3 rule 4): lj_uiscript_step -> lj_app_service_pending (pending_link_cue / pending_bg /
+ * pending_genmacro: the latched gen_macro is loaded from CueMacros\ and posted as LOAD_GENMACRO c = LJ_GM_SRC_CUE,
+ * the old record freed only after the engine took the new pointer, ME-102) -> lj_app_midi_dispatch (MTC quarter-frames
+ * fed to lj_mtc_feed here) -> lj_app_cuelist_step -> lj_app_seam_idle -> the 100 ms refresh.
+ * Cue list hotkeys (01 s7 rows, io/lj_actions.h LJ_FN_CUELIST_*): CueList Control / Toggle List of Cuelists open the
+ * windows; Cuelist Start Top / Start Selected / Go / Back / Stop / Stop and Clear / Goto Mark n / Run from Mark n / Log
+ * Timecode map to LJ_ACT_CUELIST_OP with the enum lj_cl_op of the same name; Quick Save CueList saves without the
+ * dialog when [PREFS] QuickCl=1; Cuelist select previous / next / start step the Select Cuelist list. "Cuelist Go"
+ * on an idle list is Run from top (03 s6.5). The program row LJ_FN_PROG_CUELIST (MIDI note, hotkey) = load + Top. */
+void lj_app_cuelist_step(uint64_t now_us);   /* every idle pass: lj_cl_run_step with the app's lj_cl_host (cuelist-core writes the host, desktop-app the call) */
+int  lj_app_load_cuelist(uint32_t number);   /* CueLists\NNNNNNNN.Cl2 (0 = AutoSave.Cl2) into show->current_cl; the runner is unpinned from the old list first; 0 / -1 + log */
+int  lj_app_gs2_reload(void);                /* ME-31: lj_show_gs2_load_all outside the lock, swap + lj_engine_bind_profile per GS2 fixture under it, free the old array; 0 / -1 */
+int  lj_app_gm_shapes_reload(void);          /* ME-34: <library>\Override\Macros.Mac (+ UserMacros.Mac) or the built-ins -> ctx->gm_shapes + LJ_CMD_GM_SHAPES; the old table freed after the post */
+int  lj_app_bez_reload(void);                /* <library>\MacroShapes\*.bez sampled -> show->bez swapped under lj_lock (movement track writes the loader) */
+int  lj_app_followspot(int setting);         /* 1..20 recall into the current scene (+ the static, Intensity + Movement opened), 0 = Clear Followspot; 0 / -1 */
+
 #endif /* LJ_APP_APP_H */

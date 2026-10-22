@@ -312,3 +312,65 @@ if(Python3_FOUND)
   add_test(NAME exe_profiles_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/exe_profiles_check.py" --check)
 endif()
 add_test(NAME test_profiles_w2 COMMAND lj4evr_tests test_profiles_w2)
+
+# ---- W3 contracts (docs/w3-contracts.md section 7), append-only ----
+# fixlib inflates .Udf stream 0 with miniz tinfl (design 5.3); the cue list runner is SDL-free and the tests drive it.
+target_link_libraries(lj_fixlib PUBLIC lj_miniz)
+target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_cuelist_run.c")
+set(LJ_W3_TESTS test_cuelist test_cuelist_run test_genmacro test_movemacro test_gdc_grammar test_gs2 test_udf_crc test_profile_editor test_followspot)
+foreach(sub ${LJ_W3_TESTS})
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+# Expected-pending rows (the W2 profiles_ids precedent): each prints PENDING and fails until its track lands the body;
+# the track removes its name from this list in the same commit. test_cuelist and test_profile_editor carry real rows now.
+# (test_genmacro: the genmacro track landed its body; the DISABLED row is gone)
+if(Python3_FOUND)
+  # profiles_ids extended to the W3 tier-1 families 15/06-15/09 (design 10 W3 acceptance 8): red until the profiles track lands them
+  add_test(NAME profiles_ids_w3 COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/check_profiles.py" --tier 1 2 3 4 5 6 7 8 9)
+  # (the DISABLED property on profiles_ids_w3 is removed: the W3 profiles track landed the 15/06-15/09 hand files)
+  # lj_shapes_gen.c is the committed output of gen_vectors.py --shapes (design 9.2); the genmacro track writes the generator
+  add_test(NAME gen_vectors_shapes_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/gen_vectors.py" --shapes --check)
+  # genmacro track: the check is live; the --mutate row flips one sample of the committed file and must fail
+  add_test(NAME gen_vectors_shapes_mutated COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/gen_vectors.py" --shapes --check --mutate)
+  set_tests_properties(gen_vectors_shapes_mutated PROPERTIES WILL_FAIL TRUE)
+endif()
+
+# W3 gs2 track (append-only): the 48 shipped .GS2 + the .Udf sample against tools/ref/16-gs2_ref.py, field by field and
+# round-trip byte-exact (developer PC only: prints SKIP and passes when LJ4EVR_REFERENCE_DIR is empty).
+if(Python3_FOUND)
+  add_test(NAME gs2_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/gs2_check.py" --tests "$<TARGET_FILE:lj4evr_tests>" --ref "${LJ4EVR_REFERENCE_DIR}")
+endif()
+# LORD_C-17: two libFuzzer targets over the importer boundary (clang only; ci.yml linux-clang runs each 60 s, integrator).
+option(LJ_FUZZ "Build the libFuzzer targets fuzz_gs2 / fuzz_udf (clang)" OFF)
+if(LJ_FUZZ)
+  foreach(fz fuzz_gs2 fuzz_udf)
+    add_executable(${fz} "${CMAKE_SOURCE_DIR}/tools/fuzz/${fz}.c")
+    target_include_directories(${fz} PRIVATE "${CMAKE_SOURCE_DIR}/src")
+    target_link_libraries(${fz} PRIVATE lj_fixlib lj_core)
+    target_compile_options(${fz} PRIVATE -fsanitize=fuzzer,address,undefined)
+    target_link_options(${fz} PRIVATE -fsanitize=fuzzer,address,undefined)
+  endforeach()
+endif()
+
+# W3 cuelist-window (append-only): TCuelist2Form enable table, greyed CD / DA / MP rows, ListPop order, red load-error line, golden
+add_test(NAME test_cuelist_form COMMAND lj4evr_tests test_cuelist_form)
+
+# W3 profiles track (append-only): test_profiles_w3 = the 15/06-15/09 hand profiles by id (footprints, Atomic classes, MAC 550 16-bit pairs,
+# RoboColor palette counts, ME-25/27 states, every window built headless)
+add_test(NAME test_profiles_w3 COMMAND lj4evr_tests test_profiles_w3)
+
+# W3 desktop-app (append-only): the W3 app seam (cue-list host, reloads, follow spot, W3 actions) and its script verbs headless
+target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_app_w3.c")
+add_test(NAME test_uiscript_w3 COMMAND lj4evr_tests test_uiscript_w3)
+
+# W3 gdc-fades-followspot (append-only): the Generic DMX Control / Set Fade Status / follow spot windows headless + W3GDC_* goldens
+add_test(NAME test_gdc_fades_fs COMMAND lj4evr_tests test_gdc_fades_fs)
+
+# W3 profile-editor (append-only): the three windows headless (tests/ui/test_profile_editor_form.c)
+add_test(NAME test_profile_editor_form COMMAND lj4evr_tests test_profile_editor_form)
+
+# W3 movement track (append-only): the five movement windows headless (ME-16, LORD_FIDELITY-12, goldens W3MM_*)
+add_test(NAME test_movement_w3 COMMAND lj4evr_tests test_movement_w3)
+
+# W3 genmacro (append-only): the Generic Macro Editor, Save Macro and Select Macro headless (tests/ui/test_genmacro_editor.c, golden W3GM_EDITOR)
+add_test(NAME test_genmacro_editor COMMAND lj4evr_tests test_genmacro_editor)

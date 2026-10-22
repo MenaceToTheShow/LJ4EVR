@@ -1,0 +1,42 @@
+LJ4 replay 1
+# genmacro_vs_bgcue (design 3.4 rank 6 vs rank 5, LJ_GENMACRO_RANK_ABOVE_BG, rig M14; owner genmacro): a BG cue slot
+# drives 1:1 at 200 Snap; the cue's latched generic macro (genmacro=1, base off, Amp+ 40) rides on that merged value
+# (layer=6, never below the BG value); `at k genmacro_on engine 0` returns the BG value (layer=5); the macro latched
+# through pending_genmacro (`load_cue ... nobg` style: the UI had not pinned it) shows `expect_pending k genmacro 1`
+# and runs after `at k ack_genmacro`.
+# NOTE design 3.4: rank 6 takes ref = the merged value of ranks 0-5 (base off), so the BG cue's 200 is the reference:
+#      200 + 40 at the positive peak (tick 20, index 2047), 200 - 40 at the negative one (tick 60, index 6143).
+# NOTE 14 sA.3 (8) Generic Macro Engine Off (tick 61): "disable ALL macros running - this includes any macro running
+#      from the cue"; the BG value shows again with layer 5. The indexes hold while the engine is off (PROPOSAL rig 14 sA.7).
+# NOTE ME-2 / design 2.3 rule 3: `load_cue 1 nogm` = the UI could not pin the cue's macro, so the engine stops the old
+#      macro, writes pending_genmacro = 1 (tick 70: BG value, layer 5) and the UI's `ack_genmacro` posts LOAD_GENMACRO
+#      with the record pinned (tick 71). The macro's restart flag is 0, so its indexes continue (CHM 5567).
+# NOTE expectations from the 14 sA.3 arithmetic written out independently (cycle 2.0 s = 80 ticks, Sine, +-40).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+seq 1 name="bg" scene st=1000 ft=0 ch 1:1=200:S
+bg 1 name="bg one"
+bgslot 1 seq=1
+macro 1 name="ride"
+mch 1:1 shape=7 base=off amp=40,40 cycle=20 dir=fwd delay=0
+cue 1 bgcue=1 genmacro=1
+at 0 load_cue 1
+expect 0 1:1=200 layer=6   # index 0
+expect 10 1:1=228 layer=6   # index 1023
+expect 20 1:1=240 layer=6   # index 2047
+expect 40 1:1=200 layer=6   # index 4095
+expect 60 1:1=160 layer=6   # index 6143
+at 61 genmacro_on engine 0
+expect 61 1:1=200 layer=5
+expect_view 61 gm_engine=0 gm_cue=1
+at 62 genmacro_on engine 1
+expect 62 1:1=160 layer=6   # index 6246
+expect 69 1:1=168 layer=6   # index 6963
+at 70 load_cue 1 nogm
+expect 70 1:1=200 layer=5
+expect_pending 70 genmacro 1
+at 71 ack_genmacro
+expect 71 1:1=170 layer=6   # index 7065
+expect_view 71 gm_engine=1 gm_cue=1
+expect 80 1:1=194 layer=6   # index 7987
+expect 89 1:1=221 layer=6   # index 716

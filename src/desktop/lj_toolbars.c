@@ -320,7 +320,7 @@ void lj_desktop_seqcue_fields(uint32_t seq_no, const char *seq_name, int scene, 
     char counter[24];   /* gcc -Wformat-truncation: "%d:%d" of any two ints */
     field(lj_tb_seqname, seq_name, ctx->seq_saved || seq_no != 0);
     field(lj_tb_cuename, cue_name, ctx->cue_saved || cue_no != 0);
-    if (lj_tb_clname && ctx->show && ctx->show->current_cl) field(lj_tb_clname, ctx->show->current_cl->name, 0);
+    if (lj_tb_clname && ctx->show && ctx->show->current_cl) field(lj_tb_clname, ctx->show->current_cl->name, ctx->cl && ctx->cl->state != LJ_CL_IDLE);   /* W3: yellow while the list executes [01 s2.3.2] */
     if (scenes < 1) scenes = 1;
     if (scene < 1) scene = 1;
     snprintf(counter, sizeof counter, "%d:%d", scene, scenes);   /* X:Y = current : last [01 s2.3.1] */

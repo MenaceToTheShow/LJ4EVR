@@ -6,6 +6,7 @@
  * --selftest proves equals the screen pixel for pixel. */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen/sscanf under /W4 /WX on MSVC (as gfx/lj_bmp.c) */
 #include "app/lj_uiscript.h"
+#include "app/lj_app_w3.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@
 #include <string.h>
 #include "controls/lj_ctl.h"
 #include "controls/lj_ctl_common.h"
+#include "controls/lj_ctl_movement.h"
 #include "core/lj_clock.h"
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
@@ -30,19 +32,26 @@
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 #include "io/lj_midi.h"
+#include "model/lj_cuelist.h"
+#include "model/lj_show.h"
+#include "windows/lj_cuelist_form.h"
 #include "miniz.h"
 
 enum { LJ_US_ARGS = 6 };
 enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLCLICK, LJ_US_DRAG, LJ_US_TYPE, LJ_US_KEY, LJ_US_WAIT, LJ_US_SHOT,
                   LJ_US_ASSERT_CAPTION, LJ_US_ASSERT_TEXT, LJ_US_ASSERT_ENABLED, LJ_US_ASSERT_VISIBLE, LJ_US_ASSERT_FRAME, LJ_US_ASSERT_VIEW,
                   LJ_US_ASSERT_FILE, LJ_US_ASSERT_PPS, LJ_US_ASSERT_CLIENT, LJ_US_ASSERT_POS, LJ_US_LOG, LJ_US_QUIT,
-                  /* W2 (appended) */ LJ_US_MIDI, LJ_US_HOTKEY, LJ_US_ASSERT_LED, LJ_US_ASSERT_FILE_LINE, LJ_US_SLEEP_UNTIL_TICK, LJ_US_MOVE, LJ_US_VERBS };
+                  /* W2 (appended) */ LJ_US_MIDI, LJ_US_HOTKEY, LJ_US_ASSERT_LED, LJ_US_ASSERT_FILE_LINE, LJ_US_SLEEP_UNTIL_TICK, LJ_US_MOVE,
+                  /* W3 (appended; assert_pos keeps its W1 row: a fixture number as the first word is the W3 form) */
+                  LJ_US_CL_LOAD, LJ_US_CL_GOTO, LJ_US_CL_EXECUTE, LJ_US_CL_ASSERT_LINE, LJ_US_GS2_IMPORT, LJ_US_ASSERT_PROMPT, LJ_US_MM_SET, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
     { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
     { "assert_frame", 1, 2 }, { "assert_view", 1, 4 }, { "assert_file", 2, 2 }, { "assert_pps", 3, 3 }, { "assert_client", 3, 3 }, { "assert_pos", 3, 3 }, { "log", 1, 1 }, { "quit", 0, 0 },
     /* W2 (appended; docs/ui-script.md "W2 verbs"): parsed and type-checked here, executed by the app track (lj_us_exec_w2) */
-    { "midi", 3, 3 }, { "hotkey", 2, 2 }, { "assert_led", 2, 2 }, { "assert_file_line", 2, 2 }, { "sleep_until_tick", 1, 1 }, { "move", 3, 3 } };   /* assert_view gains W2 field names inside its W1 row */
+    { "midi", 3, 3 }, { "hotkey", 2, 2 }, { "assert_led", 2, 2 }, { "assert_file_line", 2, 2 }, { "sleep_until_tick", 1, 1 }, { "move", 3, 3 },
+    /* W3 (appended; docs/ui-script.md "W3 verbs") */
+    { "cl_load", 1, 1 }, { "cl_goto", 1, 1 }, { "cl_execute", 0, 0 }, { "cl_assert_line", 2, 2 }, { "gs2_import", 1, 1 }, { "assert_prompt", 1, 1 }, { "mm_set", 4, 4 } };   /* assert_view gains W2 field names inside its W1 row */
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -133,7 +142,13 @@ static int lj_us_tokens(char *s, char **arg, int cap)
 static const struct { const char *name; size_t off, size; } lj_us_vfields[] = {
     LJ_US_VF(gm), LJ_US_VF(blackout), LJ_US_VF(freeze), LJ_US_VF(offline),
     LJ_US_VF(bg_any), LJ_US_VF(statics_any), LJ_US_VF(flash_latched), LJ_US_VF(flash_seq), LJ_US_VF(transparent_mode), LJ_US_VF(smoke_active),
-    LJ_US_VF(haze_level), LJ_US_VF(chase_ms), LJ_US_VF(cue_number), LJ_US_VF(bg_number), LJ_US_VF(pending_link_cue), LJ_US_VF(snapshot_tick) };
+    LJ_US_VF(haze_level), LJ_US_VF(chase_ms), LJ_US_VF(cue_number), LJ_US_VF(bg_number), LJ_US_VF(pending_link_cue), LJ_US_VF(snapshot_tick),
+    /* W3 (appended) */
+    LJ_US_VF(gm_engine_on), LJ_US_VF(gm_slot_on), LJ_US_VF(gm_cue_number), LJ_US_VF(gm_editor_number), LJ_US_VF(mm_amp_pct), LJ_US_VF(mm_speed_pct),
+    LJ_US_VF(mm_fade), LJ_US_VF(mm_frozen), LJ_US_VF(pending_genmacro) };
+static const char *const lj_us_cl_states[4] = { "plain", "done", "next", "error" };   /* enum lj_cl_line_state order */
+static int lj_us_cl_state(const char *s) { int i; for (i = 0; i < 4; i++) if (strcmp(lj_us_cl_states[i], s) == 0) return i; return -1; }
+static int lj_us_in(const char *s, int lo, int hi) { int v; return lj_us_int(s, &v) == 0 && v >= lo && v <= hi; }
 static const char *const lj_us_leds[LJ_LED_COUNT] = { "bgcue", "statics", "smoke" };   /* enum lj_desktop_led order */
 
 static int lj_us_vfield(const char *name, size_t len)
@@ -216,8 +231,25 @@ static const char *lj_us_check(const lj_us_stmt *st)
     case LJ_US_ASSERT_PPS:
         if (lj_us_int(st->arg[0], &a) || a < 1 || a > LJ_LINKS || lj_us_int(st->arg[1], &b) || lj_us_int(st->arg[2], &c)) return "expected <link 1-4> <min> <max>";
         break;
-    case LJ_US_ASSERT_CLIENT: case LJ_US_ASSERT_POS: case LJ_US_MOVE:
+    case LJ_US_ASSERT_POS:
+        if (lj_us_int(st->arg[0], &a) == 0) {                 /* W3: assert_pos <fixture> <pan> <tilt> */
+            if (a < 1 || a > LJ_FIXTURES || !lj_us_in(st->arg[1], -32768, 32767) || !lj_us_in(st->arg[2], -32768, 32767)) return "expected <fixture 1-100> <pan> <tilt> (-32768..32767)";
+            break;
+        }
+        /* fall through - the W1 <Form> <x> <y> form */
+    case LJ_US_ASSERT_CLIENT: case LJ_US_MOVE:
         if (lj_us_int(st->arg[1], &a) || lj_us_int(st->arg[2], &b)) return "expected <Form> <x> <y>";
+        break;
+    case LJ_US_CL_GOTO:
+        if (!lj_us_in(st->arg[0], 1, 1000000)) return "cl_goto takes a line number (1..)";
+        break;
+    case LJ_US_CL_ASSERT_LINE:
+        if (!lj_us_in(st->arg[0], 1, 1000000)) return "cl_assert_line takes a line number (1..)";
+        if (lj_us_cl_state(st->arg[1]) < 0) return "expected plain, done, next or error";
+        break;
+    case LJ_US_MM_SET:
+        if (!lj_us_in(st->arg[0], 1, LJ_FIXTURES)) return "mm_set fixture must be 1..100";
+        for (a = 1; a < 4; a++) if (!lj_us_in(st->arg[a], 0, 255)) return "mm_set shape, amp and speed must be 0..255";
         break;
     default: break;
     }
@@ -714,6 +746,103 @@ static int lj_us_exec_w2(lj_us_stmt *st)
     }
 }
 
+/* ---- W3 verbs (lj_uiscript.h, docs/ui-script.md "W3 verbs") ---- */
+
+static int lj_us_path(const char *rel, char *path, size_t cap)   /* as given, else under the user library (assert_file's rule) */
+{
+    FILE *f = fopen(rel, "rb");
+    if (f) { fclose(f); if (lj_str_copy(path, cap, rel) == 0) return 0; }
+    else if (lj_ctx_get()->lib && lj_library_path(lj_ctx_get()->lib, rel, path, cap) == 0 && (f = fopen(path, "rb")) != NULL) { fclose(f); return 0; }
+    lj_us_failf(lj_us.line, "%s is missing", rel);
+    return -1;
+}
+
+/* assert_pos <fixture> <pan> <tilt>: the readout (17 s1.3) of the fixture's pan / tilt bytes in the engine's frame (out[], after S7) */
+static int lj_us_assert_fixture_pos(const lj_us_stmt *st)
+{
+    lj_ctx *c = lj_ctx_get();
+    const lj_profile *p;
+    uint8_t ofs[4], b[4];
+    int f, want_p, want_t, base, i, ch;
+    int32_t pan, tilt;
+    char msg[128];
+    lj_us_int(st->arg[0], &f); lj_us_int(st->arg[1], &want_p); lj_us_int(st->arg[2], &want_t);
+    if (!c->show || !c->engine) { lj_us_failf(lj_us.line, "%s", "no show or engine"); return -1; }
+    p = lj_show_profile(c->show, f - 1);
+    base = lj_show_fixture_base(c->show, f - 1);
+    if (!p || base < 0 || !lj_profile_window(p, LJ_CTL_MOVEMENT)) { snprintf(msg, sizeof msg, "fixture %d has no pan / tilt", f); lj_us_failf(lj_us.line, "%s", msg); return -1; }
+    if (p->pt16) lj_pos_patch16(p, ofs);
+    else { ofs[0] = ofs[1] = p->pan_ofs; ofs[2] = ofs[3] = p->tilt_ofs; }
+    lj_lock();
+    for (i = 0; i < 4; i++) { ch = base + ofs[i]; b[i] = ch < LJ_CHANS ? lj_engine_frame(c->engine)->out[ch / LJ_LINK_CH][ch % LJ_LINK_CH] : 0; }
+    lj_unlock();
+    pan = p->pt16 ? lj_pos_from_dmx16((uint16_t)((b[0] << 8) | b[1])) : lj_pos_from_dmx8(b[0]);
+    tilt = p->pt16 ? lj_pos_from_dmx16((uint16_t)((b[2] << 8) | b[3])) : lj_pos_from_dmx8(b[2]);
+    if (pan == want_p && tilt == want_t) return 0;
+    snprintf(msg, sizeof msg, "fixture %d is at %ld : %ld, expected %d : %d", f, (long)pan, (long)tilt, want_p, want_t);
+    lj_us_failf(lj_us.line, "%s", msg);
+    return -1;
+}
+
+static int lj_us_exec_w3(lj_us_stmt *st)
+{
+    lj_ctx *c = lj_ctx_get();
+    char path[LJ_PATH_CAP], err[160], msg[600];
+    lj_window *win;
+    lj_widget *w;
+    int n, got, f, shape, amp, speed, k;
+    switch (st->verb) {
+    case LJ_US_CL_LOAD:
+        if (lj_us_path(st->arg[0], path, sizeof path) != 0) return -1;
+        if (lj_app_load_cuelist_path(path, 0) != 0) { lj_us_failf(lj_us.line, "cue list %s did not load (see the log)", st->arg[0]); return -1; }
+        return 0;
+    case LJ_US_CL_GOTO:                                    /* waiting for Go: Jump to this; otherwise a click on the row of the Cuelist window */
+        lj_us_int(st->arg[0], &n);
+        if (c->cl && c->cl->state == LJ_CL_WAIT_GO) { lj_desktop_run_action(LJ_ACT_CUELIST_OP, LJ_CL_OP_ARG(LJ_CL_OP_JUMP, n)); return 0; }
+        if (!c->show || !c->show->current_cl || (uint32_t)n > c->show->current_cl->n) { lj_us_failf(lj_us.line, "the cue list has no line %s", st->arg[0]); return -1; }
+        if (!(win = lj_win_get(LJ_WIN_CUELIST_FORM)) || !(w = lj_window_find(win, "lv1"))) { lj_us_failf(lj_us.line, "%s", "the Cuelist window is not open"); return -1; }
+        lj_w_listview_select(w, n - 1);
+        lj_us.cur = win;
+        return 0;
+    case LJ_US_CL_EXECUTE:
+        lj_desktop_run_action(LJ_ACT_CUELIST_OP, LJ_CL_OP_ARG(LJ_CL_OP_GO, 0));
+        return 0;
+    case LJ_US_CL_ASSERT_LINE:
+        lj_us_int(st->arg[0], &n);
+        if (!c->cl || !c->show || !c->show->current_cl) { lj_us_failf(lj_us.line, "%s", "no cue list"); return -1; }
+        got = lj_cl_line_state(c->cl, c->show->current_cl, (uint32_t)n);
+        snprintf(msg, sizeof msg, "line %d state", n);
+        return lj_us_assert_eq(msg, got >= 0 && got < 4 ? lj_us_cl_states[got] : "?", st->arg[1]);
+    case LJ_US_GS2_IMPORT:
+        if (lj_us_path(st->arg[0], path, sizeof path) != 0) return -1;
+        if (lj_app_gs2_import(path, err, sizeof err) != 0) { lj_us_failf(lj_us.line, "%s", err); return -1; }
+        return 0;
+    case LJ_US_ASSERT_PROMPT: {
+        const char *l1, *l2, *cap;
+        if (!(win = lj_win_message_window())) { lj_us_failf(lj_us.line, "%s", "no prompt is open"); return -1; }
+        l1 = lj_w_caption(lj_window_find(win, "Label1")); l2 = lj_w_caption(lj_window_find(win, "Label2")); cap = lj_window_caption(win)->text;
+        l1 = l1 ? l1 : ""; l2 = l2 ? l2 : "";
+        snprintf(msg, sizeof msg, "%s %s", l1, l2);
+        if (strcmp(st->arg[0], l1) == 0 || strcmp(st->arg[0], l2) == 0 || strcmp(st->arg[0], msg) == 0 || (cap && strcmp(st->arg[0], cap) == 0)) return 0;
+        snprintf(msg, sizeof msg, "the prompt shows \"%s\" / \"%s\", expected \"%s\"", l1, l2, st->arg[0]);
+        lj_us_failf(lj_us.line, "%s", msg);
+        return -1; }
+    case LJ_US_MM_SET:                                     /* what the Movement Macro window does: the current scene, under the lock, then CURRENT_SEQ */
+        lj_us_int(st->arg[0], &f); lj_us_int(st->arg[1], &shape); lj_us_int(st->arg[2], &amp); lj_us_int(st->arg[3], &speed);
+        if (!c->show || !c->show->current_seq || c->current_scene >= c->show->current_seq->n) { lj_us_failf(lj_us.line, "%s", "no current scene"); return -1; }
+        lj_lock();
+        {   lj_movemacro *m = &c->show->current_seq->scenes[c->current_scene].macro[f - 1];
+            m->type = (uint8_t)shape; m->amp_pan = m->amp_tilt = (uint8_t)amp; m->cycle_pan = m->cycle_tilt = (uint8_t)speed;
+            for (k = 0; k < 6; k++) m->fstate[k] = LJ_SNAP; }
+        lj_unlock();
+        lj_ctx_set_modified(LJ_MOD_SEQ, 1);
+        lj_ctx_set_scene(c->current_scene);
+        return 0;
+    default:
+        return -1;
+    }
+}
+
 /* ---- step ------------------------------------------------------------------------- */
 
 static int lj_us_exec(lj_us_stmt *st)
@@ -776,6 +905,7 @@ static int lj_us_exec(lj_us_stmt *st)
     case LJ_US_ASSERT_PPS:   return lj_us_assert_pps(st);
     case LJ_US_ASSERT_CLIENT: case LJ_US_ASSERT_POS: {
         lj_rect r;
+        if (st->verb == LJ_US_ASSERT_POS && lj_us_int(st->arg[0], &k) == 0) return lj_us_assert_fixture_pos(st);   /* W3 */
         int x, y, want_x, want_y;
         char msg[96];
         if (!(win = lj_us_window(st->arg[0]))) return -1;
@@ -804,6 +934,8 @@ static int lj_us_exec(lj_us_stmt *st)
         return 0;
     case LJ_US_MIDI: case LJ_US_HOTKEY: case LJ_US_ASSERT_LED: case LJ_US_ASSERT_FILE_LINE: case LJ_US_SLEEP_UNTIL_TICK:
         return lj_us_exec_w2(st);
+    case LJ_US_CL_LOAD: case LJ_US_CL_GOTO: case LJ_US_CL_EXECUTE: case LJ_US_CL_ASSERT_LINE: case LJ_US_GS2_IMPORT: case LJ_US_ASSERT_PROMPT: case LJ_US_MM_SET:
+        return lj_us_exec_w3(st);
     default:
         return -1;
     }

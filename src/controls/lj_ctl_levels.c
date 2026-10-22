@@ -19,6 +19,14 @@ int lj_ctl_levels_row(lj_ctl_win *c, lj_widget *parent, const lj_ctl_row *row, i
     if (row->hi <= row->lo) { e->lo = 0; e->hi = 255; }
     f->on_event = lj_ctl_on_event; f->ud = e;
     lj_ctl_osf_new(c, parent, row, x, y + LJ_LV_OSF_Y, LJ_FADER_W - 1, LJ_LV_OSF_H);
+    {   /* ME-32: the master fixture's Channel Configuration caption wins over the profile's */
+        const lj_show *sh = lj_ctx_get()->show;
+        int m = lj_sel_master();
+        if (sh && m >= 0 && m < LJ_FIXTURES && row->ch < LJ_PROFILE_CH && sh->fixture[m].ch_caption[row->ch][0]) {
+            lj_str_copy(e->text, sizeof e->text, sh->fixture[m].ch_caption[row->ch]);
+            caption = e->text;
+        }
+    }
     if (!caption && c->profile && row->ch < LJ_PROFILE_CH && c->profile->level_caption[row->ch][0]) {
         lj_str_copy(e->text, sizeof e->text, (const char *)c->profile->level_caption[row->ch]);
         caption = e->text;

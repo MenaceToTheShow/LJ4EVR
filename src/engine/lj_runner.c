@@ -75,9 +75,9 @@ static uint32_t lj_runner_rng(uint32_t *s)
 
 static uint32_t lj_runner_scaled_us(uint32_t ms, int pct)
 {
-    uint32_t v = (uint32_t)((uint64_t)ms * (uint32_t)pct / 100u);   /* min(60000, ms * pct / 100) [11 F8, F9] */
-    if (v > LJ_TIME_MAX_MS) v = LJ_TIME_MAX_MS;
-    return v * 1000u;
+    uint64_t v = (uint64_t)ms * (uint32_t)pct * 10u;   /* ME-103: scaled in microseconds, ms * pct / 100 * 1000, so no whole-ms truncation drifts the absolute timeline; PROPOSAL rig: LJ2 rounding unknown */
+    if (v > (uint64_t)LJ_TIME_MAX_MS * 1000u) v = (uint64_t)LJ_TIME_MAX_MS * 1000u;   /* min(60000 ms, ...) [11 F8, F9] */
+    return (uint32_t)v;
 }
 
 void lj_runner_enter(lj_runner *r, uint16_t scene, uint64_t t, uint32_t tick_us, const uint8_t merged[LJ_CHANS], uint16_t cue_pct)
@@ -244,7 +244,7 @@ void lj_runner_eval(lj_runner *r, const lj_scene *sc, uint64_t now, const lj_pai
         base = lj_addr_code(fx->link, fx->address);
         pan = base + p->pan_ofs; tilt = base + p->tilt_ofs;
         if (pan + 1 >= LJ_CHANS || tilt + 1 >= LJ_CHANS) continue;
-        lj_movemacro_offset(&mm[f], m, amp_pct, &dp, &dt);
+        lj_movemacro_offset_bez(&mm[f], m, c->show->bez, amp_pct, &dp, &dt);   /* W3: Bezier types read show->bez (seam 5) */
         if (p->pt16) {
             int32_t v;
             if (r->st[pan] != LJ_OFF)  { v = r->val[pan] * 256 + r->val[pan + 1] + dp;   if (v < 0) v = 0; if (v > 65535) v = 65535; r->val[pan] = (uint8_t)(v >> 8); r->val[pan + 1] = (uint8_t)v; }

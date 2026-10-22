@@ -1,36 +1,41 @@
-/* lj_genmacro.c - 14 sA.3 arithmetic. The per-channel formula (14 sA.3 "derived"):
+/* lj_genmacro.c - rank 6, the 14 sA.3 arithmetic. The per-channel formula (14 sA.3 "derived"):
  * s = shape[(index - delay) mod 8192]; delta = s * Amp+ / 32640 for s >= 0, s * Amp- / 32640
  * for s < 0 (the note writes "-s * Amp-", which would make both halves positive; the
- * -186/186 readout of the editor needs the signed form); ref = base if enabled else the
- * merged value; out = clamp(ref + delta, 0, 255). */
+ * -186/186 readout of the editor needs the signed form, LJ_GENMACRO_AMP_SPLIT); ref = base if
+ * enabled else the merged value; out = clamp(ref + delta, 0, 255). Shapes: engine/lj_shapes_gen.c
+ * (the 66 regenerated tables) or the user's override pinned by LJ_CMD_GM_SHAPES (ME-34). */
 #include <string.h>
 #include "engine/lj_genmacro.h"
 #include "engine/lj_post.h"
-#include "engine/lj_trig_gen.h"
+#include "engine/lj_shapes_gen.h"
 
 enum { LJ_GM_N = LJ_GENMACRO_SHAPE_N, LJ_GM_MASK = LJ_GM_N - 1 };
+#define LJ_GM_IDX_END ((uint32_t)LJ_GM_N << 16)
 
-int lj_genmacro_programmed(const lj_genmacro *m, int ch)
+int16_t lj_genmacro_shape_in(const lj_gm_shapes *sh, int shape, int k)
 {
-    return m->ch[ch].amp_pos != 0 || m->ch[ch].amp_neg != 0;   /* W2: the model's "no shape" encoding */
+    if (!sh || !sh->n || !sh->s) sh = &lj_gm_shapes_builtin;
+    if (shape < 0 || shape >= sh->n) return 0;
+    return sh->s[(size_t)shape * LJ_GM_N + (size_t)(k & LJ_GM_MASK)];
 }
 
-static int16_t lj_gm_sin(uint32_t q /* 4096-table index in 16.16 */)
+int32_t lj_genmacro_delta(const lj_gm_shapes *sh, const lj_gm_param *p, uint32_t idx)
 {
-    int32_t a = lj_sin4096[(q >> 16) & 4095], b = lj_sin4096[((q >> 16) + 1) & 4095];
-    int32_t v = a + (int32_t)(((int64_t)(b - a) * (int64_t)(q & 0xFFFF)) / 65536);   /* linear between table points (division, not a signed shift: ME-60, C11 6.5.7p5) */
-    v = (int32_t)(((int64_t)v * 32640 + (v >= 0 ? 16383 : -16383)) / 32767);         /* 32767 -> 32640 scale [14 sA.6] */
-    return (int16_t)v;
+    int delay = p->dir == LJ_DIR_BOUNCE ? 0 : p->delay;        /* CHM 5835 (LJ_GENMACRO_BOUNCE_NO_DELAY) */
+    int32_t s = lj_genmacro_shape_in(sh, p->shape, (int)(idx >> 16) - delay);
+    int64_t q = (int64_t)s * (s >= 0 ? p->amp_pos : p->amp_neg);   /* Amp+ on the positive half, Amp- on the negative one; a negative amplitude mirrors its half */
+    return (int32_t)((q >= 0 ? q + LJ_GENMACRO_FULL / 2 : q - LJ_GENMACRO_FULL / 2) / LJ_GENMACRO_FULL);   /* nearest, half away from 0 (C division truncates) */
 }
 
-int16_t lj_genmacro_shape(int shape, int k)
+int32_t lj_genmacro_step(const lj_gm_shapes *sh, const lj_gm_param *p, uint32_t idx, int32_t ref, int wide)
 {
-    k &= LJ_GM_MASK;
-    if (shape == 0) return lj_gm_sin((uint32_t)k << 14);       /* '2*Sine' = sin(pi*k/8192): half a period over the shape, table step k/4 */
-    return lj_gm_sin((uint32_t)k << 15);                       /* 'Sine' = sin(2*pi*k/8192), table step k/2; W2: the other 64 shapes */
+    int32_t delta = lj_genmacro_delta(sh, p, idx), out;
+    if (p->base_on) ref = wide ? p->base * 256 : p->base;
+    out = ref + (wide ? delta * LJ_GENMACRO_16BIT_SCALE : delta);
+    if (out < 0) out = 0;
+    if (out > (wide ? 65535 : 255)) out = wide ? 65535 : 255;   /* "limited to 0 to 255" (CHM 5493) */
+    return out;
 }
-
-void lj_genmacro_restart(lj_gm_ch st[LJ_CHANS]) { memset(st, 0, sizeof(lj_gm_ch) * LJ_CHANS); }
 
 void lj_genmacro_advance(const lj_genmacro *m, lj_gm_ch st[LJ_CHANS], uint32_t tick_us)
 {
@@ -38,42 +43,80 @@ void lj_genmacro_advance(const lj_genmacro *m, lj_gm_ch st[LJ_CHANS], uint32_t t
     for (ch = 0; ch < LJ_CHANS; ch++) {
         uint64_t cycle_us = (uint64_t)m->ch[ch].cycle_ds * 100000u;
         uint32_t incr, idx;
-        if (!lj_genmacro_programmed(m, ch) || cycle_us == 0) continue;   /* cycle 0 = static (CHM 5831) */
-        incr = (uint32_t)(((uint64_t)LJ_GM_N << 16) * tick_us / cycle_us);   /* 8192 * tick / cycle in 16.16 */
+        if (cycle_us == 0 || !lj_genmacro_ch_used(m, ch)) continue;   /* cycle 0 = static (CHM 5831) */
+        incr = (uint32_t)(((uint64_t)LJ_GM_IDX_END * tick_us) / cycle_us);   /* 8192 * tick / cycle in 16.16 */
+        if (incr >= LJ_GM_IDX_END) incr = LJ_GM_IDX_END - 1;   /* a cycle shorter than a tick (never with cycle >= 0.4 s) */
         idx = st[ch].idx;
         if (m->ch[ch].dir == LJ_DIR_BOUNCE) {                  /* bounce off either end, delay not considered (CHM 5835) */
             if (st[ch].back) { if (idx < incr) { st[ch].back = 0; idx = incr - idx; } else idx -= incr; }
-            else { idx += incr; if (idx >= ((uint32_t)LJ_GM_N << 16)) { st[ch].back = 1; idx = 2u * ((uint32_t)LJ_GM_N << 16) - idx - 1; } }
+            else { idx += incr; if (idx >= LJ_GM_IDX_END) { st[ch].back = 1; idx = 2u * LJ_GM_IDX_END - idx - 1; } }
         } else if (m->ch[ch].dir == LJ_DIR_REV) idx -= incr;
         else idx += incr;
-        st[ch].idx = idx & (((uint32_t)LJ_GM_N << 16) - 1);   /* "looped back into the 0-8191 interval" (CHM 5565) */
+        st[ch].idx = idx & (LJ_GM_IDX_END - 1);                /* "looped back into the 0-8191 interval" (CHM 5565) */
     }
 }
 
-void lj_genmacro_apply(const lj_genmacro *m, const lj_gm_ch st[LJ_CHANS], const lj_post_ctx *c, uint8_t merged[LJ_CHANS], uint8_t layer_of[LJ_CHANS])
+/* One source over merged[]: every programmed channel of a patched fixture except LSB members (CHM 5583: N/A);
+ * a declared 16-bit pair is one value with one state (ME-22): ref = MSB * 256 + LSB, split back bytewise. */
+static void lj_gm_apply(const lj_genmacro *m, const lj_gm_ch st[LJ_CHANS], const lj_gm_shapes *sh, const lj_post_ctx *c,
+                        uint8_t merged[LJ_CHANS], uint8_t layer_of[LJ_CHANS])
 {
     int ch;
     for (ch = 0; ch < LJ_CHANS; ch++) {
-        int32_t s, delta, ref, out, lsb;
-        if (!lj_genmacro_programmed(m, ch) || c->fixture_of[ch] < 0 || lj_post_is_lsb(c, ch)) continue;   /* LSB rows are N/A (CHM 5583) */
-        s = lj_genmacro_shape(m->ch[ch].shape, (int)(st[ch].idx >> 16) - m->ch[ch].delay);
-        delta = s >= 0 ? (int32_t)(((int64_t)s * m->ch[ch].amp_pos + 16320) / 32640)
-                       : (int32_t)(((int64_t)s * m->ch[ch].amp_neg - 16320) / 32640);
+        int lsb;
+        if (!lj_genmacro_ch_used(m, ch) || c->fixture_of[ch] < 0 || lj_post_is_lsb(c, ch)) continue;
         lsb = lj_post_pair_lsb(c, ch);
-        if (lsb >= 0) {                                        /* 16-bit on the MSB pair: delta scaled by 256 (UNVERIFIED, 14 sA.3) */
-            ref = m->ch[ch].base_on ? m->ch[ch].base * 256 : merged[ch] * 256 + merged[lsb];
-            out = ref + delta * 256;
-            if (out < 0) out = 0;
-            if (out > 65535) out = 65535;
-            merged[ch] = (uint8_t)(out >> 8); merged[lsb] = (uint8_t)out;
+        if (lsb >= 0) {
+            int32_t v = lj_genmacro_step(sh, &m->ch[ch], st[ch].idx, merged[ch] * 256 + merged[lsb], 1);
+            merged[ch] = (uint8_t)(v >> 8); merged[lsb] = (uint8_t)(v & 0xFF);
             layer_of[ch] = layer_of[lsb] = LJ_L_GENMACRO;
         } else {
-            ref = m->ch[ch].base_on ? m->ch[ch].base : merged[ch];
-            out = ref + delta;
-            if (out < 0) out = 0;
-            if (out > 255) out = 255;                          /* "limited to 0 to 255" (CHM 5493) */
-            merged[ch] = (uint8_t)out;
+            merged[ch] = (uint8_t)lj_genmacro_step(sh, &m->ch[ch], st[ch].idx, merged[ch], 0);
             layer_of[ch] = LJ_L_GENMACRO;
         }
     }
+}
+
+static void lj_gm_load(lj_gm_rank6 *g, int src, const lj_genmacro *m, int restart)
+{
+    if (restart) memset(g->st[src], 0, sizeof g->st[src]);    /* indexes reset only on restart: channels "may ... become unsynchronized when selecting new macros" [CHM 5567] */
+    g->m[src] = m;
+}
+
+void lj_gm_rank6_load_cue(lj_gm_rank6 *g, const lj_genmacro *m)
+{
+    lj_gm_load(g, LJ_GM_SRC_CUE, m, m && m->restart_on_load);   /* 14 sA.3 (7): restart on cue load if flagged */
+}
+
+void lj_gm_rank6_cmd(lj_gm_rank6 *g, const lj_cmd *c)
+{
+    int src = c->c == LJ_GM_SRC_EDITOR ? LJ_GM_SRC_EDITOR : LJ_GM_SRC_CUE;
+    switch (c->kind) {
+    case LJ_CMD_LOAD_GENMACRO: lj_gm_load(g, src, c->gm, c->b != 0); break;   /* b = restart: the UI passes the record's flag when a cue loaded it (LJ_GENMACRO_RESTART_CUE_ONLY) */
+    case LJ_CMD_GENMACRO_ON:
+        if (c->a == LJ_GM_SRC_ENGINE) g->engine_off = (uint8_t)(c->b == 0);
+        else g->slot_off = (uint8_t)(c->b == 0);              /* Generic Macro Slot On/Off: the cue's macro only */
+        break;
+    case LJ_CMD_GENMACRO_RESTART: memset(g->st[c->a == LJ_GM_SRC_EDITOR ? LJ_GM_SRC_EDITOR : LJ_GM_SRC_CUE], 0, sizeof g->st[0]); break;
+    case LJ_CMD_GM_SHAPES: g->shapes = c->gm_shapes; break;    /* pinned by the UI until the next GM_SHAPES (ME-34) */
+    default: break;
+    }
+}
+
+void lj_gm_rank6_tick(lj_gm_rank6 *g, const lj_post_ctx *c, uint8_t merged[LJ_CHANS], uint8_t layer_of[LJ_CHANS], uint32_t tick_us)
+{
+    int src;
+    if (g->engine_off) return;                                 /* "disable ALL macros running" [14 sA.3 (8)]; indexes hold (PROPOSAL rig 14 sA.7) */
+    for (src = LJ_GM_SRC_CUE; src <= LJ_GM_SRC_EDITOR; src++) {   /* the editor's after the cue's (LJ_GENMACRO_EDITOR_AFTER_CUE) */
+        if (!g->m[src] || (src == LJ_GM_SRC_CUE && g->slot_off)) continue;
+        if (c->show) lj_gm_apply(g->m[src], g->st[src], g->shapes, c, merged, layer_of);
+        lj_genmacro_advance(g->m[src], g->st[src], tick_us);   /* index for the next tick: a (re)started macro shows index 0 first [14 sA.3 (7)] */
+    }
+}
+
+void lj_gm_rank6_view(const lj_gm_rank6 *g, lj_engine_status *s)
+{
+    s->gm_engine_on = (uint8_t)!g->engine_off; s->gm_slot_on = (uint8_t)!g->slot_off;
+    s->gm_cue_number = g->m[LJ_GM_SRC_CUE] ? g->m[LJ_GM_SRC_CUE]->number : 0;
+    s->gm_editor_number = g->m[LJ_GM_SRC_EDITOR] ? g->m[LJ_GM_SRC_EDITOR]->number : 0;
 }

@@ -17,6 +17,7 @@ the tool, its version and the SHA-256 of every input; nobody edits them by hand.
 | `src/gfx/lj_art_gen.c` | `tools/artpack.py` | `art/glyphs/*.txt`, `art/icons/*.txt` | `artpack.py --check` in `generate-check`; `art_table` |
 | `tests/vectors.h` | `tools/gen_vectors.py` | `tools/ref/08-sacn_ref.py`, `14-macros_mac_decode.py`, `16-gs2_ref.py`, `17-position_ref.py` | `gen_vectors.py --check` in `generate-check` and the `gen_vectors_check` CTest row |
 | `src/engine/lj_trig_gen.c` | `tools/gen_vectors.py` | `tools/ref/17-position_ref.py` | same row |
+| `src/engine/lj_shapes_gen.c` | `tools/gen_vectors.py --shapes` (W3 genmacro) | the authored definitions in `gm_shapes()` of `tools/gen_vectors.py`; no reference data | `gen_vectors.py --shapes --check` (CTest `gen_vectors_shapes_check`) and `--shapes --check --mutate` (CTest `gen_vectors_shapes_mutated`, WILL_FAIL: one flipped sample of the committed file must be caught) |
 
 ## dfm2c.py
 
@@ -71,3 +72,39 @@ What the tables hold, in one line each:
 
 It runs `dfm2c.py --check` only when the reference tree exists and blocks the
 commit on drift, with the command to run printed.
+
+## gen_vectors.py --shapes (W3 genmacro track)
+
+    .venv/Scripts/python.exe -I tools/gen_vectors.py --shapes            # write src/engine/lj_shapes_gen.c
+    .venv/Scripts/python.exe -I tools/gen_vectors.py --shapes --check    # exit 1 when the committed file differs
+    .venv/Scripts/python.exe -I tools/gen_vectors.py --shapes --compare  # developer PC: each definition against Macros.Mac
+
+`lj_shapes_gen.c` holds the 66 generic-macro shapes of note 14 sA.6 in `Macros.Mac` file order (the duplicate
+`2*Sine^2` at #1 and #12 kept), 8192 int16 samples each at +-32640 = 127.5 x 256, as plain C data (66 x 8192 samples,
+about 2.8 MB of text: the contracts allowed generator code instead; one table is the shortest thing that is exact on
+every compiler and needs no float in `engine/`). Every sample comes from an authored definition in `gm_shapes()`:
+the sine family is exactly `round(32640 * sin)` (design 3.6), the others are our own piecewise formulas. Martin's file
+is never read for emission and nothing from `reference/` is committed (ME-34); `--compare` reads it (path from
+`LJ4EVR_MACROS_MAC`, else `reference/installer/extracted_2.209/app/Macros.Mac`) through
+`tools/ref/14-macros_mac_decode.py` and prints how far each definition sits from it. On 2026-10-22, 53 of the 66
+definitions reproduce the decode sample for sample; the 13 that do not:
+
+| # | Shape | max abs diff | samples differing | Why |
+|---|---|---|---|---|
+| 17 | Bounce | 2 | 1957 | `abs(sin(pi (k / 4621.85)^2))`, the chirp constant fitted |
+| 18 | Bounce 2 | 9 | 4266 | `abs(sin(pi (k / 3819.05)^3))`, fitted |
+| 26 | Sqrt^3 | 1 | 3 | `32660.05 (k / 8192)^1.5`, fitted |
+| 29 | Log | 1 | 2 | `3621.28 ln k`, fitted |
+| 30 | Inverted Log | 1 | 2 | `32640 - Log(k - 99)` |
+| 31 | Swapped Log | 1 | 2 | `Log(2k)`, then the negative mirror |
+| 56 | Swapped Peak | 1 | 2588 | `32766.5 (k / 4096)^1.5` and its mirror |
+| 57 | Swapped Peak^2 | 126 | 7726 | `(k / 4096)^3`: Martin's table saturates next to the swap (range -32616..32640 here, -32640..32640 there) |
+| 58 | Swapped Peak^4 | 249 | 5712 | `(k / 4096)^6`, same reason (+-32592 here) |
+| 59 | Ripple | 1 | 3 | Sqrt^3 with the sign flipped on 1024j..1024j+512 |
+| 63 | Spiky | 128 | 7895 | the Swapped Peak swept by a 512-sample ramp |
+| 64 | Static | 32512 | 8176 | our noise: 512 held steps of 16 samples from xorshift32 (TV static has no formula) |
+| 65 | Static 2 | 63872 | 8176 | the same, bipolar |
+
+`test_genmacro` asserts the count, the names, every range above (the note's ranges, with 57 / 58 ours) and the sine
+family against `tests/vectors.h`. A user's own `Macros.Mac` replaces the table at run time (`<library>\Override\`,
+`docs/fidelity.md`).

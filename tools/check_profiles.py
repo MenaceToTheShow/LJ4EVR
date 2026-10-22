@@ -3,6 +3,7 @@
 design 10 W2 acceptance 5 "every 15/02-15/05 id has a hand file (CI check by id)"). Python 3 stdlib.
 
     python -I tools/check_profiles.py --tier 2 3 4 5     # W2: 15/02 MAC 600, 15/03 MAC 250 family, 15/04 MAC 2000 family, 15/05 Roboscan 518/812/218
+    python -I tools/check_profiles.py --tier 6 7 8 9     # W3: 15/06 Atomic 3000, 15/07 MiniMAC, 15/08 RoboColor, 15/09 MAC 550/575/700
     python -I tools/check_profiles.py --tier 1 10        # the W1 families (what exe_profiles_check.py --check already enforces)
     python -I tools/check_profiles.py --hand DIR --tier 2   # check a copy of src/fixlib/hand (the "renamed file fails" proof)
 
@@ -18,7 +19,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import exe_profiles_check  # noqa: E402  (HAND, OUT, W1_IDS)
+import exe_profiles_check  # noqa: E402  (HAND, OUT)
 
 # id: footprint (None = not checked). Sources: the note named per tier; PROPOSAL marks a footprint no Martin source gives.
 TIERS = {   # 15-builtin-profiles-index.md
@@ -30,11 +31,15 @@ TIERS = {   # 15-builtin-profiles-index.md
                                    188: 15, 189: 15, 190: 15, 191: 15}),                       # NBD: 21 - 6 barndoor channels (inferred)
     5:  ("15/05 Roboscan 518 / 812 / 218", {3: 9, 58: 9, 1: 5, 52: 7, 2: 8, 57: 8,             # DMXTAB-518 V4, DMXTAB-812 V1, QLC 218
                                             41: 5, 36: 5, 33: 14}),                            # via DMX Interface: PROPOSAL
-    6:  ("15/06 Atomic 3000", dict.fromkeys([80, 114, 115])),
-    7:  ("15/07 MiniMAC", dict.fromkeys([54, 65, 53, 66, 69])),
-    8:  ("15/08 RoboColor", dict.fromkeys([13, 59, 14, 60, 15, 61, 37, 40])),
-    9:  ("15/09 MAC 550 / 575 / 700", dict.fromkeys([110, 155, 116, 140])),
-    10: ("15/10 generics", dict.fromkeys(exe_profiles_check.W1_IDS[4:])),
+    6:  ("15/06 Atomic 3000", {80: 4, 114: 6, 115: 2}),                                    # UM-Atomic3000DMX Rev G p.23-24 + QLC colour/fan (scroller at address + 4)
+    7:  ("15/07 MiniMAC", {54: 10, 65: 10, 53: 8, 66: 8, 69: 11}),                         # DMXTAB-MiniMACProfile / -Wash V2 mode 4; Maestro: QLC Mode 4
+    8:  ("15/08 RoboColor", {13: 5, 59: 6, 14: 5, 60: 6, 15: 5, 61: 7,                    # DMXTAB-RoboColorIII V1 (II inferred); Pro 400: QLC 5 / 7
+                             37: 6, 40: 6}),                                               # via DMX Interface: PROPOSAL
+    9:  ("15/09 MAC 550 / 575 / 700", {110: 21, 155: 19, 116: 23, 140: 16}),              # UM-MAC550 Rev E, UM-MAC575 Rev C, UM-MAC700P Rev G, UM-MAC700W Rev D (16-bit basic)
+    10: ("15/10 generics", dict.fromkeys([19, 70, 56, 71, 21, 72, 23, 20, 73, 22,       # DMX Dimmer 1..32
+                                          92, 93, 94, 95, 96, 97, 98, 99, 100, 101,     # DMX Switch Pack 1..32
+                                          78, 135, 77, 76, 75,                          # RGB Pack x4 A/B, x6, x8, x10
+                                          18, 45, 27, 90, 42, 43, 46])),                # Smoke, Hazer, SwitchBox 6, External, GCS 1, GSC 1, USER2
 }
 
 INIT = re.compile(r"lj_profile\s+\w+\s*=\s*(?:\{\s*\.id\s*=\s*(\d+)|(LJ_\w+)\(\s*(\d+))")

@@ -4,9 +4,9 @@
  * never the engine, the sender or the model (ME-23). The OS header is allowed here
  * by tools/test_layering.py OS_ALLOW. Device index = the CoreMIDI source index.
  *
- * Packets may use running status and carry several messages; system real-time
- * bytes (0xF8..0xFF) may sit anywhere and are skipped, SysEx data is skipped until
- * the next status byte. The client stays for the process (CoreMIDI wants one per
+ * Packets may use running status and carry several messages; the byte stream is
+ * parsed by lj_midi_feed (lj_midi.c, LORD_C-6: real-time skipped, SysEx skipped,
+ * MTC quarter frames carried as {F1, data, 0}). The client stays for the process (CoreMIDI wants one per
  * app); the port is disposed on close. */
 #include <CoreMIDI/CoreMIDI.h>
 #include "io/lj_midi.h"
@@ -22,27 +22,17 @@ static MIDIEndpointRef lj_cm_src;
 static void (*lj_cm_cb)(void *ud, const uint8_t msg[3]);
 static void *lj_cm_ud;
 
+static void lj_cm_msg(const uint8_t m[3], void *ud) { (void)ud; if (lj_cm_cb) lj_cm_cb(lj_cm_ud, m); }
+
 static void lj_cm_read(const MIDIPacketList *pl, void *refcon, void *srcref)
 {
     const MIDIPacket *p = &pl->packet[0];
     UInt32 i;
     (void)refcon; (void)srcref;
     for (i = 0; i < pl->numPackets; i++, p = MIDIPacketNext(p)) {
-        uint8_t m[3] = { 0, 0, 0 };
-        int need = 0, have = 0;
-        UInt16 j;
-        for (j = 0; j < p->length; j++) {
-            uint8_t b = p->data[j];
-            if (b >= 0xF8) continue;                                       /* real-time: clock, active sensing */
-            if (b & 0x80) {
-                m[0] = b; have = 0;
-                need = b >= 0xF0 ? 0 : ((b & 0xE0) == 0xC0 ? 1 : 2);       /* system common / SysEx: not ours; program change, pressure: 1 byte */
-                continue;
-            }
-            if (!need) continue;
-            m[1 + have++] = b;
-            if (have == need) { if (need == 1) m[2] = 0; if (lj_cm_cb) lj_cm_cb(lj_cm_ud, m); have = 0; }   /* running status: m[0] stays */
-        }
+        uint8_t run[3] = { 0, 0, 0 };                                      /* per packet, as before: a packet starts with a status byte */
+        int have = 0;
+        lj_midi_feed(p->data, p->length, run, &have, lj_cm_msg, NULL);
     }
 }
 

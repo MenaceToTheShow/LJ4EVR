@@ -98,6 +98,31 @@
 #define LJ_SMOKE_RELEASE_ENDS_HELD    1   /* 04 s12: "smoke while held"; a timed press (c = toggle ms) ignores the release; PROPOSAL rig */
 #define LJ_SNAPSHOT_WHOLE_FRAME       1   /* 03 s4.7: SNAPSHOT_REQ copies the whole post-S9 lj_frame (out[], merged[], layer_of[], tick_no); a = enum lj_snapshot_src tells the UI which half to map back */
 #define LJ_LOCK_HOLD_TEST_US 2000   /* ME-81, ME-96: test_lock_hold asserts (Release) one tick under lj_lock stays below design 3.1's 2 ms (4 cues, 64 statics, BG, flash, current, generic macro) */
+/* ---- W3 constants (design 10 W3, docs/w3-contracts.md; appended) ---- */
+#define LJ_GENMACRO_SHAPES           66   /* 14 sA.6: Macros.Mac records in file order, the duplicate 2*Sine^2 (#1 == #12) kept; lj_shapes_gen.c regenerates them */
+#define LJ_GENMACRO_FULL          32640   /* 14 sA.6: sample full scale = 127.5 x 256 (not 32767); delta = s * amp / 32640, nearest */
+#define LJ_GENMACRO_AMP186_EXAMPLE  186   /* 14 sA.3 / IMG genericmacroeditor.gif: 'Sine' at Amp+ = Amp- = 186 reads Min/Max -186/186 (replay genmacro_sine_amp186) */
+#define LJ_GENMACRO_AMP_SPLIT         1   /* 14 sA.3 (3), LORD_ENGINE-14: Amp+ scales s >= 0, Amp- scales s < 0 (signed form, see lj_genmacro.c); each half asserted on its own */
+#define LJ_GENMACRO_DELAY_MAX      8191   /* 14 sA.2: delay 0..8191 subtracted from the channel index (CHM 5571) */
+#define LJ_GENMACRO_CYCLE_MIN_DS      4   /* 14 sA.2: 0.4 s; 0 = static (CHM 5831) */
+#define LJ_GENMACRO_CYCLE_MAX_DS   5950   /* 14 sA.2: 595 s */
+#define LJ_GENMACRO_BOUNCE_NO_DELAY   1   /* CHM 5835: "delay values are not considered when bouncing" */
+#define LJ_GENMACRO_16BIT_SCALE     256   /* 14 sA.3 UNVERIFIED (RN v2.5 b1): on a declared MSB pair the delta x 256 rides the 16-bit reference; rig M14 */
+#define LJ_GENMACRO_RANK_ABOVE_BG     1   /* design 3.4 rank 6 above the BG cue (rank 5): PROPOSAL, rig M14 (replay genmacro_vs_bgcue); above the current sequence is CONFIRMED by the follow-spot topic [11 C7] */
+#define LJ_GENMACRO_EDITOR_AFTER_CUE  1   /* PROPOSAL: the editor's live macro (LJ_GM_SRC_EDITOR) applies after the cue's at rank 6; rig 14 sA.7 */
+#define LJ_GENMACRO_RESTART_CUE_ONLY  1   /* CHM 5841: Restart on cue load fires only when the cue loads the macro, not on add-to-cue or editor load */
+#define LJ_MACRO_INDEX_ONCE_PER_TICK  1   /* ME-35 (design 3.6, 11 C9, 17 s7.1): the per-fixture movement-macro index is engine state advanced once per tick in step 2, runners only read it (replay movemacro_six_shapes: two slots, one step); it resets when the previous tick's merged[] carried no macro for that fixture; cue macro control scaling applies at runner evaluation, cue-slot runners only; the overlay stays pre-merge. Rank 6's per-channel index advances once per tick per source after the merge (lj_gm_rank6_tick) */
+#define LJ_MOVEMACRO_PCT_MAX        999   /* 03 s5.11: the cue macro control's 1-999 % option; the scaled byte still clamps at LJ_MOVEMACRO_AMP_MAX */
+#define LJ_MOVEMACRO_FADE_LINEAR      1   /* PROPOSAL rig 03 s5.11: Fade out / Fade in move the amplitude scale linearly between its value and 0 over the selected time */
+#define LJ_MOVEMACRO_DELAY_UNIT     256   /* 17 s6.2: the delay byte, 256 = 100 % = 0 % */
+#define LJ_MOVEMACRO_STEP_MAX       512   /* 04 s4.4: Stepped Ellipse step size up to 512 (8 points at N 4096) */
+#define LJ_MOVEMACRO_BEZ_EQUAL_TIME   1   /* 04 s4.5: a fixed number of points between nodes, so node-to-node travel time is equal; PROPOSAL rig 17 s8 item 6 */
+#define LJ_FOLLOWSPOT_ALL_SNAP        1   /* 11 F22: follow spot recall writes every channel as Snap (a UI-side scene write, not an engine layer) */
+#define LJ_CL_STEP_MS                10   /* design 2.3 rule 4: the cue list runner is stepped on every UI wake, SDL_WaitEventTimeout(10); never in the engine */
+#define LJ_CL_MANUAL_IGNORES_WAITS    1   /* 03 s6.3: "Command is ignored in Manual Mode" for every Wait */
+#define LJ_CL_GOTO_BEYOND_IGNORED     1   /* RN v2.6 b7: Goto Line# beyond the last line is ignored (the list ends), never a stall */
+#define LJ_MTC_TIMEOUT_MS           500   /* design 8.3: MTC time-out (Stop / Restart / Ignore per the cue list preference) */
+#define LJ_MTC_LATE_FRAMES            2   /* 03 s6.4: the 8-quarter-frame decode delivers the time 2 frames late (displayed as received, as LJ2) */
 
 /* Layer ranks (design 3.4, 11 s3.4; 2-4, 6-7 PROPOSAL rig M12-M15). layer_of[ch] carries the rank that won. */
 enum lj_layer { LJ_L_DEFAULT = 0, LJ_L_CUE, LJ_L_FLASH, LJ_L_CURRENT, LJ_L_STATICS, LJ_L_BGCUE, LJ_L_GENMACRO, LJ_L_SMOKE, LJ_L_COUNT };

@@ -1,0 +1,37 @@
+LJ4 replay 1
+# gdc_followspot (F35, 04 s1.4, 04 s13; docs/w3-contracts.md seam 5): the three UI-side writers - the Generic DMX
+# Control command line, Follow spot recall and Sequence fades - edit the current scene in place and post CURRENT_SEQ, so
+# their result is on the wire at the next tick through rank 3 (the current sequence), not through an engine layer.
+# NOTE F35 (CHM thegenericdmxcontrol.htm): "1/4s@100" selects channels 1..4, snaps them and sets 100 (8-bit values);
+#      "#1F@50" replaces the selection with group 1 (1:5, 1:6), Fade, 50; "@@7" programs every generic channel (the MAC
+#      500 is not a generic profile and keeps its values); a level on an Off channel arms Fade.
+# NOTE 04 s13 / 11 F22: follow spot 1 recalls the MAC's programmed channels with every channel of the fixture Snap and
+#      the unprogrammed ones at the profile's default DMX (0 for the MAC 500, 15/00 s5).
+# NOTE 04 s1.4: Sequence fades change only fade states: Intensity All Off takes shutter + intensity off the wire (rank 0
+#      default output), Off -> Snap brings the kept value 200 back; the unselected dimmer keeps its 7.
+tick_us=25000
+patch 1 profile=21 link=1 addr=1      # Generic / DMX Dimmer / 8 Channel: 1:1..1:8
+patch 2 profile=12 link=1 addr=21     # Martin / MAC 500 / Mode 2/4: shutter 1:21, intensity 1:22, pan 1:31/1:32, tilt 1:33/1:34
+gdcgroup 1 1:5 1:6
+seq 1 name="current"
+scene st=60000 ft=0
+follow 1 name="Solo" sel=2
+ch 1:22=200:F 1:31=128:F 1:32=0:F
+at 0 current 1 0
+expect 0 1:1=0 1:22=0
+at 2 gdc "1/4s@100"
+expect 2 1:1=100 1:2=100 1:4=100 layer=3
+expect 2 1:5=0 1:22=0 layer=0
+at 3 gdc "#1F@50"
+expect 4 1:5=50 1:6=50 1:1=100 layer=3
+at 5 gdc "@@7"
+expect 5 1:1=7 1:8=7 layer=3
+expect 5 1:22=0 1:31=0 layer=0
+at 6 followspot 1
+expect 6 1:22=200 1:31=128 1:21=0 1:34=0 layer=3
+expect 6 1:1=7
+at 7 seqfades intensity all_off
+expect 7 1:21=0 1:22=0 layer=0
+expect 7 1:31=128 1:1=7 layer=3
+at 8 seqfades intensity off_snap
+expect 8 1:22=200 1:31=128 1:1=7 layer=3

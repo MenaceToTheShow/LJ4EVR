@@ -89,3 +89,46 @@ int lj_fmt_time(char *dst, size_t cap, uint32_t ms)
     int n = snprintf(dst, cap, "%u:%02u", (unsigned)(ms / 1000), (unsigned)(ms % 1000 / 10));
     return n < 0 || (size_t)n >= cap ? -1 : 0;
 }
+
+/* RTF -> plain text for the user's profile notes (design 5.3, LORD_FIDELITY-17). Not a parser: groups that start with
+ * \* or a header destination (fonttbl colortbl stylesheet info pict header footer) are dropped whole, every other
+ * control word is dropped, \par / \line = newline, \tab = tab, \'hh = that byte, backslash-escaped \ { } = the
+ * literal; CR / LF in the source are formatting only. rtf must be NUL-terminated (a .GS2 notes field need not be:
+ * copy it first). */
+enum { LJ_BS = 0x5C };   /* backslash */
+static int lj_hex(int c) { return c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1; }
+static int lj_alpha(int c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+int lj_str_rtf_strip(char *dst, size_t cap, const char *rtf)
+{
+    static const char *const skip[] = { "fonttbl", "colortbl", "stylesheet", "info", "pict", "header", "footer", NULL };
+    const unsigned char *s = (const unsigned char *)rtf;
+    size_t o = 0;
+    int depth = 0, skipat = 0, first = 0, trunc = 0;
+    if (!dst || !cap) return -1;
+    while (s && *s) {
+        int c = *s++, emit = -1, was_first = first;
+        first = 0;
+        if (c == '{') { depth++; first = 1; if (!skipat && s[0] == LJ_BS && s[1] == '*') skipat = depth; continue; }
+        if (c == '}') { if (depth == skipat) skipat = 0; if (depth) depth--; continue; }
+        if (c == '\r' || c == '\n') continue;
+        if (c != LJ_BS) emit = c;
+        else if (*s == '\'' && lj_hex(s[1]) >= 0 && lj_hex(s[2]) >= 0) { emit = lj_hex(s[1]) * 16 + lj_hex(s[2]); s += 3; }
+        else if (*s == LJ_BS || *s == '{' || *s == '}') emit = *s++;
+        else if (lj_alpha(*s)) {
+            char w[16];
+            int n = 0, i;
+            for (; lj_alpha(*s); s++) if (n < 15) w[n++] = (char)*s;
+            w[n] = 0;
+            if (*s == '-') s++;
+            while (*s >= '0' && *s <= '9') s++;
+            if (*s == ' ') s++;
+            if (!strcmp(w, "par") || !strcmp(w, "line")) emit = '\n';
+            else if (!strcmp(w, "tab")) emit = '\t';
+            for (i = 0; was_first && !skipat && skip[i]; i++) if (!strcmp(w, skip[i])) skipat = depth;
+        } else if (*s) s++;                                          /* other control symbol (\~ \- \_ ...) */
+        if (emit < 0 || skipat) continue;
+        if (o + 1 < cap) dst[o++] = (char)emit; else trunc = 1;
+    }
+    dst[o] = 0;
+    return trunc ? -1 : 0;
+}

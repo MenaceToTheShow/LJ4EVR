@@ -98,4 +98,15 @@ const lj_midi_map_entry *lj_midi_dispatch(const lj_midi_map *m, const uint8_t ms
 
 extern const char *const lj_midi_kind_words[];   /* seq cue bgcue cl fn cc (the map= file words and the MIDI-IN window tabs; cc is the extension, no LJ2 tab), NULL-terminated */
 
+/* ---- W3 (appended, docs/w3-contracts.md; cuelist-core track): MIDI time code for the cue list [03 s6.4, design 8.3] ----
+ * Quarter-frame messages (F1 0n..7n) only, not SysEx full frames; 24 / 25 / 30df / 30 fps from piece 7. The MIDI path
+ * hands every F1 data byte to lj_mtc_feed on the UI thread (lj_app_midi_dispatch, ME-23: never in the OS callback); the
+ * cue list runner reads lj_mtc_time each 10 ms step. LORD_C-6: the CoreMIDI byte-stream parser moves to lj_midi_feed so
+ * quarter-frames ride the same parser on both OSes. */
+typedef struct { uint8_t piece[8], have; uint8_t fps /* 24 25 29 (=30df) 30, 0 = unknown */; uint32_t ms; uint64_t last_us; uint8_t running; } lj_mtc;
+void lj_mtc_reset(lj_mtc *t);
+int  lj_mtc_feed(lj_mtc *t, uint8_t qf_data, uint64_t now_us);    /* one quarter-frame data byte; 1 when a full time was assembled (t->ms valid), else 0 */
+int  lj_mtc_time(const lj_mtc *t, uint64_t now_us, uint32_t *ms); /* 0 with the last time, -1 when none or older than LJ_MTC_TIMEOUT_MS (the time-out preference acts on -1) */
+int  lj_midi_feed(const uint8_t *bytes, size_t n, uint8_t run[3], int *have, void (*msg)(const uint8_t m[3], void *ud), void *ud);   /* LORD_C-6 byte-stream parser (running status, F1 carried as {F1, data, 0}); messages emitted */
+
 #endif /* LJ_IO_MIDI_H */

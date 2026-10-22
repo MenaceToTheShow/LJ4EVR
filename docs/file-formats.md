@@ -100,16 +100,46 @@ num=2
 name="Show 1"
 tracking=1
 mark 1=2
-line 1 adv=manual cmd=wait_elapsed param=5000 pstr= cue=3 trig=0 comment="first, go"
-line 2 adv=auto cmd=goto_line param=1 pstr= cue=0 trig=0 comment=
-line 3 adv=auto cmd=none param=0 pstr= cue=0 trig=2051 comment=
+line 1 adv=manual cmd=wait_elapsed param=5000 pstr= ref=0 cue=3 trig=0 comment="first, go"
+line 2 adv=auto cmd=flash_sequence param=2500 pstr= ref=12 cue=0 trig=0 comment=
+line 3 adv=auto cmd=mp_play param=0 pstr=clip.wav ref=0 cue=0 trig=0 comment=
+line 4 adv=auto cmd=none param=0 pstr= ref=0 cue=0 trig=2051 comment=
+line 5 adv=auto cmd=goto_line param=1 pstr= ref=0 cue=0 trig=0 comment=loop
 ```
 
 `cmd=` words are the 03 s6.3 commands in snake case, in `lj_cl_cmd_words[]` order
-(`none` first; W3's enum follows that order). `param=` is the millisecond parameter,
-`pstr=` the string one (file name, hotkey name), `trig=` the slot bit mask. Lines are
-numbered 1..n in file order; `mark k=line` only when set. Validator: a line latches a cue
-or trigs slots, not both (03 s6.1); marks inside 1..n.
+(`none` first; `enum lj_cl_cmd` follows that order). `param=` is the millisecond parameter,
+`pstr=` the string one (file name, MTC fps), `ref=` (W3) the record a drag-only command
+names, `trig=` the slot bit mask (slots 1-12, 0..4095). Lines are numbered 1..n in file
+order; `mark k=line` only when set. A W1 file without `ref=` loads with `ref=0`.
+
+Parameters per command (W3, `model/lj_cuelist.h`):
+
+| `cmd=` | `param=` | `pstr=` / `ref=` / `comment=` |
+|---|---|---|
+| `wait_elapsed` | ms since the previous line executed (Min 0-99, Sec 0-59, 1/100 s) | - |
+| `wait_pc_clock` | ms since local midnight, below 86 400 000 | - |
+| `wait_date_change` | - | - |
+| `wait_mtc` | ms of H:M:S:F (`lj_cl_hmsf_ms` at the fps) | `pstr` = `24` / `25` / `30` |
+| `autoseek_mtc` | - | - |
+| `goto_line` | target line 1..n; beyond the last line the list ends (RN v2.6 b7) | - |
+| `execute_file` | - | `pstr` = program path, `comment` = its parameters (the "Comment/Exe Parameter" column); runs only with `Main.Ini [CUELIST2] AllowExecute=1` |
+| `hotkey_command` | `enum lj_fn` number (`io/lj_actions.h`, append-only) | - |
+| `flash_sequence` | duration ms, at most 99 900 | `ref` = sequence |
+| `load_background_cue` | - | `ref` = BG cue |
+| `link_cuelist` | - | `ref` = cue list |
+| CD / DA / MP words | as read | as read |
+
+Load-error lines (design 8.5, ME-11): a line whose word is a CD / DA / MP command, one of
+the panel actions `set_current_cue` / `set_cue_trig` (they fill `cue` / `trig`, they are
+never stored), or a word this build does not know, loads with `load_error = 1`: kept, shown
+red, skipped at execution with a log line, and written back on save with the words it was
+read with (an unknown word is held in memory as `param` = word, NUL, then `pstr`). One log
+line per such line at load. The file is refused (nothing loaded, `"<path> item N: <why>"`)
+for: `num` outside 0..99999999, a line out of order, `param` outside 0..86399999, `ref` or
+`cue` outside 0..99999999, `trig` above 4095, a command word longer than 31 characters, a
+line that latches a cue and trigs slots (03 s6.1), a Flash Sequence above 99.9 s, a mark
+beyond the last line.
 
 ### `BGCues\NNNNNNNN.bgc` (`lj_bgcue.h`, kind `bgc`; extension is a PROPOSAL, 18 s2)
 
@@ -165,6 +195,14 @@ carry the eight sub-master names and modes (`enum lj_master_mode`). Validator
 fixtures on one channel, builtin profiles known to `lj_fixlib_by_id`, gs2 rows name a
 file. `lj_show_load` returns -1 only when `Config.dat` exists and fails this.
 
+W3 (ME-32, Channel Configuration): after an `fx` line, `chcap n text=<caption>` (offset n 1..32, caption at most
+5 bytes, quoted when it holds a space) and `chgm=1,3` (the offsets whose Grand Master control is disabled) belong to
+that fixture; a `chcap` / `chgm` before any `fx`, an offset outside 1..32 or a longer caption fails the load.
+Customize Fixture overrides live per fixture in `UserFixtureDef\Setup.<n>.pal` (n = fixture number, kind
+`custompal`): `pal p entry=e rgb=r bmp=<name>` per overridden entry (p 1..6 = Color 1, Color 2, Gobo 1, Gobo 2,
+Effects 1, Effects 2; e 1..20; `rgb` 0xRRGGBB as decimal or -1 = none); `lj_show_load` reads them, a bad file is
+logged and leaves the profile's palette in force.
+
 ### `DefaultOut.dat` (`lj_show.h`, kind `defaultout`)
 
 ```
@@ -199,8 +237,12 @@ restart=1
 ch 1:17 shape=7 bon=1 base=100 amp=45,-45 cycle=168 dir=rev delay=3
 ```
 
-Per channel with a shape: shape index, base on/off and value, positive and negative
-amplitude, cycle in deciseconds, `dir` fwd|rev, delay.
+One `ch` line per programmed channel (W3: `lj_genmacro_ch_used`, so shape 0 `2*Sine` is written too): shape
+index, base on/off and value, positive and negative amplitude, cycle in deciseconds, `dir` fwd|rev|bounce, delay.
+Ranges (the loader refuses the whole file on any field outside them, rule 6): `num` 1..9999, `name` up to 30
+bytes, `restart` 0..1, `shape` 0..254 (built-ins 0..65, then the User-shapes tab), `bon` 0..1, `base` 0..255, `amp`
+two integers -255..255 (required), `cycle` 0..5950 (0 = static, else 0.4..595 s), `delay` 0..8191; an unknown `dir`
+word reads as `fwd` (design 5.2 skips unknown words). LSB channels of a 16-bit pair carry no line (CHM 5583).
 
 ### The global patch file `.GPA` (`lj_patch.h`, kind `patch`; saved from the Global Patch dialog)
 
@@ -374,3 +416,90 @@ or `test_model_w2_library`.
   marks the sequences (slots), BG cues (`bgcue=`) and generic macros (`genmacro=`) a cue on disk
   references ("Check Used Sequences / Mark Unused Sequences", 03 s4.4). HouseLight cues (`HCues\`,
   18 s2) are undecoded and not scanned.
+
+## W3 gdc-fades-followspot (2026-10-22)
+
+### The Generic DMX Control command line (`model/lj_gdc.h`, F35, CHM thegenericdmxcontrol.htm)
+
+Not a file: the keyboard grammar of TGenericMegaForm's `eCommand`, parsed by `lj_gdc_parse` into at most
+`LJ_GDC_CMDS_MAX` (64) commands and run by `lj_gdc_run` against the control's selection and the current scene (seam 5 of
+`docs/w3-contracts.md`: under `lj_lock`, then `LJ_CMD_CURRENT_SEQ`; no engine command). A line is at most 127 bytes;
+spaces between commands are skipped. Commands run left to right, so `#1/3F@50-#2@+10` selects groups 1..3, sets Fade,
+programs 50, deselects group 2 and adds 10 to what is left.
+
+| Form | Meaning |
+|---|---|
+| `n` | select channel n, the selection cleared first (every unsigned term clears: `1+3+5`, `1@50 3@25`) |
+| `+n` / `-n` | add / remove channel n |
+| `n/m` | channels n..m (swapped when m < n); combines with `+` / `-`: `1/10-4/6+12` = 1,2,3,7,8,9,10,12 |
+| `#g`, `+#g`, `-#g`, `#g/h` | groups (1..32); `.` and `,` stand for `#`; `#1/#5` is an input error |
+| `##` | every mapped channel |
+| `@v`, `@+v`, `@-v` | level / relative level of the selection; `*` stands for `@`; clamped to 0..255 |
+| `@@v` | every mapped channel to v (the selection is unchanged) |
+| `o O s S f F` | fade state Off / Snap / Fade of the selection |
+| empty line | clears the selection when "Empty Command Clears Selection" is on |
+
+Channel n = address code + 1 (1..2048; link 2 starts at 513), PROPOSAL rig F35. Only channels of the Generic DMX Dimmer
+and DMX Switch Pack profiles are mapped, minus the hidden ones; selecting anything else is silently ignored. Levels are %
+(0..100, nearest to 0..255; above 100 clamps) with "Use % Values", else 8-bit. A level on a channel makes it Fade unless it
+is Snap already. Numbers are at most 4 digits. Errors: `input error at column <n>` (1-based, the first byte that does not
+fit; LJ2 has no message string for it, PROPOSAL), also for a line over 127 bytes or more than 64 commands.
+
+### `GenericGroups.dat` (`lj_gdc.h`, kind `gdcgroups`; library root, LJ2's own name)
+
+```
+LJ4 gdcgroups 1
+group 1 name="Front wash"
+ch 1:5 groups=3          # bit g-1 = member of group g (decimal mask)
+hide 1:7                 # Hide Selected Channels
+```
+
+A missing file is no groups. Loaded when the control first opens, saved after every group or hide edit.
+
+### `FollowSpot.dat` (`lj_followspot.h`, kind `follow`; library root, PROPOSAL name; LJ2's `Follow2.Dat` is not imported)
+
+```
+LJ4 follow 1
+spot 1 used=1 name="Guitar Solo 1" sel=2,5 static=1.3 autoclr=1
+ch 1:22=200:F 1:31=128:F
+```
+
+`spot n` (1..20) starts a setting; the `ch` lines after it are its recorded channels (non-Off only). `static=p.s` is
+the associated Statics 2 entry (page and slot 1..64; absent = none). A missing file is 20 unused settings; every load
+is checked with `lj_followspot_validate`. Ini: `Main.Ini [MISC] FollowModePreSelected` = "Use only selected fixtures as
+followspots" (key verbatim from the exe, section PROPOSAL). Forms.ini `[GENERIC]` keeps LJ2's keys verbatim for the
+Generic DMX Control: `CellWidth CellHight GridBackColor ChanelColor SelectedColor OffColor SnapColor FadeColor
+LockCursorKeys EmptyClear AutoScroll ShowCommandLine PctValues ViewGroups ViewLevelFader` (Martin's typos kept).
+
+## W3 gs2: `.GS2`, `.Udf`, `.Udo` (Martin's formats, read and written natively; note 16, oracle `tools/ref/16-gs2_ref.py`)
+
+### `UserFixtureDef\<name>.GS2` (`fixlib/lj_gs2.h`)
+
+One 20,851-byte Delphi record, byte-packed, little-endian, `ShortString[n]` = length byte + n chars with stale tails.
+The field table is the oracle's `LAYOUT` (16 s4); `lj_gs2.c` `lj_gs2_xfer` walks the struct-owned subset in file order,
+one line per field. Raw-record rule (design 5.3, ME-9): `lj_gs2_write(lj_gs2_parse(x)) == x` for every record, so
+reserved blocks, `const04`, `legacy_name` (2609 records), `source_file`, the three OV strings, `rgb_pad`, sub-record
+reserved tails, the 22 stray palette bytes and the 17 bytes at 0x266C travel untouched. Messages: a wrong size is
+`not a GS2 record: N bytes` (verbatim oracle). `gs2_dump <file>` (`lj4evr_tests`) prints the parsed fields one per line
+and `roundtrip ok`.
+
+### `.Udf` / `.Udo` export container (16 s2, re-measured on `udf200`)
+
+```
+zlib stream 0      the .GS2 record (20,851 bytes inflated)
+zlib streams 1..   icon / palette bitmaps (BM), .Udo also the OV .spt files      (never read by LJ4EVR)
+zlib stream last   the file table: one 532-byte entry per file
+36-byte footer     u32 crc32(everything before the footer), u32 file count, u32 1,
+                   u32 compressed size of the table stream, u32 compressed size of the data streams, u32 1, 12 x 0
+```
+
+File-table entry (532 bytes; note 16 s2 says 266, which is one of its two string halves): +0 `ShortString[255]` file
+name, +256 `ShortString[255]` destination folder (`User\UserFixtures\`, `Source-Images\Fixtures\`), +512 u32
+uncompressed size, +516 u32 compressed size, +520 u32 offset of the stream in the container, +524 u32 crc32 of the
+uncompressed file, +528 u32 0x200 (constant in the sample, meaning unknown).
+
+Import (`lj_udf_parse`): the footer CRC is verified first (a mismatch, or a file shorter than the footer, is
+`footer CRC mismatch`, the oracle's text), then miniz `tinfl` inflates stream 0 only (zlib header and Adler-32
+checked; output beyond 16 MB aborts), then the size check of the record. Export (`lj_udf_export`): stream 0 =
+`lj_gs2_write`, a one-entry table (`gs2_file`, `User\UserFixtures\`), the footer; no bitmap stream (D2: the icon
+bitmap is the user's file).

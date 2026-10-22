@@ -151,7 +151,7 @@ over a synthetic `.GS2`-shaped profile and over every QLC+ profile.
 
 | Check | What it proves |
 |---|---|
-| `lj4evr_tests test_fixlib_profiles` (CTest row) | 201 rows in id order, row 12 / 19 / 0 / 32 verbatim, greyed rows have no profile, id 12 is the hand profile and the QLC+ conversion for 12 exists beside it, MAC 500 = 8 windows (Levels NULL), dimmer = Levels only, every row and button offset < footprint, every palette <= 20, Lamp rows and SWITCH rows never allow Fade, ME-25 classes read back (92 SWITCH, 18 SMOKE, 45 HAZE + HAZE_FAN, 27 SWITCH), tier-2 id 54 derives windows once (W2: hand count 66), extras resolve, `lj_layout_derive` on a synthetic profile (reverse focus, shared fade button, lamp + special OFF|SNAP) |
+| `lj4evr_tests test_fixlib_profiles` (CTest row) | 201 rows in id order, row 12 / 19 / 0 / 32 verbatim, greyed rows have no profile, id 12 is the hand profile and the QLC+ conversion for 12 exists beside it, MAC 500 = 8 windows (Levels NULL), dimmer = Levels only, every row and button offset < footprint, every palette <= 20, Lamp rows and SWITCH rows never allow Fade, ME-25 classes read back (92 SWITCH, 18 SMOKE, 45 HAZE + HAZE_FAN, 27 SWITCH), tier-2 id 156 (smartMAC) derives windows once (W3: hand count 86), extras resolve, `lj_layout_derive` on a synthetic profile (reverse focus, shared fade button, lamp + special OFF|SNAP) |
 | `tools/qxf2c.py --check` (CI generate-check) | generated file and overflow list current, map lines valid |
 | `tools/qxf2c.py --selftest` | deterministic conversion, the MAC500 DMX4 facts, the synthetic QXF |
 | `tools/exe_profiles_check.py --check` | 201 rows, binding column, every W1 tier-1 id has a hand file |
@@ -204,3 +204,96 @@ What the W2 tables add to the W1 rules:
 | `profiles_ids` (`tools/check_profiles.py --tier 1 2 3 4 5`) | every id of tiers 1-5 has exactly one hand profile carrying the exe tag / name / mode literals and the note's footprint (`--hand DIR` checks a copy: renaming `lj_mac600.c` fails ids 11 and 67) |
 | `exe_profiles_check` (`tools/exe_profiles_check.py --check`, ME-76) | the binding column agrees with `hand/*.c` and `qxf_map.tsv`; every W1 and W2 tier-1 id has a hand file |
 | `lj4evr_tests test_profiles_w2` | all 30 ids resolve to hand profiles with the exe identity and footprint, every row below the footprint, Lamp rows and Fixture Reset never reach Fade (ME-27), no SWITCH / SMOKE / HAZE class (ME-25), the MAC 2000 Profile pan pair 19/20 and gobo index pairs, the 812's 13 gobo and 13 colour slots, every window builds headless |
+
+## W3: tier-1 hand files 15/06-15/09
+
+Twenty more exe ids are hand profiles (design 6.1 item 2, W3 acceptance 8). As in W2 the
+`qxf_map.tsv` lines of 14, 53, 54, 60, 69, 80, 114, 116 and 140 stay mapped and the hand
+file wins by id (ME-8 / ME-26); `tools/exe_profiles_check.py` regenerates the binding
+column. The tier-1 id list lives once, in `tools/check_profiles.py` `TIERS`;
+`exe_profiles_check.py` builds its per-wave lists from it (`wave_ids()`: tiers 1 and 10 =
+W1, 2-5 = W2, 6-9 = W3; ME-106).
+
+| File | ids (footprint) | Source |
+|---|---|---|
+| `lj_atomic.c` | 80 Atomic 3000 4 Channel Mode (4), 114 Atomic 3000 Color (4 Ch+Scroller) (6), 115 Atomic 3000 Color Scroller (2 Ch) (2) | UM-Atomic3000DMX Rev G p.23-24; scroller colour + fan from QLC+ (Atomic Colors manual not fetched), addressed at Atomic + 4 (NOTES) |
+| `lj_minimac.c` | 54 MiniMAC Profile Mode 2/4 (10), 65 Intensity Mode (10), 53 MiniMAC Wash Mode 2/4 (8), 66 Intensity Mode (8), 69 MiniMAC Maestro I & II (11) | DMX tables MiniMAC Profile / Wash V2 (fw 1.5, mode 4), UM-MiniMACProfile Rev H p.40-42; Maestro QLC+ Mode 4 |
+| `lj_robocolor.c` | 14 RoboColor III Mode 1 (5), 60 Mode 2 (6), 15 RoboColor Pro 400 Mode 3 (5), 61 Mode 2 (7), 13 / 59 RoboColor II Mode 1 / 2 (5 / 6), 37 RoboColor I / 40 RoboColor II via DMX Interface (6 / 6) | DMX table RoboColor III V1, UM-RoboColorIII Rev C p.19; Pro 400 QLC+; RoboColor II and the interface entries PROPOSAL |
+| `lj_mac550.c` | 110 MAC 550 (21), 155 MAC 575 Krypton (19), 116 MAC 700 Profile (23), 140 MAC 700 Wash (16), all 16 Bit basic | UM-MAC550 Rev E p.28-32, UM-MAC575Krypton Rev C p.29-34, UM-MAC700Profile Rev G p.29-34, UM-MAC700Wash Rev D p.23-25 (QLC+ agrees on the 700s) |
+
+What the W3 tables add:
+
+- Row conventions (`LJ_W_ROTATION`, `LJ_W_WHEELSCROLL`, `LJ_W_MODEPAIR`, `reverse`) are
+  stated once, in the comment above `LJ_STATES_ALL` in `fixlib/lj_profile.h`
+  (LORD_FIXTURES-10); the W3 tables and `lj_layout_derive` follow it.
+- Atomic 3000: ch 1 flash intensity is `INTENSITY` (Grand Master), ch 3 rate is the
+  `STROBE` class and dyn ("cross-fixture type compatible with strobe controls", NOTES),
+  ch 2 duration `SPECIAL`, ch 4 the six-button effect group (`RampUp` .. `Spikes`).
+- MiniMAC Intensity Mode: ch 1 0-38 is the intensity (`INTENSITY`, `limit_gm`), so the
+  Grand Master scales that range and leaves strobe / lamp / reset values alone; the
+  shutter-only personalities black out through the shutter at GM 0 (`bo_at_gm0`).
+- RoboColor III: no intensity or movement window; the Colors window is the four
+  `Color Head n` rows on one 13-slot palette (11 colours + white + blackout snaps) plus the
+  strobe bar; blackout and GM 0 put the wheels on blackout (240).
+- MAC 700: the Lamp window adds `400W` / `700W`; the 700 Wash's `Indexing | Rotating` is a
+  special group on the macro channel (the mode is not on the beam-shaper channel).
+- ME-25: none of the 15/06-15/09 fixtures has a switch-pack, smoke or haze channel; the
+  Atomic scroller fan is `SPECIAL` (never scaled).
+- No source gives the RoboColor II, RoboColor I or the interface RoboColor II a channel map:
+  Levels-only profiles with PROPOSAL footprints, like the W2 interface Roboscans (the W2
+  entries 33 / 36 / 41 and 118 are unchanged: no rig item or interface manual landed).
+- Not exposed in W3 (W4 sweep): the MiniMAC colour wheel's CW scroll (its class carries no
+  `Wheel Scroll` caption), the MAC 700 random-CMY limit specials, per-effect sub-tables of
+  the MAC 550 / 575 / 700 effects-speed channel (the radio uses the colour-speed one).
+
+| Check | What it proves |
+|---|---|
+| `profiles_ids_w3` (`tools/check_profiles.py --tier 1 2 3 4 5 6 7 8 9`) | every id of tiers 1-9 has exactly one hand profile with the exe tag / name / mode literals and the note's footprint |
+| `exe_profiles_check` | binding column current; every W1, W2 and W3 tier-1 id (from `TIERS`) has a hand file |
+| `lj4evr_tests test_profiles_w3` | all 20 ids resolve to hand profiles with the exe identity and footprint, rows below the footprint, button `value` inside `lo..hi` (F47), Lamp rows / Fixture Reset / Stand Alone never reach Fade (ME-27), no SWITCH / SMOKE / HAZE class (ME-25), Atomic intensity / strobe classes, MAC 550 pan 16/17 + tilt 18/19 and the gobo index pair, MAC 700 400W / 700W, RoboColor III 13 snaps on four head rows, Pro 400 7 / 7 / 5 slots, MiniMAC limit_gm, every window builds headless |
+
+## W3: `.GS2` / `.Udf` / `.Udo` import and export (gs2 track, 2026-10-22)
+
+Code: `src/fixlib/lj_gs2.c` (prototypes `fixlib/lj_gs2.h`, W1 ones in `fixlib/lj_profile.h`), oracle
+`tools/ref/16-gs2_ref.py`, design 5.3 / 6.2, note 16.
+
+- **Import.** `lj_gs2_load(path)` (a `.GS2`) and `lj_udf_import(path)` (a `.Udf` / `.Udo`) read the file (at most
+  16 MB), then `lj_gs2_read(buf, len)` / `lj_udf_parse(buf, len)`: size check, a heap copy kept as `gs2_raw`,
+  `lj_gs2_parse`, `lj_layout_derive`. `gs2_file` is the base name with the extension forced to `.GS2` (the import
+  dialog writes the stream-0 bytes there, design 5.3). The profile is `id 46` / tag `USER2` (Generic Fixture 2).
+- **Mapping (16 s9 -> `lj_profile`).** Identity = `manufacturer` / `fixture_name` / `fixture_mode` on 2609 records;
+  any other `format_version` (0 or 1 in the library, 198 files) takes name = `legacy_name`, manufacturer
+  `User Definable`, mode empty (ME-33, PROPOSAL 16 s10). `footprint` = `last_offset + 1`. The dyn records, statics,
+  palettes (+ type codes: five per palette, `fx_pal2_types` for palette 6), levels, GM flags, `ext_gm`,
+  `default_dmx`, pan/tilt flags and patch, HSV flags and the two millisecond fields map one to one.
+  Palette colour: the file holds R, G, B, pad (a Delphi `TColor` `$00BBGGRR`); the struct keeps `0xRRGGBB`, the gfx
+  order (LORD_FIXTURES-9). `icon_caption` is `S[10]` (`char[11]`; LORD_FIXTURES-14 settled against 16 s4.2 and the
+  oracle's LAYOUT).
+- **Channel classes** (no `.GS2` field; derived): enabled level offsets -> LEVEL, then by function, later wins:
+  misc movement SPEED, iris / focus / zoom / frost / beam BEAM, effects EFFECT, gobo GOBO, colour and CMY/RGB COLOR,
+  STROBE, SHUTTER, INTENSITY, pan/tilt (8 bit, 16 bit adjacent, or the four patch targets) PAN / TILT; lamp on / off /
+  reset statics LAMP and specials SPECIAL only on channels still NONE or LEVEL. ME-25's SWITCH / SMOKE / HAZE /
+  HAZE_FAN have no source field in a `.GS2`, so a user profile never carries them. ME-27 `states_allowed` comes from
+  `lj_layout_derive` (lamp and specials OFF+SNAP).
+- **Validation (untrusted input).** Size != 20,851 -> `not a GS2 record: N bytes` (the oracle's assert text).
+  Beyond the oracle, the offsets the program indexes with must be < 32: `last_offset`, every enabled dyn record,
+  pan/tilt offsets (16 bit: MSB < 31) and, with 16-bit patch on, the four patch targets; refusals start `GS2 `.
+  None of the 11,366 library files nor the 48 shipped ones trips them (below).
+- **Export.** `lj_gs2_write` copies `gs2_raw` and rewrites only struct-owned fields; a ShortString is rewritten only
+  when the struct text differs from what the raw bytes read as, so stale tails and over-wide length bytes survive.
+  Version != 2609 records never get the 0x3E37.. identity slots written (they are not 2.6b9 data). A profile without
+  `gs2_raw` (a built-in, a new profile) is written over a zeroed record with `const04 = 0x2E` and version 2609.
+  `lj_gs2_save` writes the 20,851 bytes; `lj_udf_export` writes a one-file container (file-formats.md).
+- **Notes.** `notes_rtf` is the user's own 4,097 raw bytes, exported untouched and shown through
+  `lj_str_rtf_strip` (core/lj_str.c, LORD_FIDELITY-17). The field need not be NUL-terminated on disk: copy 4,096
+  bytes + NUL before stripping. Icon / palette bitmaps of a `.Udf` are later streams, never walked (design 5.3);
+  extracting them into the user's library is the import dialog's job and nothing is committed (KING_DAVE-19).
+- **Free.** `lj_gs2_free` releases `gs2_raw` and the window tables `lj_layout_derive` allocated (only for profiles
+  with `gs2_raw`; built-ins keep their static tables), so Reload profile data leaks nothing.
+- **Checks.** `test_gs2` / `test_udf_crc` on synthetic records (no Martin bytes); `gs2_check` (CTest, developer PC,
+  `LJ4EVR_REFERENCE_DIR`): `tools/gs2_check.py` compares `lj4evr_tests gs2_dump <file>` with the oracle's parse,
+  field by field, plus both round trips. 2026-10-22: `260 files, 0 with differences` over the reference folder
+  (48 shipped `.GS2`, `udf200`, the 12 sample files) and `11366 files, 0 with differences` over the extracted
+  `LJ_Profiles.zip` (scratch copy, deleted after), including the truncated `Robe_ColorSpot700EAT_Mode3-1.Udo`, which
+  both refuse with `footer CRC mismatch`. Fuzz: `-DLJ_FUZZ=ON` (clang) builds `fuzz_gs2` / `fuzz_udf`
+  (`tools/fuzz/`, LORD_C-17); `fuzz_gs2` also aborts on any accepted input that does not write back byte-exact.

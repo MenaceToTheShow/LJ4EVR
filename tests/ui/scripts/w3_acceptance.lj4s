@@ -1,0 +1,416 @@
+# w3_acceptance.lj4s - the W3 "Show control" walkthrough of design 10 W3 as a --script (docs/ui-script.md,
+# W3 verbs). Desktop-app track first draft, 2026-10-22. Run from the repo root on a fresh Default library
+# (delete <userdir>User\Default, <userdir>forms.ini and <userdir>Default.lj4b) so the records get numbers
+# 0001 / 0002 and the shots land in docs/screenshots/w3/:
+#   build-ninja-msvc\lj4evr.exe --script tests\ui\scripts\w3_acceptance.lj4s
+# Fixtures: MAC 500 Mode 2/4 at 1:001 (fixture 1), Generic DMX Dimmer at 1:017 (fixture 2, as W2), four more
+# MAC 500 at 1:033 / 1:049 / 1:065 / 1:081 (fixtures 3-6) for Fan Out.
+# Widget names: DFM object names (ui/forms/lj_forms_gen.c). Lines marked RECONCILE name widgets or values of a
+# W3 window whose behaviour file had not landed when this was written; the integrator checks them against the
+# landed windows (the W2 precedent, docs/w2-integration.md section 9). Every line parses at load
+# (tests/app/test_uiscript_w3.c loads this file in CI).
+# Generic macro frame values at given ticks are asserted at synthetic time by replay genmacro_sine_amp186 (design 3.7);
+# a live run cannot name the tick the macro started on, so this walkthrough asserts the editor's Min/Max readout
+# and the view fields, and freezes the movement macro (speed 0) to assert positions at two ticks.
+
+log "W3 acceptance: six fixtures (MAC 500 x5, a dimmer)"
+open fixture_config
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "1"
+key Enter
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbGeneric
+key Right
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "17"
+key Enter
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "33"
+key Enter
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "49"
+key Enter
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "65"
+key Enter
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TLinkConfigForm3.eAdr
+type "81"
+key Enter
+assert_text TLinkConfigForm3.LFixtures "6 Fixtures configured"
+click TLinkConfigForm3.bSave
+close fixture_config
+wait 300
+close cue_form
+close seq_form
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -300 -120
+wait 300
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -230 -120
+wait 300
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -160 -120
+wait 300
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -90 -120
+wait 300
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -20 -120
+wait 300
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 50 -120
+wait 300
+assert_text main.icon1 "(1) MAC500"
+assert_text main.icon2 "(2) DMX1"
+assert_text main.icon6 "(6) MAC500"
+
+# ---- two cues: 0001 "odd" and 0002 "even" (empty: the list only has to latch them) ----
+log "W3 acceptance: cues 0001 / 0002"
+open cue_form
+click TCurrentCue.sbSaveCue
+wait 300
+click TSaveCueForm.ECueName
+type "odd"
+click TSaveCueForm.BSaveNew
+wait 300
+assert_caption TCurrentCue "CUE [0001 odd]"
+
+# ---- acceptance 1: a 20-line cue list built through the Cuelist window ----
+# Line k latches cue 0001 (k odd) or 0002 (k even); lines 2-20 Wait Elapsed 1.00 s; lines 10 and 15 Manual,
+# whose wait is ignored (LJ_CL_MANUAL_IGNORES_WAITS [03 s6.1]).
+log "W3 acceptance: 20-line cue list"
+open cuelist_form
+click TCuelist2Form.sbNew
+rclick TCuelist2Form.sbAdd                       # right-click Add = 10 lines [03 s6.2]
+rclick TCuelist2Form.sbAdd
+cl_assert_line 20 plain
+cl_goto 1
+click TCuelist2Form.Pop_SetCurrentCue          # ListPop "Set Current Cue": cue 0001
+cl_goto 3
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 5
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 7
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 9
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 11
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 13
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 15
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 17
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 19
+click TCuelist2Form.Pop_SetCurrentCue
+click TCurrentCue.sbNewCue
+click TCurrentCue.sbSaveCue
+wait 300
+click TSaveCueForm.ECueName
+type "even"
+click TSaveCueForm.BSaveNew
+wait 300
+assert_caption TCurrentCue "CUE [0002 even]"
+cl_goto 2
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 4
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 6
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 8
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 10
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 12
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 14
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 16
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 18
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 20
+click TCuelist2Form.Pop_SetCurrentCue
+cl_goto 2
+click TCuelist2Form.popWaitTimeOut             # ListPop > PC Time Commands > Wait Elapsed (aWaitElapsed)
+click TCuelist2Form.eElapsedSec               # RECONCILE: the TclEditPanels edit inside pEdit
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 3
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 4
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 5
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 6
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 7
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 8
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 9
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 10
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 11
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 12
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 13
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 14
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 15
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 16
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 17
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 18
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 19
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 20
+click TCuelist2Form.popWaitTimeOut
+click TCuelist2Form.eElapsedSec
+key End
+key BS 2
+type "1"
+key Enter
+cl_goto 10
+click TCuelist2Form.AdvanceManual1               # ListPop > Set Advance > Manual (aAdvanceManual)
+cl_goto 15
+click TCuelist2Form.AdvanceManual1               # ListPop > Set Advance > Manual (aAdvanceManual)
+shot docs/screenshots/w3/cuelist-20-lines.png
+click TCuelist2Form.sbSave
+wait 300
+click TSaveCuelist2Form.eCuelistName
+type "twenty"
+click TSaveCuelist2Form.bSaveNew
+wait 300
+assert_file CueLists/00000001.Cl2 exists
+
+# run against PC elapsed: Go on an idle list = Run from top [03 s6.5]; the asserts sit half a second after each latch
+log "W3 acceptance: run against PC elapsed"
+click TCuelist2Form.sbPCElapsed
+cl_execute
+wait 500
+assert_view cue_number 1                         # line 1 at 0 s
+wait 1000
+assert_view cue_number 2                         # line 2 at 1 s
+wait 1000
+assert_view cue_number 1                         # line 3 at 2 s
+wait 6000
+assert_view cue_number 1                         # line 9 at 8 s; line 10 is Manual
+cl_assert_line 10 next
+cl_assert_line 9 done
+wait 2000
+assert_view cue_number 1                         # 10.5 s: the manual line ignored its 1 s wait
+cl_execute
+wait 300
+assert_view cue_number 2                         # line 10 on Go !
+wait 4500
+assert_view cue_number 2                         # line 14 at Go + 4 s; line 15 is Manual
+cl_assert_line 15 next
+cl_execute
+wait 300
+assert_view cue_number 1                         # line 15 on Go !
+wait 5000
+assert_view cue_number 2                         # line 20 at Go + 5 s, the list ends
+cl_assert_line 20 done
+shot docs/screenshots/w3/cuelist-run.png
+
+# ---- acceptance 2: a .Cl2 with an MP Play line loads with that line red and runs the rest ----
+log "W3 acceptance: MP Play line"
+cl_load tests/ui/scripts/w3_mp_play.Cl2
+cl_assert_line 2 error
+shot docs/screenshots/w3/cuelist-mp-play.png
+cl_execute
+wait 1000
+assert_view cue_number 2                         # line 1 cue 0001, line 2 skipped, line 3 cue 0002 after 0.50 s
+cl_assert_line 2 error
+cl_assert_line 3 done
+
+# ---- acceptance 3 (live half): a generic macro, Sine at amplitude 186, on the MAC 500 ----
+log "W3 acceptance: generic macro amplitude 186"
+click main.icon1
+open genmacro_editor
+click TCueMacroControlForm.sbSelectAll                # RECONCILE: the master's channels in pChannels
+dblclick TCueMacroControlForm.lvBuiltIn.7.0           # 'Sine' (shape 7, the Macros.Mac order of 14 sA.6)
+click TCueMacroControlForm.cbSym                      # Keep Amplitude Symmetrical
+click TCueMacroControlForm.pbAmpPos 93 6              # RECONCILE: the x of Amp+ 186 on the bar (186 / 255 of its width)
+assert_text TCueMacroControlForm.lMinMax "Min/Max -186/186"   # RECONCILE: lMinMax format (LJ_GENMACRO_AMP186_EXAMPLE)
+assert_view gm_engine_on=1 gm_slot_on=1
+shot docs/screenshots/w3/genmacro-amp186.png
+close genmacro_editor
+
+# ---- acceptance 4 (live half): a movement macro, System Ellipse, frozen at index 0, at two ticks ----
+# pan = home 0 + round(32767 * 100 * 32768 / (127 * 32767)) = 25802, tilt = sin 0 = 0 (17-position_ref.py macro_offset)
+log "W3 acceptance: movement macro"
+click main.tb_fixture_13                         # None
+click main.icon1
+click main.tb_fixture_9                          # Home: pan / tilt 50 % = readout 0
+mm_set 1 1 100 0                                 # System Ellipse, amplitude 100, speed 0 = frozen [03 s5.11]
+wait 200
+assert_pos 1 25802 0
+wait 500
+assert_pos 1 25802 0
+mm_set 1 1 100 50                                # running: the trace window
+open movemacro_editor
+wait 500
+shot docs/screenshots/w3/movemacro-ellipse.png
+close movemacro_editor
+mm_set 1 0 0 0
+
+# ---- Fan Out over the five MAC 500s ----
+log "W3 acceptance: Fan Out"
+click main.tb_fixture_13
+click main.icon1
+click main.icon3
+click main.icon4
+click main.icon5
+click main.icon6
+click main.tb_fixture_9                          # home all five
+open fan_out
+drag TFanOutForm.pb1 TFanOutForm.pb1 60 60 40 0   # RECONCILE: a pan delta dragged on the paint box
+shot docs/screenshots/w3/fan-out.png
+# RECONCILE: assert_pos 1 -<d> 0 / assert_pos 6 <d> 0 once the delta the drag sets is known (lj_fan_out, 17 s5.2)
+close fan_out
+
+# ---- acceptance 5-7 (UI half): a synthetic .Udf imports; the profile editor's Q9 prompt ----
+# w3_synthetic.Udf was written by our lj_udf_export from the built-in Generic DMX Dimmer (no Martin bytes);
+# gs2_import fails unless Reload profile data lists the profile afterwards.
+log "W3 acceptance: .Udf import, profile editor"
+gs2_import tests/ui/scripts/w3_synthetic.Udf
+assert_file UserFixtureDef/w3_synthetic.GS2 exists
+open profile_editor                              # RECONCILE: the editor opens on the imported user profile
+click TScanner2DefsForm.eAuthor
+type "W3"
+click TScanner2DefsForm.bCancel
+assert_prompt "Any unapplied profile changes will be lost ?"   # 12 Q9 (exe 0x319674)
+shot docs/screenshots/w3/profile-editor-prompt.png
+click TConfirmForm.BCancel
+close profile_editor
+
+shot docs/screenshots/w3/end.png
+quit

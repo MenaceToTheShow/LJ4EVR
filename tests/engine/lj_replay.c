@@ -26,6 +26,13 @@
 #include "model/lj_scene.h"
 #include "model/lj_sequence.h"
 #include "model/lj_show.h"
+#include "app/lj_cuelist_run.h"   /* W3 cuelist-core: cl / clline, at k cl_*, expect_cl */
+#include "model/lj_cuelist.h"
+#include "model/lj_followspot.h"   /* W3 gdc-fades-followspot: follow / gdcgroup, at k followspot|gdc|seqfades */
+#include "model/lj_gdc.h"
+#include "model/lj_kv.h"
+#include "model/lj_seqfades.h"
+#include "model/lj_movemacro.h"   /* W3 movement: bez / node, at k macro_fade|fx_edit|fanout|spread|autodelay, expect_mm */
 #include "model/lj_statics.h"
 #include "model/lj_table.h"
 #include "model/lj_words.h"
@@ -229,6 +236,12 @@ static int rp_patch(rp *p, char **argv, int argc)
         KV_NUM("ibo", 0, 1, fx->ignore_bo, uint8_t);
         KV_NUM("igm", 0, 1, fx->ignore_gm, uint8_t);
         KV_NUM("lsgm", 0, 1, fx->link_strobe_gm, uint8_t);
+        if (!strcmp(key, "chgm")) {   /* W3 profile-editor (ME-32): Config.dat's chgm= list, offsets 1..32 with Grand Master control disabled */
+            uint32_t o[LJ_PROFILE_CH]; int m = lj_kv_list(val, o, LJ_PROFILE_CH), j;
+            if (m < 0) return rp_bad(p, key, val);
+            for (j = 0; j < m; j++) { if (o[j] < 1 || o[j] > LJ_PROFILE_CH) return rp_bad(p, key, val); fx->ch_gm_off |= 1u << (o[j] - 1); }
+            continue;
+        }
         KV_NUM("sub", 0, LJ_SUBMASTERS, fx->intensity_group, uint8_t);
         if (!strcmp(key, "gs2")) return rp_fail(p, "gs2= profiles are W3 (lj_gs2_parse)");
         return rp_fail(p, "patch: unknown key %s", key);
@@ -709,11 +722,16 @@ static int rp_write_frame(rp *p)
         && fwrite(tn, 1, 8, p->frames) == 8 ? 0 : -1;
 }
 
+/* W3 cuelist-core: the harness's UI-thread cue list (one scenario at a time, reset in lj_replay_run) */
+static struct { lj_cl_run run; lj_cuelist *build; uint64_t t, now; int on, fn_calls, fn_last; } rp_clx;
+static void rp_cl_steps(rp *p, uint64_t until);
+
 /* Runs ticks until tick k has run (synthetic time k * tick_us); one view copy per tick, as the app's idle pass does. */
 static int rp_run_to(rp *p, long k)
 {
     while (p->tick <= k) {
         uint64_t t0 = lj_clock_us(), dt;
+        rp_cl_steps(p, (uint64_t)p->tick * p->tick_us);   /* W3: the 10 ms UI wakes before this tick (design 2.3 rule 4) */
         lj_engine_tick(p->e, (uint64_t)p->tick * p->tick_us);
         dt = lj_clock_us() - t0;
         if (dt > p->r->max_tick_us) p->r->max_tick_us = (uint32_t)dt;
@@ -738,6 +756,460 @@ static int rp_tick_arg(rp *p, const char *s, long *k, int allow_ran)
 }
 
 /* ---- command lines ---- */
+/* ---- W3 gdc-fades-followspot: the UI-side writers of the Generic DMX Control, Sequence Fades and Follow spot windows.
+ * Like the windows they edit the current scene (the engine's view after tick k-1) and post CURRENT_SEQ. ---- */
+static struct { lj_gdc_state gdc; lj_scene fscene[LJ_FOLLOWSPOT]; uint8_t sel[LJ_FIXTURES]; int have_sel; } rp_gfs;   /* one scenario at a time */
+
+static int rp_gfs_build(rp *p, char **argv, int argc)
+{
+    long n, v; int i, code; char key[32]; const char *val;
+    if (!strcmp(argv[0], "gdcgroup")) {                       /* gdcgroup g l:a [l:a ...] */
+        if (argc < 2 || rp_num(argv[1], 1, LJ_GEN_GROUPS, &n)) return rp_fail(p, "gdcgroup: expected `gdcgroup <1..32> l:a ...`");
+        p->show->gdc.used[n - 1] = 1;
+        for (i = 2; i < argc; i++) {
+            if (rp_chan(argv[i], NULL, &code)) return rp_fail(p, "gdcgroup: expected l:a, got \"%s\"", argv[i]);
+            p->show->gdc.member[code] |= 1u << (n - 1);
+        }
+        return 0;
+    }
+    /* follow n [name=".."] sel=f,f [static=p.s autoclr=0|1], then ch lines into the setting */
+    if (argc < 2 || rp_num(argv[1], 1, LJ_FOLLOWSPOT, &n)) return rp_fail(p, "follow: expected `follow <1..20> sel=...`");
+    {
+        lj_followspot *fs = &p->show->followspot[n - 1];
+        memset(fs, 0, sizeof *fs);
+        fs->used = 1;
+        for (i = 2; i < argc; i++) {
+            KV_NEXT(i);
+            KV_STR("name", fs->name);
+            KV_NUM("autoclr", 0, 1, fs->static_auto_clear, uint8_t);
+            if (!strcmp(key, "static")) { long pg, sl; if (rp_pageslot(val, &pg, &sl)) return rp_bad(p, key, val); fs->static_page = (uint8_t)pg; fs->static_slot = (uint8_t)sl; continue; }
+            if (!strcmp(key, "sel")) {
+                uint32_t m[LJ_FIXTURES]; int k, cnt = lj_kv_list(val, m, LJ_FIXTURES);
+                if (cnt < 0) return rp_bad(p, key, val);
+                memset(rp_gfs.sel, 0, sizeof rp_gfs.sel);
+                for (k = 0; k < cnt; k++) { if (m[k] < 1 || m[k] > LJ_FIXTURES) return rp_bad(p, key, val); fs->selected[m[k] - 1] = rp_gfs.sel[m[k] - 1] = 1; }
+                rp_gfs.have_sel = 1;
+                continue;
+            }
+            return rp_fail(p, "follow: unknown key %s", key);
+        }
+        (void)v;
+        lj_scene_init(&rp_gfs.fscene[n - 1]);
+        p->scene = &rp_gfs.fscene[n - 1];                      /* the following ch lines are the setting's programmed channels */
+    }
+    return 0;
+}
+
+static int rp_gfs_at(rp *p, long k, char **argv, int argc)
+{
+    static const char *const attr_words[] = { "intensity", "movement", "color", "gobo", "beam", "effects", "level", "movemacro", NULL };   /* enum lj_attr */
+    static const char *const sfx_words[] = { "all_off", "all_snap", "all_fade", "off_snap", "off_fade", "snap_off", "snap_fade", "fade_off", "fade_snap", NULL };   /* enum lj_sfx */
+    lj_sequence *s = p->show->current_seq;
+    lj_scene *sc;
+    lj_cmd c;
+    long n;
+    int cur;
+    if (rp_run_to(p, k - 1)) return -1;
+    cur = p->view.cur_scene - 1;                               /* the view's "X:Y" is 1-based, 0 = none */
+    if (!s || !s->scenes || cur < 0 || cur >= s->n) return rp_fail(p, "%s: no current sequence (`at k current <seq> <scene>` first)", argv[0]);
+    sc = &s->scenes[cur];
+    if (!strcmp(argv[0], "gdc")) {                            /* at k gdc "<command line>" */
+        lj_gdc_prog prog; char err[96];
+        if (argc != 2) return rp_fail(p, "gdc: expected `gdc \"<command line>\"`");
+        rp_gfs.gdc.empty_clears = 1;
+        if (lj_gdc_parse(argv[1], &prog, err, sizeof err)) return rp_fail(p, "gdc \"%s\": %s", argv[1], err);
+        if (lj_gdc_run(&prog, p->show, &rp_gfs.gdc, sc) < 0) return rp_fail(p, "gdc \"%s\": lj_gdc_run failed", argv[1]);
+    } else if (!strcmp(argv[0], "followspot")) {              /* at k followspot <n> | 0 */
+        if (argc != 2 || rp_num(argv[1], 0, LJ_FOLLOWSPOT, &n)) return rp_fail(p, "followspot: expected `followspot <0..20>`");
+        if (n) {
+            lj_followspot *fs = &p->show->followspot[n - 1];
+            memcpy(fs->val, rp_gfs.fscene[n - 1].val, LJ_CHANS); memcpy(fs->state, rp_gfs.fscene[n - 1].state, LJ_CHANS);
+            if (lj_followspot_validate(p->show->followspot)) return rp_fail(p, "followspot: %s", lj_followspot_validate(p->show->followspot));
+            if (lj_followspot_apply(fs, p->show, sc, NULL, rp_gfs.sel) < 0) return rp_fail(p, "followspot %ld is not defined", n);
+            rp_gfs.have_sel = 1;
+        }                                                       /* 0 = Clear Followspot: the scene keeps what was applied (04 s13 "release") */
+    } else {                                                    /* at k seqfades <attr,attr> <sfx> [all] */
+        lj_seqfades f; char buf[128], *t; int a, i;
+        uint8_t all[LJ_FIXTURES];
+        if (argc < 3 || argc > 4 || (argc == 4 && strcmp(argv[3], "all")) || lj_str_copy(buf, sizeof buf, argv[1])) return rp_fail(p, "seqfades: expected `seqfades <attr,...> <sfx> [all]`");
+        memset(&f, 0, sizeof f);
+        for (t = strtok(buf, ","); t; t = strtok(NULL, ",")) { if ((a = lj_word_index(attr_words, t)) < 0) return rp_bad(p, "attr", t); f.attr_mask = (uint8_t)(f.attr_mask | 1u << a); }
+        if ((a = lj_word_index(sfx_words, argv[2])) < 0) return rp_bad(p, "sfx", argv[2]);
+        f.sfx = (uint8_t)a; f.all_scenes = argc == 4;
+        for (i = 0; i < LJ_FIXTURES; i++) all[i] = 1;
+        if (lj_seqfades_apply(&f, p->show, s, cur, rp_gfs.have_sel ? rp_gfs.sel : all) < 0) return rp_fail(p, "seqfades: lj_seqfades_apply failed");
+    }
+    memset(&c, 0, sizeof c);
+    c.kind = LJ_CMD_CURRENT_SEQ; c.a = (uint32_t)cur; c.seq[0] = s; c.at_us = (uint64_t)k * p->tick_us;
+    return lj_engine_cmd(p->e, &c) ? rp_fail(p, "lj_engine_cmd: command array full") : 0;
+}
+
+/* ---- W3 cue list (cuelist-core; docs/replay-grammar.md "W3 lines"): `cl` / `clline` build lines, `at k cl_*`, `expect_cl`.
+ * The harness is the UI thread of design 2.3 rule 4: lj_cl_run_step every LJ_CL_STEP_MS of synthetic time before each
+ * tick (rp_cl_steps from rp_run_to), effects through this lj_cl_host at that time. ---- */
+static const char *const rp_cl_state_words[] = { "idle", "running", "wait_go", NULL };   /* enum lj_cl_state */
+static const char *const rp_cl_adv_words[] = { "auto", "manual", NULL };              /* enum lj_cl_adv */
+
+static int rp_cl_load_cue(void *ud, uint32_t n)
+{
+    rp *p = (rp *)ud; lj_cmd c; int i;
+    const lj_cue *cue = (const lj_cue *)lj_table_get(&p->show->cues, n);
+    if (!cue) return -1;
+    memset(&c, 0, sizeof c);
+    c.kind = LJ_CMD_LOAD_CUE; c.a = n; c.cue = cue; c.at_us = rp_clx.now;
+    for (i = 0; i < LJ_CUE_SLOTS; i++) c.seq[i] = cue->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, cue->slot[i].seq) : NULL;
+    c.bg = cue->bg_cue ? (const lj_bgcue *)lj_table_get(&p->show->bgcues, cue->bg_cue) : NULL;
+    if (c.bg) for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
+    c.gm = cue->gen_macro ? (const lj_genmacro *)lj_table_get(&p->show->macros, cue->gen_macro) : NULL;
+    p->cue = (lj_cue *)cue;
+    return lj_engine_cmd(p->e, &c);
+}
+static int rp_cl_post(void *ud, const lj_cmd *cmd) { rp *p = (rp *)ud; lj_cmd c = *cmd; if (!c.at_us) c.at_us = rp_clx.now; return lj_engine_cmd(p->e, &c); }
+static int rp_cl_load_bg(void *ud, uint32_t n)
+{
+    rp *p = (rp *)ud; lj_cmd c; int i;
+    memset(&c, 0, sizeof c);
+    c.kind = LJ_CMD_LOAD_BG; c.a = n; c.at_us = rp_clx.now;
+    if (!(c.bg = (const lj_bgcue *)lj_table_get(&p->show->bgcues, n))) return -1;
+    for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
+    return lj_engine_cmd(p->e, &c);
+}
+static int rp_cl_flash(void *ud, uint32_t seq, int on)
+{
+    rp *p = (rp *)ud; lj_cmd c;
+    memset(&c, 0, sizeof c);
+    c.kind = LJ_CMD_FLASH; c.b = (uint32_t)(on != 0); c.at_us = rp_clx.now;
+    if (on && !(c.seq[0] = (const lj_sequence *)lj_table_get(&p->show->sequences, seq))) return -1;
+    return lj_engine_cmd(p->e, &c);
+}
+static int rp_cl_link(void *ud, uint32_t n, const lj_cuelist **out) { rp *p = (rp *)ud; *out = (const lj_cuelist *)lj_table_get(&p->show->cuelists, n); return *out ? 0 : -1; }
+static void rp_cl_fn(void *ud, int fn) { (void)ud; rp_clx.fn_calls++; rp_clx.fn_last = fn; }
+static int rp_cl_exec(void *ud, const char *path, const char *args) { (void)ud; (void)path; (void)args; return -1; }   /* [CUELIST2] AllowExecute=0 */
+static int rp_cl_timecode(void *ud, int src, uint32_t *ms) { (void)ud; (void)src; (void)ms; return -1; }              /* no MTC / CD / DA / MP */
+static int rp_cl_clock(void *ud, uint32_t *ms_of_day, uint32_t *day)   /* synthetic midnight + t */
+{
+    uint64_t ms = rp_clx.now / 1000u; (void)ud;
+    *ms_of_day = (uint32_t)(ms % 86400000u); *day = (uint32_t)(ms / 86400000u);
+    return 0;
+}
+static const lj_cl_host *rp_cl_host(rp *p)
+{
+    static lj_cl_host h;
+    h.ud = p; h.load_cue = rp_cl_load_cue; h.post = rp_cl_post; h.load_bg = rp_cl_load_bg; h.flash = rp_cl_flash; h.link = rp_cl_link;
+    h.fn = rp_cl_fn; h.exec = rp_cl_exec; h.clear_cue = NULL; h.timecode = rp_cl_timecode; h.clock = rp_cl_clock;
+    return &h;
+}
+
+/* every 10 ms of synthetic time up to `until` (design 2.3 rule 4) */
+static void rp_cl_steps(rp *p, uint64_t until)
+{
+    if (!rp_clx.on) return;
+    while (rp_clx.t + LJ_CL_STEP_MS * 1000u <= until) {
+        rp_clx.t += LJ_CL_STEP_MS * 1000u;
+        rp_clx.now = rp_clx.t;
+        lj_cl_run_step(&rp_clx.run, rp_clx.now, rp_cl_host(p));
+    }
+}
+
+static int rp_cl(rp *p, char **argv, int argc)   /* cl n [name="<name>"] [tracking=0|1] */
+{
+    long v, n; int i; char key[32]; const char *val; lj_cuelist *cl;
+    if (argc < 2 || rp_num(argv[1], 1, LJ_NUMBER_MAX, &n)) return rp_fail(p, "cl: expected `cl <number> [name=] [tracking=]`");
+    if (lj_table_get(&p->show->cuelists, (uint32_t)n)) return rp_fail(p, "cl %ld already defined", n);
+    cl = lj_cuelist_new_rec();
+    cl->number = (uint32_t)n;
+    if (lj_table_put(&p->show->cuelists, (uint32_t)n, cl)) { lj_cuelist_free(cl); return rp_fail(p, "lj_table_put failed"); }
+    rp_clx.build = cl; p->seq = NULL; p->scene = NULL; p->cue = NULL; p->bg = NULL; p->macro = NULL;
+    for (i = 2; i < argc; i++) {
+        KV_NEXT(i);
+        KV_STR("name", cl->name);
+        KV_NUM("tracking", 0, 1, cl->tracking, uint8_t);
+        return rp_fail(p, "cl: unknown key %s", key);
+    }
+    return 0;
+}
+
+static int rp_clline(rp *p, char **argv, int argc)   /* clline adv= cmd= [param=] [pstr=] [ref=] [cue=] [trig=] [comment=] */
+{
+    long v; int i; char key[32]; const char *val; lj_cl_line l; const char *msg;
+    if (!rp_clx.build) return rp_fail(p, "clline outside a cl");
+    memset(&l, 0, sizeof l);
+    for (i = 1; i < argc; i++) {
+        KV_NEXT(i);
+        KV_WORD("adv", rp_cl_adv_words, l.manual, uint8_t);
+        KV_WORD("cmd", lj_cl_cmd_words, l.cmd, uint8_t);
+        KV_NUM("param", 0, 86399999L, l.param_ms, uint32_t);
+        KV_STR("pstr", l.param);
+        KV_NUM("ref", 0, LJ_NUMBER_MAX, l.ref, uint32_t);
+        KV_NUM("cue", 0, LJ_NUMBER_MAX, l.cue, uint32_t);
+        KV_NUM("trig", 0, 0xFFF, l.trig_mask, uint16_t);
+        KV_STR("comment", l.comment);
+        return rp_fail(p, "clline: unknown key %s", key);
+    }
+    l.load_error = (uint8_t)(lj_cl_cmd_inert(l.cmd) || l.cmd == LJ_CL_SET_CURRENT_CUE || l.cmd == LJ_CL_SET_CUE_TRIG);   /* as lj_cuelist_load sets it */
+    lj_cuelist_insert(rp_clx.build, rp_clx.build->n, &l);
+    if ((msg = lj_cuelist_validate(rp_clx.build)) != NULL) return rp_fail(p, "cl %u invalid: %s", (unsigned)rp_clx.build->number, msg);
+    return 0;
+}
+
+/* at k cl_run <n> top|line=<l> | cl_go | cl_back | cl_stop [clear] | cl_jump <l> | cl_mark goto|run <m> | cl_run_to <l> */
+static int rp_cl_at(rp *p, long k, char **argv, int argc)
+{
+    const char *w = argv[2];
+    const lj_cuelist *cl = rp_clx.run.cl;
+    long n = 0;
+    int op;
+    if (!strcmp(w, "cl_run")) {
+        if (argc != 5 || rp_num(argv[3], 1, LJ_NUMBER_MAX, &n)) return rp_fail(p, "cl_run: expected `cl_run <n> top|line=<l>`");
+        if (!(cl = (const lj_cuelist *)lj_table_get(&p->show->cuelists, (uint32_t)n))) return rp_fail(p, "cl %ld is not defined", n);
+        if (!strcmp(argv[4], "top")) { op = LJ_CL_OP_TOP; n = 0; }
+        else if (!strncmp(argv[4], "line=", 5) && !rp_num(argv[4] + 5, 1, (long)cl->n, &n)) op = LJ_CL_OP_RUN;
+        else return rp_fail(p, "cl_run: expected top or line=<1..%u>", (unsigned)cl->n);
+    } else if (!strcmp(w, "cl_go") || !strcmp(w, "cl_back")) {
+        if (argc != 3) return rp_fail(p, "%s takes no arguments", w);
+        op = w[3] == 'g' ? LJ_CL_OP_GO : LJ_CL_OP_BACK;
+    } else if (!strcmp(w, "cl_stop")) {
+        if (argc > 4 || (argc == 4 && strcmp(argv[3], "clear"))) return rp_fail(p, "cl_stop: expected [clear]");
+        op = argc == 4 ? LJ_CL_OP_STOP_CLEAR : LJ_CL_OP_STOP;
+    } else if (!strcmp(w, "cl_jump") || !strcmp(w, "cl_run_to")) {
+        if (argc != 4 || rp_num(argv[3], 1, 1000000, &n)) return rp_fail(p, "%s: expected a line number", w);
+        op = w[3] == 'j' ? LJ_CL_OP_JUMP : LJ_CL_OP_RUN_TO;
+    } else {
+        if (argc != 5 || (strcmp(argv[3], "goto") && strcmp(argv[3], "run")) || rp_num(argv[4], 1, LJ_MARKS, &n)) return rp_fail(p, "cl_mark: expected `cl_mark goto|run <1..4>`");
+        op = argv[3][0] == 'g' ? LJ_CL_OP_MARK_GOTO : LJ_CL_OP_MARK_RUN;
+    }
+    if (!cl) return rp_fail(p, "%s: no cue list pinned (cl_run first)", w);
+    if (rp_run_to(p, k - 1)) return -1;
+    rp_clx.on = 1;
+    rp_cl_steps(p, (uint64_t)k * p->tick_us);                   /* the wakes before the click, then the click at k */
+    rp_clx.t = rp_clx.now = (uint64_t)k * p->tick_us;
+    if (lj_cl_run_op(&rp_clx.run, cl, op, (uint32_t)n, rp_clx.now, rp_cl_host(p))) return rp_fail(p, "%s: lj_cl_run_op refused (state %s)", w, rp_cl_state_words[rp_clx.run.st.state]);
+    return 0;
+}
+
+static int rp_expect_cl(rp *p, char **argv, int argc)   /* expect_cl <tick> state=idle|running|wait_go [next=<l>] [last=<l>] */
+{
+    long k, v; int i, want; char key[32]; const char *val;
+    if (argc < 3 || rp_tick_arg(p, argv[1], &k, 1)) return argc < 3 ? rp_fail(p, "expect_cl: expected `expect_cl <tick> state= [next=] [last=]`") : -1;
+    if (rp_run_to(p, k)) return -1;
+    p->r->expects++;
+    for (i = 2; i < argc; i++) {
+        long got;
+        KV_NEXT(i);
+        if (!strcmp(key, "state")) {
+            if ((want = lj_word_index(rp_cl_state_words, val)) < 0) return rp_bad(p, key, val);
+            if (want != rp_clx.run.st.state) rp_fail(p, "tick %ld cue list state expected %s got %s", k, val, rp_cl_state_words[rp_clx.run.st.state]);
+            continue;
+        }
+        if (rp_num(val, 0, 1000000, &v)) return rp_bad(p, key, val);
+        if (!strcmp(key, "next")) got = (long)rp_clx.run.st.next;
+        else if (!strcmp(key, "last")) got = (long)rp_clx.run.st.last;
+        else if (!strcmp(key, "fn")) got = (long)rp_clx.fn_calls;
+        else return rp_fail(p, "expect_cl: unknown field %s", key);
+        if (got != v) rp_fail(p, "tick %ld cue list %s expected %ld got %ld", k, key, v, got);
+    }
+    return 0;
+}
+
+/* ---- W3 movement: bez / node build lines; at k macro_fade | fx_edit | fanout | spread | autodelay; expect_mm.
+ * Fan Out / Spread / Auto Delay do what their windows do: edit the current scene (the engine's view after tick k-1)
+ * and post CURRENT_SEQ (seam 5). ---- */
+enum { RP_BEZ = 8 };
+static struct { lj_bez bez[RP_BEZ]; lj_bez_table t[RP_BEZ]; lj_bez_set set; int cur; } rp_mm;   /* one scenario at a time */
+
+static int rp_mm_build(rp *p, char **argv, int argc)
+{
+    long n, v; int i; char key[32]; const char *val;
+    if (!strcmp(argv[0], "bez")) {                            /* bez n name="..." */
+        if (argc < 2 || rp_num(argv[1], 1, RP_BEZ, &n)) return rp_fail(p, "bez: expected `bez <1..8> name=\"...\"`");
+        memset(&rp_mm.bez[n - 1], 0, sizeof rp_mm.bez[0]);
+        for (i = 2; i < argc; i++) { KV_NEXT(i); KV_STR("name", rp_mm.bez[n - 1].name); return rp_fail(p, "bez: unknown key %s", key); }
+        rp_mm.cur = (int)n;
+        if (rp_mm.set.n < n) rp_mm.set.n = (int)n;
+        rp_mm.set.t = rp_mm.t;
+        p->show->bez = &rp_mm.set;                            /* the engine reads show->bez per tick */
+        return 0;
+    }
+    {                                                         /* node x= y= [ix= iy= ox= oy= line=1] */
+        lj_bez *b = rp_mm.cur ? &rp_mm.bez[rp_mm.cur - 1] : NULL;
+        lj_bez_node *nd;
+        int got_i = 0, got_o = 0;
+        if (!b) return rp_fail(p, "node outside a bez");
+        if (b->n >= LJ_BEZ_NODES_MAX) return rp_fail(p, "node: more than %d nodes", LJ_BEZ_NODES_MAX);
+        nd = &b->node[b->n];
+        memset(nd, 0, sizeof *nd);
+        for (i = 1; i < argc; i++) {
+            KV_NEXT(i);
+            KV_NUM("x", -32768, 32767, nd->x, int16_t);
+            KV_NUM("y", -32768, 32767, nd->y, int16_t);
+            if (!strcmp(key, "ix")) { if (rp_num(val, -32768, 32767, &v)) return rp_bad(p, key, val); nd->in_x = (int16_t)v; got_i |= 1; continue; }
+            if (!strcmp(key, "iy")) { if (rp_num(val, -32768, 32767, &v)) return rp_bad(p, key, val); nd->in_y = (int16_t)v; got_i |= 2; continue; }
+            if (!strcmp(key, "ox")) { if (rp_num(val, -32768, 32767, &v)) return rp_bad(p, key, val); nd->out_x = (int16_t)v; got_o |= 1; continue; }
+            if (!strcmp(key, "oy")) { if (rp_num(val, -32768, 32767, &v)) return rp_bad(p, key, val); nd->out_y = (int16_t)v; got_o |= 2; continue; }
+            KV_NUM("line", 0, 1, nd->line, uint8_t);
+            return rp_fail(p, "node: unknown key %s", key);
+        }
+        if (!(got_i & 1)) nd->in_x = nd->x;
+        if (!(got_i & 2)) nd->in_y = nd->y;
+        if (!(got_o & 1)) nd->out_x = nd->x;
+        if (!(got_o & 2)) nd->out_y = nd->y;
+        b->n++;
+        if (b->n >= 3 && lj_bez_sample(b, &rp_mm.t[rp_mm.cur - 1])) return rp_fail(p, "bez %d: %s", rp_mm.cur, lj_bez_validate(b) ? lj_bez_validate(b) : "lj_bez_sample failed");
+        return 0;
+    }
+}
+
+/* the fixture's pan / tilt in readout units (17 s1.3) from a scene, and back (an Off channel becomes Snap) */
+static int rp_mm_pt(rp *p, int f, int *pan, int *tilt, int *wide)
+{
+    const lj_profile *pr = lj_engine_post_ctx(p->e)->profile_of[f];
+    const lj_fixture *fx = &p->show->fixture[f];
+    if (!pr || !fx->link || !(pr->pt16 || pr->pt8)) return -1;
+    *pan = lj_addr_code(fx->link, fx->address) + pr->pan_ofs; *tilt = lj_addr_code(fx->link, fx->address) + pr->tilt_ofs; *wide = pr->pt16 != 0;
+    return (*pan + 1 < LJ_CHANS && *tilt + 1 < LJ_CHANS) ? 0 : -1;
+}
+static int32_t rp_mm_get(const lj_scene *sc, int ch, int wide) { return wide ? (sc->val[ch] << 8 | sc->val[ch + 1]) - 32768 : (sc->val[ch] << 8) - 32768; }
+static void rp_mm_set(lj_scene *sc, int ch, int wide, int32_t v)
+{
+    uint16_t d = (uint16_t)(v + 32768);                       /* ME-22: the pair written as one 16-bit value with one state */
+    sc->val[ch] = (uint8_t)(d >> 8);
+    if (sc->state[ch] == LJ_OFF) sc->state[ch] = LJ_SNAP;
+    if (wide) { sc->val[ch + 1] = (uint8_t)d; sc->state[ch + 1] = sc->state[ch]; }
+}
+
+static int rp_mm_order(rp *p, const char *s, int *order)
+{
+    uint32_t m[LJ_FIXTURES]; int k, n = lj_kv_list(s, m, LJ_FIXTURES);
+    if (n < 1) return -1;
+    for (k = 0; k < n; k++) { if (m[k] < 1 || m[k] > LJ_FIXTURES || !p->show->fixture[m[k] - 1].link) return -1; order[k] = (int)m[k] - 1; }
+    return n;
+}
+
+static int rp_mm_at(rp *p, long k, char **argv, int argc)
+{
+    static const char *const fade_words[] = { "out", "in", "off", "on", "freeze", "run", NULL };   /* enum lj_mm_ctl */
+    static const char *const style_words[] = { "linear", "circular", "segments", "random", NULL };  /* enum lj_mm_delay_style */
+    lj_sequence *s = p->show->current_seq;
+    lj_scene *sc;
+    lj_cmd c;
+    long n, v = 0;
+    int i, order[LJ_FIXTURES], cnt = 0;
+    char key[32]; const char *val;
+    memset(&c, 0, sizeof c);
+    if (!strcmp(argv[0], "macro_fade")) {                    /* at k macro_fade out|in|off|on|freeze|run [ms] */
+        if (argc < 2 || argc > 3 || (n = lj_word_index(fade_words, argv[1])) < 0 || (argc == 3 && rp_num(argv[2], 0, 600000, &v)))
+            return rp_fail(p, "macro_fade: expected `macro_fade out|in|off|on|freeze|run [ms]`");
+        c.kind = LJ_CMD_MACRO_FADE; c.a = (uint32_t)n; c.b = argc == 3 ? (uint32_t)v : 0;
+        if (rp_run_to(p, k - 1)) return -1;
+        c.at_us = (uint64_t)k * p->tick_us;
+        return lj_engine_cmd(p->e, &c) ? rp_fail(p, "lj_engine_cmd: command array full") : 0;
+    }
+    if (!strcmp(argv[0], "fx_edit")) {                       /* at k fx_edit <seq> <scene> <fixture> macro=... [mst=...]: the Movement Macro window's in-place edit, no post */
+        long sn, scn; lj_sequence *q; char *fv[16]; int r;
+        if (argc < 5 || argc > 15 || rp_num(argv[1], 1, LJ_NUMBER_MAX, &sn) || rp_num(argv[2], 0, LJ_SCENES_MAX - 1, &scn)) return rp_fail(p, "fx_edit: expected `fx_edit <seq> <scene 0-based> <fixture> macro=...`");
+        if ((q = (lj_sequence *)lj_table_get(&p->show->sequences, (uint32_t)sn)) == NULL || scn >= (long)q->n) return rp_fail(p, "fx_edit: seq %ld scene %ld is not defined", sn, scn);
+        if (rp_run_to(p, k - 1)) return -1;
+        fv[0] = (char *)"fx";
+        for (i = 3; i < argc; i++) fv[i - 2] = argv[i];
+        sc = p->scene; p->scene = &q->scenes[scn];
+        r = rp_fx(p, fv, argc - 2);
+        p->scene = sc;
+        return r;
+    }
+    if (rp_run_to(p, k - 1)) return -1;
+    if (!s || !s->scenes || !p->view.cur_scene || p->view.cur_scene > s->n) return rp_fail(p, "%s: no current sequence (`at k current <seq> <scene>` first)", argv[0]);
+    sc = &s->scenes[p->view.cur_scene - 1];                  /* the view's scene X is 1-based */
+    for (i = 1; i < argc; i++) if (!strncmp(argv[i], "order=", 6) && (cnt = rp_mm_order(p, argv[i] + 6, order)) < 0) return rp_bad(p, "order", argv[i] + 6);
+    if (!cnt) return rp_fail(p, "%s: needs order=<f,f,...>", argv[0]);
+    if (!strcmp(argv[0], "fanout") || !strcmp(argv[0], "spread")) {   /* at k fanout <dpan> <dtilt> home=0|1 order=..; at k spread pan|tilt order=.. */
+        int32_t pan[LJ_FIXTURES], tilt[LJ_FIXTURES]; int pc[LJ_FIXTURES], tc[LJ_FIXTURES], wide[LJ_FIXTURES];
+        long dp = 0, dt = 0, home = 0; int axis = 0;
+        if (!strcmp(argv[0], "fanout")) {
+            if (argc < 4 || rp_num(argv[1], 0, 127, &dp) || rp_num(argv[2], 0, 127, &dt)) return rp_fail(p, "fanout: expected `fanout <dpan 0..127> <dtilt 0..127> home=0|1 order=...`");
+            for (i = 3; i < argc; i++) { if (!strncmp(argv[i], "order=", 6)) continue; KV_NEXT(i); KV_NUM("home", 0, 1, home, long); return rp_fail(p, "fanout: unknown key %s", key); }
+        } else {
+            if (argc != 3 || (axis = !strcmp(argv[1], "tilt") ? 1 : !strcmp(argv[1], "pan") ? 0 : -1) < 0) return rp_fail(p, "spread: expected `spread pan|tilt order=...`");
+        }
+        for (i = 0; i < cnt; i++) {
+            int f = order[i];
+            if (rp_mm_pt(p, f, &pc[f], &tc[f], &wide[f])) return rp_fail(p, "%s: fixture %d has no pan / tilt", argv[0], f + 1);
+            pan[f] = rp_mm_get(sc, pc[f], wide[f]); tilt[f] = rp_mm_get(sc, tc[f], wide[f]);
+        }
+        if (argv[0][0] == 'f' ? lj_fan_out(pan, tilt, order, cnt, (int)dp, (int)dt, (int)home) : lj_fan_spread(axis ? tilt : pan, order, cnt))
+            return rp_fail(p, "%s: needs 2 or more fixtures", argv[0]);
+        for (i = 0; i < cnt; i++) { int f = order[i]; rp_mm_set(sc, pc[f], wide[f], pan[f]); rp_mm_set(sc, tc[f], wide[f], tilt[f]); }
+    } else {                                                  /* at k autodelay <style> <max> [count=] [segments=] order=.. */
+        long cn = 0, sg = 0; int st; uint8_t d[LJ_FIXTURES]; uint32_t seed = LJ_RNG_SEED;
+        if (argc < 3 || (st = lj_word_index(style_words, argv[1])) < 0 || rp_num(argv[2], 1, 256, &v)) return rp_fail(p, "autodelay: expected `autodelay linear|circular|segments|random <max 1..256> ... order=...`");
+        for (i = 3; i < argc; i++) { if (!strncmp(argv[i], "order=", 6)) continue; KV_NEXT(i); KV_NUM("count", 1, LJ_FIXTURES, cn, long); KV_NUM("segments", 1, LJ_FIXTURES, sg, long); return rp_fail(p, "autodelay: unknown key %s", key); }
+        if (lj_mm_auto_delay(cnt, st, (int)v, (int)cn, (int)sg, &seed, d)) return rp_fail(p, "autodelay: bad arguments (count= / segments= needed by the style)");
+        for (i = 0; i < cnt; i++) { sc->macro[order[i]].delay = d[i]; if (sc->macro[order[i]].fstate[LJ_MMP_DELAY] == LJ_OFF) sc->macro[order[i]].fstate[LJ_MMP_DELAY] = LJ_SNAP; }
+    }
+    c.kind = LJ_CMD_CURRENT_SEQ; c.a = p->view.cur_scene - 1u; c.seq[0] = s; c.at_us = (uint64_t)k * p->tick_us;
+    return lj_engine_cmd(p->e, &c) ? rp_fail(p, "lj_engine_cmd: command array full") : 0;
+}
+
+static int rp_expect_mm(rp *p, char **argv, int argc)        /* expect_mm <tick> <fixture> pan=<idx> tilt=<idx> */
+{
+    long k, f, v; int i; char key[32]; const char *val;
+    if (argc < 4 || rp_tick_arg(p, argv[1], &k, 1) || rp_num(argv[2], 1, LJ_FIXTURES, &f)) return rp_fail(p, "expect_mm: expected `expect_mm <tick> <fixture> pan=<idx> tilt=<idx>`");
+    for (i = 3; i < argc; i++) { KV_NEXT(i); if (rp_num(val, 0, LJ_MOVEMACRO_N_TABLE - 1, &v) || (strcmp(key, "pan") && strcmp(key, "tilt"))) return rp_bad(p, key, val); }
+    if (rp_run_to(p, k)) return -1;
+    p->r->expects++;
+    for (i = 3; i < argc; i++) {
+        long got;
+        rp_key(argv[i], key, sizeof key, &val); rp_num(val, 0, LJ_MOVEMACRO_N_TABLE - 1, &v);
+        got = key[0] == 'p' ? p->view.mm_idx_pan[f - 1] : p->view.mm_idx_tilt[f - 1];
+        if (got != v) rp_fail(p, "tick %ld fixture %ld macro index %s expected %ld got %ld", k, f, key, v, got);
+    }
+    return 0;
+}
+
+/* ---- W3 genmacro: the `gm_shapes <file>` build line and `at k genmacro_on|genmacro_restart|ack_genmacro|gm_shapes` ---- */
+static struct { lj_gm_shapes sh; int have; } rp_gm;   /* the scenario's override table (ME-34), freed when the scenario ends */
+
+static int rp_gm_shapes(rp *p, char **argv, int argc)
+{
+    char path[600], err[200];
+    const char *sl = strrchr(p->path, '/'), *bs = strrchr(p->path, '\\');
+    if (argc != 2) return rp_fail(p, "gm_shapes: expected `gm_shapes <file>`");
+    if (bs > sl) sl = bs;
+    if (snprintf(path, sizeof path, "%.*s%s", sl ? (int)(sl - p->path + 1) : 0, p->path, argv[1]) >= (int)sizeof path) return rp_fail(p, "gm_shapes: path too long");
+    lj_gm_shapes_free(&rp_gm.sh); rp_gm.have = 0;
+    if (lj_gm_shapes_load(path, NULL, &rp_gm.sh, err, sizeof err)) return rp_fail(p, "gm_shapes: %s", err);
+    rp_gm.have = 1;
+    return 0;
+}
+
+static int rp_gm_at(rp *p, long k, char **argv, int argc)
+{
+    const char *w = argv[2];
+    lj_cmd c;
+    long v;
+    memset(&c, 0, sizeof c);
+    c.at_us = (uint64_t)k * p->tick_us;
+    if (!strcmp(w, "genmacro_on")) {                           /* at k genmacro_on engine|slot 0|1 */
+        if (argc != 5 || (strcmp(argv[3], "engine") && strcmp(argv[3], "slot")) || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "genmacro_on: expected `genmacro_on engine|slot 0|1`");
+        c.kind = LJ_CMD_GENMACRO_ON; c.a = argv[3][0] == 'e' ? LJ_GM_SRC_ENGINE : LJ_GM_SRC_CUE; c.b = (uint32_t)v;
+    } else if (!strcmp(w, "genmacro_restart")) {               /* at k genmacro_restart [editor] */
+        if (argc > 4 || (argc == 4 && strcmp(argv[3], "editor"))) return rp_fail(p, "genmacro_restart: expected [editor]");
+        c.kind = LJ_CMD_GENMACRO_RESTART; c.a = argc == 4 ? LJ_GM_SRC_EDITOR : LJ_GM_SRC_CUE;
+    } else if (!strcmp(w, "ack_genmacro")) {                   /* services pending_genmacro as lj_app_service_pending does: the cue loaded it, so its restart flag applies */
+        if (argc != 3) return rp_fail(p, "ack_genmacro takes no arguments");
+        if (rp_run_to(p, k - 1)) return -1;
+        if (!p->view.pending_genmacro) return rp_fail(p, "ack_genmacro: no pending generic macro after tick %ld", k - 1);
+        c.gm = (const lj_genmacro *)lj_table_get(&p->show->macros, p->view.pending_genmacro);
+        if (!c.gm) return rp_fail(p, "ack_genmacro: macro %u is not defined", p->view.pending_genmacro);
+        c.kind = LJ_CMD_LOAD_GENMACRO; c.a = p->view.pending_genmacro; c.b = c.gm->restart_on_load; c.c = LJ_GM_SRC_CUE;
+    } else if (!strcmp(w, "gm_shapes")) {                      /* at k gm_shapes builtin|loaded */
+        if (argc != 4 || (strcmp(argv[3], "builtin") && strcmp(argv[3], "loaded"))) return rp_fail(p, "gm_shapes: expected `gm_shapes builtin|loaded`");
+        if (argv[3][0] == 'l' && !rp_gm.have) return rp_fail(p, "gm_shapes loaded: no `gm_shapes <file>` build line");
+        c.kind = LJ_CMD_GM_SHAPES; c.gm_shapes = argv[3][0] == 'l' ? &rp_gm.sh : NULL;
+    } else return rp_fail(p, "unknown command %s", w);
+    if (rp_run_to(p, k - 1)) return -1;
+    return lj_engine_cmd(p->e, &c) ? rp_fail(p, "lj_engine_cmd: command array full") : 0;
+}
+
 static int rp_at(rp *p, char **argv, int argc)
 {
     long k, v = 0, n = 0; lj_cmd c; const char *w; int i; uint32_t id = 0;
@@ -755,8 +1227,12 @@ static int rp_at(rp *p, char **argv, int argc)
         p->edit_tick = k;
         return w[0] == 'g' ? rp_gpatch(p, argv + 2, argc - 2) : w[0] == 'd' ? rp_default(p, argv + 2, argc - 2) : rp_scene_edit(p, argv + 2, argc - 2);
     }
+    if (!strcmp(w, "gdc") || !strcmp(w, "followspot") || !strcmp(w, "seqfades")) return rp_gfs_at(p, k, argv + 2, argc - 2);   /* W3 gdc-fades-followspot */
+    if (!strncmp(w, "cl_", 3)) return rp_cl_at(p, k, argv, argc);   /* W3 cuelist-core */
+    if (!strcmp(w, "macro_fade") || !strcmp(w, "fx_edit") || !strcmp(w, "fanout") || !strcmp(w, "spread") || !strcmp(w, "autodelay")) return rp_mm_at(p, k, argv + 2, argc - 2);   /* W3 movement */
+    if (!strcmp(w, "genmacro_on") || !strcmp(w, "genmacro_restart") || !strcmp(w, "ack_genmacro") || !strcmp(w, "gm_shapes")) return rp_gm_at(p, k, argv, argc);   /* W3 genmacro */
     if (!strcmp(w, "load_cue")) {
-        const lj_cue *cue; int nobg = 0;
+        const lj_cue *cue; int nobg = 0, nogm = 0;
         if (argc < 4 || rp_num(argv[3], 1, LJ_NUMBER_MAX, &n)) return rp_fail(p, "load_cue: expected a cue number");
         cue = (const lj_cue *)lj_table_get(&p->show->cues, (uint32_t)n);
         if (!cue) return rp_fail(p, "cue %ld is not defined", n);
@@ -764,12 +1240,13 @@ static int rp_at(rp *p, char **argv, int argc)
         for (i = 4; i < argc; i++) {                           /* [edit] [nobg]: nobg = the UI had no bg record to pin, so the engine requests it (pending_bg, ack_bg) */
             if (!strcmp(argv[i], "edit")) c.b = 1;
             else if (!strcmp(argv[i], "nobg")) nobg = 1;
-            else return rp_fail(p, "load_cue: expected [edit] [nobg], got %s", argv[i]);
+            else if (!strcmp(argv[i], "nogm")) nogm = 1;         /* W3 genmacro: the UI had no macro record to pin (pending_genmacro, ack_genmacro) */
+            else return rp_fail(p, "load_cue: expected [edit] [nobg] [nogm], got %s", argv[i]);
         }
         for (i = 0; i < LJ_CUE_SLOTS; i++) c.seq[i] = cue->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, cue->slot[i].seq) : NULL;
         c.bg = cue->bg_cue && !nobg ? (const lj_bgcue *)lj_table_get(&p->show->bgcues, cue->bg_cue) : NULL;
         if (c.bg) for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
-        c.gm = cue->gen_macro ? (const lj_genmacro *)lj_table_get(&p->show->macros, cue->gen_macro) : NULL;
+        c.gm = cue->gen_macro && !nogm ? (const lj_genmacro *)lj_table_get(&p->show->macros, cue->gen_macro) : NULL;
         p->cue = (lj_cue *)cue;                                 /* the loaded cue: what a later `loop` line edits */
     } else if (!strcmp(w, "load_bg")) {
         if (argc != 4 || rp_num(argv[3], 0, LJ_BG_FILES, &n)) return rp_fail(p, "load_bg: expected a bg cue number or 0");
@@ -780,9 +1257,13 @@ static int rp_at(rp *p, char **argv, int argc)
             for (i = 0; i < LJ_BG_SLOTS; i++) c.bgseq[i] = c.bg->slot[i].seq ? (const lj_sequence *)lj_table_get(&p->show->sequences, c.bg->slot[i].seq) : NULL;
         }
     } else if (!strcmp(w, "load_genmacro")) {
-        if (argc < 4 || argc > 5 || rp_num(argv[3], 0, LJ_MACROS_MAX, &n)) return rp_fail(p, "load_genmacro: expected a macro number or 0 [restart]");
+        if (argc < 4 || argc > 6 || rp_num(argv[3], 0, LJ_MACROS_MAX, &n)) return rp_fail(p, "load_genmacro: expected a macro number or 0 [restart] [editor]");
         c.kind = LJ_CMD_LOAD_GENMACRO; c.a = (uint32_t)n;
-        if (argc == 5) { if (strcmp(argv[4], "restart")) return rp_fail(p, "load_genmacro: expected [restart]"); c.b = 1; }
+        for (i = 4; i < argc; i++) {                           /* W3: [editor] = c LJ_GM_SRC_EDITOR (the Generic Macro Editor's working record) */
+            if (!strcmp(argv[i], "restart")) c.b = 1;
+            else if (!strcmp(argv[i], "editor")) c.c = LJ_GM_SRC_EDITOR;
+            else return rp_fail(p, "load_genmacro: expected [restart] [editor]");
+        }
         if (n && !(c.gm = (const lj_genmacro *)lj_table_get(&p->show->macros, (uint32_t)n))) return rp_fail(p, "macro %ld is not defined", n);
     } else if (!strcmp(w, "current")) {
         if (argc < 4 || rp_num(argv[3], 0, LJ_NUMBER_MAX, &n)) return rp_fail(p, "current: expected `current <seq> <scene> [blind]` or `current 0`");
@@ -1105,6 +1586,14 @@ static int rp_expect_view(rp *p, char **argv, int argc)
         else if (!strcmp(key, "cue")) got = (long)p->view.cue_number;
         else if (!strcmp(key, "bg")) got = (long)p->view.bg_number;
         else if (!strcmp(key, "snapshot_tick")) got = (long)p->view.snapshot_tick;
+        else if (!strcmp(key, "gm_engine")) got = p->view.gm_engine_on;          /* W3 genmacro */
+        else if (!strcmp(key, "gm_slot")) got = p->view.gm_slot_on;
+        else if (!strcmp(key, "gm_cue")) got = (long)p->view.gm_cue_number;
+        else if (!strcmp(key, "gm_editor")) got = (long)p->view.gm_editor_number;
+        else if (!strcmp(key, "mm_amp")) got = p->view.mm_amp_pct;   /* W3 movement: the cue macro control in force */
+        else if (!strcmp(key, "mm_speed")) got = p->view.mm_speed_pct;
+        else if (!strcmp(key, "mm_fade")) got = p->view.mm_fade;
+        else if (!strcmp(key, "mm_frozen")) got = p->view.mm_frozen;
         else return rp_fail(p, "expect_view: unknown field %s", key);
         if (got != v) rp_fail(p, "tick %ld view %s expected %ld got %ld", k, key, v, got);
     }
@@ -1146,7 +1635,9 @@ static int rp_line(rp *p, char **argv, int argc)
         if (!strcmp(w, "expect_range")) return rp_expect_range(p, argv, argc);
         if (!strcmp(w, "expect_status")) return rp_expect_status(p, argv, argc);
         if (!strcmp(w, "expect_pending")) return rp_expect_pending(p, argv, argc);
+        if (!strcmp(w, "expect_mm")) return rp_expect_mm(p, argv, argc);   /* W3 movement */
         if (!strcmp(w, "expect_view")) return rp_expect_view(p, argv, argc);
+        if (!strcmp(w, "expect_cl")) return rp_expect_cl(p, argv, argc);   /* W3 cuelist-core */
         if (!strcmp(w, "run")) { long k; if (argc != 2 || rp_tick_arg(p, argv[1], &k, 1)) return argc != 2 ? rp_fail(p, "run: expected `run <tick>`") : -1; return rp_run_to(p, k); }
         if (!strcmp(w, "perf")) return rp_perf(p, argv, argc);
         return rp_fail(p, "unknown line %s", w);
@@ -1161,6 +1652,10 @@ static int rp_line(rp *p, char **argv, int argc)
         if (e == argv[1] || *e || argv[1][0] == '-') return rp_bad(p, "seed", argv[1]);
         return sd == LJ_RNG_SEED ? 0 : rp_fail(p, "seed 0x%08lX: the engine's LJ_RNG_SEED is 0x%08lX", sd, (unsigned long)LJ_RNG_SEED);
     }
+    if (!strcmp(w, "follow") || !strcmp(w, "gdcgroup")) return rp_gfs_build(p, argv, argc);   /* W3 gdc-fades-followspot */
+    if (!strcmp(w, "cl")) return rp_cl(p, argv, argc);           /* W3 cuelist-core */
+    if (!strcmp(w, "clline")) return rp_clline(p, argv, argc);
+    if (!strcmp(w, "bez") || !strcmp(w, "node")) return rp_mm_build(p, argv, argc);   /* W3 movement */
     if (!strcmp(w, "patch")) return rp_patch(p, argv, argc);
     if (!strcmp(w, "profile")) return rp_profile(p, argv, argc);
     if (!strcmp(w, "default")) return rp_default(p, argv, argc);
@@ -1178,6 +1673,7 @@ static int rp_line(rp *p, char **argv, int argc)
     if (!strcmp(w, "static")) return rp_static(p, argv, argc);
     if (!strcmp(w, "macro")) return rp_macro(p, argv, argc);
     if (!strcmp(w, "mch")) return rp_mch(p, argv, argc);
+    if (!strcmp(w, "gm_shapes")) return rp_gm_shapes(p, argv, argc);   /* W3 genmacro (ME-34) */
     if (!strcmp(w, "htp")) return rp_htp(p, argv, argc);
     return rp_fail(p, "unknown line %s", w);
 }
@@ -1207,6 +1703,9 @@ int lj_replay_run(const char *path, FILE *frames_out, lj_replay_result *out)
     f = fopen(p->path, "rb");
     if (!f) { rp_fail(p, "cannot open"); free(p); return -1; }
     p->show = lj_show_new();
+    memset(&rp_mm, 0, sizeof rp_mm);   /* W3 movement: the Bezier scratch, per scenario (show->bez points into it) */
+    memset(&rp_clx, 0, sizeof rp_clx); lj_cl_run_init(&rp_clx.run);   /* W3 cuelist-core */
+    memset(&rp_gfs, 0, sizeof rp_gfs);   /* W3 gdc-fades-followspot: the harness's one lj_gdc_state and follow-spot scratch, per scenario */
     for (;;) {
         size_t n;
         int argc;
@@ -1229,6 +1728,7 @@ int lj_replay_run(const char *path, FILE *frames_out, lj_replay_result *out)
     printf("replay %s: %d ticks, %d expects, %d fails\n", p->name, out->ticks, out->expects, out->fails);
     lj_engine_destroy(p->e);
     lj_show_free(p->show);
+    lj_gm_shapes_free(&rp_gm.sh); rp_gm.have = 0;              /* W3 genmacro: the scenario's override table */
     for (i = 0; i < LJ_FIXTURES; i++) free(p->prof[i]);
     free(p);
     return (rc || out->fails) ? -1 : 0;
