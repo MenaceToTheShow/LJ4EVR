@@ -40,7 +40,8 @@ struct lj_window {
     lj_wbind *binds; int nbinds;
     lj_rect dirty[LJ_DIRTY_CAP]; int ndirty; unsigned dirty_all:1, frame_dirty:1, painted:1;
     lj_widget *capture, *down_w, *hover; int down_button, hover_ticks, mx, my; int frame_btn;
-    lj_surface hint_surf; void *hint_handle; unsigned alt_pending:1, eat_char:1;
+    lj_surface hint_surf; void *hint_handle; unsigned alt_pending:1, eat_char:1, dead:1;
+    int depth;                                  /* lj_window_event / popup event nesting: a destroy inside a handler waits for the event to return */
     lj_mouse_ev last_ev;                   /* lj_window_last_event */
 };
 
@@ -289,9 +290,8 @@ lj_window *lj_window_create(const lj_form_desc *desc, const lj_binding *bindings
     return win;
 }
 
-void lj_window_destroy(lj_window *win)
+static void destroy_now(lj_window *win)
 {
-    if (!win) return;
     bound_dispatch(&win->root, LJ_WEV_DESTROY, win->root.ud);
     if (win->hint_handle && win->host && win->host->popup_hide) win->host->popup_hide(win->host->ud, win->hint_handle);
     lj_surface_free(&win->hint_surf);
@@ -300,6 +300,15 @@ void lj_window_destroy(lj_window *win)
     free(win->binds);
     lj_surface_free(&win->surf);
     free(win);
+}
+
+/* A handler may destroy its own window (Ok / Cancel buttons, menu items); the event code still walks the window after
+ * the handler returns, so the free waits for the outermost event to finish (ASan heap-use-after-free, W3 integration). */
+void lj_window_destroy(lj_window *win)
+{
+    if (!win) return;
+    if (win->depth) { win->dead = 1; return; }
+    destroy_now(win);
 }
 
 /* ---- accessors ---- */
@@ -600,9 +609,8 @@ static lj_widget *timer_widget(lj_widget *w, int id)
     return NULL;
 }
 
-void lj_window_event(lj_window *win, const lj_ui_event *ev)
+static void event_body(lj_window *win, const lj_ui_event *ev)
 {
-    if (!win || !ev) return;
     switch (ev->type) {
     case LJ_EV_MOUSE_DOWN: case LJ_EV_MOUSE_UP: case LJ_EV_MOUSE_MOVE: case LJ_EV_MOUSE_WHEEL: case LJ_EV_MOUSE_LEAVE:
         mouse(win, &ev->u.mouse);
@@ -641,11 +649,21 @@ void lj_window_event(lj_window *win, const lj_ui_event *ev)
     }
 }
 
+void lj_window_event(lj_window *win, const lj_ui_event *ev)
+{
+    if (!win || !ev || win->dead) return;
+    win->depth++;
+    event_body(win, ev);
+    if (--win->depth == 0 && win->dead) destroy_now(win);
+}
+
 void lj_window_popup_event(lj_window *owner, void *handle, const lj_ui_event *ev)
 {
-    if (!owner || !ev || !handle) return;
+    if (!owner || !ev || !handle || owner->dead) return;
     if (handle == owner->hint_handle) { if (ev->type == LJ_EV_MOUSE_DOWN) hint_hide(owner); return; }
+    owner->depth++;
     if (ev->type >= LJ_EV_MOUSE_DOWN && ev->type <= LJ_EV_MOUSE_LEAVE) lj_menu_popup_mouse(&owner->menu, handle, &ev->u.mouse);
+    if (--owner->depth == 0 && owner->dead) destroy_now(owner);
 }
 
 /* ---- painting ---- */

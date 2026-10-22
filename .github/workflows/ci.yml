@@ -81,6 +81,8 @@ jobs:
       - run: ctest --preset ci-linux-clang
       - name: Fuzz the .GS2 / .Udf readers, 60 s each (LORD_C-17; fixlib and core instrumented, docs/ci.md)
         run: |
+          # ponytail: the image has clang 19 without compiler-rt; installed per run until docker.yml bakes it in
+          apt-get update -qq && apt-get install -y -qq --no-install-recommends libclang-rt-19-dev > /dev/null
           cmake -S . -B build-fuzz -G Ninja -DLJ_SDL=OFF -DLJ_FUZZ=ON -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined"
           cmake --build build-fuzz --target fuzz_gs2 fuzz_udf
           build-fuzz/fuzz_gs2 -max_total_time=60

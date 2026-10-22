@@ -123,7 +123,12 @@ static int lj_sfunc_first(const lj_gs2_sfunc *s)
 
 static void lj_window_add(lj_ctl_window *w, int *nw, enum lj_ctl_kind kind, const char *caption, const char *const *menu, lj_rowbuf *rows, lj_rowbuf *specials)
 {
-    if (!rows->n) { free(rows->rows); free(specials ? specials->rows : NULL); return; }
+    int i;
+    if (!rows->n) {                                   /* no window: its special groups' buttons go too (LSan, W3 integration) */
+        for (i = 0; specials && i < specials->n; i++) free((void *)specials->rows[i].buttons);
+        free(rows->rows); free(specials ? specials->rows : NULL);
+        return;
+    }
     w[*nw].kind = kind; w[*nw].caption = caption; w[*nw].menu = menu;
     w[*nw].rows = rows->rows; w[*nw].nrows = rows->n;
     w[*nw].specials = specials ? specials->rows : NULL; w[*nw].nspecials = specials ? specials->n : 0;
