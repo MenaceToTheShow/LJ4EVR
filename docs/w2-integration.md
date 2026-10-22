@@ -354,3 +354,14 @@ PC a `SetWindowPos` onto the primary display (y < 1440) lands 1440 px lower, raw
 Rows appended: Smoke readouts (closed), Smoke progress bar / art (W4), Cue Time ticks (PROPOSAL), BG empty slots (closed),
 Restore window, MIDI-IN, first open of a `poDesigned` form, the seq-0 duplicate (receiver side). New section "Fidelity
 contract rows touched by W2": F8, F20, F25, F30, F48, F51, F52, I2, each with its screenshot pair or `deferred: needs rig`.
+
+### CI
+
+    acaee38 (W2: acceptance walkthrough)  run 39815257660: macos-clang red, `lj_sdl.c:296` clang
+                                         -Wlogical-not-parentheses in the new window_at pass test (MSVC and gcc are silent on it)
+    2804ca4 (the fix)                     run 39816435207: green, all six jobs
+                                         https://github.com/UnbannableGT/LJ4EVR/actions/runs/39816435207
+                                         macos-clang: selftest MIDI-IN: 0 input device(s) listed, injected 90 3C 7F polled back: OK
+                                         windows-msvc (Release and Debug): the same line, 0 devices on the hosted runner
+                                         replay-frames.bin linux / macos / windows 776cf859abfbb8f418003a944ca7261f1fca89f8eb337a817a5af7ed2c4a5474
+                                         (unchanged by this pass: no engine output changed)
