@@ -128,6 +128,43 @@ static void rem_tcp(void)
     lj_remote_get_stats(&st); RCHECK(!st.tcp_open && st.conns == 0);
 }
 
+/* LORD_C-10: on the injected clock, a connection silent for LJ_REMOTE_IDLE_US is closed and its slot freed (a new client
+ * takes it); one that sent a frame since stays until its own 60 s are up */
+static void rem_idle(void)
+{
+    static const uint8_t cue130[] = { 129, 1, 2 };
+    const uint64_t t = 5000000u;
+    lj_remote_cfg c;
+    lj_remote_stats st;
+    lj_socket a, b, d;
+    uint64_t t0;
+    uint32_t r0;
+    int fired = 0;
+    lj_remote_cfg_default(&c);
+    c.tcp_on = 1; c.tcp_port = 0;
+    RCHECK(lj_remote_open(&c) == 0);
+    lj_remote_get_stats(&st); r0 = st.refused;                         /* the stats outlive a close: rem_tcp refused one */
+    if (!st.tcp_open) return;
+    a = lj_socket_connect(LJ_IP_LOOPBACK, st.tcp_port); b = lj_socket_connect(LJ_IP_LOOPBACK, st.tcp_port);
+    for (t0 = lj_clock_us(); lj_clock_us() - t0 < 2000000u; ) { lj_remote_poll(t); lj_remote_get_stats(&st); if (st.conns == 2) break; }
+    RCHECK(st.conns == 2);                                             /* both accepted at t */
+    lj_socket_send(a, cue130, sizeof cue130);
+    for (t0 = lj_clock_us(); lj_clock_us() - t0 < 2000000u && !fired; ) fired = lj_remote_poll(t + LJ_REMOTE_IDLE_US / 2);
+    RCHECK(fired == 1);                                                /* a spoke at t + 30 s */
+    lj_remote_poll(t + LJ_REMOTE_IDLE_US - 1);
+    lj_remote_get_stats(&st); RCHECK(st.conns == 2);                   /* 1 us short of 60 s: both still open */
+    lj_remote_poll(t + LJ_REMOTE_IDLE_US);
+    lj_remote_get_stats(&st); RCHECK(st.conns == 1);                   /* b silent 60 s: closed; a stays */
+    d = lj_socket_connect(LJ_IP_LOOPBACK, st.tcp_port);
+    for (t0 = lj_clock_us(); lj_clock_us() - t0 < 2000000u; ) { lj_remote_poll(t + LJ_REMOTE_IDLE_US); lj_remote_get_stats(&st); if (st.conns == 2) break; }
+    RCHECK(st.conns == 2 && st.refused == r0);                          /* the freed slot takes a new client */
+    lj_remote_poll(t + LJ_REMOTE_IDLE_US / 2 + LJ_REMOTE_IDLE_US);
+    lj_remote_get_stats(&st); RCHECK(st.conns == 1);                   /* a's own 60 s since its frame: closed; d (accepted at t + 60 s) stays */
+    printf("  idle: a connection silent %u s closed, its slot reused, a live one kept\n", (unsigned)(LJ_REMOTE_IDLE_US / 1000000u));
+    lj_socket_close(a); lj_socket_close(b); lj_socket_close(d);
+    lj_remote_close();
+}
+
 static void rem_cfg(void)
 {
     lj_ini *ini = lj_ini_new();
@@ -233,6 +270,7 @@ int lj_test_remote(int argc, char **argv)
 
     rem_cfg();
     rem_tcp();
+    rem_idle();                         /* W6 net: LORD_C-10 */
     lj_remote_set_query(NULL); lj_remote_set_setter(NULL);
     lj_fn_unbind_all();
     printf("test_remote: %s\n", rem_fails ? "FAIL" : "PASS");

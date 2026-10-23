@@ -1,7 +1,7 @@
 /* lj_hardware_setup.c - see lj_hardware_setup.h. The sACN controls are code-built
  * (design 7.7) inside the DMX Hardware page's Panel3 under pConfiguredHardware; the
  * geometry is ours (PROPOSAL rig M-hw: LJ2's page held Martin's card panels). */
-#define _CRT_SECURE_NO_WARNINGS 1   /* sscanf/strcat under /W4 /WX on MSVC (as core/lj_ini.c) */
+#define _CRT_SECURE_NO_WARNINGS 1   /* strcat under /W4 /WX on MSVC (as core/lj_ini.c) */
 #include "windows/lj_hardware_setup.h"
 
 #include <stdio.h>
@@ -38,14 +38,6 @@ lj_window *lj_hardware_setup_window(void) { return hs.win; }
 static lj_sacn_cfg *cfg(void) { lj_ctx *c = lj_ctx_get(); return c->sacn ? c->sacn : &hs.local; }
 static lj_widget *find(const char *n) { return lj_window_find(hs.win, n); }
 
-static void ip_text(uint32_t ip, char *out, size_t cap) { snprintf(out, cap, "%u.%u.%u.%u", (ip >> 24) & 255, (ip >> 16) & 255, (ip >> 8) & 255, ip & 255); }
-static int ip_parse(const char *s, uint32_t *out)
-{
-    unsigned a, b, c, d; char tail;
-    if (sscanf(s, "%u.%u.%u.%u%c", &a, &b, &c, &d, &tail) != 4 || a > 255 || b > 255 || c > 255 || d > 255) return -1;
-    *out = (a << 24) | (b << 16) | (c << 8) | d;
-    return 0;
-}
 
 /* W5 artnet: per link, beside its universe, the protocol combo and the Art-Net Port-Address (W5-ART-4). Captions
  * "sACN" / "Art-Net" / "Port-Address" and the geometry: PROPOSAL rig M-hw (LJ2 had no network output, note 05 item 23). */
@@ -53,6 +45,20 @@ static const char *const lj_hs_protos[] = { "sACN", "Art-Net" };
 static lj_widget *label(lj_widget *parent, lj_ctl_desc *d, const char *name, int x, int y, int w, const char *caption);
 static lj_widget *proto_w(int i) { char nm[16]; { if (snprintf(nm, sizeof nm, "cbProto%d", i + 1) < 0) nm[0] = 0; } return lj_window_find(hs.win, nm); }
 static lj_widget *aaddr_w(int i) { char nm[16]; { if (snprintf(nm, sizeof nm, "seArtAddr%d", i + 1) < 0) nm[0] = 0; } return lj_window_find(hs.win, nm); }
+/* LORD_FIDELITY-11: per link, the Port-Address is live for Art-Net only and the universe for sACN only. Plain `enabled`:
+ * the field is not a sacrifice, so it keeps its own hint (no LJ_NA_HINT). */
+static void artnet_grey(void)
+{
+    int i, art;
+    for (i = 0; i < LJ_LINKS; i++) {
+        lj_widget *p = proto_w(i), *a = aaddr_w(i), *u = hs.uni[i];
+        if (!p) continue;
+        art = ((lj_w_combobox *)p)->index == 1;
+        if (a) { a->enabled = art != 0; lj_widget_invalidate(a); }
+        if (u) { u->enabled = art == 0; lj_widget_invalidate(u); }
+    }
+}
+static void on_proto(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CHANGE) artnet_grey(); }
 static void artnet_rows(lj_widget *panel)
 {
     static lj_ctl_desc d[LJ_LINKS * 3];
@@ -61,7 +67,7 @@ static void artnet_rows(lj_widget *panel)
     for (i = 0; i < LJ_LINKS; i++) {
         y = 110 + LJ_HS_ROW * (i + 1);                                  /* the "Link n -> Universe" row */
         memset(&d[n], 0, sizeof d[n]); d[n].kind = LJ_K_COMBOBOX; d[n].name = cb[i]; d[n].left = LJ_HS_X + 90; d[n].top = y; d[n].width = 80; d[n].height = 21; d[n].style = "csDropDownList"; d[n].item_index = 0; d[n].drop_down_count = 2; d[n].item_height = 13; d[n].font_inherited = 1;
-        lj_w_combobox_set_items(lj_w_combobox_create(panel, &d[n++]), lj_hs_protos, 2);
+        { lj_widget *cbw = lj_w_combobox_create(panel, &d[n++]); lj_w_combobox_set_items(cbw, lj_hs_protos, 2); cbw->on_event = on_proto; }
         label(panel, &d[n++], "lArtAddr", LJ_HS_X + 180, y + 4, 76, "Port-Address");
         memset(&d[n], 0, sizeof d[n]); d[n].kind = LJ_K_SPINEDIT; d[n].name = se[i]; d[n].left = LJ_HS_X + 258; d[n].top = y; d[n].width = 80; d[n].height = 22; d[n].min_value = 0; d[n].max_value = LJ_ARTNET_ADDR_MAX; d[n].max_length = 5; d[n].font_inherited = 1;   /* 0 reaches the validation path (refused, deprecated by the spec) */
         d[n].hint = "Art-Net Port-Address 1..32767 (Net, Sub-Net, Universe)";
@@ -75,6 +81,7 @@ static void artnet_fill(const lj_sacn_cfg *c)
         if (proto_w(i)) ((lj_w_combobox *)proto_w(i))->index = c->proto[i] == LJ_OUT_ARTNET ? 1 : 0;
         if (aaddr_w(i)) lj_w_spinedit_set_value(aaddr_w(i), c->artnet_addr[i]);
     }
+    artnet_grey();
 }
 static void artnet_read(lj_sacn_cfg *n)
 {
@@ -157,7 +164,7 @@ static void page_fill(void)
     hs.nnics = lj_net_list_ipv4(hs.nics, LJ_HS_NICS);
     if (hs.nnics < 0) hs.nnics = 0;
     for (i = 0; i < hs.nnics; i++) {
-        char ip[32]; ip_text(hs.nics[i].ipv4, ip, sizeof ip);
+        char ip[32]; lj_net_ip_fmt(ip, sizeof ip, hs.nics[i].ipv4);
         if (snprintf(hs.nic_text[i], sizeof hs.nic_text[i], "%s (%s)%s", hs.nics[i].name, ip, hs.nics[i].up ? "" : " - down") < 0) hs.nic_text[i][0] = 0;   /* gcc -Wformat-truncation: the result is checked */
         hs.nic_items[i] = hs.nic_text[i];
         if (hs.nics[i].ipv4 == c->nic_ipv4) sel = i;
@@ -167,14 +174,14 @@ static void page_fill(void)
     for (i = 0; i < LJ_LINKS; i++) {
         lj_w_spinedit_set_value(hs.uni[i], c->universe_of_link[i]);
         buf[0] = 0;
-        for (j = 0; j < c->nunicast[i] && j < LJ_SACN_UNICAST_MAX; j++) { char ip[32]; ip_text(c->unicast[i][j], ip, sizeof ip); if (j) strcat(buf, ", "); strcat(buf, ip); }
+        for (j = 0; j < c->nunicast[i] && j < LJ_SACN_UNICAST_MAX; j++) { char ip[32]; lj_net_ip_fmt(ip, sizeof ip, c->unicast[i][j]); if (j) strcat(buf, ", "); strcat(buf, ip); }
         lj_w_edit_set_text(hs.ucast[i], buf);
     }
     lj_w_spinedit_set_value(hs.prio, c->priority);
     lj_w_edit_set_text(hs.name, c->name);
     lj_w_checkbox_set_checked(hs.preview, c->preview);
     lj_w_checkbox_set_checked(hs.unlock, c->unlock_rate);
-    ip_text(c->nic_ipv4, hs.addr_text, sizeof hs.addr_text);
+    lj_net_ip_fmt(hs.addr_text, sizeof hs.addr_text, c->nic_ipv4);
     lj_w_set_caption(find("lType"), "sACN (E1.31)");                 /* where Martin's cards were [08 s7] */
     lj_w_set_caption(find("lAddress"), hs.addr_text);
     lj_w_set_caption(find("lChannels"), "2048");
@@ -189,7 +196,7 @@ void lj_hardware_setup_refresh(void)
     char ip[32], part[48];
     int i;
     if (!hs.win) return;
-    ip_text(c->nic_ipv4, ip, sizeof ip);
+    lj_net_ip_fmt(ip, sizeof ip, c->nic_ipv4);
     snprintf(hs.status, sizeof hs.status, "NIC %s", ip);
     for (i = 0; i < LJ_LINKS; i++) {
         if (!c->universe_of_link[i] || c->proto[i] == LJ_OUT_ARTNET) continue;   /* W5 artnet: an Art-Net link has no sACN universe */
@@ -226,7 +233,7 @@ const char *lj_hardware_setup_apply(void)
             for (end = tok; *end && *end != ',' && *end != ' '; end++) { }
             if (*end) *end++ = 0;
             if (n.nunicast[i] >= LJ_SACN_UNICAST_MAX) { snprintf(err, sizeof err, "Link %d: more than %d unicast addresses", i + 1, LJ_SACN_UNICAST_MAX); msg = err; }
-            else if (ip_parse(tok, &n.unicast[i][n.nunicast[i]]) != 0) { snprintf(err, sizeof err, "Link %d: unicast address %.20s is not a.b.c.d", i + 1, tok); msg = err; }
+            else if (lj_net_ip_parse(tok, &n.unicast[i][n.nunicast[i]]) != 0) { snprintf(err, sizeof err, "Link %d: unicast address %.20s is not a.b.c.d", i + 1, tok); msg = err; }
             else n.nunicast[i]++;
         }
         if (msg) break;

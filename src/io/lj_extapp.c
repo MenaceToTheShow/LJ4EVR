@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "io/lj_extapp.h"
+#include "io/lj_net.h"
 #include "io/lj_serial.h"
 #include "io/lj_socket.h"
 #include "core/lj_log.h"
@@ -60,24 +61,6 @@ int lj_extapp_encode(const char *cmd, uint8_t out[LJ_EXTAPP_MAX_BYTES], size_t *
 
 /* ---- settings: Hardware.Ini [EXTAPP] (ours, additive; docs/file-formats.md) ---- */
 
-int lj_extapp_ip_parse(const char *s, uint32_t *ip)
-{
-    uint32_t v = 0;
-    int part, dots = 0;
-    if (!s || !*s) return -1;
-    for (;;) {
-        int digits = 0;
-        for (part = 0; *s >= '0' && *s <= '9' && digits < 3; s++, digits++) part = part * 10 + (*s - '0');
-        if (!digits || part > 255) return -1;
-        v = v << 8 | (uint32_t)part;
-        if (*s == 0) break;
-        if (*s != '.' || ++dots > 3) return -1;
-        s++;
-    }
-    if (dots != 3) return -1;
-    if (ip) *ip = v;
-    return 0;
-}
 
 static int baud_ok(long b) { return b >= 110 && b <= 921600; }
 
@@ -116,7 +99,7 @@ void lj_extapp_cfg_load(lj_ini *ini, lj_extapp_cfg *c)
         l->transport = (uint8_t)(t >= 0 && t <= LJ_EXTAPP_TCP ? t : LJ_EXTAPP_OFF);
         { if (snprintf(k, sizeof k, "SerialPort%d", i + 1) < 0) k[0] = 0; } lj_str_copy(l->serial_port, sizeof l->serial_port, lj_ini_gets(ini, "EXTAPP", k, ""));
         { if (snprintf(k, sizeof k, "Baud%d", i + 1) < 0) k[0] = 0; }       l->baud = (uint32_t)lj_ini_geti(ini, "EXTAPP", k, LJ_EXTAPP_BAUD_DEFAULT);
-        { if (snprintf(k, sizeof k, "Host%d", i + 1) < 0) k[0] = 0; }       if (lj_extapp_ip_parse(lj_ini_gets(ini, "EXTAPP", k, ""), &l->ip) != 0) l->ip = 0;
+        { if (snprintf(k, sizeof k, "Host%d", i + 1) < 0) k[0] = 0; }       if (lj_net_ip_parse(lj_ini_gets(ini, "EXTAPP", k, ""), &l->ip) != 0) l->ip = 0;
         { if (snprintf(k, sizeof k, "Port%d", i + 1) < 0) k[0] = 0; }       port = lj_ini_geti(ini, "EXTAPP", k, 0); l->port = (uint16_t)(port >= 1 && port <= 65535 ? port : 0);
         { if (snprintf(k, sizeof k, "Definition%d", i + 1) < 0) k[0] = 0; } if (lj_str_copy(l->def_file, sizeof l->def_file, lj_ini_gets(ini, "EXTAPP", k, "")) != 0) l->def_file[0] = 0;
         link_check(l);
@@ -130,7 +113,7 @@ void lj_extapp_cfg_save(lj_ini *ini, const lj_extapp_cfg *c)
     if (!ini || !c) return;
     for (i = 0; i < LJ_SCENE_EXT; i++) {
         const lj_extapp_link *l = &c->link[i];
-        if (snprintf(ip, sizeof ip, "%u.%u.%u.%u", (unsigned)(l->ip >> 24), (unsigned)(l->ip >> 16 & 255u), (unsigned)(l->ip >> 8 & 255u), (unsigned)(l->ip & 255u)) < 0) ip[0] = 0;
+        lj_net_ip_fmt(ip, sizeof ip, l->ip);
         { if (snprintf(k, sizeof k, "Fixture%d", i + 1) < 0) k[0] = 0; }    lj_ini_seti(ini, "EXTAPP", k, l->fixture);
         { if (snprintf(k, sizeof k, "Transport%d", i + 1) < 0) k[0] = 0; }  lj_ini_seti(ini, "EXTAPP", k, l->transport);
         { if (snprintf(k, sizeof k, "SerialPort%d", i + 1) < 0) k[0] = 0; } lj_ini_sets(ini, "EXTAPP", k, l->serial_port);
@@ -176,7 +159,7 @@ int lj_extapp_def_link(lj_ini *def, lj_extapp_link *out, char *err, size_t cap)
         else if (!baud_ok(v = lj_ini_geti(def, "LJ4EVR", "BAUD", LJ_EXTAPP_BAUD_DEFAULT))) bad = "BAUD outside 110..921600";
         else { out->baud = (uint32_t)v; out->transport = LJ_EXTAPP_SERIAL; }
     } else if (!strcmp(t, "TCP")) {
-        if (lj_extapp_ip_parse(lj_ini_gets(def, "LJ4EVR", "HOST", ""), &out->ip) != 0) bad = "HOST is not a dotted IPv4 address";
+        if (lj_net_ip_parse(lj_ini_gets(def, "LJ4EVR", "HOST", ""), &out->ip) != 0) bad = "HOST is not a dotted IPv4 address";
         else if ((v = lj_ini_geti(def, "LJ4EVR", "PORT", 0)) < 1 || v > 65535) bad = "PORT outside 1..65535";
         else { out->port = (uint16_t)v; out->transport = LJ_EXTAPP_TCP; }
     } else bad = "no [LJ4EVR] TRANSPORT=SERIAL or TCP: nothing is sent";

@@ -15,10 +15,35 @@
 #include <net/if.h>
 #include <unistd.h>
 #endif
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "io/lj_net.h"
 #include "core/lj_str.h"
+
+int lj_net_ip_parse(const char *s, uint32_t *ip)
+{
+    uint32_t v = 0;
+    int part, digits, dots = 0;
+    if (!s) return -1;
+    for (;;) {
+        for (part = digits = 0; *s >= '0' && *s <= '9' && digits < 3; s++, digits++) part = part * 10 + (*s - '0');
+        if (!digits || part > 255) return -1;
+        v = v << 8 | (uint32_t)part;
+        if (!*s) break;
+        if (*s != '.' || ++dots > 3) return -1;
+        s++;
+    }
+    if (dots != 3) return -1;
+    if (ip) *ip = v;
+    return 0;
+}
+
+void lj_net_ip_fmt(char *dst, size_t cap, uint32_t ip)
+{
+    if (!dst || !cap) return;
+    if (snprintf(dst, cap, "%u.%u.%u.%u", (unsigned)(ip >> 24), (unsigned)(ip >> 16 & 255u), (unsigned)(ip >> 8 & 255u), (unsigned)(ip & 255u)) < 0) dst[0] = 0;
+}
 
 #ifdef _WIN32
 static int lj_wsa_up;

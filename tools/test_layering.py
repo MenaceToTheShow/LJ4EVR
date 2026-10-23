@@ -22,6 +22,9 @@ Checks, over src/:
      help topics exempt), a runtime "->hint = LJ_NA_HINT / NULL" write outside lj_widget_set_enabled (ui/lj_widget.c),
      a private edit_int copy (lj_w_edit_int is the one), a wave-named app seam file (app/lj_app_w<n>); and a private
      popup_at may exist at most twice (2 measured at W5, closed in writing: ponytail, no helper for two callers).
+ 12. W6 WIZARD_STYLES-9 count, must stay 0: a dotted-IPv4 parser or formatter outside io/lj_net.c (lj_net_ip_parse /
+     lj_net_ip_fmt are the one pair): a function named *ip_parse / *ip_fmt / *ip_text, or an sscanf / snprintf with
+     a "%u.%u.%u.%u" format (log lines may still print an address with lj_log).
 
 usage: test_layering.py --src <repo>/src --cc <compiler> [--gen <dir with version.h>]
 exit 0 = clean, 1 = findings printed one per line.
@@ -58,7 +61,6 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "core/lj_clock.c": {"windows.h", "time.h"},
     "core/lj_lock.c": {"windows.h", "pthread.h"},
     "io/lj_net.c": {"winsock2.h", "ws2tcpip.h", "iphlpapi.h", "sys/socket.h", "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},
-    "io/lj_sacn.c": {"winsock2.h", "ws2tcpip.h", "sys/socket.h", "netinet/in.h", "arpa/inet.h", "unistd.h"},   # ME-44: iphlpapi.h / ifaddrs.h live in lj_net.c
     "io/lj_midi_winmm.c": {"windows.h", "mmsystem.h"},
     "model/lj_library.c": {"sys/stat.h", "direct.h", "io.h", "dirent.h"},   # the library folder walk and rmdir (_findfirst / opendir)
     "model/lj_movemacro.c": {"io.h", "dirent.h"},   # W3: the MacroShapes\*.bez listing
@@ -66,7 +68,7 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "app/lj_sysmem.c": {"windows.h", "unistd.h", "sys/sysctl.h"},   # W2 app: the memory gauge free-memory query (ME-87)
     "core/lj_fsinfo.c": {"sys/types.h", "sys/stat.h", "direct.h"},   # W3 movement: file mtime (LORD_FIDELITY-12) and lj_fs_mkdir (_mkdir)
     # W5 contracts (docs/w5-contracts.md, W5-X-OS): the one new socket file, and one serial backend per OS
-    "io/lj_socket.c": {"winsock2.h", "ws2tcpip.h", "sys/socket.h", "sys/select.h", "netinet/in.h", "arpa/inet.h", "unistd.h", "fcntl.h"},   # Art-Net, sACN input, remote TCP, External Application TCP
+    "io/lj_socket.c": {"winsock2.h", "ws2tcpip.h", "sys/socket.h", "sys/select.h", "netinet/in.h", "arpa/inet.h", "unistd.h", "fcntl.h"},   # Art-Net, sACN output (W6 WIZARD_STYLES-10) and input, remote TCP, External Application TCP
     "io/lj_serial_win.c": {"windows.h"},                     # CreateFile / SetCommState / COMMTIMEOUTS (remote, External Application serial)
     "io/lj_serial_posix.c": {"termios.h", "fcntl.h", "unistd.h", "dirent.h"},   # open O_NONBLOCK / termios raw (macOS, Linux pty in CI); W5 remote: dirent.h lists /dev (cu.* names are not predictable)
 }
@@ -102,6 +104,9 @@ NA_EXEMPT = {"core/lj_types.h", "windows/lj_help_topics_gen.c"}
 HINT_WRITE_RE = re.compile(r'->\s*hint\s*=\s*(?:LJ_NA_HINT|NULL)\b')
 EDIT_INT_RE = re.compile(r'\bstatic\s+int\s+\w*edit_int\s*\(')
 POPUP_AT_RE = re.compile(r'\bstatic\s+void\s+\w*popup_at\s*\(')
+IP_FN_RE = re.compile(r'\b(?:static\s+)?(?:int|void)\s+((?:\w*_)?ip_(?:parse|fmt|text))\s*\(')                                # W6 WIZARD_STYLES-9
+IP_SCAN_RE = re.compile(r'\b(?:sscanf|snprintf)\s*\([^;]*"%\d*u\.%\d*u\.%\d*u\.%\d*u')
+IP_ONE = {"lj_net_ip_parse", "lj_net_ip_fmt"}
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*([<"])([^>"]+)[>"]', re.M)
 
 
@@ -289,7 +294,7 @@ def main():
     headers = []
     nfiles = 0
     noops = ternaries = scene_getters = helper_copies = 0
-    na_copies = popups = 0
+    na_copies = popups = ip_copies = 0
     selfcheck_ids()
     group_text = "".join(open(os.path.join(src, g), encoding="latin-1").read() for g in GROUP_HEADERS)
     for g in GROUP_HEADERS:
@@ -395,6 +400,15 @@ def main():
                 na_copies += 1
                 findings.append("%s: a wave-named seam file (ME-173)" % rel)
             popups += len(POPUP_AT_RE.findall(code))
+            # 12. W6 WIZARD_STYLES-9
+            for m in IP_FN_RE.finditer(code):
+                if m.group(1) not in IP_ONE:
+                    ip_copies += 1
+                    findings.append("%s: %s copies lj_net_ip_parse / lj_net_ip_fmt (WIZARD_STYLES-9)" % (rel, m.group(1)))
+            if rel != "io/lj_net.c":
+                for _ in IP_SCAN_RE.finditer(nocomment):
+                    ip_copies += 1
+                    findings.append("%s: a dotted-IPv4 sscanf / snprintf; use lj_net_ip_parse / lj_net_ip_fmt (WIZARD_STYLES-9)" % rel)
     if popups > 2:
         findings.append("%d private popup_at copies: three or more is the ME-173 line, land lj_window_popup_at" % popups)
     # 10. ME-141
@@ -410,8 +424,8 @@ def main():
     for f in findings:
         print(f)
     print("test_layering: %d file(s) checked, %d header(s) compiled alone, noop handlers %d, ini ternaries %d, "
-          "scene getters %d, set-text/lib/ctx copies %d, noop Help handlers %d, hint/edit_int/seam copies %d, popup_at %d, %d finding(s)"
-          % (nfiles, len(headers), noops, ternaries, scene_getters, helper_copies, len(hn), na_copies, popups, len(findings)))
+          "scene getters %d, set-text/lib/ctx copies %d, noop Help handlers %d, hint/edit_int/seam copies %d, popup_at %d, ip-parse copies %d, %d finding(s)"
+          % (nfiles, len(headers), noops, ternaries, scene_getters, helper_copies, len(hn), na_copies, popups, ip_copies, len(findings)))
     return 1 if findings else 0
 
 

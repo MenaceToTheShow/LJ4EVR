@@ -90,7 +90,7 @@ Every listener is off on a fresh `Hardware.Ini`; each one logs the address it bi
 |---|---|---|---|
 | UDP 5568, sACN DMX-in | Hardware Setup > Enable DMX in, source sACN (`[DMXIN] Enabled=1`) | every interface (multicast) | with `[DMXIN] Nic` set, packets from off that subnet are dropped |
 | UDP 6454, Art-Net | an output link on Art-Net, or DMX-in from Art-Net | the output interface (every interface when none is chosen) | ArtPollReply only from that subnet, at most 4 rows per address; Art-Net DMX-in from off the subnet dropped |
-| TCP 7232, remote | Setup > RS-232 / TCP Remote > TCP enabled (`[REMOTE] TcpEnabled=1`) | 127.0.0.1 unless you choose an interface; never 0.0.0.0 | at most 4 connections |
+| TCP 7232, remote | Setup > RS-232 / TCP Remote > TCP enabled (`[REMOTE] TcpEnabled=1`) | 127.0.0.1 unless you choose an interface; never 0.0.0.0 | at most 4 connections; one silent for 60 s is closed |
 | serial, remote | the RS-232 remote enabled (`[REMOTE] SerialEnabled=1`) | the chosen port only | none |
 | External Application | a patched External Application fixture with its link set | no listener: a TCP client to the definition file's host and port, or a serial port | none |
 

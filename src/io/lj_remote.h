@@ -16,7 +16,7 @@
  * Transports, all OFF by default (W5-X-OFF), polled by the UI loop with a byte budget (W5-X-THREAD):
  *   - TCP: a listener (io/lj_socket.h) bound to 127.0.0.1 unless the user picks an interface from lj_net_list_ipv4, on
  *     LJ_REMOTE_TCP_PORT (PROPOSAL); at most LJ_REMOTE_CONNS connections, extra ones accepted and closed at once; each
- *     connection has its own frame state. There is no authentication: on a LAN interface anyone on that network can
+ *     connection has its own frame state; one silent for LJ_REMOTE_IDLE_US is closed (W6 LORD_C-10). There is no authentication: on a LAN interface anyone on that network can
  *     drive the show (docs/running.md, SECURITY.md).
  *   - serial: one port through io/lj_serial.h at the chosen baud, 8N1.
  * Settings: Hardware.Ini [REMOTE] TcpEnabled TcpIp TcpPort SerialEnabled SerialPort Baud (ours, additive). */
@@ -34,6 +34,7 @@ enum {
     LJ_REMOTE_BAUD_DEFAULT = 9600  /* PROPOSAL until the harvested LJ_RS232.exe baud list says otherwise (W5-REM-3) */
 };
 #define LJ_REMOTE_FRAME_US 200000u   /* 05 s10.1: all three bytes within 0.2 s */
+#define LJ_REMOTE_IDLE_US 60000000u  /* LORD_C-10: a TCP connection that sends nothing for 60 s is closed and its slot freed. PROPOSAL (LJ2 had no TCP) */
 
 enum lj_remote_cmd { LJ_REM_CUELIST = 128, LJ_REM_CUE, LJ_REM_BGCUE, LJ_REM_FLASH, LJ_REM_MISC, LJ_REM_STATIC, LJ_REM_CL_GOBACK, LJ_REM_SLOT, LJ_REM_BGSLOT, LJ_REM_LAST = LJ_REM_BGSLOT };
 typedef struct { uint8_t cmd, d1, d2; uint16_t value; } lj_remote_msg;   /* value = d1 * 128 + d2 */
@@ -69,6 +70,5 @@ enum { LJ_REMOTE_BAUDS = 7 };
 extern const uint32_t lj_remote_bauds[LJ_REMOTE_BAUDS];                   /* rgBaudRate of TRS232SettingsForm (LJ_RS232.exe): 2400 .. 57600 */
 typedef struct { uint8_t tcp_open, serial_open; uint16_t tcp_port; int conns; uint32_t bytes, frames, ignored, refused; } lj_remote_stats;
 void lj_remote_get_stats(lj_remote_stats *out);                           /* the settings window status line and the tests */
-int  lj_remote_ip_parse(const char *s, uint32_t *out);                    /* "a.b.c.d" -> host order; 0 / -1 */
 
 #endif /* LJ_IO_REMOTE_H */

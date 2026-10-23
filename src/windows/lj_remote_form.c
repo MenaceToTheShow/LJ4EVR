@@ -101,7 +101,7 @@ static void fill(void)
         uint32_t ip = nic[i].ipv4;
         if (nic[i].loopback || !nic[i].up || !ip) continue;
         rf.ips[rf.nips] = ip;
-        if (snprintf(rf.iptxt[rf.nips], sizeof rf.iptxt[0], "%u.%u.%u.%u", ip >> 24, (ip >> 16) & 255u, (ip >> 8) & 255u, ip & 255u) < 0) rf.iptxt[rf.nips][0] = 0;
+        lj_net_ip_fmt(rf.iptxt[rf.nips], sizeof rf.iptxt[0], ip);
         if (ip == c->tcp_ip) sel = rf.nips;
         rf.nips++;
     }

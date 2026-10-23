@@ -59,8 +59,9 @@ when it opens.
   subnet is dropped too.
 - **TCP 7232 (remote control).** Off by default. It listens on 127.0.0.1 unless
   you choose a network interface in Setup > RS-232 / TCP Remote, and it never
-  listens on 0.0.0.0. At most 4 connections. The remote has no authentication:
-  on a LAN interface anyone on that network can drive the show.
+  listens on 0.0.0.0. At most 4 connections; one silent for 60 s is closed.
+  The remote has no authentication: on a LAN interface anyone on that network
+  can drive the show.
 - **RS-232 remote.** Off by default; it opens only the serial port you choose.
 - **External Application (TCP client).** It opens no listener. While a fixture
   of the External Application profile is patched and its link is set, it
