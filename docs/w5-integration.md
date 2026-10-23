@@ -124,3 +124,10 @@ into 96- or 292-byte rows with a bounded format and advance an index in the dest
 Every job built; windows-msvc, macos-clang, linux-clang, generate-check green. linux-gcc-asan: 151 of 152, LeakSanitizer
 in `test_ljb` (23 bytes from `lj_ljb_extract`): the test reused `x` for the out-of-range call, which sets it to NULL
 before the earlier buffer was freed. The test now frees it first; `lj_ljb_extract` is unchanged.
+
+### CI green: run 39993461343 (`80705f3`)
+
+https://github.com/UnbannableGT/LJ4EVR/actions/runs/39993461343: six of six jobs green (generate-check,
+linux-gcc-asan 152 of 152 under ASan + UBSan, linux-clang with the seven 60 s fuzz targets, windows-msvc Release + Debug
+ctest + selftests + installer, macos-clang, determinism). determinism: `frames-{linux,windows,macos}.bin` all
+`5b13f419...63114b50`; `replay-frames.bin` all `c46fee4c...5039d` (both = W4).
