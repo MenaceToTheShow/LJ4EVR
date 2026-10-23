@@ -118,3 +118,9 @@ at level 1). Every remaining `snprintf` added in W5 whose return value was unuse
 `52b999a`) now checks it with the same idiom, braced where more code follows on the line. The five left unchecked write
 into 96- or 292-byte rows with a bounded format and advance an index in the destination expression
 (`ea.rows[n++]`, `rep->lines[rep->nlines++]`). MSVC trees: ctest 153 / 151 / 153 passed.
+
+### CI round 4 (`fbaa9c3`) and the fix
+
+Every job built; windows-msvc, macos-clang, linux-clang, generate-check green. linux-gcc-asan: 151 of 152, LeakSanitizer
+in `test_ljb` (23 bytes from `lj_ljb_extract`): the test reused `x` for the out-of-range call, which sets it to NULL
+before the earlier buffer was freed. The test now frees it first; `lj_ljb_extract` is unchanged.

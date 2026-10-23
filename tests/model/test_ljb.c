@@ -177,6 +177,7 @@ static void test_container(void)
     CHECK(strcmp(one(e, 2, buf, sizeof buf, &n), "") == 0 && lj_ljb_open(&b, buf, n, err, sizeof err) == 0);
     CHECK(lj_ljb_extract(&b, 0, &x, &xn, err, sizeof err) == -1 && x == NULL && strcmp(err, "LJB: bad entry 0") == 0);
     CHECK(lj_ljb_extract(&b, 1, &x, &xn, err, sizeof err) == 0 && xn == sizeof hello - 1 && memcmp(x, hello, xn) == 0);
+    free(x); x = NULL;                                                  /* the next call sets x to NULL */
     CHECK(lj_ljb_extract(&b, 2, &x, &xn, err, sizeof err) == -1);   /* index out of range */
     free(x); x = NULL; lj_ljb_free(&b);
     e[0].usz = 0;
