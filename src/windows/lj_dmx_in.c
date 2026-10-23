@@ -667,7 +667,7 @@ static void di_fn(enum lj_fn fn, int edge, uint32_t prog, void *ud)
     if (!edge) return;
     switch (fn) {
     case LJ_FN_DMXIN_HTP:          if (idx >= 1 && idx <= 24) di_post(LJ_CMD_HTP_GROUP, idx, v, 0); break;
-    case LJ_FN_DMXIN_STATIC:       if (idx >= 1 && idx <= 20) lj_statics2_press((int)idx, (int)v); break;   /* ponytail: press / release on the current page; a Toggle slot flips on each rise (the exe's "flash and merge modes disregarded" needs the statics track's pinned path) */
+    case LJ_FN_DMXIN_STATIC:       if (idx >= 1 && idx <= 20) lj_statics2_latch((int)idx, v != 0); break;   /* W6: latched through the pinned global slot, flash and merge modes disregarded (05 s3.2) */
     case LJ_FN_DMXIN_STATIC_LEVEL: if (idx >= 1 && idx <= 20) lj_statics2_set_level((int)idx, (int)(v * 100u + 127u) / 255); break;
     case LJ_FN_DMXIN_SEQ_ONOFF:    if (idx >= 1 && idx <= LJ_CUE_SLOTS) di_post(LJ_CMD_ENABLE, LJ_RUN_SLOT0 + idx - 1, v != 0, 0); break;
     case LJ_FN_DMXIN_SEQ_INT:      if (idx >= 1 && idx <= LJ_CUE_SLOTS) di_post(LJ_CMD_SEQ_INT, idx, v, 0); break;

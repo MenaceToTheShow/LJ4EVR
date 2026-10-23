@@ -9,11 +9,16 @@
 
 enum { LJ_HTP_MASK_MAX = (1L << LJ_HTP_GROUPS) - 1 };   /* 24 HTP groups = bits 0..23 */
 
-static const lj_patch_ch lj_patch_dflt = { LJ_SRC_NONE, 0, 0, LJ_IN_ABSOLUTE, 0, 0, 255, 0 };
+static const lj_patch_ch lj_patch_dflt = { LJ_SRC_NONE, 0, 0, LJ_IN_ABSOLUTE, 0, 0, 255, 0, 0 };
 
 void lj_patch_init(lj_patch_ch patch[LJ_CHANS]) { int i; for (i = 0; i < LJ_CHANS; i++) patch[i] = lj_patch_dflt; }
 
-int lj_patch_is_default(const lj_patch_ch *p) { return memcmp(p, &lj_patch_dflt, sizeof *p) == 0; }
+int lj_patch_is_default(const lj_patch_ch *p)   /* field by field: W6 ign_en left tail padding, which memcmp would read */
+{
+    const lj_patch_ch *d = &lj_patch_dflt;
+    return p->src_kind == d->src_kind && p->src_link == d->src_link && p->src_ch == d->src_ch && p->in_mode == d->in_mode && p->invert == d->invert
+        && p->min == d->min && p->max == d->max && p->htp_mask == d->htp_mask && p->ign_en == d->ign_en;
+}
 
 int lj_patch_load(const char *path, lj_patch_ch patch[LJ_CHANS], char *err, size_t cap)
 {
@@ -40,6 +45,7 @@ int lj_patch_load(const char *path, lj_patch_ch patch[LJ_CHANS], char *err, size
             p->min = (uint8_t)lj_kv_range(v, "min", 0, 0, 255, &rbad);
             p->max = (uint8_t)lj_kv_range(v, "max", 255, 0, 255, &rbad);
             p->htp_mask = (uint32_t)lj_kv_range(v, "htp", 0, 0, LJ_HTP_MASK_MAX, &rbad);
+            p->ign_en = (uint8_t)lj_kv_range(v, "ign", 0, 0, 1, &rbad);   /* W6: absent (every v1.1.0 file) = Use */
             if (rbad) { bad = "number out of range"; break; }
         }
     }
@@ -59,9 +65,9 @@ int lj_patch_save(const char *path, const lj_patch_ch patch[LJ_CHANS])
     for (i = 0; ok && i < LJ_CHANS; i++) {
         const lj_patch_ch *p = &patch[i];
         if (lj_patch_is_default(p)) continue;
-        ok = lj_rec_write(rec, "ch ", "%d:%d src=%s sl=%d sc=%u mode=%s inv=%d min=%d max=%d htp=%u", i / LJ_LINK_CH + 1, i % LJ_LINK_CH + 1,
+        ok = lj_rec_write(rec, "ch ", "%d:%d src=%s sl=%d sc=%u mode=%s inv=%d min=%d max=%d htp=%u%s", i / LJ_LINK_CH + 1, i % LJ_LINK_CH + 1,
                           lj_word(lj_patch_src_words, p->src_kind), p->src_link, p->src_ch, lj_word(lj_in_mode_words, p->in_mode),
-                          p->invert, p->min, p->max, (unsigned)p->htp_mask) == 0;
+                          p->invert, p->min, p->max, (unsigned)p->htp_mask, p->ign_en ? " ign=1" : "") == 0;   /* W6: ign only when set, so a v1.1.0 patch saves byte-identical */
     }
     return lj_rec_close(rec) == 0 && ok ? 0 : -1;
 }
@@ -75,6 +81,7 @@ const char *lj_patch_validate(const lj_patch_ch patch[LJ_CHANS])
         if (p->in_mode > LJ_IN_LT255) return "DMX-in mode unknown";
         if (p->min > p->max) return "min over max";
         if (p->invert > 1) return "invert flag not 0/1";
+        if (p->ign_en > 1) return "Ignore DMX In Enable flag not 0/1";
         if (p->htp_mask > (uint32_t)LJ_HTP_MASK_MAX) return "HTP group mask over 24 groups";
         if (p->src_kind != LJ_SRC_NONE) {
             if (p->src_link < 1 || p->src_link > LJ_LINKS || p->src_ch < 1 || p->src_ch > LJ_LINK_CH) return "source link:channel out of range";

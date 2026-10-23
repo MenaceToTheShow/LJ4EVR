@@ -1,0 +1,26 @@
+LJ4 replay 1
+# dmxin_s1_ignore (W6 dmxpatch, W5/GP-DMXIN): Global Patch 1:1 (Use) and 1:2 (Ignore DMX In Enable, ign=1) both take DMX-in
+# 1:5 Absolute over a cue value of 100. With Overwrite Enable off only the Ignore channel takes the input; with it on both
+# do (CHM globalpatch.htm; 11 S1, lj_post.c). Outside the replay_all glob (W5-X-REPLAY).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+gpatch 1:1 src=in sl=1 sc=5 mode=abs
+gpatch 1:2 src=in sl=1 sc=5 mode=abs ign=1
+seq 1 name="base"
+scene st=60000 ft=0 ch 1:1=100:S 1:2=100:S
+cue 1
+slot 1 seq=1
+at 0 load_cue 1
+at 1 dmx_in 1 5=200
+expect 1 1:1=100 1:2=200               # the gate is closed: Use keeps the cue value, Ignore takes the input
+at 2 overwrite_enable 1
+at 3 dmx_in 1 5=40
+expect 3 1:1=40 1:2=40
+at 4 overwrite_enable 0
+expect 4 1:1=100 1:2=40
+at 5 gpatch 1:2 ign=0
+at 5 global_patch
+expect 5 1:1=100 1:2=100               # back to Use: the gate holds it too

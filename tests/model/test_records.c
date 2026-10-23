@@ -272,6 +272,25 @@ static void lj_test_presets_palettes_patch_macro(const lj_library *lib)
     CHECK(lj_patch_save(path, patch) == 0 && lj_patch_load(path, patch2, err, sizeof err) == 0 && memcmp(patch, patch2, sizeof patch) == 0);
     patch2[2047].src_ch = 512;                              /* self-patch */
     CHECK(lj_patch_validate(patch2) != NULL);
+    {   /* W6 GP-DMXIN: ign_en round-trips as " ign=1", and a v1.1.0 file (no ign key) loads as Use and saves byte-identical */
+        static const char v110[] = "LJ4 patch 1\nch 1:17 src=in sl=1 sc=5 mode=htp inv=1 min=10 max=200 htp=8388609\n";
+        char back[sizeof v110 + 16];
+        FILE *f;
+        size_t n = 0;
+        patch[16].ign_en = 1;
+        CHECK(!lj_patch_is_default(&patch[16]) && lj_patch_validate(patch) == NULL);
+        CHECK(lj_patch_save(path, patch) == 0 && lj_patch_load(path, patch2, err, sizeof err) == 0 && patch2[16].ign_en == 1 && patch2[2047].ign_en == 0);
+        patch[16].ign_en = 2;
+        CHECK(lj_patch_validate(patch) != NULL);
+        patch[16].ign_en = 0;
+        if ((f = fopen(path, "wb")) != NULL) { fputs(v110, f); fclose(f); }
+        CHECK(lj_patch_load(path, patch2, err, sizeof err) == 0 && patch2[16].in_mode == LJ_IN_HTP && patch2[16].ign_en == 0);
+        CHECK(lj_patch_save(path, patch2) == 0);
+        if ((f = fopen(path, "rb")) != NULL) { n = fread(back, 1, sizeof back, f); fclose(f); }
+        CHECK(n == sizeof v110 - 1 && memcmp(back, v110, n) == 0);
+        if ((f = fopen(path, "wb")) != NULL) { fputs("LJ4 patch 1\nch 1:17 src=in sl=1 sc=5 ign=2\n", f); fclose(f); }
+        CHECK(lj_patch_load(path, patch2, err, sizeof err) == -1);   /* out of range: refused */
+    }
 
     m->number = 7; strcpy(m->name, "Sine"); m->restart_on_load = 1;
     c = lj_addr_code(1, 17);

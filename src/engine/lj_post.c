@@ -78,7 +78,7 @@ int lj_post_s1_patch_src(const lj_post_ctx *c, int link, int ch, int v)
     (void)link;
     if (!c->patch) return v;
     pc = &c->patch[ch];
-    if (pc->src_kind != LJ_SRC_DMX_IN || !c->overwrite_enable) return v;   /* DMX-in gated by Overwrite Enable [02 s7.1]; the DMX Out source is copied in lj_post_run */
+    if (pc->src_kind != LJ_SRC_DMX_IN || (!c->overwrite_enable && !pc->ign_en)) return v;   /* DMX-in gated by Overwrite Enable [02 s7.1] unless the channel is "Ignore DMX In Enable" (W6, CHM globalpatch.htm: "always be overwritten ... regardless of overwrite Enable state"); the DMX Out source is copied in lj_post_run */
     if (pc->src_link < 1 || pc->src_link > LJ_LINKS || pc->src_ch < 1 || pc->src_ch > LJ_LINK_CH) return v;
     in = c->dmx_in[lj_addr_code(pc->src_link, pc->src_ch)];
     switch (pc->in_mode) {                                     /* 11 S1 modes */

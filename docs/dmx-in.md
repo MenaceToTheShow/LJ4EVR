@@ -54,17 +54,19 @@ Patch overrides keep working. Preferences > Cue Latch > Clear Cue on Cue# 0.
 Function rules (note 05 s3.2): a level above 127 is "on"; edge functions fire on the move from 127 or below to 128 or
 above; Cuelist Go (Alt) fires on 0-127 -> 128-255, 128-191 -> 192-255 and 192-255 -> 128-191; Static n, Latch is on at
 50 % (128) and above; the Binary Cue Value bits (1..128 and 512) add up to a cue number that loads only while Latch Cue is
-above 127; Overwrite Enable gates every Global Patch DMX-in source and is on while it is not assigned; Cue Time and
+above 127; Overwrite Enable gates every Global Patch DMX-in source except a channel switched to Ignore DMX In Enable
+(Global Patch popup > DMX in Enable Switch, W6), and is on while it is not assigned; Cue Time and
 Sequence Time follow the Cue Time Control preference (always, or on a change of 1 / 2 / 3 steps).
 
 ## Not in this version
 
-- "Use / Ignore DMX In Enable" per Global Patch channel stays greyed: it needs a per-channel flag in the patch record and
-  an S1 rule in the engine.
-- Static n, Latch presses the slot on the current Statics page, so a slot in Toggle mode flips on each rise.
 - The MX-10 example tables are not shipped (fixture-specific examples; provenance row).
 
 Done since the track's first text (W5 integration): the Fingers "DMX in (1-12)" .. "(37-48)" pages feed the input through
 `lj_dmxin_emulate` (`test_da2532_fingers`); a master driven by a saved Master Intensity or Intensity Gr.n function shows
 its mode text red and refuses the mouse while DMX-in is on and its functions are enabled, whether or not input arrives
 (05 s3.2; `tests/ui/scripts/w5_acc_dmxin_1.lj4s`); the Cue field beside Cue # shows the latched cue's name.
+
+W6 (dmxpatch): Static n, Latch latches slot n of the Statics page shown at the rise with the Add scope, whatever its
+Flash or replace mode, and the fall releases that same slot even after a page change (`test_dmx_in`); the Global Patch
+Use / Ignore DMX In Enable switch is live (`test_engine_w5`, `replay_w5_dmxin_s1_ignore`).

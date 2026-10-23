@@ -9,7 +9,8 @@
  *     raises TValueTableImportErrorForm with its reason; Export writes the user tables to the chosen folder;
  *  3. Hardware Setup: Enable DMX in live with the universe beside it; an input universe equal to an output universe refused;
  *     the dropped-hardware tabs stay greyed with the hint;
- *  4. goldens W5DMX_*.bmp (LJ_GOLDEN_UPDATE=1 rewrites them; reviewed in REVIEWED.tsv). */
+ *  4. goldens W5DMX_*.bmp (LJ_GOLDEN_UPDATE=1 rewrites them; reviewed in REVIEWED.tsv);
+ *  5. W6: the Global Patch DMX in Enable Switch (Use / Ignore) live; DMX-in "Static n, Latch" through the pinned slot. */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC */
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +30,11 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_w_spinedit.h"
+#include "model/lj_patch.h"
+#include "model/lj_statics.h"
 #include "windows/lj_dmx_in.h"
+#include "windows/lj_global_patch.h"
+#include "windows/lj_statics2_form.h"
 #include "windows/lj_windows.h"
 
 #ifndef LJ_SOURCE_DIR
@@ -202,7 +207,13 @@ int lj_test_dmx_in(int argc, char **argv)
     CHECK(w != NULL);
     if (w) {
         CHECK(menu_en(w, "P_InSeq") == 1);
-        CHECK(menu_en(w, "P_EnableUse") == 0 && menu_en(w, "P_EnableIgnore") == 0);   /* the per-channel Overwrite Enable exemption: model + engine, not landed */
+        CHECK(menu_en(w, "P_EnableUse") == 1 && menu_en(w, "P_EnableIgnore") == 1);   /* W6 GP-DMXIN: the per-channel DMX in Enable Switch is live */
+        CHECK(lj_global_patch_menu("PatchtoLink1") == 0 && lj_global_patch_select(2) == 0);
+        CHECK(lj_global_patch_menu("P_EnableIgnore") == 0 && lj_global_patch_work()[2].ign_en == 1 && strstr(row(w, "lv1", 2), "\tAbs/Ign\t") != NULL);
+        CHECK(lj_global_patch_apply() == 0 && show->patch[2].ign_en == 1 && show->patch[3].ign_en == 0);   /* Apply hands the switch to show->patch */
+        CHECK(lj_global_patch_menu("P_EnableUse") == 0 && lj_global_patch_work()[2].ign_en == 0 && strstr(row(w, "lv1", 2), "\tAbs\t") != NULL);
+        CHECK(lj_global_patch_select(600) == 0 && lj_global_patch_menu("P_EnableIgnore") == 0 && lj_global_patch_work()[600].ign_en == 0);   /* no DMX-in source: nothing to switch */
+        CHECK(lj_global_patch_menu("NewGlobalPatch1") == 0 && lj_global_patch_apply() == 0 && lj_patch_is_default(&show->patch[2]));
         click(w, "eSourceIn", 1);
         CHECK(lj_win_get(LJ_WIN_DMX_IN) == NULL);   /* a single click edits the field */
         click(w, "eSourceIn", 2);
@@ -313,6 +324,27 @@ int lj_test_dmx_in(int argc, char **argv)
         lj_fn_run_prog(LJ_FN_DMXIN_AUDIO, 128u, 1);          CHECK(ac.gain_pct == 100);
         lj_fn_run_prog(LJ_FN_DMXIN_AUDIO, 1u << 8 | 200u, 1); CHECK(ac.noise == 200);
         ctx->audio = was;
+    }
+    {   /* W6 STATICS-LATCH: "Static 03, Latch" latches a Flash slot through its pinned global index, Add scope, and the
+         * release reaches that slot after the Statics page changed */
+        static lj_scene empty;
+        lj_cmd cmd;
+        lj_static_slot *st;
+        CHECK(lj_statics_add_page(&show->pages, &show->npages, "P1") == 0 && lj_statics_add_page(&show->pages, &show->npages, "P2") == 1);
+        if (show->npages == 2) {
+            st = &show->pages[0].slot[2];
+            CHECK(lj_static_slot_record(st, &empty) == 0);
+            st->activation = LJ_ACT_FLASH; st->replace = LJ_REP_PAGE; st->level_pct = 100;
+            CHECK(lj_statics2_set_page(1) == 0);
+            lj_fn_run_prog(LJ_FN_DMXIN_STATIC, 3u << 8 | 1u, 1);
+            CHECK(lj_statics2_last_cmd(&cmd) && cmd.kind == LJ_CMD_STATIC_ACTIVATE && cmd.a == (uint32_t)lj_static_global_index(1, 3) && cmd.c == LJ_REP_ADD && cmd.st == st);
+            CHECK(lj_statics2_latch(3, 1) == -1);                                     /* already latched: nothing posted again */
+            CHECK(lj_statics2_set_page(2) == 0 && lj_statics2_page() == 2);
+            lj_fn_run_prog(LJ_FN_DMXIN_STATIC, 3u << 8 | 0u, 1);
+            CHECK(lj_statics2_last_cmd(&cmd) && cmd.kind == LJ_CMD_STATIC_DEACTIVATE && cmd.a == (uint32_t)lj_static_global_index(1, 3));   /* page 1 slot 3, not the page shown */
+            CHECK(lj_statics2_latch(3, 0) == -1 && lj_statics2_latch(3, 1) == -1);   /* nothing held; page 2 slot 3 is empty */
+            lj_statics2_set_page(1);
+        }
     }
     CHECK(me16 == 0);
     lj_win_close_all();

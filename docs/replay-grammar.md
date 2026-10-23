@@ -29,7 +29,7 @@ keeps private) and parses the fields with `sscanf`/`strtol`, bounded.
 | `patch n profile=<id> link=<l> addr=<a> [ipan=0 itilt=0 swap=0 ibo=0 igm=0 lsgm=0 sub=<0..8> gs2=<file>]` | fixture n (1..100) with exe row id (`19` = Generic / DMX Dimmer / 1 Channel, `12` = Martin / MAC 500 / Mode 2/4) at link:address; flags as `Config.dat`; `gs2=` loads a user profile through `lj_gs2_parse` (W3; the W1 harness rejects it) |
 | `profile n key=value ...` | after fixture n's `patch`: a per-fixture copy of its built-in profile with fields overridden (what a `.GS2` would carry), bound with `lj_engine_bind_profile`. Keys: `use_gm bo_at_gm0 invert_int invert_range limit_gm` (0/1; `invert_int=1 invert_range=1` = "Invert Intensity value range"), `imin imax` (the intensity function's Min/Max), `ioffset` (1-based), `class<k>=none\|intensity\|shutter\|strobe\|pan\|tilt\|color\|gobo\|beam\|effect\|level\|speed\|lamp\|special\|switch\|smoke\|haze\|haze_fan`, `disabled<k>` (`level_disabled`), `ddmx<k>` (`default_dmx`), `extgm<k>`; k = 1..footprint |
 | `default l:a=v [l:a=v ...]` | `default_out[]` entries (rank 0); unlisted channels are 0. `patch` and `profile` first copy the profile's `default_dmx` into `default_out` for the footprint (what Fixture Configuration does on save, LORD_FIXTURES-11); a `default` line after them overrides |
-| `gpatch l:a [src=none\|out\|in sl=<l> sc=<c> mode=abs\|lotp\|htp\|gt0\|lt255 inv=0\|1 min=<v> max=<v> htp=<mask>]` | one global-patch row (02 s7.1) |
+| `gpatch l:a [src=none\|out\|in sl=<l> sc=<c> mode=abs\|lotp\|htp\|gt0\|lt255 inv=0\|1 min=<v> max=<v> htp=<mask> ign=0\|1]` | one global-patch row (02 s7.1); `ign=1` (W6) = Ignore DMX In Enable: the DMX-in source applies with Overwrite Enable off |
 | `submaster k name="<5 chars>" mode=prop\|lotp\|htp\|none` | sub-master k (1..8) mode |
 | `seq n name="<name>" [sync=0 gst=0 gft=0]` | starts sequence n; the following `scene` / `ch` / `fx` lines belong to it until the next `seq`, `cue`, `bg`, `static`, `macro` or `at` |
 | `scene st=<ms> ft=<ms>` | appends a scene (scene time, fade time) to the current sequence |
@@ -289,3 +289,8 @@ to `tests/engine/replay/w5/`, outside the `replay_all` / `replay_dump` glob, so 
 The S1 source is the build line `gpatch l:a src=in sl=<link> sc=<ch> mode=abs|lotp|htp|gt0|lt255` (W2 grammar); the
 scenario `tests/engine/replay/w5/dmxin_audio_contract.lj4r` (CTest `replay_w5_contract`, 10 expects) walks Absolute and
 HTP with the gate off and on, the clear rule, two audio trigs per scene and a manual slot that ignores them.
+
+W6 (dmxpatch): `gpatch ... ign=1` marks a channel "Ignore DMX In Enable" (CHM `globalpatch.htm`: such channels "will
+always be overwritten by the DMX in channel values regardless of overwrite Enable state"). The scenario
+`tests/engine/replay/w5/dmxin_s1_ignore.lj4r` (CTest `replay_w5_dmxin_s1_ignore`, picked up by the `dmxin_s1_*` glob) has
+one Use and one Ignore channel on the same input with the gate off, then on, then off.

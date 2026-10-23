@@ -347,6 +347,13 @@ on loopback; the LJ2 side is the CHM GIF named (reduced unless note 07 s14 says 
 | Restore User Library, an `.LJB` picked (W5-LJB-4) **supersedes** the Restore window part of the W5 rows above | (LJ2 restored `.LJB` over a library, 06 s4) | `lRestore` names the NEW library the import creates and, after the import, Target Library Path shows its folder | ME-181 | `docs/screenshots/w5/ljb-imported-TLibraryRestoreForm.png` (re-shot, scratch userdata) |
 | Audio Analyzer and MediaPlayer, Pass Keypresses to LightJockey | off: a key pressed in the side program stays there; on: LightJockey's hotkeys act | the same, per window: with the flag off a hotkey pressed while the Analyzer or the player has focus is dropped | ME-182 (ME-17: no stub widget) | `test_uiscript_w2` (both windows, flag 0 and 1) |
 
+### W6 dmxpatch (2026-10-23; each row supersedes the row it names, the rows above are kept as written)
+
+| Where | LJ2 2.209 | LJ4EVR | Decision | Evidence |
+|---|---|---|---|---|
+| F48, Global Patch popup `DMX in Enable Switch` > `Use` / `Ignore` **supersedes** the "stay greyed" part of the W5 F48 row | "Channels marked as ignoring the switch will always be overwritten by the DMX in channel values regardless of overwrite Enable state" (CHM `globalpatch.htm`) | live on the selected DMX-in row (the list is single-select, as Set DMX In Sequence); the switch is the `lj_patch_ch.ign_en` flag, `ign=1` in the `.GPA` line; the `In mode/Sw` column reads `Abs/Ign` (PROPOSAL rig: `globalpatch.gif` is reduced) | done (W5/GP-DMXIN) | `test_engine_w5`, `replay_w5_dmxin_s1_ignore`, `test_records`, `test_dmx_in` |
+| DMX-in `Static n, Latch` **supersedes** the `docs/dmx-in.md` "presses the slot on the current Statics page" note | "the entry is activated as soon as the level reaches 50%. Note that the static control entry flash and merge/replace modes disregarded" (CHM, DMX-in) | at 50 % slot n of the Statics page shown is latched with the Add scope whatever its Flash / replace mode; below 50 % releases that same slot by its global index, even after a page change (which page LJ2 addresses is not written: the current one, PROPOSAL rig 14 sB.8 item 9) | done (W5-INT/STATICS-LATCH) | `test_dmx_in` |
+
 ## What v1.1.0 is not
 
 v1.1.0 (W5) delivers all seven items of the v1.0.0 list above: Art-Net output beside sACN, the Audio Analyzer and
