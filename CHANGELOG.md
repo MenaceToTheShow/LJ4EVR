@@ -5,7 +5,7 @@ single source of the number.
 
 ## [Unreleased]
 
-### 1.1.0 (W5, on `main`, not yet tagged)
+## [1.1.0] - 2026-10-23 - W5 The seven left-out features
 
 The seven features 1.0.0 left out are in, each replacing its greyed `Not available in LJ4EVR` chrome:
 
@@ -31,7 +31,7 @@ The seven features 1.0.0 left out are in, each replacing its greyed `Not availab
 Also: the Hardware Setup status line shows the real sACN packets/s per universe (1.0.0 always showed 0); a master
 driven by DMX-in shows its mode text red and ignores the mouse.
 
-Also from the W5 code council's fix pass (`W5_CODE_MASTER_ELDER_VERDICT.md`, ME-167..ME-186):
+Fixed before release (found in the 1.1.0 review):
 
 - DMX-in functions run only on a frame a sender (or Fingers) delivered: a saved Master Intensity assignment no longer
   drives the Grand Master to 0 at start with no input. The Overwrite Enable gate follows its channel after DMX-in is
@@ -50,8 +50,8 @@ Also from the W5 code council's fix pass (`W5_CODE_MASTER_ELDER_VERDICT.md`, ME-
   Run starts from the last non-transparent cue.
 - Help gains three topics: DMX-in and remote control, Audio Analyzer and MediaPlayer, Importing a LightJockey 2 backup.
 
-Still left out (README "What v1.1.0 is not"): the reference-rig comparison, audio CD and Winamp, video, and the
-Global Patch per-channel "Use / Ignore DMX In Enable" items.
+What 1.1.0 is not (README "What v1.1.0 is not"): it still leaves out the comparison with LightJockey 2 on a real
+rig, audio CD and Winamp, video, and the Global Patch per-channel "Use / Ignore DMX In Enable" items.
 
 Known gaps:
 
@@ -66,6 +66,14 @@ Known gaps:
 - The Art-Net OemCode is OemUnknown (0x00FF) until a code is registered.
 - The Statics 2 page layout and the background-cue file (`.bgc`) are LJ4EVR's own choices until a LightJockey sample
   shows the original.
+
+Developer detail:
+
+- W5 tracks, integration and acceptance: `docs/w5-contracts.md`, `docs/w5-integration.md`; gates `docs/w5-gates.md`.
+- Code council fix pass r1 (`W5_CODE_MASTER_ELDER_VERDICT.md` section 5, ME-167..ME-186) in `79b8d18`; the
+  `replay-frames.bin` re-record (ME-179) is `9da72c3f...560adb`; SDL is pinned to commit `829a65d7...` (ME-171 (e)).
+- Carried past 1.1.0: the reference rig (D4), the Mac hand run (ME-189 / ME-158), the Art-Net OemCode (W5-ART-7)
+  and the verdict's section 6 rows.
 
 ## [1.0.0] - 2026-10-23 - W4 Fidelity sweep and release
 

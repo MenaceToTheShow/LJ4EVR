@@ -8,11 +8,12 @@ every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN.
 Art-Net is a trade mark of Artistic Licence: Art-Net(TM) Designed by and Copyright Artistic Licence.
 
-Status: **1.0.0** is the first full release: every LightJockey 2 window of the
-feature inventory, cue lists, macros, follow spots, `.GS2` / `.Udf` profiles and
-sACN output. `main` now carries the 1.1.0 work (W5): Art-Net output, the Audio
-Analyzer and audio trig, the `.LJB` importer, DMX-in over sACN and Art-Net, the
-RS-232 / TCP remote, External Application string output and the LJ MediaPlayer.
+Status: **1.1.0** adds the seven features 1.0.0 left out: Art-Net output, the
+Audio Analyzer and audio trig, the `.LJB` importer, DMX-in over sACN and
+Art-Net, the RS-232 / TCP remote, External Application string output and the
+LJ MediaPlayer. 1.0.0 was the first full release: every LightJockey 2 window of
+the feature inventory, cue lists, macros, follow spots, `.GS2` / `.Udf` profiles
+and sACN output.
 What each version leaves out is below (`CHANGELOG.md`).
 
 ![The LJ4EVR main desktop with the Sequence and Cue windows open](docs/screenshots/w4/entry/main-TLJMainForm.png)
