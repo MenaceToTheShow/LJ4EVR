@@ -207,3 +207,9 @@ where CI names it.
 The local gcc check now matches CI: w64devkit gcc 14.2 with `-fsanitize=address,undefined` and a forced
 `#define snprintf __builtin_snprintf`. It reproduces both of CI's reports on the old files, and the sweep of every
 SDL-free `.c` file is clean.
+
+### 10. CI record
+
+    https://github.com/UnbannableGT/LJ4EVR/actions/runs/39887131384 (7d0b9c4): all six jobs green: windows-msvc,
+    linux-clang, linux-gcc-asan (with the 60 s fuzz step), macos-clang, generate-check, determinism (the three
+    frame dumps byte-equal)
