@@ -109,10 +109,12 @@ static const lj_profile lj_gn_switch6 = { .id = 27, .tag = "SWITCH6", .manufactu
     .windows = lj_gn_swwin_6, .nwindows = 1, .notes = "Martin 6-Channel SwitchBox: six on/off channels (on = 255, off = 0)." };
 
 /* Other / External Application/Device (id 90, tag EXTERNAL, ExternalApp.Rtf): a plug-in link (<= 32-char command strings per scene,
- * 4 DMX out + 4 DMX in channels); no control window in W1 (TSpecialSettings_ExternalApp is W5 scope). */
+ * 4 DMX out + 4 DMX in channels). W5 extapp: one window, the Extended control TSpecialSettings_ExternalApp (button 7), which
+ * controls/lj_ctl_extapp.c builds instead of the row renderer (no rows here); caption exe 0x24EAAC. */
+static const lj_ctl_window lj_gn_external_win[] = { { LJ_CTL_EXTENDED, "External Application", NULL, NULL, 0, NULL, 0 } };
 static const lj_profile lj_gn_external = { .id = 90, .tag = "EXTERNAL", .manufacturer = "Other", .name = "External Application/Device", .mode = "",
     .footprint = 32, .channel_class = { LJ_R32(LJ_CH_SPECIAL) }, .blackout = { "", 1, { 0 }, { 0 } }, .use_gm = 0, .level_invisible = { LJ_R32(1) },
-    .windows = NULL, .nwindows = 0, .notes = "Links an external program into LightJockey through a plug-in (LJ-RS232Send ships with LJ2); needs a valid address and 32 channels." };
+    .windows = lj_gn_external_win, .nwindows = 1, .notes = "Links an external program into LightJockey through a plug-in (LJ-RS232Send ships with LJ2); needs a valid address and 32 channels." };
 
 /* User Definable placeholders (ColorScroll1Notes, Scanner1Notes, GenericFixture2Notes; note 02 s5): the profile a fixture has before
  * Define Fixture Profile replaces it. Generic Fixture 2 "by default only has generic level control enabled (8 bit virtual fader

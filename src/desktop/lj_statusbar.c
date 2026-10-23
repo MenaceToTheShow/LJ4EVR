@@ -6,11 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "core/lj_clock.h"
 #include "core/lj_str.h"
 #include "gfx/lj_draw.h"
 #include "io/lj_fn.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_prefs.h"
+#include "windows/lj_audio_form.h"   /* W5 audio: the Trig panel */
 
 typedef struct { lj_widget base; char text[LJ_SB_COUNT][32]; uint8_t flag[LJ_SB_COUNT]; char hotkeys[32]; } lj_sb;   /* hotkeys: the W2 setup indicator, "" = no panel */
 
@@ -93,6 +95,12 @@ void lj_statusbar_refresh(void)
     lj_desktop_status_flag(LJ_SB_SEQ_MOD, ctx->modified[LJ_MOD_SEQ]);
     lj_desktop_status_flag(LJ_SB_CUE_MOD, ctx->modified[LJ_MOD_CUE]);
     lj_desktop_status_flag(LJ_SB_CL_MOD, ctx->modified[LJ_MOD_CL]);
+    {   /* W5 audio: Trig duplicates the analyzer's trig indicator [01 s2.4]; a capture that failed to open shows here (W5-AUD-5) */
+        int ok = 1, bad = 0;
+        if (ctx->audio && ctx->audio->enabled) bad = lj_audio_device_status(&ok)[0] && !ok;
+        lj_desktop_status_flag(LJ_SB_TRIG, lj_audio_form_trig_lit(lj_clock_us()));
+        lj_desktop_status_set(LJ_SB_STATUS, bad ? "Audio-in failed" : "");
+    }
 }
 
 void lj_desktop_status_set(enum lj_status_field f, const char *text)

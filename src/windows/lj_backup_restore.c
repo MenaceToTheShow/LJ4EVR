@@ -9,6 +9,7 @@
 #include <time.h>
 #include "core/lj_log.h"
 #include "core/lj_str.h"
+#include "model/lj_ljb.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "windows/lj_file_dialogs.h"
@@ -131,12 +132,70 @@ static void show_notes(void)
     lj_w_memo_set_lines(rs.win ? lj_window_find(rs.win, "Re1") : NULL, rs.lines, n);
 }
 
+/* ---- W5 ljb: the Restore window accepts *.LJB beside .lj4b (PROPOSAL entry, W5-LJB-4). The file imports into a NEW
+ * library (lj_ljb_import: no existing library is written), the report replaces the notes box, then the User Libraries
+ * restart prompt opens the new library through LJ_ACT_SELECT_LIBRARY. ---- */
+static struct { int on; lj_library lib; lj_ljb_report rep; char name[LJ_LIBNAME_CAP]; } rb;
+
+static int is_ljb(const char *path)
+{
+    size_t n = strlen(path);
+    return n > 4 && path[n - 4] == '.' && (path[n - 3] | 0x20) == 'l' && (path[n - 2] | 0x20) == 'j' && (path[n - 1] | 0x20) == 'b';
+}
+
+static int ljb_set_file(const char *path)
+{
+    char err[128];
+    lj_str_copy(rs.path, sizeof rs.path, path);
+    rb.on = 1;
+    if (lj_ljb_preview(path, rb.name, sizeof rb.name, rs.notes, sizeof rs.notes, err, sizeof err) != 0) { rb.name[0] = 0; lj_str_copy(rs.notes, sizeof rs.notes, err); }
+    lj_window_set_text(rs.win, "lLibName", rb.name);                    /* Info.$$$'s name; its source path is never shown (W5-X-PRIVATE) */
+    lj_window_set_text(rs.win, "lLibPath", ""); lj_window_set_text(rs.win, "lBackupTime", "");   /* the TDateTime is not decoded (no double in model/) */
+    lj_window_set_text(rs.win, "lPath", "");
+    show_notes();
+    { lj_widget *b = rs.win ? lj_window_find(rs.win, "bRestore") : NULL; if (b) { b->enabled = 1; lj_widget_invalidate(b); } }
+    return 0;
+}
+
+static void on_ljb_restart(int yes, void *ud)
+{
+    char names[64][LJ_LIBNAME_CAP];
+    int i, n = lj_library_list(lj_ctx_get()->userdir, names, 64);
+    (void)ud;
+    for (i = 0; yes && i < n; i++) if (strcmp(names[i], rb.lib.name) == 0) { lj_desktop_run_action(LJ_ACT_SELECT_LIBRARY, i); return; }
+}
+
+static void on_ljb_yes(int yes, void *ud)
+{
+    char err[160];
+    size_t at;
+    int i;
+    (void)ud;
+    if (!yes) return;
+    if (lj_ljb_import(rs.path, lj_ctx_get()->userdir, NULL, &rb.lib, &rb.rep, err, sizeof err) != 0) { lj_win_message("Warning", err); return; }
+    snprintf(rs.notes, sizeof rs.notes, "Imported into \"%s\": %d converted, %d not converted (" LJ_LJB_REPORT ")\n", rb.lib.name, rb.rep.converted, rb.rep.skipped);   /* PROPOSAL text */
+    for (i = 0; i < rb.rep.nlines; i++) { at = strlen(rs.notes); snprintf(rs.notes + at, sizeof rs.notes - at, "%s\n", rb.rep.lines[i]); }
+    show_notes();
+    lj_window_set_text(rs.win, "lPath", rb.lib.name);
+    lj_win_confirm("Please Confirm..", LJ_USERLIB_RESTART1, LJ_USERLIB_RESTART2, on_ljb_restart, NULL);
+}
+
+static int ljb_run(void)
+{
+    char l1[LJ_LIBNAME_CAP + 48];
+    snprintf(l1, sizeof l1, "Import \"%s\" as a new user library ?", rb.name[0] ? rb.name : "LJB");   /* PROPOSAL rig: LJ2 restores .LJB over a library [06 s4] */
+    lj_win_confirm("Please Confirm..", l1, "(No existing library is changed)", on_ljb_yes, NULL);
+    return 0;
+}
+
 int lj_restore_set_file(const char *path)
 {
     const char *base, *s;
     char name[LJ_LIBNAME_CAP];
     size_t len;
     if (!path || !exists(path)) return -1;
+    rb.on = 0;
+    if (is_ljb(path)) return ljb_set_file(path);
     lj_str_copy(rs.path, sizeof rs.path, path);
     for (base = s = path; *s; s++) if (*s == '/' || *s == '\\') base = s + 1;
     len = strlen(base) > strlen(LJ_LIBRARY_BACKUP_EXT) ? strlen(base) - strlen(LJ_LIBRARY_BACKUP_EXT) : strlen(base);
@@ -171,6 +230,7 @@ int lj_restore_run(void)
 {
     lj_ctx *c = lj_ctx_get();
     char l1[LJ_LIBNAME_CAP + 40];
+    if (rs.path[0] && rb.on) return ljb_run();
     if (!rs.path[0] || !c->lib) return -1;
     snprintf(l1, sizeof l1, "Restore Backup files to \"%s\" ?", c->lib->name);   /* PROPOSAL rig: Label7's words; LJ2's restore prompt is not in the exe pool */
     lj_win_confirm("Please Confirm..", l1, "(Files with the same names in the library are replaced)", on_restore_yes, NULL);
@@ -199,6 +259,13 @@ static void fill_files(void)
     char names[LJ_RS_ROWS][LJ_DIRENT_CAP];
     int i, n = lj_library_dir_list(rs.dir, LJ_LIBRARY_BACKUP_EXT, names, LJ_RS_ROWS);
     rs.n = 0;
+    for (i = 0; i < n; i++) {
+        if (snprintf(rs.file[rs.n], sizeof rs.file[rs.n], "%s%s%s", rs.dir, rs_join(rs.dir), names[i]) >= (int)sizeof rs.file[rs.n]) continue;
+        lj_str_copy(rs.shown[rs.n], sizeof rs.shown[rs.n], names[i]);
+        rs.items[rs.n] = rs.shown[rs.n];
+        rs.n++;
+    }
+    n = lj_library_dir_list(rs.dir, ".LJB", names, LJ_RS_ROWS - rs.n);   /* W5 ljb: LJ2 backups listed after ours (any case) */
     for (i = 0; i < n; i++) {
         if (snprintf(rs.file[rs.n], sizeof rs.file[rs.n], "%s%s%s", rs.dir, rs_join(rs.dir), names[i]) >= (int)sizeof rs.file[rs.n]) continue;
         lj_str_copy(rs.shown[rs.n], sizeof rs.shown[rs.n], names[i]);
@@ -282,7 +349,7 @@ lj_window *lj_restore_open(void)
     if (rs.win) return rs.win;
     rs.win = lj_window_create(&lj_form_TLIBRARYRESTOREFORM, lj_rs_bindings);
     if (!rs.win) { lj_log("restore: cannot create TLibraryRestoreForm"); return NULL; }
-    rs.close_pending = 0; rs.path[0] = 0; rs.notes[0] = 0; rs.files = NULL; rs.dirs = NULL;
+    rs.close_pending = 0; rs.path[0] = 0; rs.notes[0] = 0; rs.files = NULL; rs.dirs = NULL; rb.on = 0;
     if ((w = lj_window_find(rs.win, "DriveList")) != NULL) w->visible = 0;          /* ME-17 stubs, see the header */
     if ((w = lj_window_find(rs.win, "DirList")) != NULL && w->parent) {      /* W4-DLG-1: the folder tree over DirList's rect */
         rs.dirs = lj_w_listbox_create(w->parent, NULL);

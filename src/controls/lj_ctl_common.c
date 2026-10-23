@@ -16,6 +16,7 @@
 #include "controls/lj_ctl_levels.h"
 #include "controls/lj_ctl_movement.h"
 #include "controls/lj_ctl_rgbpack.h"       /* W2 windows-a (LORD_FIDELITY-18) */
+#include "controls/lj_ctl_extapp.h"        /* W5 extapp: TSpecialSettings_ExternalApp */
 #include "core/lj_lock.h"
 #include "core/lj_locale.h"
 #include "core/lj_log.h"
@@ -273,6 +274,7 @@ void lj_ctl_win_repaint(lj_ctl_win *c)
         }
     }
     if (c->kind == LJ_CTL_RGBPACK) lj_ctl_rgbpack_repaint(c);   /* W2 windows-a */
+    if (c->kind == LJ_CTL_EXTENDED && c->profile && c->profile->id == 90) lj_ctl_extapp_repaint(c);   /* W5 extapp */
 }
 
 void lj_ctl_repaint_all(void)
@@ -547,6 +549,7 @@ lj_window *lj_ctl_open_table(enum lj_ctl_kind kind, const lj_ctl_window *table, 
     c->win = lj_window_create(&c->desc, c->bind);
     if (!c->win) { lj_log("lj_ctl: %s: window create failed", c->desc.name); return NULL; }
     if (kind == LJ_CTL_RGBPACK) lj_ctl_rgbpack_build(c);       /* W2 windows-a: status panels + programming panel, not the row renderer */
+    else if (kind == LJ_CTL_EXTENDED && p && p->id == 90) lj_ctl_extapp_build(c);   /* W5 extapp: the command-string window, not the row renderer */
     else build_rows(c);
     lj_ctl_win_repaint(c);
     if (lj_ctl_host && lj_ctl_host->open && lj_ctl_host->open(lj_ctl_host->ud, c->win, 2u /* LJ_WF_STAY_ON_TOP */) != 0) lj_log("lj_ctl: %s: host open failed", c->desc.name);

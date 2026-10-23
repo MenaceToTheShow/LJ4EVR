@@ -116,12 +116,30 @@ int lj_test_restore_data(int argc, char **argv);   /* W4 dlg-files */
 /* W5 contracts (docs/w5-contracts.md seam 11; append-only) */
 int lj_test_engine_w5(int argc, char **argv);
 int lj_test_socket(int argc, char **argv);
+int lj_test_extapp(int argc, char **argv);      /* W5 extapp (append-only) */
+int lj_test_extapp_seq(int argc, char **argv);
+int lj_test_extapp_ui(int argc, char **argv);
 int lj_test_fuzz_sacn_rx(int argc, char **argv);
 int lj_test_fuzz_vtr(int argc, char **argv);
+int lj_test_dmxin_rules(int argc, char **argv);       /* W5 dmxin (append-only) */
+int lj_test_dmxin_vtr(int argc, char **argv);
+int lj_test_dmxin_functions(int argc, char **argv);
+int lj_test_dmxin_loopback(int argc, char **argv);
 int lj_test_fuzz_artnet(int argc, char **argv);
+int lj_test_artnet(int argc, char **argv);   /* W5 artnet */
 int lj_test_fuzz_remote(int argc, char **argv);
 int lj_test_fuzz_ljb(int argc, char **argv);
 int lj_test_uiscript_w5(int argc, char **argv);
+/* W5 media (append-only) */
+int lj_test_media(int argc, char **argv);
+int lj_test_media_form(int argc, char **argv);
+int lj_test_audio(int argc, char **argv);          /* W5 audio */
+int lj_test_audio_form(int argc, char **argv);     /* W5 audio */
+int lj_test_remote(int argc, char **argv);        /* W5 remote */
+int lj_test_serial_pty(int argc, char **argv);    /* W5 remote */
+int lj_test_remote_form(int argc, char **argv);   /* W5 remote */
+int lj_test_ljb(int argc, char **argv);           /* W5 ljb */
+int lj_test_ljb_sample(int argc, char **argv);    /* W5 ljb */
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
     { "font_cells", lj_test_font_cells },
@@ -234,10 +252,29 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_socket", lj_test_socket },         /* contracts: io/lj_socket.h on loopback, UDP + TCP, non-blocking (tests/io/test_socket.c) */
     { "fuzz_sacn_rx", lj_test_fuzz_sacn_rx },  /* dmxin (pending): sACN receiver fuzz row (tests/io/test_dmxin.c) */
     { "fuzz_vtr", lj_test_fuzz_vtr },          /* dmxin (pending): .vtr parser fuzz row (tests/io/test_dmxin.c) */
+    { "dmxin_rules", lj_test_dmxin_rules },          /* dmxin: E1.31 receiver rules, merge, loss, tables, emulation, Art-Net input, loopback unicast (tests/io/test_dmxin.c) */
+    { "dmxin_vtr", lj_test_dmxin_vtr },              /* dmxin: .vtr parse / limits / names / linear / round trip, SYSTEM tables, DmxIn.dat (tests/io/test_dmxin.c) */
+    { "dmxin_functions", lj_test_dmxin_functions },  /* dmxin: the 05 s3.2 threshold and edge rules on synthetic frames (tests/io/test_dmxin.c) */
+    { "dmxin_loopback", lj_test_dmxin_loopback },    /* dmxin: W5-DMXIN-1 unicast to 127.0.0.1:5568, our own CID ignored (tests/io/test_dmxin.c) */
     { "fuzz_artnet", lj_test_fuzz_artnet },    /* artnet (pending): ArtDmx / ArtPoll / ArtPollReply fuzz row (tests/io/test_artnet.c) */
-    { "fuzz_remote", lj_test_fuzz_remote },    /* remote (pending): 3-byte frame parser fuzz row (tests/io/test_remote.c) */
-    { "fuzz_ljb", lj_test_fuzz_ljb },          /* ljb (pending): .LJB container fuzz row (tests/model/test_ljb.c) */
+    { "fuzz_remote", lj_test_fuzz_remote },    /* remote: 3-byte frame parser + exec fuzz row (tests/io/test_remote.c) */
+    { "fuzz_ljb", lj_test_fuzz_ljb },          /* ljb: .LJB container fuzz row (tests/model/test_ljb.c) */
     { "test_uiscript_w5", lj_test_uiscript_w5 },   /* contracts: app/lj_app_io.c headless (W5-X-OFF, Emulate Audio Trig), the four W5 script verbs' checks (tests/ui/test_uiscript_w5.c) */
+    /* W5 media (append-only) */
+    { "test_media", lj_test_media },             /* media: io/lj_media.c clock / formats / states, the runner's MP lines sample-exact, .Cl2 MP round trip (tests/io/test_media.c) */
+    { "test_media_form", lj_test_media_form },   /* media: the LJ MediaPlayer window + golden W5MED_MEDIA_PLAYER, the Cuelist window's MP rows live (tests/io/test_media.c) */
+    /* W5 extapp (append-only) */
+    { "test_extapp", lj_test_extapp },         /* extapp: W5-EXT-2 grammar, [EXTAPP] / definition files hostile, the engine frame copy, loopback TCP with a dead peer (tests/io/test_extapp.c) */
+    { "test_extapp_seq", lj_test_extapp_seq }, /* extapp: W5-EXT-4 the scene record's ext word round trip, v1.0.0 files unchanged, bad ext lines refused (tests/io/test_extapp.c) */
+    { "test_extapp_ui", lj_test_extapp_ui },   /* extapp: W5-EXT-1 both entries headless, goldens CTL_EXTERNAL_EXTENDED / W5X_EXTAPP_SETUP (tests/io/test_extapp.c) */
+    { "test_audio", lj_test_audio },           /* W5 audio: the analyzer on synthetic PCM (120 BPM = 2 trigs/s, silence, noise, decay / sensitivity / gain, FFT bands + EQ, clip, ring, [AUDIO] keys), W5-AUD-6 inputs (tests/io/test_audio.c) */
+    { "test_audio_form", lj_test_audio_form }, /* W5 audio: the Audio Analyzer window, &Audio menu, Hardware Setup tsAudio page, status-bar Trig, audio_inject, golden W5AU_ANALYZER (tests/ui/test_audio_form.c) */
+    { "test_artnet", lj_test_artnet },         /* artnet: W5-ART-1..6 vectors, readers, [ARTNET], Hardware Setup rows, discovery / expiry, rate, bind failure, loopback wire (tests/io/test_artnet.c) */
+    { "test_remote", lj_test_remote },         /* W5 remote: 05 s10.1 commands 128-136 incl. the 0 meanings, framing / 0.2 s / resync, [REMOTE] keys hostile, loopback TCP bounded + budget (tests/io/test_remote.c) */
+    { "test_serial_pty", lj_test_serial_pty }, /* W5 remote: the POSIX serial backend on a pty driving the same parser; SKIP on Windows (tests/io/test_remote_pty.c) */
+    { "test_remote_form", lj_test_remote_form }, /* W5 remote: TRS232SettingsForm by UI script, [REMOTE] saved + reopened, the windows-layer state query (tests/ui/test_remote_form.c) */
+    { "test_ljb", lj_test_ljb },               /* W5 ljb: W5-LJB-1 refusals, W5-LJB-2 hostile names, W5-LJB-3 synthetic import read back, W5-LJB-4 report + Restore window entry, LORD_C-9 (tests/model/test_ljb.c) */
+    { "ljb_sample", lj_test_ljb_sample },      /* W5 ljb: W5-LJB-5, the note 18 sample under LJ4EVR_REFERENCE_DIR; SKIP without it (tests/model/test_ljb.c) */
 };
 
 int main(int argc, char **argv)

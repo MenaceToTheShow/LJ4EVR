@@ -8,6 +8,42 @@
 #include "model/lj_scene.h"
 #include "model/lj_kv.h"
 
+/* W5 extapp: the `ext` word of a scene (docs/file-formats.md, W5-EXT-4): "ext <fixture> cmd=<string>" after the scene's
+ * ch / fx lines, one per profile-90 fixture that has a command string in this scene; absent = none, so a v1.0.0 file
+ * loads unchanged and an older build skips the key. The string is the 05 s10.2 grammar's raw text (ASCII 32..127,
+ * <= 32 characters); the # / ! encoding happens at send time (io/lj_extapp.c). */
+static int ext_text_ok(const char *c)
+{
+    size_t n = 0;
+    for (; c[n]; n++) if (n >= LJ_EXT_CMD_CAP - 1 || (unsigned char)c[n] < 32 || (unsigned char)c[n] > 127) return 0;
+    return 1;
+}
+static int ext_field(lj_scene *s, const char *v)                   /* 0 / -1 */
+{
+    char cmd[LJ_EXT_CMD_CAP];
+    int bad = 0, j, free_j = -1;
+    long f = lj_kv_range_lead(v, 0, 1, LJ_FIXTURES, &bad);
+    if (bad || lj_kv_get(v, "cmd", cmd, sizeof cmd) != 1 || !cmd[0] || !ext_text_ok(cmd)) return -1;
+    for (j = 0; j < LJ_SCENE_EXT; j++) {
+        if (s->ext[j].fixture == f) return -1;                     /* one string per fixture per scene */
+        if (!s->ext[j].fixture && free_j < 0) free_j = j;
+    }
+    if (free_j < 0) return -1;                                     /* more than LJ_SCENE_EXT strings in one scene */
+    s->ext[free_j].fixture = (uint8_t)f;
+    memcpy(s->ext[free_j].cmd, cmd, sizeof cmd);
+    return 0;
+}
+static int ext_write(lj_rec *rec, const lj_scene *s)
+{
+    char q[2 * LJ_EXT_CMD_CAP + 4];
+    int j;
+    for (j = 0; j < LJ_SCENE_EXT; j++) {
+        if (!s->ext[j].fixture || !s->ext[j].cmd[0]) continue;
+        if (lj_kv_quote(q, sizeof q, s->ext[j].cmd) != 0 || lj_rec_write(rec, "ext ", "%u cmd=%s", (unsigned)s->ext[j].fixture, q) != 0) return -1;
+    }
+    return 0;
+}
+
 int lj_sequence_load(const char *path, lj_sequence *out, char *err, size_t cap)
 {
     char k[32], v[LJ_KV_VAL_CAP];
@@ -37,6 +73,9 @@ int lj_sequence_load(const char *path, lj_sequence *out, char *err, size_t cap)
         } else if (strcmp(k, "ch") == 0 || strcmp(k, "fx") == 0) {
             if (cur < 0) { bad = "channel data before the first scene line"; break; }
             if (lj_kv_scene_field(&out->scenes[cur], k, v) < 0) { bad = "bad channel or fx line"; break; }
+        } else if (strcmp(k, "ext") == 0) {                       /* W5 extapp */
+            if (cur < 0) { bad = "ext before the first scene line"; break; }
+            if (ext_field(&out->scenes[cur], v) < 0) { bad = "bad ext line (fixture 1..100 once per scene, cmd ASCII 32..127, 1..32 characters)"; break; }
         }                                                  /* created=, modified= and unknown keys: skipped (design 5.2) */
     }
     lj_rec_close(rec);
@@ -63,7 +102,7 @@ int lj_sequence_save(const char *path, const lj_sequence *in)
     ok = ok && lj_rec_write(rec, "modified", "%s", stamp) == 0;
     ok = ok && lj_rec_write(rec, "sync", "%d gst=%d gft=%d", in->sync_times, in->global_scene_time, in->global_fade_time) == 0;
     ok = ok && lj_rec_write(rec, "scenes", "%u", in->n) == 0;
-    for (i = 0; ok && i < in->n; i++) ok = lj_kv_scene_write(rec, &in->scenes[i]) == 0;
+    for (i = 0; ok && i < in->n; i++) ok = lj_kv_scene_write(rec, &in->scenes[i]) == 0 && ext_write(rec, &in->scenes[i]) == 0;
     return lj_rec_close(rec) == 0 && ok ? 0 : -1;
 }
 
@@ -81,6 +120,8 @@ const char *lj_sequence_validate(const lj_sequence *in)
             if (s->preset[c] > LJ_PRESETS) return "preset reference not 0..99";
             for (j = 0; j < 6; j++) if (s->macro[c].fstate[j] > LJ_FADE) return "macro fade state not 0..2";
         }
+        for (c = 0; c < LJ_SCENE_EXT; c++)                         /* W5 extapp */
+            if (s->ext[c].fixture > LJ_FIXTURES || !memchr(s->ext[c].cmd, 0, LJ_EXT_CMD_CAP) || !ext_text_ok(s->ext[c].cmd)) return "ext fixture not 0..100 or command not ASCII 32..127, <= 32 characters";
     }
     return NULL;
 }

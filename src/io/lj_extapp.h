@@ -25,10 +25,11 @@
 #include "model/lj_model.h"
 
 enum lj_extapp_transport { LJ_EXTAPP_OFF = 0, LJ_EXTAPP_SERIAL, LJ_EXTAPP_TCP };
-enum { LJ_EXTAPP_MAX_BYTES = 32 /* encoded bytes of one string */ };
+enum { LJ_EXTAPP_MAX_BYTES = 32 /* encoded bytes of one string */, LJ_EXTAPP_PATH = 260 /* extapp track: def_file cap (a longer path is refused at OK) */ };
 #define LJ_EXTAPP_RECONNECT_US 2000000u   /* PROPOSAL rig W5-EXT-3 */
 
-typedef struct { uint8_t fixture /* 1..LJ_FIXTURES, 0 = slot unused */; uint8_t transport /*enum lj_extapp_transport*/; char serial_port[64]; uint32_t baud; uint32_t ip; uint16_t port; } lj_extapp_link;
+typedef struct { uint8_t fixture /* 1..LJ_FIXTURES, 0 = slot unused */; uint8_t transport /*enum lj_extapp_transport*/; char serial_port[64]; uint32_t baud; uint32_t ip; uint16_t port;
+                 char def_file[LJ_EXTAPP_PATH] /* extapp track (appended): the definition file the setup window read, shown as eFileName */; } lj_extapp_link;
 typedef struct { lj_extapp_link link[LJ_SCENE_EXT]; } lj_extapp_cfg;
 typedef struct { uint32_t sent, failed, refused; uint8_t connected[LJ_SCENE_EXT]; } lj_extapp_stats;
 
@@ -42,5 +43,16 @@ int  lj_extapp_open(const lj_extapp_cfg *c);                               /* cl
 void lj_extapp_close(void);
 void lj_extapp_step(const uint8_t ext_fixture[LJ_SCENE_EXT], const char *ext, uint64_t now_us);   /* UI thread, the frame copy's fields (ext = &frame.ext[0][0], LJ_SCENE_EXT rows of LJ_EXT_CMD_CAP): send each changed string to its fixture's link; reconnects */
 void lj_extapp_stats_get(lj_extapp_stats *out);
+
+/* ---- extapp track (below the contract) ----
+ * The definition file (TExternalAppSetupForm eFileName; LJ2's plug-in .Ini, H2.100 p265-266): LJ2's [IDENTIFIERS] keys are
+ * shown as they are; our [LJ4EVR] section names the built-in transport (PROPOSAL rig W5-EXT-3, docs/extapp.md):
+ *   TRANSPORT=SERIAL|TCP   SERIALPORT=COM3   BAUD=9600   HOST=192.0.2.10 (dotted IPv4 only, no name lookup)   PORT=7000
+ * The file is untrusted: at most LJ_EXTAPP_DEF_MAX bytes, every value range-checked. */
+enum { LJ_EXTAPP_DEF_MAX = 16384, LJ_EXTAPP_BAUD_DEFAULT = 9600 /* PROPOSAL rig W5-EXT-3 */ };
+lj_ini *lj_extapp_def_open(const char *path, char *err, size_t cap);              /* size check + lj_ini_load; NULL + reason */
+int  lj_extapp_def_link(lj_ini *def, lj_extapp_link *out, char *err, size_t cap); /* [LJ4EVR] into out's transport fields (fixture, def_file untouched): 0, or -1 with the reason and transport OFF */
+int  lj_extapp_slot_of(const lj_extapp_cfg *c, int fixture);                      /* the link slot of fixture 1..LJ_FIXTURES, -1 */
+int  lj_extapp_ip_parse(const char *s, uint32_t *ip);                             /* strict dotted IPv4 (host order): 0 / -1 */
 
 #endif /* LJ_IO_EXTAPP_H */

@@ -1,0 +1,25 @@
+LJ4 replay 1
+# dmxin_s1_lt255 (W5-DMXIN-4, dmxin track): Global Patch 1:1 takes DMX-in 1:5 in mode lt255 (DMX < 255: the input unless it is 255; 11 S1, lj_post.c) over a
+# cue value of 100, gated by Overwrite Enable (05 s3.2). Outside the replay_all glob (W5-X-REPLAY).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+gpatch 1:1 src=in sl=1 sc=5 mode=lt255
+seq 1 name="base"
+scene st=60000 ft=0 ch 1:1=100:S
+cue 1
+slot 1 seq=1
+at 0 load_cue 1
+at 1 dmx_in 1 5=200
+expect 1 1:1=100                       # the gate is closed: the cue value stands
+at 2 overwrite_enable 1
+at 3 dmx_in 1 5=0
+expect 3 1:1=0
+at 4 dmx_in 1 5=50
+expect 4 1:1=50
+at 5 dmx_in 1 5=200
+expect 5 1:1=200
+at 6 dmx_in 1 5=255
+expect 6 1:1=100
+at 7 overwrite_enable 0
+expect 7 1:1=100

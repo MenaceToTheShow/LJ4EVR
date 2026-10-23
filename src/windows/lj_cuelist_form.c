@@ -2,8 +2,9 @@
  * TCuelist2Form over show->current_cl: the lv1 grid (L # | Adv | Command | Parameter | Cue/Trig | Comment/Exe Parameter),
  * the line states the runner publishes (ctx->cl: last executed gray, next blue [RN v2.6 b7]; load_error red, design 8.5),
  * the transport through LJ_ACT_CUELIST_OP, the ListPop / ActionList commands, the eight recent-command buttons, and the
- * TclEditPanels page of the selected line reparented into pEdit as LJ2 does (the holder form is never shown). The CD / DA /
- * MP rows, menu items and time-code buttons stay verbatim, greyed, hint LJ_CL_NOT_AVAILABLE (design 8.5, ME-11). The list
+ * TclEditPanels page of the selected line reparented into pEdit as LJ2 does (the holder form is never shown). The CD / DA
+ * rows, menu items and time-code buttons stay verbatim, greyed, hint LJ_CL_NOT_AVAILABLE (design 8.5, ME-11); the MP rows,
+ * sbMPTime and the Mediaplayer Offset / Sort items are live from W5 (io/lj_media.h, docs/media.md). The list
  * is "locked while active" [03 s6.1]: every edit is refused while the runner is not IDLE. The cue list runs in the app
  * (app/lj_cuelist_run.h); this file never steps it. */
 #include <stdio.h>
@@ -33,6 +34,8 @@
 #include "windows/lj_show_dialogs.h"   /* W4 dlg-show: Offset / Sort (ME-120), the cue picker */
 #include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 #include "core/lj_lock.h"
+#include "io/lj_media.h"            /* W5 media: the clip of ctx->media, the WAV picker of its host */
+#include "core/lj_fsinfo.h"
 
 #define CL_SEC         "CUELIST2"   /* forms.ini / Main.Ini section [01 s4 table: forms.ini [CUELIST2] 545x350, ViewEditPanel ViewEditCommand] */
 #define CL_RECENT      8            /* sbCMD1..8 */
@@ -62,21 +65,19 @@ static const struct { const char *action; int cmd; } cl_actions[] = {
     { "aMTCWait", LJ_CL_WAIT_MTC }, { "aMTCSeek", LJ_CL_AUTOSEEK_MTC }, { "aWaitElapsed", LJ_CL_WAIT_ELAPSED }, { "aWaitPCClock", LJ_CL_WAIT_PC_CLOCK },
     { "aWaitDateChange", LJ_CL_WAIT_DATE_CHANGE }, { "aGotoLine", LJ_CL_GOTO_LINE }, { "aExecuteFile", LJ_CL_EXECUTE_FILE },
     { "aSetCurrentCue", LJ_CL_SET_CURRENT_CUE }, { "aHotkeyCommand", LJ_CL_HOTKEY_COMMAND } };
-/* menu items greyed for good (design 8.5: the CD / DA / MP families and their tools); hints shown on the buttons only (VCL menu
- * hints go to Application.OnHint, which LJ2 does not display) */
+/* menu items greyed for good (design 8.5: the CD / DA families and their tools, ME-11); hints shown on the buttons only (VCL menu
+ * hints go to Application.OnHint, which LJ2 does not display). W5 media: the MP rows and their Offset / Sort items left the list. */
 static const char *const cl_inert_items[] = {
     "Pop_CDCommands", "popWaitCD", "popCDPlayTrack", "popCDPlayTime", "popCDStop",
     "pop_DACommands", "P_WaitDA", "P_PlayDAFile", "P_CueDAFile", "P_StopDA", "P_SeekDA", "P_PlayDA", "Pop_DATimecodeFactor",
-    "Pop_MPCommands", "CueMediaFile1", "MediaPlayerPlay1", "MPSeek1", "MediaPlayerStop1", "MediaPlayerPause1", "WaitMediaPlayer1", "MPCloseClip1",
-    "MediaPlayer1", "MediaPlayerLaunch1", "MPClose1",
-    "OffsetDATimecodes", "OffsetMediaplayerTimecodes1", "OffsetCDTimecodes1", "SortDAWaitTimes", "SortMediaCodes1", "SortCDWaitTimes1",
+    "OffsetDATimecodes", "OffsetCDTimecodes1", "SortDAWaitTimes", "SortCDWaitTimes1",
     "DigitalAudioTimecodeScaler1",
     /* Import Old Format Cuelist (the LJ1 .cl format, dropped) has no behaviour, so it is greyed (ME-120 inert rule); W4: Offset MIDI
      * Timecodes / Offset PC Time / Sort MIDI wait times are alive (TTIMECODEOFFSETFORM / TSORTTIMECODEFORM, lj_show_dialogs.c) */
     "M_ImportOldCuelist" };
 /* ListPop items that edit the list (greyed while it runs, "the list is locked while active") */
 static const char *const cl_edit_items[] = {
-    "Pop_MTCCommands", "Pop_PCTimeCommands", "popGotoLine", "Pop_Execute", "Pop_SetCurrentCue", "pop_SetCueTrig", "MPLoadFile1",
+    "Pop_MTCCommands", "Pop_PCTimeCommands", "Pop_MPCommands" /* W5 media */, "popGotoLine", "Pop_Execute", "Pop_SetCurrentCue", "pop_SetCueTrig", "MPLoadFile1",
     "Pop_Cut", "Pop_Paste", "Pop_ClearCommands", "Pop_SetAdvance", "Pop_SetMark", "Pop_TimeCodeOffsets", "Pop_SortWaitTimes", "PopSetTrackingMode" };
 static const char *const cl_tc_btn[LJ_TC_COUNT] = { "sbPCElapsed", "sbPCClock", "sbMIDITime", "sbCDTime", "sbDATime", "sbMPTime" };
 /* Main.Ini [CUELIST2] preference keys (ours, PROPOSAL rig: LJ2 keeps them in the registry or not at all); the app's runner reads
@@ -99,6 +100,7 @@ static struct {
     uint32_t shown_line;                   /* the line the edit panel shows */
     uint32_t lock_next;                    /* Lock: the next line last scrolled to */
     uint16_t log_base;                     /* Clear Logs: log entries before this index are spent */
+    uint32_t pick_line;                    /* W5 media: the MP Load File line bBrowseMPCue opened the WAV dialog for */
 } s;
 
 /* ---------------------------------------------------------------- the list and its lines */
@@ -227,6 +229,7 @@ static lj_widget *ef(const char *name)   /* a field of the holder, or of the pag
 static void set_num(const char *name, int v) { char b[16]; snprintf(b, sizeof b, "%d", v); if (ef(name)) lj_w_edit_set_text(ef(name), b); }
 static void set_txt(const char *name, const char *t) { if (ef(name)) lj_w_edit_set_text(ef(name), t); }
 static int get_num(const char *name) { const char *t = ef(name) ? lj_w_edit_text(ef(name)) : NULL; return t ? atoi(t) : 0; }
+static int clampi(int v, int hi) { return v < 0 ? 0 : v > hi ? hi : v; }
 static void enable_tree(lj_widget *w, int on) { lj_widget *c; w->enabled = on != 0; for (c = w->first; c; c = c->next) enable_tree(c, on); }
 
 static void show_panel(const char *name)
@@ -266,9 +269,12 @@ static void fill_edit(void)
         if (l->param_ms > 0 && l->param_ms < LJ_FN_COUNT) lj_fn_caption((enum lj_fn)l->param_ms, cap, sizeof cap);
         set_txt("eHotkeyFunction", cap); set_txt("eHotkeyComment", l->comment); break;
     case LJ_CL_FLASH_SEQUENCE: set_num("eFlashSeqSec", (int)(l->param_ms / 1000)); set_num("eFlashSeqFrac", (int)(l->param_ms % 1000 / 100)); set_txt("eComFlashSeq", l->comment); break;
+    case LJ_CL_MP_LOAD_FILE: set_txt("eCueMPName", l->param); set_txt("eComMPCue", l->comment); break;   /* W5 media */
+    case LJ_CL_MP_WAIT: lj_cl_ms_hmsf(l->param_ms, 100, &h, &m, &sec, &f); set_num("eWaitMPHour", h); set_num("eWaitMPMin", m); set_num("eWaitMPSec", sec); set_num("eWaitMPFrame", f); set_txt("eComWaitMPTime", l->comment); break;
+    case LJ_CL_MP_SEEK: lj_cl_ms_hmsf(l->param_ms, 100, &h, &m, &sec, &f); set_num("eSeekMPHour", h); set_num("eSeekMPMin", m); set_num("eSeekMPSec", sec); set_num("eSeekMPFrame", f); set_txt("eComSeekMPTime", l->comment); break;
     default:
         if (!strcmp(pn, "pComment")) set_txt("eCom", l->comment);
-        break;   /* the CD / DA / MP pages show greyed with their DFM defaults: their parameters stay as loaded (design 8.5) */
+        break;   /* the CD / DA pages show greyed with their DFM defaults: their parameters stay as loaded (design 8.5, ME-11) */
     }
     s.filling = 0;
     show_panel(pn);
@@ -290,6 +296,8 @@ static void ed_change(lj_widget *w, void *ud)
     case LJ_CL_FLASH_SEQUENCE: {
         uint32_t ms = (uint32_t)get_num("eFlashSeqSec") * 1000u + (uint32_t)get_num("eFlashSeqFrac") * 100u;
         l->param_ms = ms > LJ_CL_FLASH_MAX_MS ? LJ_CL_FLASH_MAX_MS : ms; break; }
+    case LJ_CL_MP_WAIT: l->param_ms = lj_cl_hmsf_ms(clampi(get_num("eWaitMPHour"), 23), clampi(get_num("eWaitMPMin"), 59), clampi(get_num("eWaitMPSec"), 59), clampi(get_num("eWaitMPFrame"), 99), 100); break;   /* UpDown25-28 bounds */
+    case LJ_CL_MP_SEEK: l->param_ms = lj_cl_hmsf_ms(clampi(get_num("eSeekMPHour"), 23), clampi(get_num("eSeekMPMin"), 59), clampi(get_num("eSeekMPSec"), 59), clampi(get_num("eSeekMPFrame"), 99), 100); break;   /* UpDown29-32 bounds */
     default: break;
     }
     modified();
@@ -318,6 +326,26 @@ static void ed_fps(lj_widget *w, void *ud)   /* sbMIDI1..3: "24 fps" / "25fps" /
 static void ed_select_cmd(lj_widget *w, void *ud) { (void)w; (void)ud; if (sel()) lj_hotkey_function_open(); }
 /* ponytail: no native file dialog in W3 (platform/ owns SDL_ShowOpenFileDialog); the path is typed into the field */
 static void ed_browse(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("cuelist: the file browser is not available yet; type the path into the field"); }
+/* W5 media: bBrowseMPCue opens the WAV dialog of the media host; the path lands on the line in lj_cuelist_form_refresh */
+static void ed_browse_mp(lj_widget *w, void *ud)
+{
+    lj_media *m = lj_ctx_get()->media;
+    const lj_cl_line *l = sel();
+    (void)w; (void)ud;
+    if (!l || l->cmd != LJ_CL_MP_LOAD_FILE) return;
+    if (!m || !m->host || !m->host->pick || m->host->pick(m->host->ud) != 0) { lj_log("cuelist: no file dialog (headless)"); return; }
+    m->pick_owner = 1; s.pick_line = l->line;
+}
+int lj_cuelist_form_set_mp_file(uint32_t line, const char *path)   /* the picked WAV onto an MP Load File line (the dialog, tests) */
+{
+    lj_cl_line *l = running() ? NULL : line_of(line);
+    if (!l || l->cmd != LJ_CL_MP_LOAD_FILE || !path) return -1;
+    lj_str_copy(l->param, sizeof l->param, path);
+    l->load_error = (uint8_t)!lj_fs_exists(path);                                  /* red again only when the file is not there */
+    if (line == s.shown_line) fill_edit();
+    modified();
+    return 0;
+}
 
 static const lj_binding ed_bindings[] = {
     { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "eNumEditEnter", lj_handler_noop, NULL }, { "CommentChanged", ed_comment, NULL },
@@ -326,8 +354,9 @@ static const lj_binding ed_bindings[] = {
     { "bOpenExeClick", ed_browse, NULL },
     /* the CD / DA / MP pages: greyed (design 8.5), their handlers bound to nothing */
     { "CDTrackNoChange", lj_handler_noop, NULL }, { "CDPlayTimeChange", lj_handler_noop, NULL }, { "CDWaitTimeChange", lj_handler_noop, NULL }, { "eWaitDATimeChange", lj_handler_noop, NULL },
-    { "eSeekDAChange", lj_handler_noop, NULL }, { "eWaitMPTimeChange", lj_handler_noop, NULL }, { "eSeekMPFrameChange", lj_handler_noop, NULL }, { "eDATCFactorChange", lj_handler_noop, NULL },
-    { "bBrowseDAClick", lj_handler_noop, NULL }, { "bBrowseMPCueClick", lj_handler_noop, NULL },
+    { "eSeekDAChange", lj_handler_noop, NULL }, { "eDATCFactorChange", lj_handler_noop, NULL }, { "bBrowseDAClick", lj_handler_noop, NULL },
+    /* W5 media: the MP pages are live */
+    { "eWaitMPTimeChange", ed_change, NULL }, { "eSeekMPFrameChange", ed_change, NULL }, { "bBrowseMPCueClick", ed_browse_mp, NULL },
     { NULL, NULL, NULL } };
 
 /* ---------------------------------------------------------------- commands and the recent panel */
@@ -464,6 +493,15 @@ void lj_cuelist_form_refresh(void)
         lj_w_set_caption(lj_window_find(s.win, "lCurrentTime"), buf);
     if (sel_line() != s.shown_line) sel_changed();
     else if (s.panel) enable_tree(s.panel, line_of(s.shown_line) && !lj_cl_cmd_inert(line_of(s.shown_line)->cmd) && !run);
+    {   /* W5 media: a WAV picked for an MP Load File line */
+        lj_media *mm = lj_ctx_get()->media;
+        char p[260];
+        int r;
+        if (mm && mm->pick_owner == 1 && mm->host && mm->host->pick_take && (r = mm->host->pick_take(mm->host->ud, p, sizeof p)) != 0) {
+            mm->pick_owner = 0;
+            if (r == 1) lj_cuelist_form_set_mp_file(s.pick_line, p);
+        }
+    }
 }
 
 /* ---------------------------------------------------------------- events of TCuelist2Form */
@@ -482,17 +520,22 @@ static void on_mark(lj_widget *w, void *ud)   /* sbMark1..4: click jumps to the 
     if (btn() == 2) op(LJ_CL_OP_MARK_RUN, (uint32_t)k);
     else { if (!running() && cl->mark[k - 1]) select_line(cl->mark[k - 1]); else op(LJ_CL_OP_MARK_GOTO, (uint32_t)k); }
 }
-static void on_tc(lj_widget *w, void *ud)   /* sbTimeCodeMouseUp: the shown time-code source; CD / DA / MP greyed */
+static int tc_live(int i) { return i < LJ_TC_CD || i == LJ_TC_MP; }   /* CD / DA greyed (ME-11) */
+static void on_tc(lj_widget *w, void *ud)   /* sbTimeCodeMouseUp: the shown time-code source; the runner's display and Log follow (W5) */
 {
     int i;
     (void)ud;
-    for (i = 0; i < LJ_TC_CD; i++) if (w && w->name && !strcmp(w->name, cl_tc_btn[i])) {
+    for (i = 0; i < LJ_TC_COUNT; i++) if (tc_live(i) && w && w->name && !strcmp(w->name, cl_tc_btn[i])) {
         s.tc_src = i;
         if (lj_ctx_get()->forms_ini) lj_ini_seti(lj_ctx_get()->forms_ini, CL_SEC, "TCSource", i);   /* ours, PROPOSAL key */
     }
     lj_w_speedbutton_set_down(lj_window_find(s.win, cl_tc_btn[s.tc_src]), 1);
+    op(LJ_CL_OP_TC_SRC, (uint32_t)s.tc_src);
     lj_cuelist_form_refresh();
 }
+/* sbMPTimeMouseUp: the media time code shown, and the LJ MediaPlayer opened ("To open the LightJockey Mediaplayer, click
+ * [mediaplayericon] in the cue list control", H2.100; the button carries that icon: PROPOSAL rig 05 s8.1) */
+static void on_tc_mp(lj_widget *w, void *ud) { on_tc(w, ud); lj_win_open(LJ_WIN_MEDIA_PLAYER); }
 static void on_log(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_LOG_TIMECODE); }
 static void on_add(lj_widget *w, void *ud)   /* sbMouseDown of Add / Insert / Delete: right-click on Add / Insert = 10 lines [03 s6.2] */
 {
@@ -621,6 +664,8 @@ static void on_action(lj_widget *w, void *ud)   /* ActionExecute: every TAction 
     if (!strcmp(a, "aCopy")) { if (line_of(sel_line())) { s.clip = *line_of(sel_line()); s.has_clip = 1; } return; }
     if (!strcmp(a, "aTimeCodeOffsetMIDI") || !strcmp(a, "aTimeCodeOffsetPC")) { if (!running()) lj_show_dlg_timecode_offset(!strcmp(a, "aTimeCodeOffsetPC") ? LJ_CLF_PC : LJ_CLF_MTC); return; }   /* W4 (ME-120) */
     if (!strcmp(a, "aSortWaitMIDI")) { if (!running() && lj_show_dlg_sort_waits(cl, LJ_CL_WAIT_MTC) == 0) modified(); return; }                                   /* W4 (ME-120) */
+    if (!strcmp(a, "aTimeCodeOffsetMP")) { if (!running()) lj_show_dlg_timecode_offset(LJ_CLF_MP); return; }                                                     /* W5 media */
+    if (!strcmp(a, "aSortWaitMP")) { if (!running() && lj_show_dlg_sort_waits(cl, LJ_CL_MP_WAIT) == 0) modified(); return; }                                       /* W5 media */
     if (!l) return;
     if (!strcmp(a, "aCut")) { s.clip = *l; s.has_clip = 1; lj_cuelist_delete(cl, sel_line() - 1); }
     else if (!strcmp(a, "aPaste")) { if (!s.has_clip) return; lj_cuelist_insert(cl, sel_line() - 1, &s.clip); }   /* "dropped lines insert above the target" [03 s6.2] */
@@ -706,7 +751,7 @@ static void open_lightcorder(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win
 static const lj_binding cl_bindings[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "FormDeactivate", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
-    { "sbCDTimeMouseDown", lj_handler_noop, NULL }, { "sbDATimeMouseDown", lj_handler_noop, NULL }, { "sbMPTimeMouseDown", lj_handler_noop, NULL }, { "sbMPTimeMouseUp", lj_handler_noop, NULL },
+    { "sbCDTimeMouseDown", lj_handler_noop, NULL }, { "sbDATimeMouseDown", lj_handler_noop, NULL }, { "sbMPTimeMouseDown", lj_handler_noop, NULL }, { "sbMPTimeMouseUp", on_tc_mp, NULL } /* W5 media */,
     { "sbTimeCodeMouseUp", on_tc, NULL }, { "sbLogAudioClick", on_log, NULL }, { "sbLockLineMouseDown", lj_handler_noop, NULL },
     { "sbGoMouseDown", on_go, NULL }, { "sbBackClick", on_back, NULL }, { "sbTopMouseDown", on_top, NULL }, { "sbRunMouseDown", on_run, NULL },
     { "sbMarkMouseUp", on_mark, NULL }, { "sbStopMouseDown", on_stop, NULL },
@@ -761,11 +806,12 @@ lj_window *lj_cuelist_form_open(void)
         lj_menu *m = lj_window_menus(s.win);
         for (i = 0; m && i < m->nrt; i++) if (m->rt[i].item->action && !m->rt[i].fn) { m->rt[i].fn = on_action; m->rt[i].ud = NULL; }
     }
-    /* design 8.5: the CD / DA / MP time-code sources greyed with the hint */
-    for (i = LJ_TC_CD; i < LJ_TC_COUNT; i++) if ((w = lj_window_find(s.win, cl_tc_btn[i])) != NULL) { w->enabled = 0; w->hint = LJ_CL_NOT_AVAILABLE; }
+    /* design 8.5: the CD / DA time-code sources greyed with the hint (ME-11); sbMPTime live from W5 */
+    for (i = LJ_TC_CD; i < LJ_TC_COUNT; i++) if (!tc_live(i) && (w = lj_window_find(s.win, cl_tc_btn[i])) != NULL) { w->enabled = 0; w->hint = LJ_CL_NOT_AVAILABLE; }
     s.tc_src = lj_ini_geti(lj_ctx_get()->forms_ini, CL_SEC, "TCSource", LJ_TC_PC_ELAPSED);
-    if (s.tc_src < 0 || s.tc_src >= LJ_TC_CD) s.tc_src = LJ_TC_PC_ELAPSED;
+    if (s.tc_src < 0 || s.tc_src >= LJ_TC_COUNT || !tc_live(s.tc_src)) s.tc_src = LJ_TC_PC_ELAPSED;
     lj_w_speedbutton_set_down(lj_window_find(s.win, cl_tc_btn[s.tc_src]), 1);
+    op(LJ_CL_OP_TC_SRC, (uint32_t)s.tc_src);   /* W5: the runner shows and logs the window's source */
     recent_load();
     restore_size();
     apply_view(0);
@@ -996,7 +1042,7 @@ static void lg_line(lj_cl_line *l, int i)
     const lj_cl_status *st = lj_ctx_get()->cl;
     uint32_t ms = st->log_ms[s.log_base + i];
     memset(l, 0, sizeof *l);
-    l->cmd = s.tc_src == LJ_TC_MIDI ? LJ_CL_WAIT_MTC : s.tc_src == LJ_TC_PC_CLOCK ? LJ_CL_WAIT_PC_CLOCK : LJ_CL_WAIT_ELAPSED;
+    l->cmd = s.tc_src == LJ_TC_MIDI ? LJ_CL_WAIT_MTC : s.tc_src == LJ_TC_PC_CLOCK ? LJ_CL_WAIT_PC_CLOCK : s.tc_src == LJ_TC_MP ? LJ_CL_MP_WAIT /* W5 media, absolute */ : LJ_CL_WAIT_ELAPSED;
     l->param_ms = l->cmd == LJ_CL_WAIT_ELAPSED && i > 0 ? ms - st->log_ms[s.log_base + i - 1] : ms;
     if (l->cmd == LJ_CL_WAIT_MTC) lj_str_copy(l->param, sizeof l->param, "25");
 }

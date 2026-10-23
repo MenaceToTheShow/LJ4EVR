@@ -354,14 +354,15 @@ int lj_show_dlg_offset(lj_cuelist *cl, int family, int32_t delta_ms, int apply, 
 {
     uint32_t i;
     int over = 0, n = 0;
-    if (!cl || (family != LJ_CLF_MTC && family != LJ_CLF_PC)) return -1;
+    if (!cl || (family != LJ_CLF_MTC && family != LJ_CLF_PC && family != LJ_CLF_MP)) return -1;   /* W5 media: MP */
     for (i = 0; i < cl->n; i++) {
         lj_cl_line *l = &cl->lines[i];
         int fps = l->param[0] ? atoi(l->param) : 25;
         int64_t v, hi;
-        if (l->cmd != (family == LJ_CLF_MTC ? LJ_CL_WAIT_MTC : LJ_CL_WAIT_PC_CLOCK)) continue;
+        if (l->cmd != (family == LJ_CLF_MTC ? LJ_CL_WAIT_MTC : family == LJ_CLF_MP ? LJ_CL_MP_WAIT : LJ_CL_WAIT_PC_CLOCK)) continue;
         if (fps != 24 && fps != 30) fps = 25;
-        hi = family == LJ_CLF_MTC ? (int64_t)lj_cl_hmsf_ms(23, 59, 59, fps - 1, fps) : 86399000;   /* H 0-23 [03 s6.3] */
+        if (family == LJ_CLF_MP) fps = 100;                                    /* W5 media: the clip clock's 1/100 s */
+        hi = family != LJ_CLF_PC ? (int64_t)lj_cl_hmsf_ms(23, 59, 59, fps - 1, fps) : 86399000;   /* H 0-23 [03 s6.3] */
         v = (int64_t)l->param_ms + delta_ms;
         n++;
         if (v < 0 || v > hi) { over++; v = v < 0 ? 0 : hi; }   /* "adjusted to maximum or minimum values" [CHM Offset Time code] */
@@ -373,6 +374,7 @@ int lj_show_dlg_offset(lj_cuelist *cl, int family, int32_t delta_ms, int apply, 
 static int32_t to_delta(void)
 {
     if (to_family == LJ_CLF_PC) return lj_show_dlg_offset_ms(edit_int(in(TO, "ePCHours"), 0), edit_int(in(TO, "ePCMinutes"), 0), edit_int(in(TO, "ePCSeconds"), 0), 0, 100);
+    if (to_family == LJ_CLF_MP) return lj_show_dlg_offset_ms(edit_int(in(TO, "eMPHours"), 0), edit_int(in(TO, "eMPMinutes"), 0), edit_int(in(TO, "eMPSeconds"), 0), edit_int(in(TO, "eMPFrames"), 0), 100);   /* W5 media */
     return lj_show_dlg_offset_ms(edit_int(in(TO, "eMIDIHours"), 0), edit_int(in(TO, "eMIDIMinutes"), 0), edit_int(in(TO, "eMIDISeconds"), 0), edit_int(in(TO, "eMIDIFrames"), 0), to_fps);
 }
 static void to_check(lj_widget *w, void *ud)   /* bCheck "Check Changes": exe 0x171224.. "Overflow/UnderFlow (" n " Lines)", "Offsets Ok", "No Lines to Check" */
@@ -412,13 +414,14 @@ static void to_layout(void)
     static const char *const panels[] = { "pMidi", "pCD", "pMP", "pDA", "pPC" };
     lj_widget *p1 = in(TO, "Panel1"), *p2 = in(TO, "Panel2");
     int i;
-    for (i = 0; i < 5; i++) { lj_widget *p = in(TO, panels[i]); if (p) p->visible = (i == 0 && to_family == LJ_CLF_MTC) || (i == 4 && to_family == LJ_CLF_PC); }
+    for (i = 0; i < 5; i++) { lj_widget *p = in(TO, panels[i]); if (p) p->visible = (i == 0 && to_family == LJ_CLF_MTC) || (i == 2 && to_family == LJ_CLF_MP) || (i == 4 && to_family == LJ_CLF_PC); }
     if (p1) p1->h = 75;                                          /* one 73-px family panel inside Panel1's bevels (cuelistoffsettimecode.gif shows one family) */
     if (p2) p2->y = 75;
     lj_window_resize(sd_win[TO], lj_form_TTIMECODEOFFSETFORM.client_width, 75 + 32);
     lj_widget_layout(lj_window_root(sd_win[TO]));
     lj_menu_set_checked(lj_window_menus(sd_win[TO]), "M_MIDI", to_family == LJ_CLF_MTC);
     lj_menu_set_checked(lj_window_menus(sd_win[TO]), "M_PC", to_family == LJ_CLF_PC);
+    lj_menu_set_checked(lj_window_menus(sd_win[TO]), "M_MP", to_family == LJ_CLF_MP);   /* W5 media */
     lj_window_invalidate_all(sd_win[TO]);
 }
 static void to_type(lj_widget *w, void *ud)
@@ -427,21 +430,22 @@ static void to_type(lj_widget *w, void *ud)
     (void)w; (void)ud;
     if (it && it->name && !strcmp(it->name, "M_MIDI")) to_family = LJ_CLF_MTC;
     else if (it && it->name && !strcmp(it->name, "M_PC")) to_family = LJ_CLF_PC;
-    else return;                                                 /* M_DA / M_MP / M_CD: greyed (ME-11) */
+    else if (it && it->name && !strcmp(it->name, "M_MP")) to_family = LJ_CLF_MP;   /* W5 media */
+    else return;                                                 /* M_DA / M_CD: greyed (ME-11) */
     to_layout();
 }
 void lj_show_dlg_timecode_offset(int family)
 {
     static const lj_binding b[] = { { "bOkClick", to_apply, NULL }, { "bCheckClick", to_check, NULL }, { "sbMIDIMouseUp", to_fps_up, NULL }, { "TimeCodeTypeClick", to_type, NULL },
         { "FormClose", close_ev, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
-    static const char *const greyed[] = { "M_DA", "M_MP", "M_CD" };
+    static const char *const greyed[] = { "M_DA", "M_CD" };   /* W5 media: M_MP live */
     lj_widget *root, *w;
     int i;
-    to_family = family == LJ_CLF_PC ? LJ_CLF_PC : LJ_CLF_MTC;
+    to_family = family == LJ_CLF_PC || family == LJ_CLF_MP ? family : LJ_CLF_MTC;
     if (!sd_win[TO]) {
         if (!mk(TO, &lj_form_TTIMECODEOFFSETFORM, b)) return;
         root = lj_window_root(sd_win[TO]);
-        for (i = 0; i < 3; i++) lj_menu_set_enabled(lj_window_menus(sd_win[TO]), greyed[i], 0);   /* menus show no hints (W3 LORD_FIDELITY-6) */
+        for (i = 0; i < LJ_COUNT_OF(greyed); i++) lj_menu_set_enabled(lj_window_menus(sd_win[TO]), greyed[i], 0);   /* menus show no hints (W3 LORD_FIDELITY-6) */
         for (w = root; w; ) {                                    /* every TUpDown drives its Associate edit (the DFM's Associate) */
             if (w->kind == LJ_K_UPDOWN && w->desc && w->desc->associate) lj_w_updown_bind(w, lj_window_find(sd_win[TO], w->desc->associate), lj_w_edit_set_text);
             if (w->first) w = w->first; else { while (w && !w->next) w = w->parent; if (w) w = w->next; }
@@ -456,7 +460,7 @@ int lj_show_dlg_sort_waits(lj_cuelist *cl, int cmd)   /* exe 0x180E34 "Not enoug
 {
     uint32_t i, first = 0, n = 0, j;
     lj_widget *pg;
-    if (!cl || cmd != LJ_CL_WAIT_MTC) return -1;
+    if (!cl || (cmd != LJ_CL_WAIT_MTC && cmd != LJ_CL_MP_WAIT)) return -1;   /* W5 media: MP wait times */
     for (i = 0; i < cl->n; i++) if (cl->lines[i].cmd == cmd) { if (!n) first = i; n++; }
     if (n < 2) { lj_win_message("Sort Wait Times", "Not enough lines to sort"); return -1; }
     for (i = first; i < first + n; i++) if (cl->lines[i].cmd != cmd) { lj_win_message("Sort Wait Times", "Fragmented Selection, cannot sort"); return -1; }

@@ -60,4 +60,7 @@ void       lj_hotkey_function_close(void);
 lj_window *lj_hotkey_function_get(void);
 void       lj_hotkey_function_refresh(void);
 
+/* W5 media (appended): the picked WAV onto MP Load File line `line` (1-based); load_error follows whether the file exists. 0 / -1 */
+int lj_cuelist_form_set_mp_file(uint32_t line, const char *path);
+
 #endif /* LJ_WINDOWS_CUELIST_FORM_H */

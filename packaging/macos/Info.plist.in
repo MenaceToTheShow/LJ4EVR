@@ -14,5 +14,6 @@
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>NSHighResolutionCapable</key><false/>
   <key>NSHumanReadableCopyright</key><string>${MACOSX_BUNDLE_COPYRIGHT}</string>
+  <key>NSMicrophoneUsageDescription</key><string>LJ4EVR listens to the audio input you choose so the Audio Analyzer can trigger sequences to the music. Nothing is recorded or sent anywhere.</string>
 </dict>
 </plist>

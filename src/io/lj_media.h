@@ -36,6 +36,9 @@ typedef struct {
     int      (*seek)(void *ud, uint64_t frame);          /* restart the stream at that sample frame */
     void     (*close)(void *ud);                         /* stop and free the clip */
     uint64_t (*consumed)(void *ud);                      /* sample frames the device has taken since the last load / seek, plus the seek point */
+    /* ---- media track (appended): the OS open dialog for a WAV (TOpenDialog OpenMediaFileDialog, bBrowseMPCue); NULL = none (headless) */
+    int      (*pick)(void *ud);                          /* starts the dialog; 0 / -1 */
+    int      (*pick_take)(void *ud, char *dst, size_t cap);   /* 1 = a CP1252 path arrived, 0 = still open, -1 = cancelled / idle */
 } lj_media_host;
 
 typedef struct {
@@ -45,6 +48,9 @@ typedef struct {
     uint64_t frames;               /* clip length in sample frames */
     uint32_t cs;                   /* clip clock, 1/100 s, from consumed frames: frames_consumed * 100 / rate */
     char     recent[5][260];       /* the player window's recent-files list of five (W5-MED-5) */
+    /* ---- media track (appended) ---- */
+    const lj_media_host *host;     /* the host lj_media_step last ran with: the player window drives the same clip through it */
+    uint8_t  pick_owner;           /* who started host->pick: 0 none, 1 the Cuelist window's MP Load File line, 2 the player window */
 } lj_media;
 
 void     lj_media_init(lj_media *m);
@@ -53,5 +59,21 @@ void     lj_media_step(lj_media *m, const lj_media_host *h);   /* every UI pass:
 uint32_t lj_media_time_cs(const lj_media *m);
 int      lj_media_format_tc(char *dst, size_t cap, uint32_t cs);   /* "HH:MM:SS:hh"; 0 / -1 */
 int      lj_media_check_file(const char *path, uint64_t size, char *err, size_t cap);   /* the extension and the size cap before a load: 0 / -1 with LJ_MEDIA_ERR_FORMAT / _SIZE */
+
+/* ---- media track (below the contract) ----
+ * Command semantics (H2.100 "Mediaplayer Commands": the quoted words; the rest PROPOSAL rig 05 s8.2):
+ *   MP Load File  closes the clip and loads `param`, paused at 0 ("waits max 5 s": SDL_LoadWAV is synchronous, never waits)
+ *   MP Play       "Play the loaded media file from its current position"; an ENDED clip restarts at 0 (PROPOSAL)
+ *   MP Seek       param_ms, clamped to the clip's end; play / pause kept ("max 5 s": synchronous, never waits)
+ *   MP Stop       "Stop playback and set position to beginning of file"
+ *   MP Pause      "Pause playback."
+ *   MP Wait       not a command: the runner's condition on the clip clock (0 here)
+ *   MP Close Clip "Stop and clear the current media clip."
+ *   MP Start      opens the player window (the app does it; 0 here); MP Close closes the window and the clip
+ * MP Wait's frame field is 0-99 (TClEditPanels UpDown28 Max = 99, the clock's 1/100 s); the help's "Frames (0-74)" is the CD
+ * row's text repeated (docs/media.md). */
+#define LJ_MEDIA_ERR_NOCLIP "No media clip loaded"   /* ours, PROPOSAL rig W5-MED-3 */
+#define LJ_MEDIA_RECENT 5                            /* H2.100: "pick from the 5 most recently loaded media files" */
+int lj_media_recent_push(lj_media *m, const char *path);   /* most recent first, no duplicates; 0 / -1 */
 
 #endif /* LJ_IO_MEDIA_H */

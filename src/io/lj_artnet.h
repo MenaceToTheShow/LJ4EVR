@@ -44,7 +44,7 @@ enum {
 #define LJ_ARTNET_KEEPALIVE_US  900000u   /* spec p.62: 800-1000 ms recommended */
 #define LJ_ARTNET_OEM           0x00FFu   /* OemUnknown; PROPOSAL rig W5-ART-7 (Joey applies for an OemCode, or this stays with its reason) */
 
-typedef struct { uint32_t ip; uint16_t port_addr[LJ_ARTNET_NODE_PORTS]; uint8_t nports; uint8_t missed; char short_name[18]; char long_name[64]; } lj_artnet_node;   /* names CP1252, NUL-terminated after a bounded copy (W5-X-TEXT) */
+typedef struct { uint32_t ip; uint16_t port_addr[LJ_ARTNET_NODE_PORTS]; uint8_t nports; uint8_t missed; char short_name[18]; char long_name[64]; uint8_t bind_index; } lj_artnet_node;   /* names CP1252, NUL-terminated after a bounded copy (W5-X-TEXT) */
 typedef struct { uint32_t packets[LJ_LINKS], pps[LJ_LINKS]; uint32_t nodes, polls, replies, discarded, send_errors; int last_err; uint8_t bound; } lj_artnet_stats;   /* per link; bound = the 6454 socket is open */
 
 /* ---- sender (engine thread only, ME-23) ---- */
@@ -55,6 +55,10 @@ void lj_artnet_close(void);                                           /* closes 
 void lj_artnet_stats_get(lj_artnet_stats *out);
 int  lj_artnet_nodes(lj_artnet_node *out, int max);                   /* engine thread: a copy of the table (the Hardware Setup node list reads the engine view copy) */
 void lj_artnet_feed(const uint8_t *pkt, size_t n, uint32_t src_ip, uint64_t now_us);   /* one received datagram as the pump handles it (tests, the artnet fuzz row) */
+
+/* bind_index (appended by the artnet track): ArtPollReply BindIndex (offset 211, 0 when the reply is shorter); one table
+ * row per (source address, BindIndex), so a node with more than four ports keeps every page. The row's ip is the
+ * datagram's source address, never the packet's IP field (a reply cannot point our ArtDmx at a third host). */
 
 /* ---- packet builders and readers (pure; tests/io/test_artnet.c against gen_vectors.py byte vectors, W5-ART-1) ---- */
 int lj_artnet_pack_dmx(uint8_t out[LJ_ARTNET_DMX_LEN], uint8_t seq, uint8_t physical, uint16_t port_addr, const uint8_t slots[LJ_LINK_CH]);   /* 530 or -1 (port_addr 0 or > 32767) */

@@ -52,9 +52,11 @@ static void lj_cl_track(const lj_cuelist *cl, uint32_t n, const lj_cl_host *h)
         if (cl->lines[i].cue && !cl->lines[i].load_error) lj_cl_latch(&cl->lines[i], h);
 }
 
-static int lj_cl_wait_holds(lj_cl_run *r, const lj_cl_line *l, uint64_t now, int clk_ok, uint32_t ms_of_day, uint32_t day, int mtc_ok, uint32_t mtc_ms)
+static int lj_cl_wait_holds(lj_cl_run *r, const lj_cl_line *l, uint64_t now, int clk_ok, uint32_t ms_of_day, uint32_t day, int mtc_ok, uint32_t mtc_ms, int mp_ok, uint32_t mp_ms)
 {
     switch (l->cmd) {
+    case LJ_CL_MP_WAIT:
+        return mp_ok && mp_ms >= l->param_ms;                                  /* W5: the clip clock (no clip = waits until Go) */
     case LJ_CL_WAIT_ELAPSED:
         if (r->ignore_first_wait && r->first_pending) return 1;               /* M_IgnoreFirstWait */
         return now - r->line_t0_us >= (uint64_t)l->param_ms * 1000u;
@@ -109,6 +111,10 @@ static int lj_cl_exec(lj_cl_run *r, uint64_t now, uint32_t day, int mtc_ok, uint
     case LJ_CL_LOAD_BACKGROUND_CUE:
         if (!h->load_bg || h->load_bg(h->ud, l.ref) < 0) lj_log("cuelist: line %u: background cue %u not loaded", (unsigned)l.line, (unsigned)l.ref);
         break;
+    case LJ_CL_MP_LOAD_FILE: case LJ_CL_MP_PLAY: case LJ_CL_MP_SEEK: case LJ_CL_MP_STOP: case LJ_CL_MP_PAUSE:
+    case LJ_CL_MP_CLOSE_CLIP: case LJ_CL_MP_START: case LJ_CL_MP_CLOSE:   /* W5 media: lj_cl_pass skips them when h->media is NULL */
+        if (h->media(h->ud, &l, now) < 0) lj_log("cuelist: line %u: %s failed", (unsigned)l.line, lj_cl_cmd_caption[l.cmd]);
+        break;
     default: break;
     }
     lj_cl_latch(&l, h);
@@ -127,8 +133,9 @@ static int lj_cl_start(lj_cl_run *r, const lj_cuelist *cl, uint32_t n, uint64_t 
 static int lj_cl_pass(lj_cl_run *r, uint64_t now, const lj_cl_host *h, int force)
 {
     if (r->in_exec) return 0;                                                   /* ME-108: an op from inside a line never runs a nested pass */
-    uint32_t ms_of_day, day, mtc_ms = 0, seen;
+    uint32_t ms_of_day, day, mtc_ms = 0, mp_ms = 0, seen;
     int clk_ok = lj_cl_clock(h, &ms_of_day, &day), mtc_ok = h->timecode && h->timecode(h->ud, LJ_TC_MIDI, &mtc_ms) == 0, done = 0;
+    int mp_ok = h->media && h->timecode && h->timecode(h->ud, LJ_TC_MP, &mp_ms) == 0;   /* W5: read once per pass, as the MTC */
     uint32_t tc = 0;
     if (r->flash_seq && now >= r->flash_off_us) lj_cl_flash_off(r, h);
     if (r->st.state != LJ_CL_IDLE) r->st.elapsed_ms = (uint32_t)((now - r->run_t0_us) / 1000u);
@@ -150,7 +157,7 @@ static int lj_cl_pass(lj_cl_run *r, uint64_t now, const lj_cl_host *h, int force
         const lj_cl_line *l;
         if (r->st.next < 1 || r->st.next > r->cl->n) { lj_cl_end(r); break; }
         l = &r->cl->lines[r->st.next - 1];
-        if (l->load_error || lj_cl_cmd_inert(l->cmd)) {                        /* design 8.5: skipped as if absent */
+        if (l->load_error || lj_cl_cmd_inert(l->cmd) || (!h->media && lj_cl_cmd_family(l->cmd) == LJ_CLF_MP)) {   /* design 8.5: skipped as if absent */
             lj_log("cuelist: line %u skipped (load error: %s)", (unsigned)l->line, l->cmd ? lj_cl_cmd_caption[l->cmd] : l->param);
             if (r->st.next == r->cl->n) { lj_cl_end(r); break; }
             lj_cl_arrive(r, r->st.next + 1, day); lj_cl_changed(r);
@@ -161,7 +168,7 @@ static int lj_cl_pass(lj_cl_run *r, uint64_t now, const lj_cl_host *h, int force
                 if (r->st.state != LJ_CL_WAIT_GO) { r->st.state = LJ_CL_WAIT_GO; lj_cl_changed(r); }
                 break;
             }
-            if (!lj_cl_wait_holds(r, l, now, clk_ok, ms_of_day, day, mtc_ok, mtc_ms)) {
+            if (!lj_cl_wait_holds(r, l, now, clk_ok, ms_of_day, day, mtc_ok, mtc_ms, mp_ok, mp_ms)) {
                 if (r->st.state != LJ_CL_RUNNING) { r->st.state = LJ_CL_RUNNING; lj_cl_changed(r); }
                 break;
             }
@@ -181,12 +188,24 @@ void lj_cl_run_init(lj_cl_run *r)
     r->st.tc_ms = -1;
 }
 
+/* W5 media: a synthetic MP line to the host (Stop on list stop, Auto seek on Run); NULL host member = nothing */
+static void lj_cl_media(const lj_cl_host *h, int cmd, uint32_t ms, uint64_t now)
+{
+    lj_cl_line l;
+    if (!h->media) return;
+    memset(&l, 0, sizeof l);
+    l.cmd = (uint8_t)cmd; l.param_ms = ms;
+    if (h->media(h->ud, &l, now) < 0) lj_log("cuelist: %s failed", lj_cl_cmd_caption[cmd]);
+}
+
 static int lj_cl_start(lj_cl_run *r, const lj_cuelist *cl, uint32_t n, uint64_t now, const lj_cl_host *h, int track)
 {
-    uint32_t ms, day;
+    uint32_t ms, day, i;
     if (!cl || !cl->n || n < 1 || n > cl->n) return -1;
     lj_cl_flash_off(r, h);
     if (track && n > 1) lj_cl_track(cl, n - 1, h);
+    if (r->autoseek_media && n > 1)                                            /* M_AutoCueAudio, PROPOSAL rig 05 s8.3: the clip where line n stands */
+        for (i = n; i-- > 0; ) if (cl->lines[i].cmd == LJ_CL_MP_WAIT && !cl->lines[i].load_error) { lj_cl_media(h, LJ_CL_MP_SEEK, cl->lines[i].param_ms, now); break; }
     lj_cl_clock(h, &ms, &day);
     r->cl = cl; r->st.number = cl->number; r->st.last = 0;
     r->run_t0_us = r->line_t0_us = now; r->st.elapsed_ms = 0;
@@ -230,6 +249,7 @@ int lj_cl_run_op(lj_cl_run *r, const lj_cuelist *cl, int op, uint32_t n, uint64_
         return lj_cl_jump(r, r->st.next - 1, now_us, h);
     case LJ_CL_OP_STOP: case LJ_CL_OP_STOP_CLEAR:
         lj_cl_flash_off(r, h);
+        if (r->st.state != LJ_CL_IDLE && r->stop_media) lj_cl_media(h, LJ_CL_MP_STOP, 0, now_us);   /* M_StopAudio */
         if (r->st.state != LJ_CL_IDLE) lj_cl_end(r);
         if (op == LJ_CL_OP_STOP_CLEAR && h->clear_cue) h->clear_cue(h->ud);
         return 0;
@@ -250,6 +270,11 @@ int lj_cl_run_op(lj_cl_run *r, const lj_cuelist *cl, int op, uint32_t n, uint64_
     case LJ_CL_OP_LOG:
         if (r->st.tc_ms < 0 || r->st.nlog >= LJ_CL_LOG_MAX) return -1;
         r->st.log_ms[r->st.nlog++] = (uint32_t)r->st.tc_ms;
+        lj_cl_changed(r);
+        return 0;
+    case LJ_CL_OP_TC_SRC:                                                      /* W5 media: the shown source (sb*Time); the next pass reads it */
+        if (n >= LJ_TC_COUNT) return -1;
+        r->st.tc_src = (uint8_t)n;
         lj_cl_changed(r);
         return 0;
     default: return -1;

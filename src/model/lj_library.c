@@ -17,6 +17,7 @@
 #include "model/lj_library.h"
 #include "model/lj_model.h"
 #include "model/lj_cue.h"
+#include "model/lj_notes.h"
 #include "core/lj_fsinfo.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
@@ -492,7 +493,16 @@ int lj_library_backup_notes(const char *zip_path, char *notes, size_t cap)
     notes[0] = 0;
     memset(&zip, 0, sizeof zip);
     if (!mz_zip_reader_init_file(&zip, zip_path, 0)) { lj_log("library: %s is not a backup", zip_path); return -1; }
-    p = (char *)mz_zip_reader_extract_file_to_heap(&zip, LJ_BACKUP_NOTES, &len, MZ_ZIP_FLAG_CASE_SENSITIVE);   /* never the library's Notes.txt */
+    {   /* LORD_C-9 (ljb track): the declared size capped before the extract allocates it; miniz then checks size and CRC */
+        mz_zip_archive_file_stat st;
+        int fi = mz_zip_reader_locate_file(&zip, LJ_BACKUP_NOTES, NULL, MZ_ZIP_FLAG_CASE_SENSITIVE);   /* never the library's Notes.txt */
+        if (fi >= 0 && (!mz_zip_reader_file_stat(&zip, (mz_uint)fi, &st) || st.m_uncomp_size > LJ_NOTES_CAP)) {
+            mz_zip_reader_end(&zip);
+            lj_log("library: %s: %s larger than %d bytes, refused", zip_path, LJ_BACKUP_NOTES, LJ_NOTES_CAP);
+            return -1;
+        }
+        p = fi >= 0 ? (char *)mz_zip_reader_extract_to_heap(&zip, (mz_uint)fi, &len, 0) : NULL;
+    }
     mz_zip_reader_end(&zip);
     if (!p) { lj_log("library: %s has no %s", zip_path, LJ_BACKUP_NOTES); return -1; }
     ok = len < cap;

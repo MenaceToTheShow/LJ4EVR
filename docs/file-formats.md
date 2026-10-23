@@ -717,3 +717,46 @@ first save writes the file.
 | `Fix<n>` | its fixture order, comma-separated fixture numbers 1..100 (`3,7,12`); anything else in the list is skipped |
 
 Clear All sets `Count=0`; the old `Name` / `Fix` keys stay and are overwritten by the next save.
+
+## W5 extapp (2026-10-23)
+
+### The `ext` word of a scene in `Sequences\NNNNNNNN.seq` (format 1, additive)
+
+```
+scene st=1000 ft=50
+ch 2:1=0:S
+ext 5 cmd=TRIG!1
+ext 7 cmd="say ""hi"" #13"
+```
+
+`ext <fixture> cmd=<string>` follows the scene's `ch` / `fx` lines. There is one line per External Application/Device
+fixture (built-in profile 90) that has a command string in that scene, at most 4 (`LJ_SCENE_EXT`). `fixture` is
+1..100 and appears once per scene. `cmd` is 1..32 characters, ASCII 32..127, quoted by the common rule. It is the raw
+string; the `#` / `!` grammar is applied at send time (docs/extapp.md). Absent = no string, so a v1.0.0 file loads
+unchanged. An older build skips the key. A bad `ext` line rejects the file like any other bad line.
+
+### Hardware.Ini `[EXTAPP]` (ours)
+
+Per link slot n = 1..4: `Fixture<n>` (1..100, 0 = unused; a fixture named twice keeps the first slot),
+`Transport<n>` (0 off, 1 serial, 2 TCP), `SerialPort<n>`, `Baud<n>` (110..921600, else 9600), `Host<n>` (dotted
+IPv4), `Port<n>` (1..65535), `Definition<n>` (the definition file path shown by TExternalAppSetupForm). A value out of
+range turns that slot's transport off. A fresh Hardware.Ini has every slot off (W5-X-OFF).
+
+### Definition files (`[LJ4EVR]` section, ours)
+
+`TRANSPORT=SERIAL|TCP`, `SERIALPORT`, `BAUD`, `HOST`, `PORT`, in an ini of at most 16 KB. LJ2's `[IDENTIFIERS]` keys
+are shown and never acted on (docs/extapp.md).
+
+## W5 artnet (2026-10-23)
+
+### `Hardware.Ini [ARTNET]` (`io/lj_artnet.h`, `lj_artnet_cfg_load / save`; ours, additive, installation-wide)
+
+| Key | Value |
+|---|---|
+| `Proto1`..`Proto4` | the protocol of link n: `0` sACN (also the value of a missing key or any other number), `1` Art-Net |
+| `Addr1`..`Addr4` | the Art-Net Port-Address of link n, 1..32767 (15 bits: Net 0-127, Sub-Net 0-15, Universe 0-15); missing or out of range = n (PROPOSAL rig W5-ART-4) |
+| `In` | the Art-Net input Port-Address handed to DMX-in, 0 = off (written by the app from `[DMXIN]`, see dmxin) |
+
+A file from v1.0.0 has no `[ARTNET]` section and loads as sACN on every link. The Hardware Setup OK button writes all
+nine keys. Two Art-Net links with one Port-Address, or Port-Address 0 on an Art-Net link, are refused by the page
+(`lj_artnet_cfg_validate`); a hand-edited file with either keeps the offending link silent and logs it.

@@ -172,6 +172,8 @@ void lj_app_cuelist_step(uint64_t now_us)
     if (mi) {                                                        /* the Cuelist window's Preferences (Main.Ini [CUELIST2], PROPOSAL keys) */
         lj_w3.run.ignore_first_wait = lj_ini_geti(mi, "CUELIST2", "IgnoreFirstWait", 0) != 0;
         lj_w3.run.auto_cue_on_run = lj_ini_geti(mi, "CUELIST2", "AutoCue", 0) != 0;
+        lj_w3.run.stop_media = lj_ini_geti(mi, "CUELIST2", "StopAudio", 0) != 0;          /* W5 media: M_StopAudio */
+        lj_w3.run.autoseek_media = lj_ini_geti(mi, "CUELIST2", "AutoSeekAudio", 0) != 0;  /* W5 media: M_AutoCueAudio */
         t = lj_ini_geti(mi, "CUELIST2", "MTCTimeout", LJ_CL_MTC_STOP);
         lj_w3.run.mtc_timeout = (uint8_t)(t >= LJ_CL_MTC_STOP && t <= LJ_CL_MTC_IGNORE ? t : LJ_CL_MTC_STOP);
     }

@@ -7,6 +7,7 @@
 #include "model/lj_words.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
+#include "core/lj_fsinfo.h"
 
 #define LJ_CL_PARAM_MAX 86399999L   /* the widest param= in ms: 23:59:59.999 (Wait PC-Clock, MTC); Wait Elapsed 99:59:99 and the rest fit below */
 #define LJ_CL_TRIG_ALL  0xFFFL      /* slots 1-12 */
@@ -82,8 +83,9 @@ int lj_cuelist_load(const char *path, lj_cuelist *out, char *err, size_t cap)
                 }
                 l->cmd = (uint8_t)c;
             }
-            if (lj_cl_cmd_inert(l->cmd) || l->cmd == LJ_CL_SET_CURRENT_CUE || l->cmd == LJ_CL_SET_CUE_TRIG) l->load_error = 1;   /* CD / DA / MP (design 8.5), panel actions stored as a cmd */
-            if (l->load_error) lj_log("%s line %u: %s not available, kept and skipped (load error)", path, (unsigned)l->line, l->cmd ? lj_cl_cmd_words[l->cmd] : l->param);
+            if (lj_cl_cmd_inert(l->cmd) || l->cmd == LJ_CL_SET_CURRENT_CUE || l->cmd == LJ_CL_SET_CUE_TRIG) l->load_error = 1;   /* CD / DA (design 8.5, ME-11), panel actions stored as a cmd */
+            if (l->cmd == LJ_CL_MP_LOAD_FILE && !l->load_error && !lj_fs_exists(l->param)) { l->load_error = 1; lj_log("%s line %u: MP Load File %s: file not found, kept and skipped (load error)", path, (unsigned)l->line, l->param); }   /* W5 media (design 8.5) */
+            else if (l->load_error) lj_log("%s line %u: %s not available, kept and skipped (load error)", path, (unsigned)l->line, l->cmd ? lj_cl_cmd_words[l->cmd] : l->param);
             out->n++;
         }
     }
@@ -134,7 +136,7 @@ const char *lj_cuelist_validate(const lj_cuelist *in)
         if (l->cue && l->trig_mask) return "a line latches a cue or trigs slots, not both";   /* 03 s6.1 */
         if (l->trig_mask > LJ_CL_TRIG_ALL) return "trig mask beyond slot 12";
         if (l->load_error) continue;                                     /* kept as read, never executed (design 8.5) */
-        if (lj_cl_cmd_inert(l->cmd)) return "CD / DA / MP command without its load error flag";
+        if (lj_cl_cmd_inert(l->cmd)) return "CD / DA command without its load error flag";
         if (l->cmd == LJ_CL_SET_CURRENT_CUE || l->cmd == LJ_CL_SET_CUE_TRIG) return "set_current_cue / set_cue_trig are panel actions, not stored commands";
         if (l->cmd == LJ_CL_FLASH_SEQUENCE && l->param_ms > LJ_CL_FLASH_MAX_MS) return "flash duration above 99.9 s";
         if (l->cmd == LJ_CL_WAIT_PC_CLOCK && l->param_ms > LJ_CL_PARAM_MAX) return "PC clock time beyond 23:59:59";
@@ -206,7 +208,7 @@ int lj_cl_cmd_family(int cmd)
     if (cmd <= LJ_CL_HOTKEY_COMMAND) return LJ_CLF_OTHER;
     return LJ_CLF_DRAG;
 }
-int lj_cl_cmd_inert(int cmd) { int f = lj_cl_cmd_family(cmd); return f == LJ_CLF_CD || f == LJ_CLF_DA || f == LJ_CLF_MP; }
+int lj_cl_cmd_inert(int cmd) { int f = lj_cl_cmd_family(cmd); return f == LJ_CLF_CD || f == LJ_CLF_DA; }   /* W5: MP left the rule (W5-MED-3, ME-11 narrowed) */
 int lj_cl_cmd_is_wait(int cmd)
 {
     return cmd == LJ_CL_WAIT_CD || cmd == LJ_CL_WAIT_DA || cmd == LJ_CL_MP_WAIT || cmd == LJ_CL_WAIT_MTC

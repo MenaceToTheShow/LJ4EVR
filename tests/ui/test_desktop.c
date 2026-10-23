@@ -202,8 +202,7 @@ int lj_test_desktop(int argc, char **argv)
     {   /* W4 hw-dmxin (W4-HW-0, I13): every dropped-hardware entry point present, greyed, hint "Not available in LJ4EVR" */
         static const char *const tb_dropped[] = { "tb_cuelist_7" /* CD: TMCICDForm2 */, "tb_cuelist_8" /* MC-X: TMCXSetupForm */, "tb_cuelist_9" /* 2518: TForm2518_2, TSetup2518Form */ };
         static const char *const menu_dropped[] = { "M_Download2510" /* the five 2510 forms */, "M_Download2518" /* TD2518Form, TCreate2518MemStatusForm */,
-                                                    "M_ManagerPrefs" /* TLJManagerPrefsForm */, "M_CapturePanel" /* TCaptureForm */, "M_SandNetStatus" /* TSandNetStatusForm */,
-                                                    "PI_DefineAppLink" /* TExternalAppSetupForm, W5 */ };
+                                                    "M_ManagerPrefs" /* TLJManagerPrefsForm */, "M_CapturePanel" /* TCaptureForm */, "M_SandNetStatus" /* TSandNetStatusForm */ };   /* W5 extapp: PI_DefineAppLink left the list (live) */
         int k, j, found;
         for (k = 0; k < LJ_COUNT_OF(tb_dropped); k++) {
             w = lj_window_find(win, tb_dropped[k]);
@@ -217,6 +216,7 @@ int lj_test_desktop(int argc, char **argv)
             CHECK(found);
         }
         CHECK(lj_menu_rt_named(m, "PI_DefineAppLink") && !lj_menu_rt_named(m, "PI_DefineAppLink")->visible);   /* shown on an External Application/Device icon only */
+        CHECK(lj_menu_rt_named(m, "PI_DefineAppLink") && lj_menu_rt_named(m, "PI_DefineAppLink")->enabled);   /* W5 extapp: live, no hint (I11 superseded) */
     }
     {   /* a MAC 500-like master through the table-driven rule: lj_profile_window on the two synthetic profiles */
         const lj_profile *p = &mh;

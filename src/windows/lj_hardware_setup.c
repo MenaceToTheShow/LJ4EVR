@@ -11,12 +11,14 @@
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "io/lj_net.h"
+#include "io/lj_artnet.h"   /* W5 artnet */
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_dmx_in.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
+#include "windows/lj_audio_form.h"    /* W5 audio: the tsAudio page */
 
 #define LJ_HS_NICS 16
 #define LJ_HS_X    150                    /* control column; labels at x 4 */
@@ -27,7 +29,7 @@ typedef struct {
     lj_sacn_cfg local;                    /* used when ctx->sacn is NULL (tests) */
     lj_nic nics[LJ_HS_NICS]; int nnics;
     char nic_text[LJ_HS_NICS][96]; const char *nic_items[LJ_HS_NICS];
-    char status[160], addr_text[32];
+    char status[240], addr_text[32];   /* W5 artnet: 160 -> 240 for the Art-Net part */
     uint32_t pps[LJ_LINKS]; int last_err;
     lj_widget *nic, *uni[LJ_LINKS], *prio, *name, *preview, *unlock, *ucast[LJ_LINKS], *lstatus;
 } lj_hs_state;
@@ -44,6 +46,56 @@ static int ip_parse(const char *s, uint32_t *out)
     if (sscanf(s, "%u.%u.%u.%u%c", &a, &b, &c, &d, &tail) != 4 || a > 255 || b > 255 || c > 255 || d > 255) return -1;
     *out = (a << 24) | (b << 16) | (c << 8) | d;
     return 0;
+}
+
+/* W5 artnet: per link, beside its universe, the protocol combo and the Art-Net Port-Address (W5-ART-4). Captions
+ * "sACN" / "Art-Net" / "Port-Address" and the geometry: PROPOSAL rig M-hw (LJ2 had no network output, note 05 item 23). */
+static const char *const lj_hs_protos[] = { "sACN", "Art-Net" };
+static lj_widget *label(lj_widget *parent, lj_ctl_desc *d, const char *name, int x, int y, int w, const char *caption);
+static lj_widget *proto_w(int i) { char nm[16]; snprintf(nm, sizeof nm, "cbProto%d", i + 1); return lj_window_find(hs.win, nm); }
+static lj_widget *aaddr_w(int i) { char nm[16]; snprintf(nm, sizeof nm, "seArtAddr%d", i + 1); return lj_window_find(hs.win, nm); }
+static void artnet_rows(lj_widget *panel)
+{
+    static lj_ctl_desc d[LJ_LINKS * 3];
+    static const char *const cb[LJ_LINKS] = { "cbProto1", "cbProto2", "cbProto3", "cbProto4" }, *const se[LJ_LINKS] = { "seArtAddr1", "seArtAddr2", "seArtAddr3", "seArtAddr4" };
+    int i, n = 0, y;
+    for (i = 0; i < LJ_LINKS; i++) {
+        y = 110 + LJ_HS_ROW * (i + 1);                                  /* the "Link n -> Universe" row */
+        memset(&d[n], 0, sizeof d[n]); d[n].kind = LJ_K_COMBOBOX; d[n].name = cb[i]; d[n].left = LJ_HS_X + 90; d[n].top = y; d[n].width = 80; d[n].height = 21; d[n].style = "csDropDownList"; d[n].item_index = 0; d[n].drop_down_count = 2; d[n].item_height = 13; d[n].font_inherited = 1;
+        lj_w_combobox_set_items(lj_w_combobox_create(panel, &d[n++]), lj_hs_protos, 2);
+        label(panel, &d[n++], "lArtAddr", LJ_HS_X + 180, y + 4, 76, "Port-Address");
+        memset(&d[n], 0, sizeof d[n]); d[n].kind = LJ_K_SPINEDIT; d[n].name = se[i]; d[n].left = LJ_HS_X + 258; d[n].top = y; d[n].width = 80; d[n].height = 22; d[n].min_value = 0; d[n].max_value = LJ_ARTNET_ADDR_MAX; d[n].max_length = 5; d[n].font_inherited = 1;   /* 0 reaches the validation path (refused, deprecated by the spec) */
+        d[n].hint = "Art-Net Port-Address 1..32767 (Net, Sub-Net, Universe)";
+        lj_w_spinedit_create(panel, &d[n++]);
+    }
+}
+static void artnet_fill(const lj_sacn_cfg *c)
+{
+    int i;
+    for (i = 0; i < LJ_LINKS; i++) {
+        if (proto_w(i)) ((lj_w_combobox *)proto_w(i))->index = c->proto[i] == LJ_OUT_ARTNET ? 1 : 0;
+        if (aaddr_w(i)) lj_w_spinedit_set_value(aaddr_w(i), c->artnet_addr[i]);
+    }
+}
+static void artnet_read(lj_sacn_cfg *n)
+{
+    int i;
+    for (i = 0; i < LJ_LINKS; i++) {
+        if (proto_w(i)) n->proto[i] = (uint8_t)(((lj_w_combobox *)proto_w(i))->index == 1 ? LJ_OUT_ARTNET : LJ_OUT_SACN);
+        if (aaddr_w(i)) n->artnet_addr[i] = (uint16_t)lj_w_spinedit_value(aaddr_w(i));
+    }
+}
+static void artnet_status(const lj_sacn_cfg *c, char *st, size_t cap)   /* W5-ART-4 / -5: Art-Net packets/s and node count, or the bind failure */
+{
+    const lj_engine_status *v = &lj_ctx_get()->view;
+    char part[64];
+    unsigned pps = 0;
+    int i, any = 0;
+    for (i = 0; i < LJ_LINKS; i++) if (c->proto[i] == LJ_OUT_ARTNET) { any = 1; pps += v->artnet_pps[i]; }
+    if (!any && !c->artnet_in) return;
+    if (!v->artnet_bound) snprintf(part, sizeof part, " | Art-Net off: UDP 6454 in use");
+    else snprintf(part, sizeof part, " | Art-Net %u pkt/s, %u nodes", pps, (unsigned)v->artnet_nodes);
+    strncat(st, part, cap - strlen(st) - 1);
 }
 
 /* ---- the code-built page (hand-filled descs, design 7.7) ---- */
@@ -92,6 +144,7 @@ static lj_widget *build_page(lj_widget *panel)
     }
     y += LJ_HS_ROW + 8;
     hs.lstatus = label(panel, &d[n++], "lSacnStatus", 4, y, 900, "");
+    artnet_rows(panel);   /* W5 artnet */
     return panel;
 }
 
@@ -124,6 +177,7 @@ static void page_fill(void)
     lj_w_set_caption(find("lType"), "sACN (E1.31)");                 /* where Martin's cards were [08 s7] */
     lj_w_set_caption(find("lAddress"), hs.addr_text);
     lj_w_set_caption(find("lChannels"), "2048");
+    artnet_fill(c);   /* W5 artnet */
     lj_hardware_setup_refresh();
 }
 
@@ -138,12 +192,13 @@ void lj_hardware_setup_refresh(void)
     ip_text(c->nic_ipv4, ip, sizeof ip);
     snprintf(hs.status, sizeof hs.status, "NIC %s", ip);
     for (i = 0; i < LJ_LINKS; i++) {
-        if (!c->universe_of_link[i]) continue;
+        if (!c->universe_of_link[i] || c->proto[i] == LJ_OUT_ARTNET) continue;   /* W5 artnet: an Art-Net link has no sACN universe */
         snprintf(part, sizeof part, " | U%u %u pkt/s", (unsigned)c->universe_of_link[i], (unsigned)hs.pps[i]);
         strncat(hs.status, part, sizeof hs.status - strlen(hs.status) - 1);
     }
     snprintf(part, sizeof part, " | last send error %d", hs.last_err);
     strncat(hs.status, part, sizeof hs.status - strlen(hs.status) - 1);
+    artnet_status(c, hs.status, sizeof hs.status);   /* W5 artnet */
     lj_w_set_caption(hs.lstatus, hs.status);
     lj_w_set_caption(find("lStatus"), hs.last_err ? "send error" : "ok");
 }
@@ -183,12 +238,15 @@ const char *lj_hardware_setup_apply(void)
     n.preview = (uint8_t)lj_w_checkbox_checked(hs.preview);
     n.unlock_rate = (uint8_t)lj_w_checkbox_checked(hs.unlock);
     if (!msg) msg = lj_sacn_cfg_validate(&n);
+    artnet_read(&n);                                                  /* W5 artnet */
+    if (!msg) msg = lj_artnet_cfg_validate(&n);
     if (msg) { lj_win_message("Hardware Setup", msg); return msg; }
     lj_lock(); *cfg() = n; lj_unlock();                               /* the engine thread takes this pointer with lj_engine_take_sacn_cfg (ME-23) */
     if (ctx->sacn) { lj_cmd c; memset(&c, 0, sizeof c); c.kind = LJ_CMD_SACN_CFG; c.sacn = ctx->sacn; lj_ctx_post(&c); }
     if (ctx->hardware_ini) {
         char path[LJ_PATH_CAP];
         lj_sacn_cfg_save(ctx->hardware_ini, cfg());
+        lj_artnet_cfg_save(ctx->hardware_ini, cfg());                 /* W5 artnet: [ARTNET], additive */
         if (snprintf(path, sizeof path, "%sHardware.Ini", ctx->userdir) < (int)sizeof path && lj_ini_save(ctx->hardware_ini, path) != 0) lj_log("hardware setup: cannot write %s", path);
     }
     page_fill();
@@ -197,11 +255,11 @@ const char *lj_hardware_setup_apply(void)
 
 /* ---- handlers ---- */
 static void na(lj_widget *w, void *ud) { (void)ud; lj_log("hardware setup: %s: Not available in LJ4EVR", w && w->name ? w->name : "?"); }
-static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_hardware_setup_apply() == NULL) lj_hardware_setup_close(); }
+static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_hardware_setup_apply() == NULL && lj_dmx_in_hs_apply() == NULL /* W5 dmxin */) { lj_audio_form_hs_apply(); /* W5 audio */ lj_hardware_setup_close(); } }
 
 static const lj_binding lj_hs_bindings[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL }, { "PC1Change", lj_handler_noop, NULL },
-    { "bOkClick", on_ok, NULL }, { "bdetectHardwareClick", na, NULL }, { "bClearhardwareClick", na, NULL }, { "cbUseDMXinClick", na, NULL },
+    { "bOkClick", on_ok, NULL }, { "bdetectHardwareClick", na, NULL }, { "bClearhardwareClick", na, NULL }, { "cbUseDMXinClick", lj_dmx_in_hs_use_click, NULL } /* W5 dmxin */,
     { "RGrefreshClick", lj_handler_noop, NULL }, { "lvUSBDblClick", lj_handler_noop, NULL }, { "lvUSBSelectItem", lj_handler_noop, NULL }, { "sbID1MouseDown", lj_handler_noop, NULL }, { "sbID1MouseUp", lj_handler_noop, NULL },
     { "sbWinampClick", na, NULL }, { "bMTCSeelctClick", na, NULL }, { "RG2532EnableClick", lj_handler_noop, NULL }, { "rg2518EnableClick", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "output" },
     { NULL, NULL, NULL }
@@ -210,8 +268,8 @@ static const lj_binding lj_hs_bindings[] = {
 lj_window *lj_hardware_setup_open(void)
 {
     static const char *const hidden[] = { "pUSB", "p4064Club", "p4064DJ", "pPCMCIA1", "pPCI", "pPCMCIA2" };
-    static const char *const greyed[] = { "bdetectHardware", "bClearhardware", "cbUseDMXin" };
-    static const char *const dropped[] = { "tsOnekey", "tsAudio", "TSDA_RS232" };   /* W4-HW-0 / I13: Martin USB interfaces, Winamp / CD / Audio Analyzer (W5),
+    static const char *const greyed[] = { "bdetectHardware", "bClearhardware" };   /* W5 dmxin: cbUseDMXin live (lj_dmx_in_hs_build) */
+    static const char *const dropped[] = { "tsOnekey", "TSDA_RS232" };   /* W5 audio: tsAudio is live (lj_audio_form_hs_build) */   /* W4-HW-0 / I13: Martin USB interfaces, Winamp / CD / Audio Analyzer (W5),
                                                                                       * 2532 serial (keyboard / MIDI instead, D16), 2518 RS-232, MC-X: inputs greyed */
     static const char *const blank[] = { "lProtectionDeviceStatus", "lLicenseStatus", "Label10" };   /* D3: the licence lines are gone */
     lj_widget *panel, *w;
@@ -227,6 +285,8 @@ lj_window *lj_hardware_setup_open(void)
     if (!panel) { lj_hardware_setup_close(); return NULL; }
     build_page(panel);
     page_fill();
+    lj_audio_form_hs_build(hs.win);   /* W5 audio */
+    lj_dmx_in_hs_build(hs.win);       /* W5 dmxin */
     lj_win_show(hs.win, 0);
     return hs.win;
 }
@@ -236,5 +296,7 @@ void lj_hardware_setup_close(void)
     if (!hs.win) return;
     lj_win_hide(hs.win);
     lj_window_destroy(hs.win);
+    lj_audio_form_hs_closed();   /* W5 audio */
+    lj_dmx_in_hs_closed();       /* W5 dmxin */
     memset(&hs, 0, sizeof hs);
 }

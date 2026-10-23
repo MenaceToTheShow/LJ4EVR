@@ -25,6 +25,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "model/lj_library.h"
 
 enum { LJ_LJB_TRAILER = 36, LJ_LJB_INDEX_REC = 532, LJ_LJB_ENTRIES_MAX = 8192 /* PROPOSAL rig W5-LJB-1 (the sample has 127) */,
        LJ_LJB_FLAG_DEFLATE = 0x300, LJ_LJB_FLAG_STORED = 0x1, LJ_LJB_NAME = 256 };
@@ -45,7 +46,16 @@ int  lj_ljb_extract(const lj_ljb *b, uint32_t i, uint8_t **out, size_t *n, char 
 int  lj_ljb_path_ok(const char *folder, const char *name);                 /* 1 when the joined relative path passes the W5-LJB-2 rules */
 void lj_ljb_free(lj_ljb *b);
 
-typedef struct { int converted, skipped; char lines[64][96]; int nlines; } lj_ljb_report;   /* one line per file not converted ("Cues\00000003.cue: slots 2-12 not converted") */
-int  lj_ljb_import(const char *ljb_path, const char *new_library_dir, lj_ljb_report *rep, char *err, size_t cap);   /* reads (size cap), opens, converts into a NEW folder (fails if it exists); 0 / -1; nothing is left behind on -1 */
+typedef struct { int converted, skipped; char lines[64][96]; int nlines; } lj_ljb_report;   /* one line per file not converted ("Cues\00000003.cue: slots 2-12 not converted"); the first 64, LJBImport.txt has all */
+
+/* ---- ljb track (below the contract) ----
+ * lj_ljb_import takes the userdir and a library name instead of a folder path (the library API builds the root):
+ * name NULL = Info.$$$'s name sanitised, else the .LJB file name; a taken name (or "Default") becomes "name (2)" ..
+ * "name (99)" (the lj_library_restore_new rule), so an existing library is never written. *out = the new library.
+ * A deflated entry may claim at most 1032 x its stored size (zlib's ceiling), so 20 bytes cannot ask for 512 MB. */
+#define LJ_LJB_ERR_READ  "LJB: cannot read the file"
+#define LJ_LJB_REPORT    "LJBImport.txt"   /* PROPOSAL name (docs/w5-contracts.md s5.5) */
+int  lj_ljb_import(const char *ljb_path, const char *userdir, const char *name, lj_library *out, lj_ljb_report *rep, char *err, size_t cap);   /* 0 / -1; nothing is left behind on -1 */
+int  lj_ljb_preview(const char *ljb_path, char *name, size_t ncap, char *notes, size_t tcap, char *err, size_t cap);   /* the Restore window: Info.$$$ name sanitised, Notes.$$$ through lj_str_rtf_strip; 0 / -1 */
 
 #endif /* LJ_MODEL_LJB_H */

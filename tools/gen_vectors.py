@@ -178,6 +178,7 @@ def gen_vectors(sacn, mac, gs2, pos):
     out.append("};\n#define LJ_VEC_POS_HALF %d\n#define LJ_VEC_POS_N_TABLE %d\n#define LJ_VEC_POS_AMP_HALF %d\n"
                % (pos.HALF, pos.N_TABLE, pos.AMP_HALF_RANGE))
     out.append(gen_movement_vectors(pos))          # W3 movement track (appended)
+    out.append(gen_artnet_vectors())               # W5 artnet track (appended)
     out.append("\n#endif /* LJ_TESTS_VECTORS_H */\n")
     return "".join(out)
 
@@ -260,10 +261,44 @@ def gen_movement_vectors(pos):
     out.append("};\n")
     return "".join(out)
 
+# --- W5 artnet track: Art-Net 4 ArtDmx / ArtPoll reference packets (note 08 s9.2, s9.3; spec p.18-19, p.63) ------------
+# An independent struct.pack builder: the C side (io/lj_artnet.c) must reproduce these bytes (tests/io/test_artnet.c).
+ARTNET_ID = b"Art-Net\x00"
+
+
+def artnet_dmx(seq, physical, port_addr, slots):
+    assert 1 <= port_addr <= 32767 and len(slots) % 2 == 0 and 2 <= len(slots) <= 512
+    return (ARTNET_ID + struct.pack("<H", 0x5000) + bytes((0, 14, seq, physical, port_addr & 0xFF, port_addr >> 8))
+            + struct.pack(">H", len(slots)) + bytes(slots))
+
+
+def artnet_poll(flags=0, diag=0, oem=0x00FF):
+    return ARTNET_ID + struct.pack("<H", 0x2000) + bytes((0, 14, flags, diag)) + bytes(4) + struct.pack(">HH", 0, oem)
+
+
+def gen_artnet_vectors():
+    ramp = bytes(i & 0xFF for i in range(512))
+    a = artnet_dmx(1, 0, 0x0102, ramp)
+    b = artnet_dmx(255, 3, 32767, bytes(255 - (i & 0xFF) for i in range(512)))
+    assert len(a) == 530 and a[8:10] == bytes((0x00, 0x50)) and a[14:18] == bytes((0x02, 0x01, 0x02, 0x00))
+    poll = artnet_poll()
+    assert len(poll) == 22
+    return ("/* W5 artnet: ArtDmx seq 1, physical 0 (link 1), Port-Address 0x0102 (Net 1, Sub-Net 0, Universe 2), slot i = i & 255 */\n"
+            + c_bytes("lj_vec_artnet_dmx_a", a)
+            + "/* ArtDmx seq 255, physical 3 (link 4), Port-Address 32767 (Net 127, SubUni 0xFF), slot i = 255 - (i & 255) */\n"
+            + c_bytes("lj_vec_artnet_dmx_b", b)
+            + "/* ArtPoll: Flags 0, DiagPriority 0, no target, EstaMan 0, Oem 0x00FF (OemUnknown, PROPOSAL rig W5-ART-7) */\n"
+            + c_bytes("lj_vec_artnet_poll", poll))
+
+
 def main():
     check = "--check" in sys.argv
     if "--shapes" in sys.argv:   # W3 genmacro track: src/engine/lj_shapes_gen.c (shapes_main below)
         return shapes_main(check)
+    if "--vtr" in sys.argv:      # W5 dmxin track: src/io/lj_vtr_gen.c (vtr_main below)
+        return vtr_main(check)
+    if "--audio" in sys.argv:    # W5 audio track: src/io/lj_audio_gen.c + tests/io/audio_vectors.h (audio_main below)
+        return audio_main(check)
     mods = {n: load(n) for n in REFS}
     want = {OUT_TRIG: gen_trig(),
             OUT_VEC: gen_vectors(mods["08-sacn_ref.py"], mods["14-macros_mac_decode.py"],
@@ -443,6 +478,184 @@ def shapes_main(check):
         print("gen_vectors --shapes --check: %s differs from the generator output" % rel)
         return 1
     print("gen_vectors --shapes --check: %s up to date (66 shapes x %d samples)" % (rel, GM_N))
+    return 0
+
+
+# ---- W5 audio track (appended): --audio -> src/io/lj_audio_gen.c + tests/io/audio_vectors.h (W5-AUD-2; 05 s9.1) ----------
+# The analyzer is integer only (hard rule 1): its 512-point FFT twiddles, the periodic Hann window, the 16 band edges and
+# the Gain fader's dB table are computed here, never with <math.h> in the binary. The synthetic PCM of the test rows
+# (a 1 kHz click, LCG noise, two bin-exact tones) is ours. Every number is a PROPOSAL rig W5-AUD-2 choice.
+OUT_AUDIO = os.path.join(ROOT, "src", "io", "lj_audio_gen.c")
+OUT_AUDIO_VEC = os.path.join(ROOT, "tests", "io", "audio_vectors.h")
+AU_N, AU_RATE, AU_BANDS = 512, 44100, 16
+
+
+def audio_tables():
+    hann = [int(round(32767 * 0.5 * (1 - math.cos(2 * math.pi * i / AU_N)))) for i in range(AU_N)]
+    cos = [int(round(32767 * math.cos(2 * math.pi * k / AU_N))) for k in range(AU_N // 2)]
+    sin = [int(round(32767 * math.sin(2 * math.pi * k / AU_N))) for k in range(AU_N // 2)]
+    edge = [1]
+    for b in range(1, AU_BANDS + 1):                              # geometric over bins 1..256, at least one bin per band
+        edge.append(max(edge[-1] + 1, int(round((AU_N // 2) ** (b / AU_BANDS)))))
+    assert edge[-1] == AU_N // 2 and len(edge) == AU_BANDS + 1
+    gain = [int(round(100 * 10 ** (p / 127.0))) for p in range(-127, 128)]   # fader -127..127 = -20..+20 dB, linear in dB
+    assert gain[0] == 10 and gain[127] == 100 and gain[254] == 1000
+    return hann, cos, sin, edge, gain
+
+
+def audio_pcm():
+    click = [int(round(24000 * math.sin(2 * math.pi * 1000 * i / AU_RATE) * (1 - i / 256.0))) for i in range(256)]
+    x, noise = 12345, []
+    for _ in range(AU_N):
+        x = (x * 1103515245 + 12345) & 0x7FFFFFFF
+        noise.append((x >> 16) % 1201 - 600)
+    low = [int(round(16000 * math.sin(2 * math.pi * 2 * i / AU_N))) for i in range(AU_N)]     # bin 2 = 172 Hz, band 1
+    high = [int(round(16000 * math.sin(2 * math.pi * 64 * i / AU_N))) for i in range(AU_N)]   # bin 64 = 5.5 kHz, band 12
+    return click, noise, low, high
+
+
+def gen_audio():
+    hann, cos, sin, edge, gain = audio_tables()
+    head = ("/* Generated by tools/gen_vectors.py --audio; do not edit. The Audio Analyzer's integer tables (io/lj_audio.h,\n"
+            " * W5-AUD-2): Q15 periodic Hann window and FFT twiddles for N = %d, the 16 band edges (FFT bins, geometric over\n"
+            " * 1..256), the Gain fader table (-127..127 = -20..+20 dB as a percentage). Ours, PROPOSAL rig W5-AUD-2.\n"
+            " * Regenerate: python -I tools/gen_vectors.py --audio; verify: --audio --check. */\n"
+            '#include "io/lj_audio.h"\n\n' % AU_N)
+    return (head +
+            "const int16_t lj_audio_hann[LJ_AUDIO_BLOCK] = {\n%s\n};\n" % c_rows(hann) +
+            "const int16_t lj_audio_cos[LJ_AUDIO_BLOCK / 2] = {\n%s\n};\n" % c_rows(cos) +
+            "const int16_t lj_audio_sin[LJ_AUDIO_BLOCK / 2] = {\n%s\n};\n" % c_rows(sin) +
+            "const uint16_t lj_audio_band_edge[LJ_AUDIO_BANDS + 1] = { %s };\n" % ", ".join(str(v) for v in edge) +
+            "const uint16_t lj_audio_gain_pct[255] = {\n%s\n};\n" % c_rows(gain))
+
+
+def gen_audio_vectors():
+    click, noise, low, high = audio_pcm()
+    return ("/* Generated by tools/gen_vectors.py --audio; do not edit. Synthetic PCM for tests/io/test_audio.c (W5-AUD-2):\n"
+            " * a 256-sample 1 kHz click with a linear decay (peak 24000), 512 samples of LCG noise in -600..600, and two\n"
+            " * bin-exact 16000-amplitude tones (bin 2 = 172 Hz, bin 64 = 5.5 kHz) at 44100 Hz. Ours, no recording. */\n"
+            "#ifndef LJ_TESTS_IO_AUDIO_VECTORS_H\n#define LJ_TESTS_IO_AUDIO_VECTORS_H\n\n#include <stdint.h>\n\n"
+            "static const int16_t lj_av_click[256] = {\n%s\n};\n" % c_rows(click) +
+            "static const int16_t lj_av_noise[512] = {\n%s\n};\n" % c_rows(noise) +
+            "static const int16_t lj_av_low[512] = {\n%s\n};\n" % c_rows(low) +
+            "static const int16_t lj_av_high[512] = {\n%s\n};\n" % c_rows(high) +
+            "\n#endif /* LJ_TESTS_IO_AUDIO_VECTORS_H */\n")
+
+
+def audio_main(check):
+    rc = 0
+    for path, text in ((OUT_AUDIO, gen_audio()), (OUT_AUDIO_VEC, gen_audio_vectors())):
+        rel = os.path.relpath(path, ROOT)
+        have = open(path, encoding="ascii", newline="").read() if os.path.exists(path) else None
+        if check:
+            if have != text:
+                print("gen_vectors --audio --check: %s differs from the generator output" % rel)
+                rc = 1
+            else:
+                print("gen_vectors --audio --check: %s up to date" % rel)
+        else:
+            with open(path, "w", encoding="ascii", newline="\n") as f:
+                f.write(text)
+            print("wrote %s (%d bytes)" % (rel, len(text)))
+    return rc
+
+
+# ---- W5 dmxin track (appended): --vtr -> src/io/lj_vtr_gen.c (W5-DMXIN-7; note 05 s3.3) ------------------------------
+# The eight SYSTEM value tables LJ2 installs under User\ValueTables, regenerated from their mappings (DMX tables are facts,
+# D2), never copied: each is a rule below, or (Sine, whose curve has no closed form we found; the nearest raised-cosine
+# misses 57 entries) its 255 steps as a digit string. IDs, TYPE and NAME are the identifying facts (a table copied into an
+# LJ2 assignment keeps its ID); PURPOSE is our text (authored prose does not ship, the ME-137 test). --vtr --compare (developer
+# PC, reference tree present) checks every map equals LJ2's and that no file we would write is byte-equal to LJ2's.
+OUT_VTR = os.path.join(ROOT, "src", "io", "lj_vtr_gen.c")
+VTR_SINE_STEPS = ("00000000010000010000100100010100100101010101010110101101101101110111011111011111111110111111111211111111112111"
+                  "11121111211121112111211121121121121121121121211211212112112121121211212112112121121121211211211211211211211121"
+                  "11211121111211112111111121111111111")
+
+
+def vtr_tables():
+    sine = [0]
+    for c in VTR_SINE_STEPS:
+        sine.append(sine[-1] + int(c))
+    assert len(sine) == 256 and sine[-1] == 255
+    skips = (38, 100, 163, 225, 255)          # Off/on, disable treshold: 0 below 6, then one step per value, two at these inputs
+    return [
+        ("{76A2BE02-AD9C-4BE4-B4CA-7419AD2BBB52}", "Linear", "1:1, no translation", list(range(256))),
+        ("{96817479-F2BE-40A9-B9B9-58FE315306F6}", "Linear inverted", "Reversed 1:1",
+         [255 - i for i in range(128)] + [127] + [256 - i for i in range(129, 256)]),
+        ("{FC78008E-C9B8-4A92-B204-AF8D693CC6A6}", "Off/on, disable treshold", "0 below input 6, then rising to full",
+         [0 if i < 6 else i - 5 + sum(1 for s in skips if s <= i) for i in range(256)]),
+        ("{CF413860-C82A-4ADF-AB05-211134196506}", "Off/On", "0 below half, full from half", [0 if i < 128 else 255 for i in range(256)]),
+        ("{09392EEE-8914-403E-9159-B9B80D2E1617}", "On/Off", "Full below half, 0 from half", [255 if i < 128 else 0 for i in range(256)]),
+        ("{450873ED-828C-4529-B994-7EA754FE0E28}", "Sine", "Slow start, fast finish", sine),
+        ("{813B4C9E-E37D-4598-97E1-BD4B70960E31}", "Sine inverted", "Reversed quarter sine",
+         [math.ceil(255 * (1 - math.sin(math.pi / 2 * i / 255)) - 0.5 - 1e-9) for i in range(256)]),   # round half down (i = 85 is 127.5)
+        ("{9B3EA976-8C53-4173-91A8-774C8F881E3D}", "Sqrt", "Square-root curve", [int(math.floor(math.sqrt(255 * i) + 0.5)) for i in range(256)]),
+    ]
+
+
+def vtr_file_text(t):
+    gid, name, purpose, m = t
+    return ("// LightJockey DMX value translation file\r\nID=%s\r\nTYPE=SYSTEM\r\nNAME=%s\r\nPURPOSE=%s\r\n" % (gid, name, purpose)
+            + "".join("%d=%d\r\n" % (i, v) for i, v in enumerate(m)))
+
+
+def gen_vtr():
+    ts = vtr_tables()
+    for _, _, _, m in ts:
+        assert len(m) == 256 and all(0 <= v <= 255 for v in m)
+    return ("/* Generated by tools/gen_vectors.py --vtr; do not edit. The SYSTEM DMX-in value tables (io/lj_dmxin.h, W5-DMXIN-7),\n"
+            " * regenerated from their mappings (rules and a step string in the generator), never copied. PURPOSE texts are ours.\n"
+            " * Regenerate: python -I tools/gen_vectors.py --vtr; verify: --vtr --check; developer PC: --vtr --compare. */\n"
+            '#include "io/lj_dmxin.h"\n\n'
+            "const uint8_t lj_vtr_stock_map[LJ_VTR_STOCK][256] = {\n"
+            + "".join("    { /* %s */\n%s\n    },\n" % (n, c_rows(m)) for _, n, _, m in ts) + "};\n"
+            "const char *const lj_vtr_stock_text[LJ_VTR_STOCK][3] = {\n"
+            + "".join('    { "%s", "%s", "%s" },\n' % (g, n, p) for g, n, p, _ in ts) + "};\n")
+
+
+def vtr_compare():
+    import glob, hashlib
+    ref = os.environ.get("LJ4EVR_REFERENCE_DIR") or os.path.join(ROOT, "reference")
+    d = os.path.join(ref, "installer", "extracted_2.209", "app", "User", "ValueTables")
+    if not os.path.isdir(d):
+        print("gen_vectors --vtr --compare: no reference ValueTables at %s; skipped" % d)
+        return 0
+    rc, ref_hashes = 0, {}
+    for f in glob.glob(os.path.join(d, "*.vtr")):
+        b = open(f, "rb").read()
+        ref_hashes[hashlib.sha1(b).hexdigest()] = os.path.basename(f)
+    for t in vtr_tables():
+        f = glob.glob(os.path.join(d, "SYSTEM_*%s.vtr" % t[0]))
+        if len(f) != 1:
+            print("%-26s no reference file" % t[1]); rc = 1; continue
+        m = {}
+        for line in open(f[0], encoding="cp1252").read().splitlines():
+            k, _, v = line.partition("=")
+            if k.isdigit():
+                m[int(k)] = int(v)
+        same = [m.get(i, i) for i in range(256)] == t[3]
+        hit = hashlib.sha1(vtr_file_text(t).encode("cp1252")).hexdigest() in ref_hashes
+        print("%-26s map %s, file hash %s" % (t[1], "equal" if same else "DIFFERS", "EQUAL (fail)" if hit else "differs"))
+        rc |= (not same) or hit
+    print("gen_vectors --vtr --compare: %s" % ("FAIL" if rc else "8 maps equal LJ2's, 0 equal file hashes"))
+    return 1 if rc else 0
+
+
+def vtr_main(check):
+    if "--compare" in sys.argv:
+        return vtr_compare()
+    text = gen_vtr()
+    rel = os.path.relpath(OUT_VTR, ROOT)
+    if not check:
+        with open(OUT_VTR, "w", encoding="ascii", newline="\n") as f:
+            f.write(text)
+        print("wrote %s (%d bytes)" % (rel, len(text)))
+        return 0
+    have = open(OUT_VTR, encoding="ascii", newline="").read() if os.path.exists(OUT_VTR) else None
+    if have != text:
+        print("gen_vectors --vtr --check: %s differs from the generator output" % rel)
+        return 1
+    print("gen_vectors --vtr --check: %s up to date" % rel)
     return 0
 
 

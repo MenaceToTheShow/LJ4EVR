@@ -230,6 +230,11 @@ typedef struct {
     uint8_t  mm_fade;                    /* 0 none, 1 fading out, 2 fading in (the Cue macro control buttons) */
     uint8_t  mm_frozen;                  /* Freeze = speed 0 [03 s5.11] */
     uint16_t mm_idx_pan[LJ_FIXTURES], mm_idx_tilt[LJ_FIXTURES];   /* movement-macro phase per fixture: the integer table index 0..LJ_MOVEMACRO_N_TABLE-1 after this tick (the Movement Macro trace window) */
+    /* ---- W5 artnet (appended) ---- */
+    uint32_t artnet_pps[LJ_LINKS];       /* ArtDmx datagrams/s per link (every subscriber counted), lj_engine_set_artnet_stats */
+    uint32_t artnet_nodes;               /* ArtPollReply rows in the subscriber table */
+    uint8_t  artnet_bound;               /* the UDP 6454 socket is open (0 with Art-Net in use = the port is taken, W5-ART-5) */
+    int      artnet_last_err;            /* last bind / sendto error, 0 = none */
 } lj_engine_status;   /* design 2.3 names this struct lj_engine_view; C puts typedef and function names in one namespace, so the TYPE is lj_engine_status and the FUNCTION keeps the design name */
 
 /* ---- post-processing context (design 3.5): what S1-S9 read, rebuilt at bind and by commands ---- */
@@ -265,6 +270,7 @@ void            lj_engine_set_tick_us(lj_engine *e, uint32_t tick_us);   /* clam
 int             lj_engine_is_offline(const lj_engine *e);            /* read after the tick under the lock: 1 = skip lj_sacn_set this tick (S9) */
 const void     *lj_engine_take_sacn_cfg(lj_engine *e);               /* the lj_sacn_cfg parked by LJ_CMD_SACN_CFG, handed out once (NULL = none); caller holds lj_lock and copies the record before lj_unlock() (ME-69: the UI rewrites it under the lock); the thread then does close-old / open-new on its copy outside it (ME-23) */
 void            lj_engine_set_sacn_stats(lj_engine *e, const uint32_t pps[LJ_LINKS], int last_err);   /* caller holds lj_lock; copied into the view */
+void            lj_engine_set_artnet_stats(lj_engine *e, const uint32_t pps[LJ_LINKS], uint32_t nodes, int bound, int last_err);   /* W5 artnet: caller holds lj_lock; copied into the view */
 void            lj_engine_note_overrun(lj_engine *e);   /* caller holds lj_lock; the engine thread counts a late tick beside lj_log_overrun (ME-144) */
 
 /* Fade maths (design 3.3), shared with the replay harness and tests. */

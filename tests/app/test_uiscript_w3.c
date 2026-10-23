@@ -211,7 +211,7 @@ int lj_test_uiscript_w3(int argc, char **argv)
     for (i = 0; i < 3; i++) lj_app_cuelist_step(lj_clock_us());
     CHECK(lj_app_cuelist_steps() == s0 + 3 && c->cl && c->cl->state == LJ_CL_IDLE);
 
-    /* ---- 5. a .Cl2 with an MP Play line: red, skipped; the cues around it latch through the app's host ---- */
+    /* ---- 5. a .Cl2 with a DA Play line (W5: MP is live): red, skipped; the cues around it latch through the app's host ---- */
     for (i = 7; i <= 8; i++) {
         q = lj_cue_new_rec(); q->number = (uint32_t)i;
         CHECK(lj_library_record_path(&lib, LJ_REC_CUE, (uint32_t)i, path, sizeof path) == 0 && lj_cue_save(path, q) == 0);
@@ -219,7 +219,7 @@ int lj_test_uiscript_w3(int argc, char **argv)
     }
     cl = lj_cuelist_new_rec(); cl->number = 1; strcpy(cl->name, "W3 test");
     memset(&ln, 0, sizeof ln); ln.manual = LJ_CL_AUTO; ln.cue = 7; CHECK(lj_cuelist_insert(cl, 1, &ln) == 0);
-    memset(&ln, 0, sizeof ln); ln.manual = LJ_CL_AUTO; ln.cmd = LJ_CL_MP_PLAY; CHECK(lj_cuelist_insert(cl, 2, &ln) == 0);
+    memset(&ln, 0, sizeof ln); ln.manual = LJ_CL_AUTO; ln.cmd = LJ_CL_DA_PLAY;   /* W5: MP is live; DA stays inert (ME-11) */ CHECK(lj_cuelist_insert(cl, 2, &ln) == 0);
     memset(&ln, 0, sizeof ln); ln.manual = LJ_CL_MANUAL; ln.cue = 8; CHECK(lj_cuelist_insert(cl, 3, &ln) == 0);
     CHECK(lj_library_record_path(&lib, LJ_REC_CL, 1, path, sizeof path) == 0 && lj_cuelist_save(path, cl) == 0);
     lj_cuelist_free(cl);

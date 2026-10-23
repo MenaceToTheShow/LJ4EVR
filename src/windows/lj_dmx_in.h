@@ -22,4 +22,18 @@ void       lj_dmx_in_bind_fns(void);            /* lj_fn rows and lj_desktop act
 #define LJ_DMX_IN_NA "Not available in LJ4EVR"     /* design 1 / ME-29 hint; ours, not in the exe pool */
 void lj_dmx_in_grey(lj_widget *root, const char *const *keep, int nkeep);   /* every input control under root (keep = names left live) disabled, hint LJ_DMX_IN_NA where the DFM gives none */
 
+/* ---- dmxin track (W5-DMXIN-1, -6, -8): the live windows ---- */
+#include "io/lj_dmxin.h"
+int  lj_dmx_in_save(void);                                   /* Dmx In Save: <library>/DmxIn/DmxIn.dat, then the live map (ctx->dmxin_map); 0 / -1 */
+const lj_dmxin_map *lj_dmx_in_working(void);                /* the unsaved working copy the Dmx In and translation windows edit */
+lj_dmxin_map *lj_dmx_in_working_mut(void);                  /* tests / UI script */
+int  lj_dmx_in_edit_linear(int vf, int vt, int tf, int tt); /* the editor's Set Linear Range; -1 out of 0..255 */
+int  lj_dmx_in_edit_save(void);                             /* the editor's Ok: <userdata>/User/ValueTables/<Type>_<Name>_<ID>.vtr; 0 / -1 */
+int  lj_dmx_in_export_dir(const char *dir);                 /* the Export window's target folder */
+int  lj_dmx_in_export(void);                                /* Export tables: the user tables into that folder; count or -1 */
+void lj_dmx_in_hs_build(lj_window *hs);                     /* Hardware Setup: cbUseDMXin live, the input universe and protocol beside it */
+const char *lj_dmx_in_hs_apply(void);                       /* on Ok: validated into ctx->dmxin + LJ_ACT_IO_APPLY; NULL or the refusal shown */
+void lj_dmx_in_hs_closed(void);
+void lj_dmx_in_hs_use_click(lj_widget *w, void *ud);         /* cbUseDMXinClick */
+
 #endif /* LJ_WINDOWS_DMX_IN_H */

@@ -1,5 +1,8 @@
 /* lj_socket.c - non-blocking IPv4 UDP / TCP (io/lj_socket.h, docs/w5-contracts.md seam 3). On the OS_ALLOW list of
  * tools/test_layering.py. Test: tests/io/test_socket.c (loopback UDP and TCP, non-blocking empty reads). */
+#ifndef _WIN32
+#define _DEFAULT_SOURCE 1   /* glibc under -std=c11: struct ip_mreq (as io/lj_net.c) */
+#endif
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>

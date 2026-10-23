@@ -50,6 +50,20 @@ void lj_remote_cfg_save(lj_ini *hardware_ini, const lj_remote_cfg *c);
 int  lj_remote_open(const lj_remote_cfg *c);                              /* close-old then open what c enables (one log line per bind); 0 / -1 (the part that failed stays closed) */
 void lj_remote_close(void);                                               /* before the engine stops (W5-X-THREAD shutdown order) */
 int  lj_remote_poll(uint64_t now_us);                                     /* UI thread: accept, read every transport within the budget, feed, exec; returns the frames executed */
-int  lj_remote_inject(const uint8_t *bytes, size_t n, uint64_t now_us);   /* the UI script `remote <line>` and the tests: the same feed + exec as a connection */
+int  lj_remote_inject(const uint8_t *bytes, size_t n, uint64_t now_us);   /* the UI script `remote <line>` and the tests: the same feed + exec as a connection; frames executed, -1 bad arguments */
+
+/* ---- remote track (below the contract block) ---- */
+/* 132 d1 1, 133, 135, 136 and 134 set a state, but the hotkey functions they run are toggles: the windows layer answers
+ * what is on now (windows/lj_remote_form.c reads ctx->view, the Statics 2 page and the cue-list status). Without a query
+ * (headless) those commands are ignored and logged. */
+enum lj_remote_q { LJ_REMQ_SMOKE_TIMER, LJ_REMQ_STATIC /* n 1..20, current page: active */, LJ_REMQ_STATIC_FLASH /* n: activation Flash */,
+                   LJ_REMQ_SLOT /* n 1..12 enabled */, LJ_REMQ_BGSLOT /* n 1..5 enabled */, LJ_REMQ_CL_MANUAL /* the current list waits on a manual line */ };
+typedef int (*lj_remote_query_fn)(enum lj_remote_q q, int n);             /* 1 / 0, -1 unknown */
+void lj_remote_set_query(lj_remote_query_fn fn);
+enum { LJ_REMOTE_BAUDS = 7 };
+extern const uint32_t lj_remote_bauds[LJ_REMOTE_BAUDS];                   /* rgBaudRate of TRS232SettingsForm (LJ_RS232.exe): 2400 .. 57600 */
+typedef struct { uint8_t tcp_open, serial_open; uint16_t tcp_port; int conns; uint32_t bytes, frames, ignored, refused; } lj_remote_stats;
+void lj_remote_get_stats(lj_remote_stats *out);                           /* the settings window status line and the tests */
+int  lj_remote_ip_parse(const char *s, uint32_t *out);                    /* "a.b.c.d" -> host order; 0 / -1 */
 
 #endif /* LJ_IO_REMOTE_H */

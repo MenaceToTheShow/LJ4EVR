@@ -292,7 +292,7 @@ static void test_cuelist(void)
     menu_fire(w, "OffsetMIDITimecodes1");                      /* Offset MIDI Timecodes */
     CHECK(lj_win_get(LJ_WIN_TIMECODE_OFFSET) && !strcmp(lj_window_caption(lj_win_get(LJ_WIN_TIMECODE_OFFSET))->text, "Offset TimeCode"));
     CHECK(in(LJ_WIN_TIMECODE_OFFSET, "pMidi")->visible && !in(LJ_WIN_TIMECODE_OFFSET, "pCD")->visible);
-    CHECK(menu_en(lj_win_get(LJ_WIN_TIMECODE_OFFSET), "M_CD") == 0 && menu_en(lj_win_get(LJ_WIN_TIMECODE_OFFSET), "M_DA") == 0 && menu_en(lj_win_get(LJ_WIN_TIMECODE_OFFSET), "M_MP") == 0);
+    CHECK(menu_en(lj_win_get(LJ_WIN_TIMECODE_OFFSET), "M_CD") == 0 && menu_en(lj_win_get(LJ_WIN_TIMECODE_OFFSET), "M_DA") == 0 && menu_en(lj_win_get(LJ_WIN_TIMECODE_OFFSET), "M_MP") == 1 /* W5 media */);
     golden(LJ_WIN_TIMECODE_OFFSET, "W4SD_TIMECODE_OFFSET");
     set_text(in(LJ_WIN_TIMECODE_OFFSET, "eMIDISeconds"), "10");
     click(in(LJ_WIN_TIMECODE_OFFSET, "bCheck"));

@@ -473,7 +473,91 @@ add_test(NAME replay_w5_contract COMMAND lj4evr_tests replay "${CMAKE_SOURCE_DIR
 foreach(sub fuzz_sacn_rx fuzz_vtr fuzz_artnet fuzz_remote fuzz_ljb)
   add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
 endforeach()
-set_tests_properties(fuzz_sacn_rx fuzz_vtr PROPERTIES DISABLED TRUE)   # dmxin track
-set_tests_properties(fuzz_artnet PROPERTIES DISABLED TRUE)             # artnet track
-set_tests_properties(fuzz_remote PROPERTIES DISABLED TRUE)             # remote track
-set_tests_properties(fuzz_ljb PROPERTIES DISABLED TRUE)                # ljb track
+# (dmxin track: fuzz_sacn_rx fuzz_vtr live, their DISABLED line removed)
+
+# ---- W5 artnet track (append-only) ----
+# test_artnet: W5-ART-1..6 (vectors, readers, [ARTNET], the Hardware Setup rows, discovery / expiry, rate, bind failure,
+# loopback wire); the fuzz_artnet row above runs with its DISABLED property removed. fuzz_artnet (libFuzzer, clang) below.
+add_test(NAME test_artnet COMMAND lj4evr_tests test_artnet)
+if(LJ_FUZZ)
+  add_executable(fuzz_artnet "${CMAKE_SOURCE_DIR}/tools/fuzz/fuzz_artnet.c")
+  target_include_directories(fuzz_artnet PRIVATE "${CMAKE_SOURCE_DIR}/src")
+  target_link_libraries(fuzz_artnet PRIVATE lj_io lj_model lj_fixlib lj_core)
+  target_compile_options(fuzz_artnet PRIVATE -fsanitize=fuzzer,address,undefined)
+  target_link_options(fuzz_artnet PRIVATE -fsanitize=fuzzer,address,undefined)
+endif()
+# W5 audio (append-only): the analyzer on synthetic PCM + W5-AUD-6 inputs; the Analyzer window, menu, tsAudio page and
+# status-bar Trig headless (golden W5AU_ANALYZER); the audio trig scenario (W5-AUD-3) outside the replay_all glob; the
+# generated tables (tools/gen_vectors.py --audio, W5-AUD-2)
+add_test(NAME test_audio COMMAND lj4evr_tests test_audio)
+add_test(NAME test_audio_form COMMAND lj4evr_tests test_audio_form)
+add_test(NAME replay_w5_audio COMMAND lj4evr_tests replay "${CMAKE_SOURCE_DIR}/tests/engine/replay/w5/audio_trig.lj4r")
+if(Python3_FOUND)
+  add_test(NAME gen_vectors_audio_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/gen_vectors.py" --audio --check)
+endif()
+# W5 extapp (append-only): External Application string output (tests/io/test_extapp.c; W5-EXT-1..4)
+foreach(sub test_extapp test_extapp_seq test_extapp_ui)
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+# W5 remote (append-only): the 05 s10.1 commands, framing, [REMOTE] keys and the loopback TCP listener (tests/io/test_remote.c);
+# the POSIX serial backend on a pty (tests/io/test_remote_pty.c, W5-REM-3, W5-X-CI). fuzz_remote is live (its DISABLED line removed).
+add_test(NAME test_remote COMMAND lj4evr_tests test_remote)
+add_test(NAME test_remote_form COMMAND lj4evr_tests test_remote_form)   # W5-REM-4: TRS232SettingsForm by UI script (tests/ui/test_remote_form.c)
+if(UNIX)
+  add_test(NAME test_serial_pty COMMAND lj4evr_tests test_serial_pty)
+endif()
+# W5 ljb (append-only): the .LJB importer (tests/model/test_ljb.c; W5-LJB-1..5, ME-8, LORD_C-9). fuzz_ljb is live (its DISABLED
+# line removed); ljb_sample reads the note 18 sample on the developer PC only and prints SKIP without LJ4EVR_REFERENCE_DIR.
+add_test(NAME test_ljb COMMAND lj4evr_tests test_ljb)
+add_test(NAME ljb_sample COMMAND lj4evr_tests ljb_sample)
+if(LJ_FUZZ)
+  add_executable(fuzz_ljb "${CMAKE_SOURCE_DIR}/tools/fuzz/fuzz_ljb.c")
+  target_include_directories(fuzz_ljb PRIVATE "${CMAKE_SOURCE_DIR}/src")
+  target_link_libraries(fuzz_ljb PRIVATE lj_model lj_fixlib lj_core)
+  target_compile_options(fuzz_ljb PRIVATE -fsanitize=fuzzer,address,undefined)
+  target_link_options(fuzz_ljb PRIVATE -fsanitize=fuzzer,address,undefined)
+endif()
+# W5 media (append-only): io/lj_media.c + the runner's MP lines (sample-exact), the player window golden and the live MP rows
+add_test(NAME test_media COMMAND lj4evr_tests test_media)
+add_test(NAME test_media_form COMMAND lj4evr_tests test_media_form)
+# W5 dmxin (append-only): the sACN / Art-Net input rules, .vtr tables and DmxIn.dat, the DMX-in functions
+# (tests/io/test_dmxin.c), the S1 modes through LJ_CMD_DMX_IN (tests/engine/replay/w5/dmxin_*.lj4r, outside the replay_all
+# glob), the SYSTEM tables (tools/gen_vectors.py --vtr, W5-DMXIN-7)
+add_test(NAME dmxin_rules COMMAND lj4evr_tests dmxin_rules)
+add_test(NAME dmxin_vtr COMMAND lj4evr_tests dmxin_vtr "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME dmxin_functions COMMAND lj4evr_tests dmxin_functions)
+add_test(NAME dmxin_loopback COMMAND lj4evr_tests dmxin_loopback)
+set_tests_properties(dmxin_loopback PROPERTIES RESOURCE_LOCK sacn_port)   # binds 5568 like test_sacn_loopback
+file(GLOB LJ_DMXIN_REPLAYS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/engine/replay/w5/dmxin_s1_*.lj4r")
+foreach(sc ${LJ_DMXIN_REPLAYS})
+  get_filename_component(scn "${sc}" NAME_WE)
+  add_test(NAME replay_w5_${scn} COMMAND lj4evr_tests replay "${sc}")
+endforeach()
+if(Python3_FOUND)
+  add_test(NAME gen_vectors_vtr_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/gen_vectors.py" --vtr --check)
+endif()
+if(LJ_FUZZ)   # W5 remote: the libFuzzer target over the 3-byte protocol (tools/fuzz/fuzz_remote.c)
+  add_executable(fuzz_remote "${CMAKE_SOURCE_DIR}/tools/fuzz/fuzz_remote.c")
+  target_include_directories(fuzz_remote PRIVATE "${CMAKE_SOURCE_DIR}/src")
+  target_link_libraries(fuzz_remote PRIVATE lj_io lj_model lj_fixlib lj_core)
+  target_compile_options(fuzz_remote PRIVATE -fsanitize=fuzzer,address,undefined)
+  target_link_options(fuzz_remote PRIVATE -fsanitize=fuzzer,address,undefined)
+endif()
+if(LJ_FUZZ)   # W5 dmxin: the two libFuzzer targets (the ci.yml fuzz step is the integrator's)
+  foreach(fz fuzz_sacn_rx fuzz_vtr)
+    add_executable(${fz} "${CMAKE_SOURCE_DIR}/tools/fuzz/${fz}.c")
+    target_include_directories(${fz} PRIVATE "${CMAKE_SOURCE_DIR}/src")
+    target_link_libraries(${fz} PRIVATE lj_io lj_model lj_fixlib lj_core)
+    target_compile_options(${fz} PRIVATE -fsanitize=fuzzer,address,undefined)
+    target_link_options(${fz} PRIVATE -fsanitize=fuzzer,address,undefined)
+  endforeach()
+endif()
+if(LJ_SDL)   # W5 audio: the SDL3 capture glue on SDL's dummy driver (W5-AUD-1, W5-X-CI)
+  add_executable(lj4evr_audio_sdl_test tests/io/test_audio.c)
+  target_include_directories(lj4evr_audio_sdl_test PRIVATE "${CMAKE_SOURCE_DIR}/tests")
+  target_compile_definitions(lj4evr_audio_sdl_test PRIVATE LJ_AUDIO_SDL_TEST)
+  target_compile_options(lj4evr_audio_sdl_test PRIVATE ${LJ_WARN})
+  target_link_libraries(lj4evr_audio_sdl_test PRIVATE lj_platform ${LJ_SDL_FREE_LIBS})
+  add_test(NAME test_audio_sdl COMMAND lj4evr_audio_sdl_test)
+  set_tests_properties(test_audio_sdl PROPERTIES ENVIRONMENT "SDL_AUDIO_DRIVER=dummy")
+endif()

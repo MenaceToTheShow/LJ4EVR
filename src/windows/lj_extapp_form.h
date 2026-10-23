@@ -13,6 +13,7 @@ void       lj_extapp_form_refresh(enum lj_win id);   /* repaint from the module 
 void       lj_extapp_form_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
 void       lj_extapp_form_target(int fixture);       /* LJ_ACT_EXTAPP_SETUP arg: the profile-90 fixture whose link the window edits (the lj_config_dlg_target pattern) */
 
-/* ---- extapp track (below this line) ---- */
+/* ---- extapp track (below this line) ----
+ * lj_extapp_form_target takes the fixture index 0-based (the desktop's popup fixture); the link slot stores it 1-based. */
 
 #endif /* LJ_WINDOWS_EXTAPP_FORM_H */

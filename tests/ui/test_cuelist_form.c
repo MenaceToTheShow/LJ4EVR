@@ -230,14 +230,15 @@ int lj_test_cuelist_form(int argc, char **argv)
     lj_desktop_bind_action(LJ_ACT_CUELIST_OP, on_op, NULL);
     lj_log_set_sink(sink, NULL);
 
-    /* the fixture: wait elapsed 1:02.50 + cue 3 | manual Go + cue 4 | a loaded MP Play line (load error) | Hotkey Command | Goto Line 1 */
+    /* the fixture: wait elapsed 1:02.50 + cue 3 | manual Go + cue 4 | a loaded DA Play line (load error; W5: MP is live, so the
+     * inert family of this fixture is DA, ME-11) | Hotkey Command | Goto Line 1 */
     cl = lj_cuelist_form_list();
     CHECK(cl != NULL && cl == ctx->show->current_cl);
     if (!cl) return 1;
     cl->number = 1; lj_str_copy(cl->name, sizeof cl->name, "ThunderStrike");
     l = mk(0, LJ_CL_WAIT_ELAPSED, lj_cl_hmsf_ms(0, 1, 2, 50, 100), NULL, 3, "Intro", 0); lj_cuelist_insert(cl, cl->n, &l);
     l = mk(1, LJ_CL_NONE, 0, NULL, 4, NULL, 0);                                         lj_cuelist_insert(cl, cl->n, &l);
-    l = mk(0, LJ_CL_MP_PLAY, 0, NULL, 0, "clip", 1);                                    lj_cuelist_insert(cl, cl->n, &l);
+    l = mk(0, LJ_CL_DA_PLAY, 0, NULL, 0, "clip", 1);                                    lj_cuelist_insert(cl, cl->n, &l);
     l = mk(0, LJ_CL_HOTKEY_COMMAND, LJ_FN_CUELIST_STOP, NULL, 0, NULL, 0);              lj_cuelist_insert(cl, cl->n, &l);
     l = mk(0, LJ_CL_GOTO_LINE, 1, NULL, 0, "again", 0);                                 lj_cuelist_insert(cl, cl->n, &l);
 
@@ -255,7 +256,7 @@ int lj_test_cuelist_form(int argc, char **argv)
     /* grid rows */
     CHECK(lj_cuelist_form_row(1, row, sizeof row) == 0 && strcmp(row, "1\tAuto\tWait Elapsed\t01:02:50\t0003 \tIntro") == 0);
     CHECK(lj_cuelist_form_row(2, row, sizeof row) == 0 && strcmp(row, "2\tMan\t<>\t\t0004 \t") == 0);   /* "<>": no command (exe 0x179F14, cuelist1.gif) */
-    CHECK(lj_cuelist_form_row(3, row, sizeof row) == 0 && strcmp(row, "3\tAuto\tMP Play\t\t\tclip") == 0);
+    CHECK(lj_cuelist_form_row(3, row, sizeof row) == 0 && strcmp(row, "3\tAuto\tDA Play\t\t\tclip") == 0);
     CHECK(lj_cuelist_form_row(4, row, sizeof row) == 0 && strcmp(row, "4\tAuto\tHotkey Command\tCuelist Stop\t\t") == 0);
     CHECK(lj_cuelist_form_row(5, row, sizeof row) == 0 && strcmp(row, "5\tAuto\tGoto Line\t1\t\tagain") == 0);
     CHECK(strcmp(lj_w_caption(lj_window_find(win, "lTotalLines")), "5 Lines") == 0);
@@ -269,14 +270,14 @@ int lj_test_cuelist_form(int argc, char **argv)
     lj_cuelist_delete(cl, cl->n - 1);
 
     /* ME-11 / design 8.5: time-code sources, recent commands and ListPop families greyed with the hint */
-    CHECK(en(win, "sbCDTime") == 0 && en(win, "sbDATime") == 0 && en(win, "sbMPTime") == 0);
+    CHECK(en(win, "sbCDTime") == 0 && en(win, "sbDATime") == 0 && en(win, "sbMPTime") == 1);   /* W5 media: sbMPTime live (W5-MED-4) */
     CHECK(en(win, "sbMIDITime") == 1 && en(win, "sbPCElapsed") == 1 && en(win, "sbPCClock") == 1);
-    CHECK(strcmp(lj_window_find(win, "sbCDTime")->hint, LJ_CL_NOT_AVAILABLE) == 0 && strcmp(lj_window_find(win, "sbMPTime")->hint, LJ_CL_NOT_AVAILABLE) == 0);
+    CHECK(strcmp(lj_window_find(win, "sbCDTime")->hint, LJ_CL_NOT_AVAILABLE) == 0 && strcmp(lj_window_find(win, "sbMPTime")->hint, "Show Media Timecode") == 0);   /* the DFM hint back */
     CHECK(strcmp(lj_window_find(win, "sbDATime")->hint, "Not available in LJ4EVR") == 0);
     CHECK(strcmp(lj_w_caption(lj_window_find(win, "sbCMD1")), "CD Stop") == 0 && en(win, "sbCMD1") == 0 && strcmp(lj_window_find(win, "sbCMD1")->hint, LJ_CL_NOT_AVAILABLE) == 0);
     CHECK(strcmp(lj_w_caption(lj_window_find(win, "sbCMD3")), "Wait CD") == 0 && en(win, "sbCMD3") == 0);
-    CHECK(menu_en(win, "Pop_CDCommands") == 0 && menu_en(win, "pop_DACommands") == 0 && menu_en(win, "Pop_MPCommands") == 0);
-    CHECK(menu_en(win, "MediaPlayer1") == 0 && menu_en(win, "CueMediaFile1") == 0 && menu_en(win, "popWaitCD") == 0);
+    CHECK(menu_en(win, "Pop_CDCommands") == 0 && menu_en(win, "pop_DACommands") == 0 && menu_en(win, "Pop_MPCommands") == 1);   /* W5 media (W5-MED-3) */
+    CHECK(menu_en(win, "MediaPlayer1") == 1 && menu_en(win, "CueMediaFile1") == 1 && menu_en(win, "popWaitCD") == 0);
     /* ME-120 (W4): the three alive, Import greyed */
     CHECK(menu_en(win, "OffsetMIDITimecodes1") == 1 && menu_en(win, "OffsetPCTime1") == 1 && menu_en(win, "OffsetMIDITimecodes2") == 1 && menu_en(win, "M_ImportOldCuelist") == 0);
     CHECK(menu_en(win, "MPLoadFile1") == 1 && menu_en(win, "Pop_MTCCommands") == 1);   /* MPLoadFile1 carries aHotkeyCommand (D13) */
@@ -350,7 +351,7 @@ int lj_test_cuelist_form(int argc, char **argv)
     /* commands onto the selected line, the recent panel, the edit page per command */
     lj_w_listview_select(lv, 4); lj_cuelist_form_refresh();
     CHECK(strcmp(lj_cuelist_form_edit_panel(), "pGotoLine") == 0);
-    lj_cuelist_form_apply_cmd(LJ_CL_MP_PLAY); CHECK(cl->lines[4].cmd == LJ_CL_GOTO_LINE);   /* inert: refused */
+    lj_cuelist_form_apply_cmd(LJ_CL_CD_STOP); CHECK(cl->lines[4].cmd == LJ_CL_GOTO_LINE);   /* inert: refused (ME-11; MP is live from W5) */
     lj_cuelist_form_apply_cmd(LJ_CL_WAIT_PC_CLOCK);
     CHECK(cl->lines[4].cmd == LJ_CL_WAIT_PC_CLOCK && lj_cuelist_form_recent(0) == LJ_CL_WAIT_PC_CLOCK && lj_cuelist_form_recent(1) == LJ_CL_CD_STOP);
     CHECK(strcmp(lj_cuelist_form_edit_panel(), "pPCClock") == 0);
@@ -363,7 +364,7 @@ int lj_test_cuelist_form(int argc, char **argv)
     CHECK(fire(win, "Pop_SetCurrentCue") == 0 && cl->lines[4].cmd == LJ_CL_WAIT_ELAPSED);   /* a panel action, never a stored command */
     CHECK(fire(win, "AdvanceManual1") == 0 && cl->lines[4].manual == 1);
     lj_w_listview_select(lv, 2); lj_cuelist_form_refresh();
-    CHECK(strcmp(lj_cuelist_form_edit_panel(), "pComment") == 0 && lj_window_find(win, "eCom")->enabled == 0);   /* the MP line's page greyed */
+    CHECK(strcmp(lj_cuelist_form_edit_panel(), "pComment") == 0 && lj_window_find(win, "eCom")->enabled == 0);   /* the DA line's page greyed */
 
     /* Set Cue Trig and the Hotkey Command picker (THotkeyFunctionDialog) */
     lj_w_listview_select(lv, 0); lj_cuelist_form_refresh();

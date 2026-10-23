@@ -13,7 +13,9 @@
  *  - action: the non-wait command (goto_line, execute_file, hotkey_command, flash_sequence, load_background_cue,
  *    link_cuelist), then the cue latch (host->load_cue) or the slot trigs (one LJ_CMD_TRIG per slot of trig_mask with
  *    b = 0xFF: "each of the sequences will be trigged exactly once ... in the programmed loop direction").
- *  - load_error lines (CD / DA / MP, design 8.5) are skipped as if absent; the list runs the rest.
+ *  - load_error lines (CD / DA, design 8.5; an MP Load File whose file is missing) are skipped as if absent; the list runs the rest.
+ *  - W5 media: an MP line goes to host->media (NULL = MP lines skipped as inert); MP Wait is a condition on the LJ_TC_MP
+ *    time code (no clip = waits until Go, as Wait MTC with no time code).
  *  - the list ends (state IDLE) after the last line or on STOP; Goto Line# beyond the last line ends it (RN v2.6 b7).
  *  - Run to line executes only the cue commands up to and including the line [RN v2.5 b3]; Tracking on (lj_cuelist.
  *    tracking) applies the same rule to Jump / Goto Mark / Run from line (PROPOSAL rig 03 s6: LJ2's tracking mode is
@@ -60,6 +62,9 @@ typedef struct {
     uint8_t  first_pending;              /* internal: the first Wait Elapsed after Run is still ahead */
     uint8_t  in_exec;                    /* internal (ME-108): a line's host callback is running; a nested Go returns -1, Stop / unpin act at once */
     uint8_t  mtc_seen;                   /* internal (ME-116): the previous pass had a time code; present -> absent at a Wait MTC applies mtc_timeout */
+    /* W5 media (appended): the two MediaPlayer preferences of the Cuelist window (Main.Ini [CUELIST2] StopAudio / AutoSeekAudio) */
+    uint8_t  stop_media;                 /* M_StopAudio "Stop Audio/Media Playback when Cuelist stops": Stop / Stop and Clear send an MP Stop */
+    uint8_t  autoseek_media;             /* M_AutoCueAudio "Auto seek audio tracks/media file on Run": Run from line n seeks the clip to the last MP Wait of lines 1..n (PROPOSAL rig 05 s8.3) */
 } lj_cl_run;
 
 void lj_cl_run_init(lj_cl_run *r);                                                    /* IDLE, tc source PC elapsed */

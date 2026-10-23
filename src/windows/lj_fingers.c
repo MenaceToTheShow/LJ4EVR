@@ -45,7 +45,7 @@ enum { PF_STATICS1 = 4, PF_STATICS13 = 5, PF_INTENSITY = 6, PF_HTP1 = 7, PF_HTP1
 const char *const lj_fingers_jog_functions[] = { "Cue Time", "P/T Macro Ampl.", "P/T Macro Ampl. (Inv)", "P/T Macro Speed", "P/T Macro Speed (Inv)", "Audio Gain",
     "Min Trglvl", "Smoke Ctrl Level", "Smoke Ctrl Duration", "Smoke Ctrl Cycle", "Hazer Ctrl Level", "Hazer Ctrl Fan", "Pan MSB", "Pan LSB", "Tilt MSB",
     "Tilt LSB", "GM Relative", "Fader Relative", NULL };
-enum { JF_GM_REL = 16, JF_FADER_REL = 17 };
+enum { JF_GM_REL = 16, JF_FADER_REL = 17, JF_AUDIO_GAIN = 5, JF_MIN_TRGLVL = 6 /* W5 audio */ };
 const char *const lj_fingers_ud_functions[] = { "Select Cue (Global)", "Select Cue (Page)", "Select Sequence", "Select Cuelist", "Select BGCue", "Select Macro",
     "Active Select", "Cuelist (Manual)", "Cuelist (Edit)", NULL };
 enum { UF_CL_MANUAL = 7 };
@@ -220,6 +220,11 @@ int lj_fingers_jog(int jog, int delta)
     f = fg.jog_fn[jog - 1];
     if (f == JF_GM_REL) return lj_fingers_gm(fg.fader[0] + delta);
     if (f == JF_FADER_REL) { int i; for (i = 1; i <= LJ_FG_FADERS; i++) lj_fingers_fader(i, fg.fader[i] + delta); return 0; }   /* PROPOSAL rig 05 s5: every fader of the page moves */
+    if ((f == JF_AUDIO_GAIN || f == JF_MIN_TRGLVL) && lj_ctx_get()->audio) {   /* W5-AUD-6: the analyzer's Gain fader / noise threshold, one step per detent */
+        lj_audio_cfg *a = lj_ctx_get()->audio;
+        if (f == JF_AUDIO_GAIN) lj_audio_set_gain_pos(a, lj_audio_gain_pos(a) + delta); else lj_audio_set_noise(a, a->noise + delta);
+        return 0;
+    }
     lj_log("fingers: %s - " LJ_FG_NA_HINT, lj_fingers_jog_functions[f]);
     return -1;
 }

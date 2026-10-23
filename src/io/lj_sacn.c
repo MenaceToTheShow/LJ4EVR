@@ -319,6 +319,7 @@ int lj_sacn_open(const lj_sacn_cfg *in)
     cfg = *in;
     why = lj_sacn_cfg_validate(&cfg);
     if (why) lj_log("sacn: config: %s (link left unmapped)", why);
+    for (i = 0; i < LJ_LINKS; i++) if (cfg.proto[i] == LJ_OUT_ARTNET) cfg.universe_of_link[i] = 0;   /* W5 artnet: an Art-Net link is unmapped here (close-old terminates its universe) */
     if (lj_net_startup() != 0) return -1;
 
     /* close-old (ME-23): terminate every universe the new map drops, then drop the socket */

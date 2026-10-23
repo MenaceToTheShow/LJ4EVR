@@ -38,7 +38,8 @@ static int  t_clock(void *ud, uint32_t *ms_of_day, uint32_t *day)
     (void)ud; *ms_of_day = (uint32_t)(ms % 86400000u); *day = T.day + (uint32_t)(ms / 86400000u);
     return 0;
 }
-static const lj_cl_host H = { NULL, t_load_cue, t_post, t_load_bg, t_flash, t_link, t_fn, t_exec, t_clear, t_timecode, t_clock };
+static int  t_media(void *ud, const lj_cl_line *l, uint64_t now) { (void)ud; (void)now; t_rec('m', l->cmd, 0); return 0; }   /* W5 media: MP lines execute (W5-MED-3) */
+static const lj_cl_host H = { NULL, t_load_cue, t_post, t_load_bg, t_flash, t_link, t_fn, t_exec, t_clear, t_timecode, t_clock, t_media };
 static lj_cl_run R;
 static struct { int op, depth, max_depth, rc; } RE;   /* ME-108: a Hotkey Command that drives the runner it runs in */
 static void t_fn(void *ud, int fn)
@@ -73,7 +74,7 @@ static lj_cl_line t_line(int manual, int cmd, uint32_t param, uint32_t ref, uint
  *  2 auto  Wait Elapsed 1.00 s       cue 2      1000 ms
  *  3 MAN   Wait Elapsed 5.00 s       cue 3      the wait is ignored: Go at 2000 ms
  *  4 auto  Wait Elapsed 0.50 s       trig 1+2   2500 ms, one TRIG b = 0xFF per slot
- *  5 auto  MP Play (load error)      cue 4      skipped, never latched (design 8.5)
+ *  5 auto  MP Play                   cue 4      2500 ms: W5 media, the MP line executes (W5-MED-3; was a load error in v1.0.0)
  *  6 auto  Hotkey Command 7          -          2500 ms
  *  7 auto  Wait Elapsed 0.50 s       -          3000 ms
  *  8 auto  Flash Seq 5, 0.50 s       -          3000 ms, released 3500 ms
@@ -134,7 +135,7 @@ static void t_acceptance(void)
     t_run_to(1000); CHECK(t_at('c', 2) == 1000);                              /* Wait Elapsed 1.00 s */
     CHECK(R.st.state == LJ_CL_WAIT_GO && R.st.next == 3);                     /* manual line 3 */
     t_run_to(6000); CHECK(t_at('c', 3) == -1 && R.st.state == LJ_CL_WAIT_GO); /* its 5 s wait is not what moves it */
-    CHECK(lj_cl_line_state(&R.st, &cl, 3) == LJ_CLL_NEXT && lj_cl_line_state(&R.st, &cl, 2) == LJ_CLL_DONE && lj_cl_line_state(&R.st, &cl, 5) == LJ_CLL_ERROR);
+    CHECK(lj_cl_line_state(&R.st, &cl, 3) == LJ_CLL_NEXT && lj_cl_line_state(&R.st, &cl, 2) == LJ_CLL_DONE && lj_cl_line_state(&R.st, &cl, 5) == LJ_CLL_PLAIN);   /* W5: MP is live */
     t_reset(0);                                                               /* again, Go after 2 s */
     t_op(&cl, LJ_CL_OP_TOP, 0);
     t_run_to(2000); CHECK(t_op(&cl, LJ_CL_OP_GO, 0) == 0 && t_at('c', 3) == 2000);   /* Go !: the wait ignored */
@@ -142,22 +143,22 @@ static void t_acceptance(void)
     t_run_to(2500);
     i = t_find('t', LJ_RUN_SLOT0 + 0, 0);
     CHECK(i >= 0 && T.ev[i].t == 2500000u && T.ev[i].b == 0xFF && t_find('t', LJ_RUN_SLOT0 + 1, 0) == i + 1 && t_count('t') == 2);   /* Set Cue Trig 1+2, once each */
-    CHECK(t_at('c', 4) == -1 && t_at('h', 7) == 2500);                        /* MP line skipped (its cue never latched), Hotkey Command right after */
+    CHECK(t_at('m', LJ_CL_MP_PLAY) == 2500 && t_at('c', 4) == 2500 && t_at('h', 7) == 2500);   /* W5: the MP line executes and latches its cue, Hotkey Command right after */
     t_run_to(2990); CHECK(t_count('f') == 0);
     t_run_to(3000); CHECK(t_at('f', 5) == 3000 && T.ev[t_find('f', 5, 0)].b == 1);   /* Flash Seq 5 */
     t_run_to(3490); CHECK(t_count('f') == 1);
     t_run_to(3500); i = t_find('f', 5, t_find('f', 5, 0) + 1); CHECK(i >= 0 && T.ev[i].b == 0 && T.ev[i].t == 3500000u);   /* released after 0.50 s */
-    t_run_to(3990); CHECK(t_at('c', 4) == -1);
-    t_run_to(4000); CHECK(t_at('c', 4) == 4000 && t_at('x', 0) == 4000 && t_at('g', 1) == 4000);   /* cue 4; Execute refused; Load BGCue 1 */
+    t_run_to(3990); CHECK(t_nth('c', 4, 2) == -1);
+    t_run_to(4000); CHECK(t_nth('c', 4, 2) == 4000 && t_at('x', 0) == 4000 && t_at('g', 1) == 4000);   /* cue 4; Execute refused; Load BGCue 1 */
     CHECK(R.st.state == LJ_CL_WAIT_GO && R.st.next == 12);
     t_run_to(6000); CHECK(t_op(&cl, LJ_CL_OP_GO, 0) == 0 && t_nth('c', 1, 2) == 6000 && R.st.state == LJ_CL_RUNNING && R.st.next == 13);
     t_run_to(7990); CHECK(R.st.next == 13 && t_nth('c', 2, 2) == -1);        /* Wait MTC, no time code: waits */
     t_run_to(8000); CHECK(t_op(&cl, LJ_CL_OP_GO, 0) == 0 && t_nth('c', 2, 2) == 8000 && R.st.next == 14);   /* until Go */
     t_run_to(9000); CHECK(t_nth('c', 3, 2) == 9000);
-    t_run_to(9990); CHECK(R.st.next == 15 && t_nth('c', 4, 2) == -1);
-    t_run_to(10000); CHECK(t_nth('c', 4, 2) == 10000 && R.st.next == 16);    /* Wait PC-Clock 00:00:10 */
+    t_run_to(9990); CHECK(R.st.next == 15 && t_nth('c', 4, 3) == -1);
+    t_run_to(10000); CHECK(t_nth('c', 4, 3) == 10000 && R.st.next == 16);    /* Wait PC-Clock 00:00:10 */
     t_run_to(11000); CHECK(t_nth('c', 1, 3) == 11000 && R.st.last == 19 && R.st.next == 2);   /* Goto 19 over line 18, Goto 2 */
-    CHECK(t_count('c') == 9);                                                 /* 1 2 3 4 1 2 3 4 1: line 18's cue 4 never */
+    CHECK(t_count('c') == 10);                                                /* 1 2 3 4 4 1 2 3 4 1 (W5: line 5's cue 4): line 18's cue 4 never */
     t_run_to(11990); CHECK(t_nth('c', 2, 3) == -1);
     t_run_to(12000); CHECK(t_nth('c', 2, 3) == 12000 && R.st.state == LJ_CL_WAIT_GO && R.st.next == 3);
     CHECK(R.st.elapsed_ms == 12000 && R.st.tc_ms == 12000 && R.st.number == 1);
@@ -178,7 +179,7 @@ static void t_ops(void)
     t_reset(0);
     CHECK(t_op(&cl, LJ_CL_OP_RUN, 14) == 0 && t_count('c') == 0);
     t_reset(0); cl.tracking = 1;
-    CHECK(t_op(&cl, LJ_CL_OP_RUN, 14) == 0 && t_count('c') == 6 && T.ev[0].a == 1 && T.ev[1].a == 2 && T.ev[2].a == 3 && T.ev[3].a == 4 && T.ev[4].a == 1 && T.ev[5].a == 2);   /* the MP line's cue 4 skipped */
+    CHECK(t_op(&cl, LJ_CL_OP_RUN, 14) == 0 && t_count('c') == 7 && T.ev[0].a == 1 && T.ev[1].a == 2 && T.ev[2].a == 3 && T.ev[3].a == 4 && T.ev[4].a == 4 && T.ev[5].a == 1 && T.ev[6].a == 2);   /* W5: the MP line's cue 4 too */
     cl.tracking = 0;
     /* Jump while waiting for Go: tracking off skips the cues before the target */
     t_reset(0);
@@ -194,7 +195,7 @@ static void t_ops(void)
     CHECK(t_op(&cl, LJ_CL_OP_BACK, 0) == -1 && t_op(&cl, LJ_CL_OP_MARK_GOTO, 1) == -1);   /* idle */
     /* Run to line 9 while idle: only the cue commands up to and including it [RN v2.5 b3] */
     t_reset(0);
-    CHECK(t_op(&cl, LJ_CL_OP_RUN_TO, 9) == 0 && t_count('c') == 4 && T.ev[3].a == 4 && t_count('h') == 0 && t_count('f') == 0 && t_count('t') == 0);
+    CHECK(t_op(&cl, LJ_CL_OP_RUN_TO, 9) == 0 && t_count('c') == 5 && T.ev[3].a == 4 && T.ev[4].a == 4 && t_count('h') == 0 && t_count('f') == 0 && t_count('t') == 0);
     CHECK(R.st.state == LJ_CL_IDLE && R.st.last == 9);
     /* Go on an idle list = Run from top [03 s6.5]; Stop and Clear clears the cue */
     t_reset(0);

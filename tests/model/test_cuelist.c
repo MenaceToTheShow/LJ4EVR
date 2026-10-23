@@ -91,12 +91,12 @@ static void lj_t_files(void)
     for (i = 0; i < 20 && i < b.n; i++) if (!lj_t_line_eq(&a.lines[i], &b.lines[i])) { CHECK(0); printf("  line %u differs\n", (unsigned)i + 1); }
     CHECK(lj_cuelist_save("test_cl_20b.Cl2", &b) == 0 && lj_t_same_file("test_cl_20.Cl2", "test_cl_20b.Cl2"));
 
-    /* MP Play on line 3 (design 10 W3 acceptance 2, ME-11): kept, flagged, the rest intact, written back unchanged */
-    a.lines[2] = lj_t_line(0, LJ_CL_MP_PLAY, 1500, "clip.wav", 0, 0, 0, "media"); a.lines[2].line = 3;
+    /* DA Play on line 3 (design 10 W3 acceptance 2, ME-11; W5: MP is live, DA stays inert): kept, flagged, the rest intact, written back unchanged */
+    a.lines[2] = lj_t_line(0, LJ_CL_DA_PLAY, 1500, "clip.wav", 0, 0, 0, "media"); a.lines[2].line = 3;
     CHECK(a.lines[2].load_error == 1 && lj_cuelist_validate(&a) == NULL);
     CHECK(lj_cuelist_save("test_cl_mp.Cl2", &a) == 0);
     CHECK(lj_cuelist_load("test_cl_mp.Cl2", &b, err, sizeof err) == 0);
-    CHECK(b.n == 20 && b.lines[2].cmd == LJ_CL_MP_PLAY && b.lines[2].load_error == 1 && b.lines[2].param_ms == 1500 && strcmp(b.lines[2].param, "clip.wav") == 0);
+    CHECK(b.n == 20 && b.lines[2].cmd == LJ_CL_DA_PLAY && b.lines[2].load_error == 1 && b.lines[2].param_ms == 1500 && strcmp(b.lines[2].param, "clip.wav") == 0);
     for (i = 0; i < b.n; i++) CHECK(b.lines[i].load_error == (i == 2));
     for (i = 0; i < 20 && i < b.n; i++) if (i != 2 && !lj_t_line_eq(&a.lines[i], &b.lines[i])) { CHECK(0); printf("  line %u differs after the MP line\n", (unsigned)i + 1); }
     CHECK(lj_cl_line_state(NULL, &b, 3) == LJ_CLL_ERROR && lj_cl_line_state(NULL, &b, 2) == LJ_CLL_PLAIN);
@@ -114,7 +114,7 @@ static void lj_t_files(void)
         if (err[0]) printf("  %s\n", err);
         CHECK(b.n == (uint32_t)LJ_CL_CMD_COUNT + 1);
         for (k = 0; k < LJ_CL_CMD_COUNT && (uint32_t)k < b.n; k++)
-            CHECK(b.lines[k].cmd == k && b.lines[k].load_error == (lj_cl_cmd_inert(k) || k == LJ_CL_SET_CURRENT_CUE || k == LJ_CL_SET_CUE_TRIG));
+            CHECK(b.lines[k].cmd == k && b.lines[k].load_error == (lj_cl_cmd_inert(k) || k == LJ_CL_SET_CURRENT_CUE || k == LJ_CL_SET_CUE_TRIG || k == LJ_CL_MP_LOAD_FILE /* W5: its clip p12 is not there */));
         if (b.n == (uint32_t)LJ_CL_CMD_COUNT + 1) {
             const lj_cl_line *u = &b.lines[LJ_CL_CMD_COUNT];
             CHECK(u->cmd == LJ_CL_NONE && u->load_error == 1 && u->manual == 1 && strcmp(u->param, "dmx_send_frame") == 0 && strcmp(u->param + strlen(u->param) + 1, "two words") == 0);
@@ -170,9 +170,9 @@ int lj_test_cuelist(int argc, char **argv)
     for (i = 0; i < LJ_CL_CMD_COUNT; i++) {
         int fam = lj_cl_cmd_family(i);
         CHECK(lj_cl_cmd_caption[i] != NULL && lj_cl_cmd_grid[i] != NULL);
-        CHECK(lj_cl_cmd_inert(i) == (fam == LJ_CLF_CD || fam == LJ_CLF_DA || fam == LJ_CLF_MP));
+        CHECK(lj_cl_cmd_inert(i) == (fam == LJ_CLF_CD || fam == LJ_CLF_DA));   /* W5 media: MP left the rule (ME-11 narrowed) */
     }
-    CHECK(lj_cl_cmd_inert(LJ_CL_WAIT_CD) && lj_cl_cmd_inert(LJ_CL_DA_TIMECODE_FACTOR) && lj_cl_cmd_inert(LJ_CL_MP_CLOSE));
+    CHECK(lj_cl_cmd_inert(LJ_CL_WAIT_CD) && lj_cl_cmd_inert(LJ_CL_DA_TIMECODE_FACTOR) && !lj_cl_cmd_inert(LJ_CL_MP_CLOSE));
     CHECK(!lj_cl_cmd_inert(LJ_CL_WAIT_MTC) && !lj_cl_cmd_inert(LJ_CL_WAIT_ELAPSED) && !lj_cl_cmd_inert(LJ_CL_NONE));
     CHECK(lj_cl_cmd_is_wait(LJ_CL_WAIT_ELAPSED) && lj_cl_cmd_is_wait(LJ_CL_WAIT_DATE_CHANGE) && lj_cl_cmd_is_wait(LJ_CL_MP_WAIT));
     CHECK(!lj_cl_cmd_is_wait(LJ_CL_GOTO_LINE) && !lj_cl_cmd_is_wait(LJ_CL_AUTOSEEK_MTC));

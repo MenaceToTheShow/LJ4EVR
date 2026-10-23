@@ -613,6 +613,37 @@ static void lj_engine_mm_ctl(lj_engine *e, const lj_cmd *c, uint64_t now)
 static int lj_engine_mm_amp(const lj_engine *e) { return (int)((uint32_t)e->macro_amp_pct * e->mmc.gain / LJ_MM_GAIN); }   /* the scale in force: floor */
 static int lj_engine_mm_speed(const lj_engine *e) { return e->mmc.frozen ? 0 : e->macro_speed_pct; }
 
+/* W5 extapp (docs/w5-contracts.md seam 6): the External Application strings of this tick into frame.ext. Runners in the
+ * merge order of lj_merge.c (cue slots, flash, current, statics, BG slots), a later one replacing an earlier one's string
+ * for the same profile-90 fixture (the topmost wins, as LTP); a runner whose scene names no string leaves the one below.
+ * A plain copy: no I/O, no allocation, no lj_table_* (ME-2). */
+static void lj_engine_ext_copy(lj_engine *e, lj_frame *f)
+{
+    static const int order[] = { LJ_RUN_FLASH, LJ_RUN_CURRENT };
+    int ids[LJ_RUN_COUNT], n = 0, i, j, k;
+    memset(f->ext_fixture, 0, sizeof f->ext_fixture);
+    memset(f->ext, 0, sizeof f->ext);
+    if (!e->show) return;
+    for (i = 0; i < LJ_CUE_SLOTS; i++) ids[n++] = LJ_RUN_SLOT0 + i;
+    for (i = 0; i < 2; i++) ids[n++] = order[i];
+    for (i = LJ_RUN_STATIC0; i < LJ_RUN_COUNT; i++) ids[n++] = i;
+    for (i = 0; i < LJ_BG_SLOTS; i++) ids[n++] = LJ_RUN_BG0 + i;
+    for (i = 0; i < n; i++) {
+        const lj_scene *sc;
+        if (!lj_runner_active(&e->run[ids[i]]) || (ids[i] == LJ_RUN_CURRENT && e->run[ids[i]].blind) || (sc = lj_engine_scene_of(e, ids[i])) == NULL) continue;
+        for (j = 0; j < LJ_SCENE_EXT; j++) {
+            int fx = sc->ext[j].fixture, slot = -1;
+            const lj_profile *p = fx >= 1 && fx <= LJ_FIXTURES ? e->post.profile_of[fx - 1] : NULL;
+            if (!p || p->id != 90 || e->show->fixture[fx - 1].kind != LJ_FX_BUILTIN || !memchr(sc->ext[j].cmd, 0, LJ_EXT_CMD_CAP)) continue;   /* built-in profile 90 "External Application/Device" only */
+            for (k = 0; k < LJ_SCENE_EXT && slot < 0; k++) if (f->ext_fixture[k] == fx) slot = k;
+            for (k = 0; k < LJ_SCENE_EXT && slot < 0; k++) if (!f->ext_fixture[k]) slot = k;
+            if (slot < 0) continue;                                /* more than LJ_SCENE_EXT fixtures: the first ones keep their slots */
+            f->ext_fixture[slot] = (uint8_t)fx;
+            memcpy(f->ext[slot], sc->ext[j].cmd, LJ_EXT_CMD_CAP);
+        }
+    }
+}
+
 void lj_engine_tick(lj_engine *e, uint64_t now_us)
 {
     lj_frame *f = &e->frame;
@@ -651,6 +682,7 @@ void lj_engine_tick(lj_engine *e, uint64_t now_us)
         }
     }
     lj_post_run(&e->post, f->merged, f->out);                  /* step 5: S1-S9 */
+    lj_engine_ext_copy(e, f);                                  /* W5 extapp: the strings ride the published frame */
     f->tick_no++;                                              /* step 6: publish */
     if (e->snap_dst) { *e->snap_dst = *f; e->st.snapshot_tick = f->tick_no; e->snap_dst = NULL; }   /* SNAPSHOT_REQ: a copy, no I/O (LJ_SNAPSHOT_WHOLE_FRAME; snap_src is the UI's) */
     lj_engine_fill_view(e, now_us);
@@ -705,4 +737,10 @@ void lj_engine_set_sacn_stats(lj_engine *e, const uint32_t pps[LJ_LINKS], int la
 {
     memcpy(e->st.sacn_pps, pps, sizeof e->st.sacn_pps);
     e->st.sacn_last_err = last_err;
+}
+
+void lj_engine_set_artnet_stats(lj_engine *e, const uint32_t pps[LJ_LINKS], uint32_t nodes, int bound, int last_err)   /* W5 artnet */
+{
+    memcpy(e->st.artnet_pps, pps, sizeof e->st.artnet_pps);
+    e->st.artnet_nodes = nodes; e->st.artnet_bound = (uint8_t)(bound != 0); e->st.artnet_last_err = last_err;
 }

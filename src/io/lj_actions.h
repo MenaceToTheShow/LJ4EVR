@@ -312,7 +312,24 @@ extern const char *const lj_fn_group_names[LJ_FNG_COUNT];   /* "System", "Intens
     LJ_FN_R12(X, LJ_FN_FINGERS_BUMP,  LJ_FNG_SYSTEM, "Fingers bump %d",             LJ_FNF_EXT | LJ_FNF_FLASH) \
     X(LJ_FN_FINGERS_GM,              LJ_FNG_SYSTEM, "Fingers GM",                   0, LJ_FNF_EXT) \
     X(LJ_FN_FINGERS_BO,              LJ_FNG_SYSTEM, "Fingers B/O",                  0, LJ_FNF_EXT | LJ_FNF_ENABLE) \
-    LJ_FN_R5(X, LJ_FN_FINGERS_JOG,   LJ_FNG_SYSTEM, "Fingers jog wheel %d",         LJ_FNF_EXT)
+    LJ_FN_R5(X, LJ_FN_FINGERS_JOG,   LJ_FNG_SYSTEM, "Fingers jog wheel %d",         LJ_FNF_EXT) \
+    /* W5 dmxin track (append-only, docs/w5-contracts.md seam 2): the DMX-in level / state targets of 05 s3.2 that no LJ2 \
+     * hotkey row covers. LJ_FNF_EXT (hidden from Edit Hotkeys); prog_num = (index << 8) | value, value the DMX level 0..255 \
+     * (or 0/1 for the state rows); index: HTP group 1..24, static 1..20, slot 1..12, master 0 = GM / 1..8 sub, smoke \
+     * enum lj_dmxin_smoke, macro 0 = amplitude / 1 = speed, time 0 = Cue Time / 1..12 slot, audio 0 = gain / 1 = noise. \
+     * Bound by windows/lj_dmx_in.c (lj_dmx_in_bind_fns), which posts the engine command on the UI thread. */ \
+    X(LJ_FN_DMXIN_HTP,               LJ_FNG_DMXIN, "DMX in HTP Group",              0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_STATIC,            LJ_FNG_DMXIN, "DMX in Static Latch",           0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_STATIC_LEVEL,      LJ_FNG_DMXIN, "DMX in Static Level",           0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_SEQ_ONOFF,         LJ_FNG_DMXIN, "DMX in Seq On/Off",             0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_SEQ_INT,           LJ_FNG_DMXIN, "DMX in Seq Intensity",          0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_MASTER,            LJ_FNG_DMXIN, "DMX in Intensity",              0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_BLACKOUT,          LJ_FNG_DMXIN, "DMX in Blackout",               0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_OVERWRITE,         LJ_FNG_DMXIN, "DMX in Overwrite Enable",       0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_SMOKE,             LJ_FNG_DMXIN, "DMX in Smoke",                  0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_MACRO,             LJ_FNG_DMXIN, "DMX in Cue Macro",              0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_TIME,              LJ_FNG_DMXIN, "DMX in Time",                   0, LJ_FNF_EXT) \
+    X(LJ_FN_DMXIN_AUDIO,             LJ_FNG_DMXIN, "DMX in Audio Analyzer",         0, LJ_FNF_EXT)
 
 #define LJ_FN_ENUM(id, g, c, n, f) id,
 enum lj_fn { LJ_FN_NONE = 0, LJ_FN_LIST(LJ_FN_ENUM) LJ_FN_COUNT };

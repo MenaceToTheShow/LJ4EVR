@@ -64,7 +64,7 @@ OS_ALLOW = {   # relative to src/, forward slashes
     # W5 contracts (docs/w5-contracts.md, W5-X-OS): the one new socket file, and one serial backend per OS
     "io/lj_socket.c": {"winsock2.h", "ws2tcpip.h", "sys/socket.h", "sys/select.h", "netinet/in.h", "arpa/inet.h", "unistd.h", "fcntl.h"},   # Art-Net, sACN input, remote TCP, External Application TCP
     "io/lj_serial_win.c": {"windows.h"},                     # CreateFile / SetCommState / COMMTIMEOUTS (remote, External Application serial)
-    "io/lj_serial_posix.c": {"termios.h", "fcntl.h", "unistd.h"},   # open O_NONBLOCK / termios raw (macOS, Linux pty in CI)
+    "io/lj_serial_posix.c": {"termios.h", "fcntl.h", "unistd.h", "dirent.h"},   # open O_NONBLOCK / termios raw (macOS, Linux pty in CI); W5 remote: dirent.h lists /dev (cu.* names are not predictable)
 }
 NAME_EXEMPT = {"app/main.c"}
 # ME-44: the group headers blessed in docs/conventions.md and design 2.0. A ui/widgets/lj_w_<x>.c without its own
@@ -80,6 +80,8 @@ PAIR_EXEMPT = {   # .c files with no same-stem header, and why
     "io/lj_midi_null.c": "a backend of io/lj_midi.h",
     "io/lj_serial_win.c": "a backend of io/lj_serial.h (W5)",
     "io/lj_serial_posix.c": "a backend of io/lj_serial.h (W5)",
+    "io/lj_audio_gen.c": "generated (gen_vectors.py --audio); declared by io/lj_audio.h (W5 audio)",
+    "io/lj_vtr_gen.c": "generated; declared by io/lj_dmxin.h (W5 dmxin)",
 }
 ID = re.compile(r"[A-Za-z_]\w*")
 ID_OK = re.compile(r"^(lj_|LJ_)")

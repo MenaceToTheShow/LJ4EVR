@@ -246,6 +246,16 @@ static void out_seq_done(int start, void *ud)   /* "Start Sequence at :" 1..2048
     gp->changed = 1; row_text(gp->sel); panel_fill();
 }
 
+static void in_seq_done(int start, void *ud)   /* W5 dmxin: "Set DMX In Sequence": DMX in channel start (1..512) -> the selected channel */
+{
+    lj_patch_ch *p;
+    (void)ud;
+    if (!gp || gp->sel < 0 || start < 1 || start > LJ_LINK_CH) { if (start > LJ_LINK_CH) lj_win_message("Global Patch", "DMX In source must be 1..512"); return; }
+    p = &gp->work[gp->sel];
+    p->src_kind = LJ_SRC_DMX_IN; p->src_link = 1; p->src_ch = (uint16_t)start;   /* one DMX-in universe (05 s3) */
+    gp->changed = 1; row_text(gp->sel); panel_fill();
+}
+
 int lj_global_patch_menu(const char *item)
 {
     static const char *const clears[] = { "P_ClearAll", "P_ClearOut", "P_ClearIn", "P_ClearInverted", "P_ClearMin", "P_ClearMax", "P_ClearChannelGroups" };
@@ -285,8 +295,9 @@ int lj_global_patch_menu(const char *item)
         gp->htp_changed = 1;
     }
     else if (strcmp(item, "P_OutSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, out_seq_done, NULL); }   /* TSetSequenceForm; ponytail: the list is single-select, so one channel */
-    else if (strcmp(item, "P_InSeq") == 0 || strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0)
-        lj_log("global patch: %s: Not available in LJ4EVR", item);   /* the DMX-in three are greyed at open (I7: input W5) */
+    else if (strcmp(item, "P_InSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, in_seq_done, NULL); }   /* W5 dmxin: TSetSequenceForm, as P_OutSeq */
+    else if (strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0)
+        lj_log("global patch: %s: Not available in LJ4EVR", item);   /* W5 dmxin: the per-channel "Ignore DMX In Enable" flag needs a lj_patch_ch field and an S1 rule (model + engine, integrator): still greyed */
     else return -1;
     return 0;
 }
@@ -374,7 +385,7 @@ lj_window *lj_global_patch_open(void)
     }
     lj_menu_set_checked(lj_window_menus(gp->win), "M_HTPgroupsaffectedgyGM", lj_global_patch_htp_masters());
     {
-        static const char *const w5[] = { "P_InSeq", "P_EnableUse", "P_EnableIgnore" };   /* DMX-in input side, W5 (I7): greyed, hint in the log line of lj_global_patch_menu */
+        static const char *const w5[] = { "P_EnableUse", "P_EnableIgnore" };   /* W5 dmxin: P_InSeq live; the Overwrite Enable exemption per channel still greyed (see lj_global_patch_menu) */
         lj_widget *in = find("eSourceIn");
         for (k = 0; k < LJ_COUNT_OF(w5); k++) lj_menu_set_enabled(lj_window_menus(gp->win), w5[k], 0);
         if (in) { if (!lj_gp_in_mouse) { lj_gp_in_vt = *in->vt; lj_gp_in_mouse = in->vt->mouse; lj_gp_in_vt.mouse = src_in_mouse; } in->vt = &lj_gp_in_vt; }

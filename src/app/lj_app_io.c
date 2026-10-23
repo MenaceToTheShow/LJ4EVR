@@ -172,6 +172,8 @@ int lj_app_io_cl_media(void *ud, const lj_cl_line *l, uint64_t now_us)
     (void)ud; (void)now_us;
     if (!l) return -1;
     if (lj_media_cmd(&lj_io.media, lj_io.plat.media, l->cmd, l->param, l->param_ms, err, sizeof err) != 0) { lj_log("cue list: %s", err); return -1; }
+    if (l->cmd == LJ_CL_MP_START) lj_win_open(LJ_WIN_MEDIA_PLAYER);          /* media track: "Start the LightJockey Mediaplayer" */
+    else if (l->cmd == LJ_CL_MP_CLOSE) lj_win_close(LJ_WIN_MEDIA_PLAYER);   /* "Close the LightJockey Mediaplayer" */
     return 0;
 }
 

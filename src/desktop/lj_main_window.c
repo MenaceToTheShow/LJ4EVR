@@ -39,7 +39,7 @@ static const lj_main_top_rule lj_top[] = {   /* F5: what 2.209 shows (toolandsta
     { "M_Generic",   2, "F5: when a generic fixture exists" },
     { "M_LJManager", 1, "F5: shown without hardware" },
     { "M_Download",  1, "F5: shown without hardware" },
-    { "M_Audio",     0, "W5" },
+    { "M_Audio",     1, "W5 audio: the built-in Audio Analyzer (fidelity row 10 superseded)" },
     { "M_SandNet",   0, "inventory s5: SandNet never" },
     { "M_MHelp",     1, "F5" },
 };
@@ -47,10 +47,10 @@ static const lj_main_inert_leaf lj_inert[] = {   /* dropped back-ends: greyed, h
     { "M_ManagerLaunch", LJ_NA_HINT }, { "M_ManagerPrefs", LJ_NA_HINT }, { "M_ManagerHelp", LJ_NA_HINT },
     { "M_Download2510", LJ_NA_HINT }, { "M_Download2518", LJ_NA_HINT },
     { "M_CapturePanel", LJ_NA_HINT }, { "M_SandNetStatus", LJ_NA_HINT },
-    { "M_RestartSound", LJ_NA_HINT }, { "M_StartDAPlayer", LJ_NA_HINT }, { "M_WinampModule", LJ_NA_HINT },
+    /* W5 audio: M_RestartSound is live */ { "M_StartDAPlayer", LJ_NA_HINT }, { "M_WinampModule", LJ_NA_HINT },
     { "M_OfflineLaunch", LJ_NA_HINT }, { "M_OfflineEnable", LJ_NA_HINT }, { "M_OfflineDisable", LJ_NA_HINT }, { "OfflinePrefs", LJ_NA_HINT },
     { "M_OfflineAutoLaunch", LJ_NA_HINT }, { "M_Autoloadlastusedscene", LJ_NA_HINT }, { "M_OfflineFixtureSelect", LJ_NA_HINT }, { "M_AutoMinimizeondialogs", LJ_NA_HINT },
-    { "PI_DefineAppLink", LJ_NA_HINT },   /* W4 I13 sweep: TExternalAppSetupForm's entry (External Application output is W5, I11) */
+    /* W5 extapp: PI_DefineAppLink is live (TExternalAppSetupForm, I11 superseded) */
 };
 static const char lj_removed[] = "Offlinebar1";   /* View > Toolbars > Offline Toolbar: removed under D12, docs/fidelity.md */
 
@@ -114,7 +114,7 @@ static const lj_menu_item_desc lj_pop_icon_items[] = {
     LJ_MI("PI_FixtureConfig", "Fixture Configuration", "IconPopClick"),
     LJ_MI("PI_GlobalPatch", "Global Patch", "IconPopClick"),
     LJ_MI("PI_Customize", lj_pi_customize_cap, "IconPopClick"),
-    LJ_MI("PI_DefineAppLink", "Define Application Link", "IconPopClick"),   /* [02 s5.7] CHM caption; shown on an External Application/Device icon only, greyed (I11, W5) */
+    LJ_MI("PI_DefineAppLink", "Define Application Link", "IconPopClick"),   /* [02 s5.7] CHM caption; shown on an External Application/Device icon only; W5 extapp: opens TExternalAppSetupForm */
     LJ_MSEP("PI_N4"),
     LJ_MSUB("PI_FixtureIcon", "Fixture Icon", lj_pop_fixicon),
     LJ_MSEP("PI_N5"),
@@ -132,6 +132,11 @@ static void fn(enum lj_fn f) { lj_fn_run(f, 1); }
 
 static void h_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_CLOSE, 0); }
 static void h_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_refresh(); }   /* ControlUpdateTimer / DelayedUpdateTimer: the 100 ms hook when the platform drives TTimer rows */
+static void h_inert(lj_widget *w, void *ud);
+static void h_audio(lj_widget *w, void *ud)   /* W5 audio: Start Audio Analyzer opens the built-in analyzer; the Digital Audio Player stays dropped (I5) */
+{
+    if (item_of(w) && item_of(w)->name && strcmp(item_of(w)->name, "M_RestartSound") == 0) lj_desktop_run_action(LJ_ACT_AUDIO_ANALYZER, 0); else h_inert(w, ud);
+}
 static void h_inert(lj_widget *w, void *ud) { (void)ud; lj_log("desktop: %s: %s", item_of(w) && item_of(w)->name ? item_of(w)->name : "?", LJ_NA_HINT); }
 static void h_sync(lj_widget *w, void *ud) { (void)ud; lj_main_menu_sync(win_of(w)); }
 static void h_autostrike(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_STRIKING_LAMPS, 1); }   /* W2: "From System->Auto Strike Lamps it runs until cancelled" [01 s6.2] */
@@ -281,6 +286,7 @@ static void h_icon_pop(lj_widget *w, void *ud)
     else if (strcmp(n, "PI_FixtureConfig") == 0) lj_desktop_run_action(LJ_ACT_FIXTURE_CONFIG, f);
     else if (strcmp(n, "PI_GlobalPatch") == 0) lj_desktop_run_action(LJ_ACT_GLOBAL_PATCH, f);
     else if (strcmp(n, "PI_Customize") == 0) lj_desktop_run_action(LJ_ACT_CUSTOMIZE_FIXTURE, f);
+    else if (strcmp(n, "PI_DefineAppLink") == 0) lj_desktop_run_action(LJ_ACT_EXTAPP_SETUP, f);   /* W5 extapp: f = the icon's fixture, 0-based */
     else if (strcmp(n, "PI_UnassignIcon") == 0) lj_desktop_unassign_icon(f);
     else if (strcmp(n, "PI_MoveIcon") == 0) lj_desktop_icon_move(f, !lj_desktop_icon_move_on(f));
     else if (strncmp(n, "PI_Align", 8) == 0) lj_desktop_align_icons(f, n + 8);
@@ -299,8 +305,8 @@ static const lj_binding lj_bindings[] = {
     { "GlobalPatch1Click", h_global_patch, NULL },
     { "Hardware2Click", h_hardware, NULL },
     { "HelpClick", h_help, NULL },
-    { "M_AudioClick", h_inert, NULL },
-    { "M_AudioOptionsClick", h_inert, NULL },
+    { "M_AudioClick", lj_handler_noop, NULL },        /* W5 audio: the &Audio header (LJ2 refreshed its items here) */
+    { "M_AudioOptionsClick", h_audio, NULL },         /* W5 audio: one handler for the three items (DFM) */
     { "M_CaptureClick", h_inert, NULL },
     { "M_Downloadclick", h_inert, NULL },
     { "M_EditHotkeysClick", h_edit_hotkeys, NULL },

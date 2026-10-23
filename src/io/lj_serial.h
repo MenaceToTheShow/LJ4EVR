@@ -15,7 +15,7 @@ typedef struct lj_serial lj_serial;
 enum { LJ_SERIAL_NAME = 64, LJ_SERIAL_PORTS_MAX = 32 };
 typedef struct { char name[LJ_SERIAL_NAME]; } lj_serial_port;   /* "COM1" .. / "/dev/ttyUSB0" ..; CP1252 */
 
-int        lj_serial_list(lj_serial_port *out, int max);          /* the ports present (Windows: COM1..COM9 that open, as LJ2's COM 1-9; POSIX: /dev/tty.* and /dev/ttyS*, ttyUSB*, ttyACM*); count, -1 on error */
+int        lj_serial_list(lj_serial_port *out, int max);          /* the ports present (Windows: COM1..COM255 that QueryDosDevice knows, without opening them; POSIX: /dev/ttyUSB*, ttyACM*, cu.*, ttyS0-3); count, -1 on error */
 lj_serial *lj_serial_open(const char *name, uint32_t baud);       /* 8N1, non-blocking; NULL + log (an unsupported baud is refused) */
 int        lj_serial_read(lj_serial *s, uint8_t *buf, size_t cap);   /* bytes read, 0 = none pending, -1 = error (the port went away) */
 int        lj_serial_write(lj_serial *s, const uint8_t *buf, size_t n);   /* bytes written (may be < n), -1 = error */

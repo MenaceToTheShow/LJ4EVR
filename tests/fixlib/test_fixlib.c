@@ -106,7 +106,7 @@ int lj_test_fixlib_profiles(int argc, char **argv)
     CHECK(lj_fixlib_by_id(45) && lj_fixlib_by_id(45)->channel_class[0] == LJ_CH_HAZE && lj_fixlib_by_id(45)->channel_class[1] == LJ_CH_HAZE_FAN);
     CHECK(lj_fixlib_by_id(27) && lj_fixlib_by_id(27)->channel_class[5] == LJ_CH_SWITCH);
     CHECK(lj_fixlib_by_id(78) && lj_fixlib_by_id(78)->footprint == 12 && lj_profile_window(lj_fixlib_by_id(78), LJ_CTL_RGBPACK));
-    CHECK(lj_fixlib_by_id(90) && lj_fixlib_by_id(90)->footprint == 32 && lj_fixlib_by_id(90)->nwindows == 0);
+    CHECK(lj_fixlib_by_id(90) && lj_fixlib_by_id(90)->footprint == 32 && lj_fixlib_by_id(90)->nwindows == 1 && lj_profile_window(lj_fixlib_by_id(90), LJ_CTL_EXTENDED));   /* W5 extapp: TSpecialSettings_ExternalApp */
     CHECK(lj_fixlib_by_id(999) == NULL && lj_fixlib_by_id(32) == NULL);
 
     /* tier 2: a QLC+-bound id gets derived windows at first use; extras resolve too */

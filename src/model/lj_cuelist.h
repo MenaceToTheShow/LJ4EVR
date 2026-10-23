@@ -21,7 +21,9 @@
  *   load_background_cue  ref = bg cue number
  *   link_cuelist      ref = cue list number (unsaved changes are lost at the link)
  *   set_current_cue, set_cue_trig   panel actions that fill `cue` / `trig_mask`; never a stored cmd (validate rejects them)
- *   CD / DA / MP rows parameters kept as loaded (load_error = 1, design 8.5)
+ *   CD / DA rows parameters kept as loaded (load_error = 1, design 8.5, ME-11)
+ *   mp_load_file      pstr = the WAV path; a path that does not exist loads with load_error = 1 (red, skipped)
+ *   mp_seek, mp_wait  ms of the H:M:S:hh time code (fps 100: frames 0-99, TClEditPanels UpDown28 / UpDown32 Max 99)
  * Bodies: lj_cuelist.c (cuelist-core track). */
 #ifndef LJ_MODEL_CUELIST_H
 #define LJ_MODEL_CUELIST_H
@@ -64,7 +66,7 @@ extern const char *const lj_cl_adv_caption[2];   /* the Adv column: "Auto", "Man
 
 enum lj_cl_family { LJ_CLF_NONE = 0, LJ_CLF_CD, LJ_CLF_DA, LJ_CLF_MP, LJ_CLF_MTC, LJ_CLF_PC, LJ_CLF_OTHER, LJ_CLF_DRAG };
 int lj_cl_cmd_family(int cmd);    /* enum lj_cl_family; -1 out of range */
-int lj_cl_cmd_inert(int cmd);     /* 1 for the CD / DA / MP families: greyed with hint LJ_CL_NOT_AVAILABLE, loaded red, skipped (design 8.5) */
+int lj_cl_cmd_inert(int cmd);     /* 1 for the CD / DA families: greyed with hint LJ_CL_NOT_AVAILABLE, loaded red, skipped (design 8.5, ME-11); MP is live from W5 (io/lj_media.h) */
 int lj_cl_cmd_is_wait(int cmd);   /* 1 for every Wait (ignored on a manual line) */
 #define LJ_CL_NOT_AVAILABLE "Not available in LJ4EVR"   /* design 8.5 hint; ours, not in the exe pool (LORD_FIDELITY-14 tag) */
 #define LJ_CL_FLASH_MAX_MS 99900                         /* "duration up to 99.9 s" [RN v2.6 b4] */
@@ -79,7 +81,7 @@ int      lj_cl_tc_text(char *dst, size_t cap, int32_t ms, int fps);   /* "HH:MM:
 /* ---- W3: what the UI-thread runner publishes (app/lj_cuelist_run.h fills it, the Cuelist window paints from it) ---- */
 enum lj_cl_state { LJ_CL_IDLE = 0 /* passive edit: list editable */, LJ_CL_RUNNING /* active: waiting on an auto line's condition */, LJ_CL_WAIT_GO /* a manual line waits for Go ! */ };
 enum lj_cl_tc_src { LJ_TC_PC_ELAPSED = 0 /* sbPCElapsed */, LJ_TC_PC_CLOCK /* sbPCClock */, LJ_TC_MIDI /* sbMIDITime */,
-                    LJ_TC_CD /* sbCDTime, greyed */, LJ_TC_DA /* sbDATime, greyed */, LJ_TC_MP /* sbMPTime, greyed */, LJ_TC_COUNT };
+                    LJ_TC_CD /* sbCDTime, greyed */, LJ_TC_DA /* sbDATime, greyed */, LJ_TC_MP /* sbMPTime, the MediaPlayer clip clock (W5) */, LJ_TC_COUNT };
 enum lj_cl_line_state { LJ_CLL_PLAIN = 0, LJ_CLL_DONE /* last executed: gray */, LJ_CLL_NEXT /* waiting: blue */, LJ_CLL_ERROR /* load_error: red */ };   /* [RN v2.6 b7], design 8.5 */
 typedef struct {
     uint8_t  state;              /* enum lj_cl_state */
@@ -99,6 +101,7 @@ enum lj_cl_op { LJ_CL_OP_TOP = 0 /* sbTop */, LJ_CL_OP_RUN /* sbRun: from line n
                 LJ_CL_OP_BACK /* sbBack: one line up, not on line 1 */, LJ_CL_OP_STOP /* sbStop */, LJ_CL_OP_STOP_CLEAR /* Cuelist Stop and Clear: also clears the current cue */,
                 LJ_CL_OP_JUMP /* Pop_JumpToThis: while waiting for Go */, LJ_CL_OP_RUN_TO /* M_RunToLine: cue commands only, up to and including n [RN v2.5 b3] */,
                 LJ_CL_OP_MARK_GOTO /* sbMark1..4 click */, LJ_CL_OP_MARK_RUN /* sbMark right-click */, LJ_CL_OP_LOG /* sbLogAudio / [CTRL]: stamp the shown time code */,
+                LJ_CL_OP_TC_SRC /* W5 media (appended): n = enum lj_cl_tc_src the display and Log time code follow (sb*Time) */,
                 LJ_CL_OP_COUNT };
 #define LJ_CL_OP_ARG(op, n) ((int)(op) | ((int)(n) << 8))
 #define LJ_CL_OP_OF(arg)    ((arg) & 0xFF)
