@@ -10,6 +10,12 @@ Packets go out at up to about 40 per second while values change, and
 about once a second while nothing changes, so a receiver always knows
 the source is alive.
 
+Any link can send Art-Net instead: pick Art-Net beside its universe in
+Hardware Setup and give it a Port-Address. LJ4EVR asks the network for
+Art-Net nodes every 2.5 seconds and sends each node only the universes
+it reports, so a link with no node sends nothing.
+Art-Net(TM) Designed by and Copyright Artistic Licence.
+
 The Grand Master scales every intensity channel. Master Intensity also
 has submasters for groups of fixtures. Blackout closes the shutter or
 intensity of every fixture. Freeze holds the output where it is while

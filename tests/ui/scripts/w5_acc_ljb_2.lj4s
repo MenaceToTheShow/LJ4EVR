@@ -1,0 +1,10 @@
+# W5 acceptance row 3, the next start (no U: argument): the imported library opens with its records.
+wait 300
+assert_caption main "LJ4EVR (User lib: MyShow)"
+assert_text main.icon1 "(1) MAC2000"
+open list_seq
+shot ../w5shots/ljb-opened.png
+close list_seq
+open list_cue
+shot ../w5shots/ljb-opened-cues.png
+quit

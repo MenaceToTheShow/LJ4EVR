@@ -188,3 +188,9 @@ verb fails with `pending: <track>` until its track lands the module (docs/w5-con
 
 The DMX-in window's monitor fields, the Analyzer window and the remote settings are checked with the W1 `assert_text` /
 `assert_enabled` verbs once their tracks give the windows bodies; `assert_frame` reads the engine's out[] after S1.
+
+W5 integrator 2 (acceptance walkthrough): `assert_text` also reads a TComboBox (the shown item, else its Text), a
+TSpinEdit (the value) and a TTrackBar (Position), so the Hardware Setup protocol / universe rows and the Analyzer
+faders can be asserted (a TRadioGroup still reads its caption). The W5 walkthrough is `tests/ui/scripts/w5_acc_*.lj4s`,
+run in a scratch userdata made by `tools/ref/w5_wire.py prep` with the loopback peers of the same tool
+(`docs/w5-integration.md`, "Acceptance").

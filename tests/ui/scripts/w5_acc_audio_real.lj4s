@@ -1,0 +1,12 @@
+# W5 acceptance row 2, real audio (developer PC with a capture device): run after w5_acc_audio_1.lj4s in the same userdir
+# (audio enabled, [AUDIO] Device = a loopback capture device), while three clicks 0.5 s apart play into it from
+# another program: three trigs at 2 Audio-Trigs / Trig = one scene (40 -> 80).
+cl_load CueLists/00000005.Cl2
+cl_execute
+click main.M_RestartSound
+click TLJSoundApp.Timeline1
+assert_frame 1:1=40
+wait 9000
+assert_frame 1:1=80
+shot ../w5shots/audio-real.png
+quit

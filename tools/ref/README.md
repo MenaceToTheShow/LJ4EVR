@@ -13,3 +13,8 @@ then re-copy.
 | `14-macros_mac_decode.py` | 14-gap-generic-macros-and-statics2.md | the sine-family formula (`round(32640 * sin)`); the Macros.Mac decode needs Martin's file and is skipped |
 | `16-gs2_ref.py` | 16-gap-gs2-format-decode.md | the `.GS2` field layout table and record size |
 | `17-position_ref.py` | 17-gap-position-maths.md | pan/tilt, fan-out, auto-delay, macro-index and cue-scaling vectors; its `demo()` self-check is run |
+
+`w5_wire.py` is ours, not a vault copy: the loopback peers of the W5 acceptance walkthrough (an Art-Net node and sACN
+listener on 127.0.0.2, sACN / Art-Net senders, a TCP remote client, a TCP receiver for External Application output)
+and `prep`, which writes the scratch library the `tests/ui/scripts/w5_acc_*.lj4s` scripts run in. It imports
+`08-sacn_ref.py` for the E1.31 packets. See `docs/w5-integration.md`, "Acceptance".

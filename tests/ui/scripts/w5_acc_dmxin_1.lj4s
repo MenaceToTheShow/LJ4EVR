@@ -1,0 +1,117 @@
+# W5 acceptance row 4 (docs/w5-gates.md section 2), part 1: DMX-in configured in the windows, then driven by `sacn_in`
+# (a real E1.31 packet through lj_dmxin_rx, docs/ui-script.md W5 verbs). W5Acc scratch library: GlobalPatch.GPA patches
+# output 1:1 (DIM1) from DMX-in 2 in HTP mode and 1:3 from DMX-in 3 in Absolute mode; cue 5 = DIM1 at 128.
+# Slots below: ch2 = HTP source, ch3 = the Off/On table channel, ch11 / ch12 = Binary Cue Value 1 / 4, ch13 = Latch Cue,
+# ch14 = Master Intensity.
+open hardware_setup
+assert_text THardwareSetupForm2.cbUseDMXin "Enable DMX in"
+click THardwareSetupForm2.cbUseDMXin
+click THardwareSetupForm2.seDmxInUniverse
+key Home
+key Up 9
+assert_text THardwareSetupForm2.seDmxInUniverse "10"
+assert_text THardwareSetupForm2.cbDmxInSource "sACN"
+shot ../w5shots/dmxin-hs.png
+click THardwareSetupForm2.bOk
+assert_file_line Hardware.Ini "[DMXIN]"
+assert_file_line Hardware.Ini "Universe=10"
+# the C-L toolbar DMX In button opens the window
+click main.tb_cuelist_10
+assert_enabled TDmxInForm.bAssign 1
+# ch 11 = Binary Cue Value 1, ch 12 = Binary Cue Value 4, ch 13 = Latch Cue, ch 14 = Master Intensity
+click TDmxInForm.LVDmxFunctions
+key Home
+key Down 10
+click TDmxInForm.LVFunctions
+key Home
+key Down 9
+click TDmxInForm.bAssign
+click TDmxInForm.LVDmxFunctions
+key Home
+key Down 11
+click TDmxInForm.LVFunctions
+key Home
+key Down 11
+click TDmxInForm.bAssign
+click TDmxInForm.LVDmxFunctions
+key Home
+key Down 12
+click TDmxInForm.LVFunctions
+key Home
+key Down 17
+click TDmxInForm.bAssign
+click TDmxInForm.LVDmxFunctions
+key Home
+key Down 13
+click TDmxInForm.LVFunctions
+key Home
+click TDmxInForm.bAssign
+assert_text TDmxInForm.LVDmxFunctions.10.3 "Binary Cue Value 1"
+assert_text TDmxInForm.LVDmxFunctions.11.3 "Binary Cue Value 4"
+assert_text TDmxInForm.LVDmxFunctions.12.3 "Latch Cue"
+assert_text TDmxInForm.LVDmxFunctions.13.3 "Master Intensity"
+# Value-translations: the SYSTEM Off/On table on channel 3
+click TDmxInForm.M_ValueTranslations
+click TDMXInValueTranslationForm.lvChannels
+key Home
+key Down 2
+click TDMXInValueTranslationForm.tv1
+key Home
+key Down 4
+click TDMXInValueTranslationForm.Pop_AssignSelected
+assert_text TDMXInValueTranslationForm.lvChannels.2.1 "Off/On"
+shot ../w5shots/dmxin-translation.png
+click TDMXInValueTranslationForm.bOk
+assert_text TDmxInForm.LVDmxFunctions.2.2 "Off/On"
+# nothing changes before Save: binary 5 latched, master at 128 -> no cue, master unchanged; the patch is not a DMX-in
+# function, so DMX-in 2 (200) already wins the HTP on 1:1 and 1:3 takes DMX-in 3 untranslated
+sacn_in 10 00C8C8 00000000000000 FFFF0080
+sacn_in 10 00C8C8 00000000000000 FFFFFF80
+wait 150
+assert_view cue_number=0 gm=255
+assert_frame 1:1=200
+assert_frame 1:3=200
+assert_file DmxIn/DmxIn.dat missing
+shot ../w5shots/dmxin-before-save.png
+sacn_in 10 00C8C8 00000000000000 FFFF0080
+wait 150
+click TDmxInForm.bSave
+assert_file DmxIn/DmxIn.dat exists
+# after Save: the master follows ch 14 (128 -> Master 50 %, then 255); Latch Cue rises with the binary value 5 -> cue 5
+# (DIM1 128, above DMX-in 2 = 50 in the HTP); the table translates ch 3 (100 -> 0, 200 -> 255)
+sacn_in 10 00C8C8 00000000000000 FFFF0080
+wait 150
+assert_view cue_number=0 gm=128
+sacn_in 10 00C8C8 00000000000000 FFFF00FF
+wait 150
+assert_view gm=255
+sacn_in 10 003264 00000000000000 FFFFFFFF
+wait 150
+assert_view cue_number=5 gm=255
+assert_frame 1:1=128
+assert_frame 1:3=0
+sacn_in 10 00C8C8 00000000000000 FFFFFFFF
+wait 150
+assert_frame 1:1=200
+assert_frame 1:3=255
+assert_text TDmxInForm.eCue "5"
+assert_text TDmxInForm.eCuename "Cue5"
+# the Grand Master is driven by DMX-in: its mode text turns red and the fader refuses the mouse (05 s3.2)
+open master_intensity
+wait 150
+assert_enabled TMasterIntensityForm.fader_master 0
+assert_enabled TMasterIntensityForm.fader_1 1
+shot ../w5shots/dmxin-after-save.png
+# Options > Disable DMX-in functions: the functions stop (binary value 1 latched does not load cue 1, the master stays
+# at 255), the Global Patch keeps following DMX-in
+click TDmxInForm.M_DisableDMXinFunc
+sacn_in 10 00C8C8 00000000000000 FF000040
+sacn_in 10 003232 00000000000000 FF00FF40
+wait 150
+assert_view cue_number=5 gm=255
+assert_frame 1:1=128
+assert_frame 1:3=0
+assert_enabled TMasterIntensityForm.fader_master 1
+click TDmxInForm.M_DisableDMXinFunc
+close dmx_in
+quit

@@ -303,3 +303,42 @@ may pull any of them forward before W3; the default is the list above.
 | Channel Configuration, `eChannelName` **supersedes** the W3 row | `MaxLength = 6` | 6 bytes (`max_length = 6` over `ch_caption[..][7]`, ME-118); the W3 row's "5 bytes" was wrong | ME-118 | `lj_profile_editor_form.c`, golden `W3PE_CHANNELCONFIG` |
 | Fan Out, saved custom selections **supersedes** the W3 row | (as there) | `sbSave` saves the order to `Main.Ini [CUSTOMSEL]` (`docs/file-formats.md`), `cb1` lists and loads them (W4 integration 1, row 12) | W4 (dlg-desktop) | `E/fan-out-TFanOutForm.png` |
 | Background Cue slot popup, `Edit Sequence` **supersedes** the ME-112 row | (as there) | loads the slot's sequence into the Sequence window (`lj_bgcue_form.c` `edit_seq`) | W4 | `lj_bgcue_form.c` |
+
+## Fidelity rows touched by W5 (W5 integrator 2, 2026-10-23)
+
+Append-only, as the sections above. Each row **supersedes** the row it names. Captures `docs/screenshots/w5/...` come
+from the W5 acceptance walkthrough (`docs/w5-integration.md`, "Acceptance"), shot under a neutral `LJ4EVR_USERDATA`
+on loopback; the LJ2 side is the CHM GIF named (reduced unless note 07 s14 says 1:1, so sizes are not compared).
+
+| Row | LJ4EVR / LJ2 pair or reason | Decision | Status |
+|---|---|---|---|
+| Main window, menu bar, `&Audio` **supersedes** the `&Audio` part of the second row of this file and the F5 "Audio W5" note | `&Audio` shown; Start Audio Analyzer (`M_RestartSound`) opens TLJSoundApp; Start Digital Audio Player stays greyed (I5) / `mainsetupmenu.gif` | fidelity row 10 superseded (W5-AUD-4) | done |
+| I6 **supersedes** the I6 deferral | `docs/screenshots/w5/audio-trig-TLJSoundApp.png`, `docs/screenshots/w5/audio-timeline-TLJSoundApp.png`, `docs/screenshots/w5/audio-hs-THardwareSetupForm2.png` / `audiorealtime1.gif`, `audiotimeline.gif`, `setupaudio.gif`; the form from `LJSound.exe`'s TPF0 resource | built in, one process (docs/audio.md "Differences from LJ2") | done |
+| I7 **supersedes** the I7 row | `docs/screenshots/w5/dmxin-after-save-TDmxInForm.png`, `docs/screenshots/w5/dmxin-translation-TDMXInValueTranslationForm.png`, `docs/screenshots/w5/dmxin-live-TDmxInForm.png` / `dmxindialog.gif`, `dmxintranslation.gif`; input live over sACN and Art-Net | the MX-10 example tables are not shipped (provenance) | done |
+| F8 **supersedes** the F8 rows | the C-L DMX In button opens the live window (`w5_acc_dmxin_1.lj4s`), `docs/screenshots/w5/dmxin-after-save-TLJMainForm.png` / `cuelisttoolbar.gif` | as W4; DMX-in now live | done |
+| F48 **supersedes** the F48 rows | DMX-in sources live: output 1:1 from DMX-in 2 in HTP mode and 1:3 from DMX-in 3 Absolute through the Off/On table, asserted by `w5_acc_dmxin_1.lj4s` / `globalpatch.gif` | the per-channel Use / Ignore DMX In Enable items stay greyed (patch record + engine rule) | done, one item greyed |
+| Master Intensity under a DMX-in function (05 s3.2) | the driven master's mode text red and its fader refusing the mouse, `docs/screenshots/w5/dmxin-after-save-TMasterIntensityForm.png` / no capture of this state | the fader paints its arrows greyed while it refuses the mouse (ours) | done |
+| F51 **supersedes** the F51 rows | `docs/screenshots/w5/ljb-imported-TLibraryRestoreForm.png` / `userlibrestore.gif`; `.LJB` listed beside `.lj4b` in Restore | imported into a NEW library with a report, never restored over one (PROPOSAL rig W5-LJB-4) | done |
+| I10 **supersedes** the I10 deferral | `docs/screenshots/w5/remote-settings-TRS232SettingsForm.png` / `rs232.gif` (LJ_RS232.exe's main window) | only the settings window (TRS232SettingsForm) plus a Remote group of ours; the main window's counters go to the log; TCP is ours, default off, 127.0.0.1 | done |
+| I11 **supersedes** the I11 deferral and TExternalAppSetupForm in "Forms that never open" | `docs/screenshots/w5/extapp-link-TExternalAppSetupForm.png`, `docs/screenshots/w5/extapp-running-TExtended.png` / `ljexternalconfigsetup.gif` | no plug-in program is started: Auto-launch / Auto-close and the DMX channel boxes greyed; serial or TCP transport built in | done |
+| I4 and F31 **supersede** the I4 row and add to F31 | `docs/screenshots/w5/media-waited-TCuelist2Form.png`, `docs/screenshots/w5/media-waited-TLJMediaForm.png` / `cuelist1.gif`, `mediaplayer.gif`; the nine MP commands and `sbMPTime` live; a `.Cl2` MP line runs | WAV only, audio only (no video, no codec: W5-X-DEP); the window gets a caption bar and a menu bar (docs/media.md) | done |
+| TValueTableImportErrorForm, TExportTableForm **supersede** their "opens by id only" rows | raised by a bad `.vtr` when the translation window opens / opened from the translation window's Options; goldens `W5DMX_VALUE_TABLE_ERROR`, `W5DMX_EXPORT_TABLE` | as LJ2; the export folder list is code-built | done |
+| Art-Net output (D14) | no LJ2 equivalent; `docs/screenshots/w5/artnet-fading-THardwareSetupForm2.png` | protocol combo and Port-Address per link (PROPOSAL captions), ArtDmx unicast to subscribers only, ArtPoll every 2.5 s to the directed broadcast, OemCode 0x00FF until one is issued (docs/artnet.md) | done |
+| sACN / Art-Net input merge | LJ2 read one hardware input; LJ4EVR merges network sources | highest priority wins, equal priority HTP per slot over at most 4 sources, loss after 2.5 s holds the last frame (PROPOSAL rig W5-DMXIN-2 / -3, docs/dmx-in.md) | done |
+| Hardware Setup status line | (ours) the `U<n> pkt/s` figures read 0 in v1.0.0: nothing passed the engine's counts to the page | the line reads the app's engine-status copy, as the Art-Net part does (W5 integrator 2) | fixed |
+
+## What v1.1.0 is not
+
+v1.1.0 (W5) delivers all seven items of the v1.0.0 list above: Art-Net output beside sACN, the Audio Analyzer and
+audio trig, the `.LJB` importer, DMX-in over sACN and Art-Net input with the `.vtr` tables, the RS-232 / TCP remote
+protocol, External Application string output and the LJ MediaPlayer. It still leaves out:
+
+- the reference rig (design D4): every timing and layering rule tagged `PROPOSAL rig` stays a best estimate until it
+  is compared with LightJockey 2 on real fixtures;
+- audio CD and Winamp (DA) playback, dropped for good: their cue-list rows, time-code buttons and Hardware Setup rows
+  stay greyed with the hint `Not available in LJ4EVR`;
+- video: SDL3 decodes WAV and nothing else, and no codec library is added, so the MediaPlayer plays WAV sound files
+  only and its video options stay greyed;
+- the Global Patch per-channel "Use / Ignore DMX In Enable" items, which need a per-channel flag in the patch record
+  and an engine rule;
+- one container reader shared by `.LJB` and `.Udf`: `.Udf` keeps its own W3 reader (`fuzz_udf`).

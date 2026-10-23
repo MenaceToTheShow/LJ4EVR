@@ -5,7 +5,8 @@ LJ4EVR builds the same protocol in, over a serial port and over TCP. Both are of
 
 ## Turning it on
 
-Open the **RS232 Settings** window (window id `remote_setup`; `lj4evr --script` can open it with `open remote_setup`).
+Open the **RS232 Settings** window: Setup > RS-232 / TCP Remote ... (window id `remote_setup`; `lj4evr --script` can
+open it with `open remote_setup`).
 The top half is LJ2's window: **COM Port** (COM 1 to COM 4; on macOS and Linux the serial devices found under `/dev`)
 and **Baud Rate** (2400, 4800, 9600, 14400, 19200, 38400, 57600). The format is fixed at 8 data bits, 1 stop bit, no
 parity, no flow control. 14400 baud is not available on Linux; choosing it there logs a refusal.

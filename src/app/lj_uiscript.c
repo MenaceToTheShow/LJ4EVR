@@ -27,6 +27,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "ui/widgets/lj_w_spinedit.h"
 #include "windows/lj_cue_form.h"
 #include "windows/lj_fixture_config.h"
 #include "windows/lj_warnings.h"
@@ -455,6 +456,9 @@ static const char *lj_us_text_of(lj_widget *w, int row, int col)
     }
     if (w->kind == LJ_K_STATUSBAR && lj_window_of(w) == lj_desktop_window()) return lj_statusbar_panel_text(LJ_SB_CLOCK);   /* the desktop's own status bar struct (sb_* names for the panels) */
     if (w->kind == LJ_K_STATUSBAR) { lj_w_statusbar *s = (lj_w_statusbar *)w; t = s->text[0]; return t ? t : (s->n && s->panels ? s->panels[0].caption : ""); }
+    if (w->kind == LJ_K_COMBOBOX) { lj_w_combobox *c = (lj_w_combobox *)w; return c->index >= 0 && c->index < c->n && c->items ? c->items[c->index] : c->text ? c->text : ""; }   /* W5 integrator 2: the shown item */
+    if (w->kind == LJ_K_SPINEDIT) { snprintf(buf, sizeof buf, "%d", lj_w_spinedit_value(w)); return buf; }   /* W5 integrator 2 */
+    if (w->kind == LJ_K_TRACKBAR) { snprintf(buf, sizeof buf, "%d", ((lj_w_trackbar *)w)->pos); return buf; }   /* W5 integrator 2: Position */
     t = lj_w_edit_text(w);
     if (!t) t = lj_w_caption(w);
     return t;

@@ -61,8 +61,10 @@ Sequence Time follow the Cue Time Control preference (always, or on a change of 
 
 - "Use / Ignore DMX In Enable" per Global Patch channel stays greyed: it needs a per-channel flag in the patch record and
   an S1 rule in the engine.
-- The masters do not yet show a remote-controlled state or refuse the mouse while a DMX-in function drives them.
 - Static n, Latch presses the slot on the current Statics page, so a slot in Toggle mode flips on each rise.
-- The Fingers "DMX in (1-12)" .. "(37-48)" pages do not yet call the emulation entry (`lj_dmxin_emulate`); the input path
-  and the tables already treat emulated channels as one more source.
 - The MX-10 example tables are not shipped (fixture-specific examples; provenance row).
+
+Done since the track's first text (W5 integration): the Fingers "DMX in (1-12)" .. "(37-48)" pages feed the input through
+`lj_dmxin_emulate` (`test_da2532_fingers`); a master driven by a saved Master Intensity or Intensity Gr.n function shows
+its mode text red and refuses the mouse while DMX-in is on and its functions are enabled, whether or not input arrives
+(05 s3.2; `tests/ui/scripts/w5_acc_dmxin_1.lj4s`); the Cue field beside Cue # shows the latched cue's name.

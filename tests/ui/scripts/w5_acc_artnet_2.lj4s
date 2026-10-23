@@ -1,0 +1,7 @@
+# W5 acceptance row 1, after a restart: the Art-Net selection came back from Hardware.Ini.
+open hardware_setup
+assert_text THardwareSetupForm2.cbProto1 "sACN"
+assert_text THardwareSetupForm2.cbProto2 "Art-Net"
+assert_text THardwareSetupForm2.seArtAddr2 "2"
+assert_file_line Hardware.Ini "Proto2=1"
+quit

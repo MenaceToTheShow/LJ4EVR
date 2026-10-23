@@ -1,0 +1,16 @@
+# W5 acceptance row 4, part 3: Art-Net input. Hardware Setup switches the DMX-in source to Art-Net (the universe box is
+# then the Port-Address, 10); `w5_wire.py send artnet 10 0:2=150,14=255 9000:stop` (ch 14 = the Master Intensity function part 1 assigned) sends ArtDmx from 127.0.0.2 to
+# 127.0.0.1:6454, where the Art-Net socket opens for the input. Output 1:1 takes DMX-in 2 (HTP).
+open hardware_setup
+click THardwareSetupForm2.cbDmxInSource
+key Down
+key Enter
+assert_text THardwareSetupForm2.cbDmxInSource "Art-Net"
+click THardwareSetupForm2.bOk
+assert_file_line Hardware.Ini "In=10"
+click main.tb_cuelist_10
+wait 2000
+assert_text TDmxInForm.lChIn "DMX Channels In 512"
+assert_frame 1:1=150
+shot ../w5shots/dmxin-artnet.png
+quit

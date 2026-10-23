@@ -73,7 +73,7 @@ static void lj_io_action(enum lj_desktop_action a, int arg, void *ud)
     case LJ_ACT_IO_APPLY:
         switch (arg) {
         case LJ_IO_OUTPUT: if (c->sacn) { lj_cmd s; memset(&s, 0, sizeof s); s.kind = LJ_CMD_SACN_CFG; s.sacn = c->sacn; lj_ctx_post(&s); lj_artnet_cfg_save(c->hardware_ini, c->sacn); } break;
-        case LJ_IO_DMXIN:  lj_dmxin_cfg_save(c->hardware_ini, &lj_io.dmxin); lj_io_dmxin_apply(); break;
+        case LJ_IO_DMXIN:  lj_dmxin_cfg_save(c->hardware_ini, &lj_io.dmxin); lj_io_dmxin_apply(); if (c->sacn) lj_artnet_cfg_save(c->hardware_ini, c->sacn); break;   /* W5 integrator 2: [ARTNET] In follows [DMXIN] on disk too */
         case LJ_IO_AUDIO:  lj_audio_cfg_save(c->hardware_ini, &lj_io.audio); lj_io_audio_apply(); break;
         case LJ_IO_REMOTE: lj_remote_cfg_save(c->hardware_ini, &lj_io.remote); lj_remote_open(&lj_io.remote); break;
         case LJ_IO_EXTAPP: lj_extapp_cfg_save(c->hardware_ini, &lj_io.extapp); lj_extapp_open(&lj_io.extapp); break;

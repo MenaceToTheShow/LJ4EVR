@@ -1,0 +1,72 @@
+# W5 acceptance row 2 (docs/w5-gates.md section 2): Audio Analyzer and audio trig. W5Acc scratch library
+# (tools/ref/w5_wire.py prep): cue 4 = sequence 3 (4 scenes, dimmer 1:1 = 40 / 80 / 120 / 160) in Audio trig mode with
+# 2 Audio-Trigs / Trig; Hotkeys/Setup1.Hot key E = Emulate Audio Trig. A click = one loud analysis block after 20 quiet
+# ones, 450 ms apart (the default decay is 312 ms).
+open hardware_setup
+click THardwareSetupForm2.PC1 190 8
+shot ../w5shots/audio-hs-before.png
+click THardwareSetupForm2.RGAudio 20 42
+shot ../w5shots/audio-hs.png
+click THardwareSetupForm2.bOk
+assert_file_line Hardware.Ini "[AUDIO]"
+click main.M_RestartSound
+assert_visible TLJSoundApp.PaintBox1 1
+cl_load CueLists/00000005.Cl2
+cl_execute
+wait 300
+assert_frame 1:1=40
+# click train, real-time view
+audio_inject 30 20
+audio_inject 1500 1
+wait 120
+shot ../w5shots/audio-trig.png
+wait 330
+assert_frame 1:1=40
+audio_inject 30 20
+audio_inject 1500 1
+wait 450
+assert_frame 1:1=80
+audio_inject 30 20
+audio_inject 1500 1
+wait 450
+assert_frame 1:1=80
+audio_inject 30 20
+audio_inject 1500 1
+wait 450
+assert_frame 1:1=120
+# Emulate Audio Trig (hotkey E of Setup1.Hot): two presses = one scene
+hotkey 1 E
+wait 100
+hotkey 1 E
+wait 300
+assert_frame 1:1=160
+# Time-line view
+click TLJSoundApp.Timeline1
+audio_inject 30 20
+audio_inject 1500 1
+wait 450
+audio_inject 30 20
+audio_inject 1500 1
+wait 450
+assert_frame 1:1=40
+shot ../w5shots/audio-timeline.png
+# noise threshold above the input: Trigger > Noise level > High, the noise fader to its end
+click TLJSoundApp.High1
+click TLJSoundApp.TrackBar3
+key End
+assert_text TLJSoundApp.TrackBar3 "455"
+audio_inject 30 20
+audio_inject 1500 1
+wait 450
+audio_inject 30 20
+audio_inject 1500 1
+wait 450
+assert_frame 1:1=40
+shot ../w5shots/audio-threshold.png
+# Analyzer > Auto Save Changes: the settings are written to Hardware.Ini [AUDIO] when the window closes
+click TLJSoundApp.AutoSaveChanges1
+close audio_analyzer
+assert_file_line Hardware.Ini "AutoSaveChanges=1"
+assert_file_line Hardware.Ini "NoiseLevelSwitch=2"
+assert_file_line Hardware.Ini "ShowInput=2"
+quit

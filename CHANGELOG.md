@@ -5,6 +5,35 @@ single source of the number.
 
 ## [Unreleased]
 
+### 1.1.0 (W5, on `main`, not yet tagged)
+
+The seven features 1.0.0 left out are in, each replacing its greyed `Not available in LJ4EVR` chrome:
+
+- **Art-Net output.** Setup > Hardware Setup: any link can send Art-Net 4 instead of sACN, with its own Port-Address.
+  LJ4EVR polls for nodes every 2.5 s and sends each node only the universes it asks for; with no node, nothing is
+  sent. The status line shows packets/s and the node count. Art-Net(TM) Designed by and Copyright Artistic Licence.
+- **Audio Analyzer and audio trig.** Hardware Setup > Audio turns capture on (off on a new installation); &Audio >
+  Start Audio Analyzer opens LightJockey's analyzer window with its real-time, time-line and equalizer views. Cue
+  slots and background cues in Audio trig mode follow the beat; Emulate Audio Trig does the same from a hotkey.
+- **`.LJB` import.** User Libraries > Restore lists LightJockey 2 `.LJB` backups. One is imported into a new library
+  (fixtures, groups, sequences, default output, statics, generic macros, cue names), with a report of everything
+  it could not convert. A damaged or hostile file is refused and nothing is written.
+- **DMX-in over sACN and Art-Net.** Hardware Setup > Enable DMX in, one input universe. The Dmx In window shows the
+  incoming channels live, assigns functions (binary cue latch, masters, Go, statics, smoke, audio settings ...) that
+  take effect on Save, and value-translation tables (`.vtr`). The Global Patch takes DMX-in channels as sources.
+- **RS-232 / TCP remote.** Setup > RS-232 / TCP Remote: LightJockey's 3-byte remote protocol over a serial port or
+  TCP (port 7232, 127.0.0.1 unless you pick an interface; off by default; no authentication).
+- **External Application string output.** The External Application/Device fixture's command strings go to a serial
+  port or a TCP receiver on each scene change (Define Application Link on the fixture icon).
+- **LJ MediaPlayer.** The nine MP cue-list commands, the media time code and the player window are live. It plays
+  WAV files through the system's audio output; video and other formats are refused with a message.
+
+Also: the Hardware Setup status line shows the real sACN packets/s per universe (1.0.0 always showed 0); a master
+driven by DMX-in shows its mode text red and ignores the mouse.
+
+Still left out (README "What v1.1.0 is not"): the reference-rig comparison, audio CD and Winamp, video, and the
+Global Patch per-channel "Use / Ignore DMX In Enable" items.
+
 ## [1.0.0] - 2026-10-23 - W4 Fidelity sweep and release
 
 The first full release. LJ4EVR 1.0.0 plays LightJockey 2 shows over sACN (E1.31) on Windows and macOS: fixture

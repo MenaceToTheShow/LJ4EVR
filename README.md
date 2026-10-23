@@ -6,10 +6,14 @@ executable per OS; SDL3 supplies the window, input, timers and a surface blit,
 every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 
 LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN.
+Art-Net is a trade mark of Artistic Licence: Art-Net(TM) Designed by and Copyright Artistic Licence.
 
-Status: **1.0.0**, the first full release: every LightJockey 2 window of the
+Status: **1.0.0** is the first full release: every LightJockey 2 window of the
 feature inventory, cue lists, macros, follow spots, `.GS2` / `.Udf` profiles and
-sACN output; what it leaves out is below (`CHANGELOG.md`).
+sACN output. `main` now carries the 1.1.0 work (W5): Art-Net output, the Audio
+Analyzer and audio trig, the `.LJB` importer, DMX-in over sACN and Art-Net, the
+RS-232 / TCP remote, External Application string output and the LJ MediaPlayer.
+What each version leaves out is below (`CHANGELOG.md`).
 
 ![The LJ4EVR main desktop with the Sequence and Cue windows open](docs/screenshots/w4/entry/main-TLJMainForm.png)
 
@@ -56,6 +60,22 @@ that belongs to one of them is still present, greyed, with the hint
 `Not available in LJ4EVR`, so the chrome matches and the gap is visible. Joey
 may pull any of them forward before W3; the default is the list above.
 
+## What v1.1.0 is not
+
+v1.1.0 (W5) delivers all seven items of the v1.0.0 list above: Art-Net output beside sACN, the Audio Analyzer and
+audio trig, the `.LJB` importer, DMX-in over sACN and Art-Net input with the `.vtr` tables, the RS-232 / TCP remote
+protocol, External Application string output and the LJ MediaPlayer. It still leaves out:
+
+- the reference rig (design D4): every timing and layering rule tagged `PROPOSAL rig` stays a best estimate until it
+  is compared with LightJockey 2 on real fixtures;
+- audio CD and Winamp (DA) playback, dropped for good: their cue-list rows, time-code buttons and Hardware Setup rows
+  stay greyed with the hint `Not available in LJ4EVR`;
+- video: SDL3 decodes WAV and nothing else, and no codec library is added, so the MediaPlayer plays WAV sound files
+  only and its video options stay greyed;
+- the Global Patch per-channel "Use / Ignore DMX In Enable" items, which need a per-channel flag in the patch record
+  and an engine rule;
+- one container reader shared by `.LJB` and `.Udf`: `.Udf` keeps its own W3 reader (`fuzz_udf`).
+
 ## Docs
 
 Citations such as `design 7.4`, `note 13`, `[06 s4.2]` or `inventory §5` refer to the maintainer's design and
@@ -86,9 +106,16 @@ For contributors:
 - [`docs/replay-grammar.md`](docs/replay-grammar.md) - the `.lj4r` engine replay scenarios
 - [`docs/running.md`](docs/running.md) - running the app, `Main.Ini`, `--selftest` and the other flags
 - [`docs/sacn.md`](docs/sacn.md) - the sACN sender, `Hardware.Ini [SACN]`, the LAN capture
+- [`docs/artnet.md`](docs/artnet.md) - Art-Net output per link, discovery, the socket, `Hardware.Ini [ARTNET]`
+- [`docs/dmx-in.md`](docs/dmx-in.md) - DMX-in over sACN and Art-Net, the merge rule, the `.vtr` value tables, the functions
+- [`docs/audio.md`](docs/audio.md) - the Audio Analyzer, audio trig, permissions and the analyzer's numbers
+- [`docs/remote.md`](docs/remote.md) - the RS-232 / TCP 3-byte remote protocol (off by default, no authentication)
+- [`docs/extapp.md`](docs/extapp.md) - External Application string output: the grammar and the transports
+- [`docs/media.md`](docs/media.md) - the LJ MediaPlayer (WAV only) and the nine MP cue-list commands
+- [`docs/ljb-import.md`](docs/ljb-import.md) - importing a LightJockey 2 `.LJB` backup into a new library
 - [`docs/ui-script.md`](docs/ui-script.md) - the `--script` driver behind the acceptance walkthroughs
 - `docs/screenshots/` - the wave acceptance captures (our own windows)
-- `docs/w0-*.md` .. `docs/w4-*.md` - per-wave contracts, gate tables and integration logs (the build record)
+- `docs/w0-*.md` .. `docs/w5-*.md` - per-wave contracts, gate tables and integration logs (the build record)
 
 ## Licence
 

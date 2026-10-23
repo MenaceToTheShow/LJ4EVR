@@ -1,0 +1,10 @@
+# W5 acceptance row 2, after a restart: the audio settings came back (Hardware.Ini [AUDIO]).
+open hardware_setup
+click THardwareSetupForm2.PC1 190 8
+shot ../w5shots/audio-restart-hs.png
+close hardware_setup
+click main.M_RestartSound
+assert_text TLJSoundApp.TrackBar3 "455"
+assert_file_line Hardware.Ini "NoiseLevelSwitch=2"
+shot ../w5shots/audio-restart.png
+quit

@@ -1,0 +1,36 @@
+# W5 acceptance row 3 (docs/w5-gates.md section 2): the .LJB importer. The userdir holds three synthetic containers
+# written by `lj4evr_tests test_ljb --write <userdir>` (tests/model/test_ljb.c, no LJ2 byte): Show.LJB, Bad.LJB (one
+# flipped byte: CRC refused) and Evil.LJB (an entry "..\..\evil.txt"). User Libraries > Restore opens at the userdir.
+open restore
+shot ../w5shots/ljb-restore-list.png
+# Bad.LJB (row 0): the CRC is checked first; Restore asks, then refuses with the message and writes nothing
+click TLibraryRestoreForm.FileList 30 6
+shot ../w5shots/ljb-bad.png
+click TLibraryRestoreForm.bRestore
+click confirm.BOk
+assert_prompt "LJB: trailer CRC mismatch"
+shot ../w5shots/ljb-bad-refused.png
+click confirm.BOk
+# Evil.LJB (row 1): the traversal entry is refused before anything is written
+click TLibraryRestoreForm.FileList 30 19
+click TLibraryRestoreForm.bRestore
+click confirm.BOk
+shot ../w5shots/ljb-evil-refused.png
+click confirm.BOk
+assert_file evil.txt missing
+assert_file User/evil.txt missing
+assert_file User/MyShow missing
+# Show.LJB (row 2): imported into a new library "MyShow", the report in the window and in LJBImport.txt
+click TLibraryRestoreForm.FileList 30 32
+assert_text TLibraryRestoreForm.lLibName "MyShow"
+click TLibraryRestoreForm.bRestore
+assert_prompt "Import ""MyShow"" as a new user library ?"
+click confirm.BOk
+shot ../w5shots/ljb-imported.png
+assert_file User/MyShow/Config.dat exists
+assert_file User/MyShow/LJBImport.txt exists
+assert_file_line User/MyShow/LJBImport.txt "CueLists\AutoSave.Cl2: cue list not converted (line records undecoded, note 18 s11)"
+assert_file_line User/MyShow/LJBImport.txt "9 converted, 7 not converted"
+# the restart prompt: OK selects MyShow for the next start and closes LJ4EVR
+click confirm.BOk
+quit

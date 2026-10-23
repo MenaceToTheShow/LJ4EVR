@@ -30,7 +30,7 @@ answers with several BindIndex pages. LJ4EVR is a controller only: it never answ
 or ArtAddress.
 
 The subscriber table holds 32 rows (PROPOSAL), one per source address and BindIndex, filled from NetSwitch, SubSwitch,
-PortTypes and SwOut of each ArtPollReply; a row is dropped after 3 polls without a reply (7.5 s, PROPOSAL). Replies are
+PortTypes and SwOut of each ArtPollReply; a row is dropped at the poll after 3 polls without a reply (7.5 to 10 s after its last reply, PROPOSAL). Replies are
 filed under the datagram's source address, never the IP field inside the packet. Packets from our own address are
 ignored.
 

@@ -8,6 +8,7 @@
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "desktop/lj_desktop.h"
+#include "io/lj_dmxin.h"
 #include "io/lj_fn.h"
 #include "ui/lj_menu.h"
 #include "ui/forms/lj_forms_gen.h"
@@ -250,6 +251,21 @@ void lj_master_intensity_close(void)
     memset(s.sync, 0, sizeof s.sync); memset(s.bump, 0, sizeof s.bump);
 }
 
+/* W5 integrator 2 (05 s3.2): a master driven by a saved DMX-in function (Master Intensity, Intensity Gr.n) shows its mode
+ * text red and refuses the mouse while assigned, whether or not input arrives; Disable DMX-in functions releases it */
+static const lj_ctl_desc lj_mi_label_remote = { LJ_K_LABEL, "lj_mi_label", 0, 0, 0, 0, .font_color = LJ_CLR(0xFF0000) };
+static int remote_of(int col)
+{
+    const lj_ctx *c = C();
+    int k;
+    if (!c->dmxin || !c->dmxin->enabled || c->dmxin->functions_off || !c->dmxin_map) return 0;
+    for (k = 0; k < LJ_LINK_CH; k++) {
+        const lj_dmxin_assign *a = &c->dmxin_map->ch[k];
+        if (col == 0 ? a->fn == LJ_DIF_MASTER_INTENSITY : (a->fn == LJ_DIF_INTENSITY_GROUP && a->num == (uint32_t)col)) return 1;
+    }
+    return 0;
+}
+
 void lj_master_intensity_refresh(void)
 {
     const lj_engine_status *v = view();
@@ -257,8 +273,10 @@ void lj_master_intensity_refresh(void)
     int i;
     if (!s.win || !s.view) return;
     for (i = 0; i < LJ_MI_COLS; i++) {
-        int lv = i == 0 ? v->gm : v->sub[i - 1];
+        int lv = i == 0 ? v->gm : v->sub[i - 1], rem = remote_of(i);
         lj_w_fader *f = (lj_w_fader *)s.fader[i];
+        if (s.mode[i] && (s.mode[i]->desc == &lj_mi_label_remote) != rem) { s.mode[i]->desc = rem ? &lj_mi_label_remote : &lj_mi_label_desc; lj_widget_invalidate(s.mode[i]); }
+        if (s.fader[i] && (int)s.fader[i]->enabled == rem) { s.fader[i]->enabled = !rem; lj_widget_invalidate(s.fader[i]); }
         if (f && !f->dragging && !f->pressed && lj_w_fader_value(s.fader[i]) != lv) { lj_w_fader_set_value(s.fader[i], lv); s.level[i] = lv; }
     }
     s.blackout = v->blackout; s.gm_fade = v->gm_fade;

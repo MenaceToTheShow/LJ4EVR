@@ -37,7 +37,7 @@ enum {
     LJ_ARTNET_REPLY_LEN = 239, LJ_ARTNET_ADDR_MAX = 32767,
     LJ_ARTNET_NODES = 32,          /* subscriber table rows, PROPOSAL rig W5-ART-2 */
     LJ_ARTNET_NODE_PORTS = 4,      /* SwOut[4] of one ArtPollReply (BindIndex pages are separate rows) */
-    LJ_ARTNET_EXPIRE_POLLS = 3,    /* a node not heard for 3 polls (7.5-9 s) expires, PROPOSAL rig W5-ART-2 */
+    LJ_ARTNET_EXPIRE_POLLS = 3,    /* a node not heard for 3 polls expires at the next one (7.5-10 s after its last reply), PROPOSAL rig W5-ART-2 */
     LJ_ARTNET_RX_BUDGET = 64       /* datagrams drained per pump (W5-X-THREAD), PROPOSAL */
 };
 #define LJ_ARTNET_POLL_US      2500000u   /* spec p.16: every 2.5 to 3 s */

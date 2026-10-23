@@ -1,0 +1,28 @@
+# W5 acceptance row 7 (docs/w5-gates.md section 2): the LJ MediaPlayer. W5Acc scratch library: cue list 2 = MP Load File
+# tone.wav (4 s, 44.1 kHz mono, written by w5_wire.py prep), MP Play, MP Wait 00:00:02:00, cue 3 (DIM1 at 99), MP Wait
+# 00:00:03:80 (the list is still running when Stop is pressed: Stop on list stop);
+# cue list 6 = MP Load File clip.mp3 and clip.avi (refused). Format "LJ4 cl 1" = the v1.0.0 record, unchanged.
+open cuelist_form
+cl_load CueLists/00000002.Cl2
+cl_assert_line 1 plain
+assert_enabled TCuelist2Form.sbMPTime 1
+assert_enabled TCuelist2Form.sbCDTime 0
+assert_enabled TCuelist2Form.sbDATime 0
+click TCuelist2Form.sbMPTime
+click TCuelist2Form.M_StopAudio
+cl_execute
+wait 1500
+assert_view cue_number=0
+shot ../w5shots/media-playing.png
+wait 1000
+assert_view cue_number=3
+assert_frame 1:1=99
+shot ../w5shots/media-waited.png
+click TCuelist2Form.sbStop
+wait 300
+assert_text TLJMediaForm.pTimeCode "00:00:00:00"
+shot ../w5shots/media-stopped.png
+cl_load CueLists/00000006.Cl2
+cl_execute
+wait 300
+quit

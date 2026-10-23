@@ -71,15 +71,20 @@ listed in [`running.md`](running.md).
 
 ## What this version leaves out
 
-The Audio Analyzer and audio triggers, DMX input over sACN (with the DMX-in value
-tables), the RS-232 / TCP remote protocol, string output to external
-applications, the `.LJB` importer, the LJ MediaPlayer and Art-Net are planned for
-a later version. Their menu items, buttons and cue list commands are present but
-greyed, with the hint "Not available in LJ4EVR". The Martin hardware that
+Since 1.1.0 LJ4EVR includes the Audio Analyzer and audio triggers, DMX input over
+sACN and Art-Net (with the DMX-in value tables), the RS-232 / TCP remote protocol,
+string output to external applications, the `.LJB` importer, the LJ MediaPlayer
+and Art-Net output; each has its page in this folder (`artnet.md`, `audio.md`,
+`dmx-in.md`, `extapp.md`, `ljb-import.md`, `media.md`, `remote.md`). Still left
+out, greyed with the hint "Not available in LJ4EVR": audio CD and Winamp
+playback, video in the MediaPlayer (it plays WAV files only) and the Global
+Patch's per-channel "Use / Ignore DMX In Enable" items. The Martin hardware that
 LightJockey drove directly (2510 and 2518 controllers, MC-X, CD control, SandNet,
 the USB and PCI interfaces) is replaced by network output. Every other known
 difference from LightJockey 2.209 is listed with its reason in
 [`fidelity.md`](fidelity.md).
+
+Art-Net(TM) Designed by and Copyright Artistic Licence.
 
 ## Getting help
 

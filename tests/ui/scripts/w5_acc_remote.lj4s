@@ -1,0 +1,33 @@
+# W5 acceptance row 5 (docs/w5-gates.md section 2): the TCP remote. W5Acc scratch library (cue 130 = DIM1 at 30, cue list
+# 1 = one manual line that loads cue 2). Started together with
+#   python -I tools/ref/w5_wire.py tcp-send 7232 "0:129 1 2" "1000:128 0 1" "2000:134 1 1" "3000:132 2 1" \
+#       "4000:flood=200000" "5000:200 1" "5100:5 5 5" "6000:close"
+# which keeps being refused until the listener opens (a fresh userdata has none), then sends at those times.
+wait 1500
+click main.M_RemoteSetup
+assert_text TRS232SettingsForm.cbInterface "127.0.0.1 (local)"
+assert_text TRS232SettingsForm.eTcpPort "7232"
+click TRS232SettingsForm.cbTcp
+shot ../w5shots/remote-settings.png
+click TRS232SettingsForm.bOk
+assert_file_line Hardware.Ini "TcpEnabled=1"
+assert_file_line Hardware.Ini "TcpIp=127.0.0.1"
+# 129 1 2 = load cue 130
+wait 700
+assert_view cue_number=130
+assert_frame 1:1=30
+# 128 0 1 = cue list 1 at its top (a manual line), then 134 1 1 = Go -> the line loads cue 2
+wait 2000
+assert_view cue_number=2
+assert_frame 1:1=200
+# 132 2 1 = blackout
+wait 1000
+assert_view blackout=1
+# a 200000-byte flood with no command byte 128..136, a half frame and data bytes: nothing changes, the loop keeps running
+wait 1000
+assert_view cue_number=2 blackout=1
+wait 1500
+assert_view cue_number=2 blackout=1
+assert_frame 1:1=200                       # the Generic DMX Dimmer has no shutter or blackout values (11 P15-P16): its level stays
+shot ../w5shots/remote-after.png
+quit

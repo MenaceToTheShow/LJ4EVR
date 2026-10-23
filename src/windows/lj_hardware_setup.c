@@ -30,7 +30,6 @@ typedef struct {
     lj_nic nics[LJ_HS_NICS]; int nnics;
     char nic_text[LJ_HS_NICS][96]; const char *nic_items[LJ_HS_NICS];
     char status[240], addr_text[32];   /* W5 artnet: 160 -> 240 for the Art-Net part */
-    uint32_t pps[LJ_LINKS]; int last_err;
     lj_widget *nic, *uni[LJ_LINKS], *prio, *name, *preview, *unlock, *ucast[LJ_LINKS], *lstatus;
 } lj_hs_state;
 static lj_hs_state hs;
@@ -181,11 +180,10 @@ static void page_fill(void)
     lj_hardware_setup_refresh();
 }
 
-void lj_hardware_setup_status(const uint32_t pps[LJ_LINKS], int last_err) { if (pps) memcpy(hs.pps, pps, sizeof hs.pps); hs.last_err = last_err; }
-
 void lj_hardware_setup_refresh(void)
 {
     const lj_sacn_cfg *c = cfg();
+    const lj_engine_status *v = &lj_ctx_get()->view;   /* W5 integrator 2: the app's copy of the engine status, as artnet_status (nothing ever called the old setter: U<n> read 0 pkt/s) */
     char ip[32], part[48];
     int i;
     if (!hs.win) return;
@@ -193,14 +191,14 @@ void lj_hardware_setup_refresh(void)
     snprintf(hs.status, sizeof hs.status, "NIC %s", ip);
     for (i = 0; i < LJ_LINKS; i++) {
         if (!c->universe_of_link[i] || c->proto[i] == LJ_OUT_ARTNET) continue;   /* W5 artnet: an Art-Net link has no sACN universe */
-        snprintf(part, sizeof part, " | U%u %u pkt/s", (unsigned)c->universe_of_link[i], (unsigned)hs.pps[i]);
+        snprintf(part, sizeof part, " | U%u %u pkt/s", (unsigned)c->universe_of_link[i], (unsigned)v->sacn_pps[i]);
         strncat(hs.status, part, sizeof hs.status - strlen(hs.status) - 1);
     }
-    snprintf(part, sizeof part, " | last send error %d", hs.last_err);
+    snprintf(part, sizeof part, " | last send error %d", v->sacn_last_err);
     strncat(hs.status, part, sizeof hs.status - strlen(hs.status) - 1);
     artnet_status(c, hs.status, sizeof hs.status);   /* W5 artnet */
     lj_w_set_caption(hs.lstatus, hs.status);
-    lj_w_set_caption(find("lStatus"), hs.last_err ? "send error" : "ok");
+    lj_w_set_caption(find("lStatus"), v->sacn_last_err ? "send error" : "ok");
 }
 
 int lj_hardware_setup_set_priority(int priority) { return hs.win ? lj_w_spinedit_set_value(hs.prio, priority) : -1; }

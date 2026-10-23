@@ -1,0 +1,52 @@
+# W5 acceptance row 6 (docs/w5-gates.md section 2): External Application string output. W5Acc scratch library: fixture
+# 3 = External Application/Device (profile 90); <userdir>/extapp.ini = a definition file with [LJ4EVR] TRANSPORT=TCP,
+# HOST=127.0.0.1, PORT=7000; sequence 6 = four 1 s scenes with ext 3 = TRIG!1, TRIG!2, V#X7F, V#X7F (cue 6, cue list 4).
+# Started together with `python -I tools/ref/w5_wire.py tcp-recv 7000 32 --close 12`.
+wait 300
+# programming: fixture 3 as master, the Extended window = TSpecialSettings_ExternalApp, Set Command on two scenes
+click main.icon3
+wait 200
+open extended
+click extended.ext_cmd
+type "TRIG!1"
+click extended.ext_set
+click TSequenceForm.sb7
+click extended.ext_cmd
+key BS 6
+type "TRIG!2"
+click extended.ext_set
+click extended.ext_cmd
+key BS 6
+click extended.ext_get
+assert_text extended.ext_cmd "TRIG!2"
+shot ../w5shots/extapp-control.png
+click TSequenceForm.sb9
+wait 300
+click TSaveSeqForm.ESeqName
+type "ExtWalk"
+click TSaveSeqForm.BSaveNew
+wait 300
+assert_text TSequenceForm.ESeqNo "0008"
+assert_file_line Sequences/00000008.seq "ext 3 cmd=TRIG!1"
+assert_file_line Sequences/00000008.seq "ext 3 cmd=TRIG!2"
+click TSequenceForm.sb8
+# Define Application Link on the icon popup: the definition file, OK
+rclick main.icon3
+click main.PI_DefineAppLink
+click TExternalAppSetupForm.eFileName
+type "extapp.ini"
+shot ../w5shots/extapp-link.png
+click TExternalAppSetupForm.bOk
+assert_file_line Hardware.Ini "Transport1=2"
+assert_file_line Hardware.Ini "Port1=7000"
+# run cue 6 (sequence 6) through cue list 4; the receiver dies at 12 s of its clock, the show keeps running
+cl_load CueLists/00000004.Cl2
+cl_execute
+wait 6000
+open extended
+shot ../w5shots/extapp-running.png
+wait 14000
+assert_frame 1:1=25 15
+open extended
+shot ../w5shots/extapp-dead.png
+quit

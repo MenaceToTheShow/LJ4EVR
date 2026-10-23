@@ -30,6 +30,7 @@
 #include "io/lj_fn.h"
 #include "gfx/lj_draw.h"
 #include "gfx/lj_font.h"
+#include "model/lj_cue.h"
 #include "model/lj_library.h"
 #include "ui/lj_menu.h"
 #include "ui/forms/lj_forms_gen.h"
@@ -141,7 +142,15 @@ static void di_monitor(void)
     lj_window_set_text(di_win[0], "lChIn", ch);
     lj_window_set_text(di_win[0], "lFreq", hz);
     if (lj_dmxin_remote_cue(&n)) { if (snprintf(cue, sizeof cue, "%u", (unsigned)n) < 0) cue[0] = 0; } else lj_str_copy(cue, sizeof cue, "N/A");
-    if ((w = lj_window_find(di_win[0], "eCue")) != NULL && strcmp(lj_w_edit_text(w), cue) != 0) lj_w_edit_set_text(w, cue);
+    if ((w = lj_window_find(di_win[0], "eCue")) != NULL && strcmp(lj_w_edit_text(w), cue) != 0) {
+        static lj_cue q;                                   /* W5 integrator 2: eCuename shows the latched cue's name, read once per change */
+        char path[LJ_PATH_CAP], err[96];
+        const lj_ctx *c = lj_ctx_get();
+        lj_widget *nm = lj_window_find(di_win[0], "eCuename");
+        lj_w_edit_set_text(w, cue);
+        if (nm) lj_w_edit_set_text(nm, strcmp(cue, "N/A") != 0 && c->lib && lj_library_record_path(c->lib, LJ_REC_CUE, n, path, sizeof path) == 0
+                                       && lj_cue_load(path, &q, err, sizeof err) == 0 ? q.name : "");
+    }
 }
 
 static int di_count_used(void) { int k, n = 0; for (k = 0; k < LJ_DI_CH; k++) n += di_work.ch[k].fn != LJ_DIF_NONE; return n; }

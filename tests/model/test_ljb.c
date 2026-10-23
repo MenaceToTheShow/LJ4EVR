@@ -499,10 +499,32 @@ static void test_notes_cap(void)
 }
 
 int lj_test_ljb(int argc, char **argv);
+/* lj4evr_tests test_ljb --write <dir>: the synthetic Show.LJB of test_import, plus Evil.LJB (an entry "..\..\evil.txt")
+ * and Bad.LJB (one flipped byte, CRC refused), for the W5 acceptance walk (docs/w5-integration.md "Acceptance" row 3) */
+static int write_samples(const char *dir)
+{
+    static ljb_ent e[32];
+    char path[LJ_PATH_CAP];
+    size_t len;
+    int n = build_library(e), bad = 0;
+    uint8_t *b = (uint8_t *)malloc(1 << 20);
+    if (!b) return 1;
+    len = ljb_pack(b, 1 << 20, e, n);
+    bad |= snprintf(path, sizeof path, "%s/Show.LJB", dir) < 0 || !len || write_file(path, b, len) != 0;
+    b[50] ^= 1;
+    bad |= snprintf(path, sizeof path, "%s/Bad.LJB", dir) < 0 || write_file(path, b, len) != 0;
+    e[n - 1].folder = "..\\..\\"; e[n - 1].name = "evil.txt";
+    len = ljb_pack(b, 1 << 20, e, n);
+    bad |= snprintf(path, sizeof path, "%s/Evil.LJB", dir) < 0 || !len || write_file(path, b, len) != 0;
+    free(b);
+    printf("test_ljb --write: Show.LJB, Bad.LJB, Evil.LJB %s\n", bad ? "FAILED" : "written");
+    return bad || fails;
+}
+
 int lj_test_ljb(int argc, char **argv)
 {
-    (void)argc; (void)argv;
     fails = 0;
+    if (argc == 3 && strcmp(argv[1], "--write") == 0) return write_samples(argv[2]);
     lj_log_set_sink(NULL, NULL);
     lj_fs_mkdir(TMP);
     test_container();

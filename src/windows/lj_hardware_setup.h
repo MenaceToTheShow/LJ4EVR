@@ -14,8 +14,7 @@
 lj_window  *lj_hardware_setup_open(void);
 void        lj_hardware_setup_close(void);
 lj_window  *lj_hardware_setup_window(void);
-void        lj_hardware_setup_refresh(void);                                   /* repaints the status line from the last lj_hardware_setup_status */
-void        lj_hardware_setup_status(const uint32_t pps[LJ_LINKS], int last_err);   /* the app's lj_engine_status copy (sacn_pps, sacn_last_err), once per idle pass */
+void        lj_hardware_setup_refresh(void);                                   /* repaints the status line from the app's engine-status copy (ctx->view) */
 const char *lj_hardware_setup_apply(void);                                     /* reads the page; NULL = applied, else the rejection text (also shown in a message box) */
 int         lj_hardware_setup_set_priority(int priority);                      /* the page's priority field (tests / UI script); 0 / -1 */
 

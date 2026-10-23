@@ -1,0 +1,34 @@
+# W5 acceptance row 1 (docs/w5-gates.md section 2): Art-Net output beside sACN. Run in the W5Acc scratch library made by
+# `python -I tools/ref/w5_wire.py prep <userdir>`, with the userdir as the working directory and
+# `w5_wire.py node 50 --answer 20` started just before (docs/w5-integration.md "Acceptance" row 1).
+open hardware_setup
+assert_text THardwareSetupForm2.cbProto2 "sACN"
+assert_text THardwareSetupForm2.seArtAddr2 "2"
+click THardwareSetupForm2.cbProto2
+key Down
+key Enter
+assert_text THardwareSetupForm2.cbProto2 "Art-Net"
+click THardwareSetupForm2.bOk
+assert_file_line Hardware.Ini "Proto2=1"
+assert_file_line Hardware.Ini "Addr2=2"
+cl_load CueLists/00000003.Cl2
+cl_execute
+wait 1500
+open hardware_setup
+wait 1100
+shot ../w5shots/artnet-fading.png
+close hardware_setup
+wait 2500
+assert_frame 1:1=255
+assert_frame 2:1=255
+wait 6000
+open hardware_setup
+wait 1100
+shot ../w5shots/artnet-idle.png
+close hardware_setup
+wait 17000
+open hardware_setup
+wait 1100
+shot ../w5shots/artnet-nonode.png
+close hardware_setup
+quit
