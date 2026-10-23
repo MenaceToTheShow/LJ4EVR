@@ -20,14 +20,14 @@ concurrency:
   cancel-in-progress: true
 
 # The container image is repeated per job because `container:` cannot read `env`.
-# Pinned by digest (docs/ci.md): tag 7b00546 of docker.yml, debian:trixie, root.
+# Pinned by digest (docs/ci.md): tag bc2fbf8 of docker.yml (lj4evr-build), debian:trixie, root.
 
 jobs:
   generate-check:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
+      image: ghcr.io/unbannablegt/lj4evr-build@sha256:731edd121abb7ce99293e7884a431dd30ea4813116d9e7ddf33ec6b064c91722
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
     outputs:
       replay_sha: ${{ steps.replay.outputs.sha }}
     container:
-      image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
+      image: ghcr.io/unbannablegt/lj4evr-build@sha256:731edd121abb7ce99293e7884a431dd30ea4813116d9e7ddf33ec6b064c91722
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -70,7 +70,7 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
+      image: ghcr.io/unbannablegt/lj4evr-build@sha256:731edd121abb7ce99293e7884a431dd30ea4813116d9e7ddf33ec6b064c91722
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -195,7 +195,7 @@ jobs:
     needs: [linux-gcc-asan, windows-msvc, macos-clang]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
+      image: ghcr.io/unbannablegt/lj4evr-build@sha256:731edd121abb7ce99293e7884a431dd30ea4813116d9e7ddf33ec6b064c91722
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
