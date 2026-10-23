@@ -38,6 +38,8 @@
 #include "ui/widgets/lj_w_radiogroup.h"
 #include "ui/widgets/lj_w_speedbutton.h"
 #include "ui/widgets/lj_w_udbutton.h"
+#include "desktop/lj_selection.h"
+#include "windows/lj_desktop_dialogs.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 
@@ -641,6 +643,7 @@ static struct {
     int cust[LJ_FIXTURES], ncust, drag_row, mv_seen; uint32_t serial;   /* mv_seen: the Movement control was open while Fan Out was (auto-close) */
     char rows[LJ_FIXTURES][48]; const char *items[LJ_FIXTURES];
     lj_widget_vt vt; void (*paint0)(lj_widget *w, lj_surface *s);
+    char cb_name[LJ_CUSTOM_SEL_MAX][LJ_CUSTOM_SEL_NAME]; const char *cb_items[LJ_CUSTOM_SEL_MAX]; int cb_n;   /* cb1: the saved custom selections (Main.Ini [CUSTOMSEL], dlg-desktop) */
 } fo;
 
 static int fo_order(int *order)                              /* the "Apply Values by" order of the selection */
@@ -771,10 +774,38 @@ int lj_fan_out_custom_move(int from, int to)                 /* the drag-and-dro
     fo_list();
     return 0;
 }
+static void fo_cb_fill(void)                                 /* cb1 from the saved custom selections; rebuilt when the count changes */
+{
+    lj_widget *cb = lj_window_find(fo.win, "cb1");
+    int i, n = lj_custom_sel_count();
+    if (!cb || n == fo.cb_n) return;
+    for (i = 0; i < n; i++) { lj_str_copy(fo.cb_name[i], sizeof fo.cb_name[i], lj_custom_sel_name(i + 1)); fo.cb_items[i] = fo.cb_name[i]; }
+    fo.cb_n = n;
+    lj_w_combobox_set_items(cb, fo.cb_items, n);
+    lj_widget_invalidate(cb);
+}
+static void fo_cb_change(lj_widget *w, void *ud)              /* a saved selection becomes the custom order (unselected fixtures drop out in fo_list) */
+{
+    int no = ((lj_w_combobox *)w)->index + 1, n;
+    (void)ud;
+    if ((n = lj_custom_sel_get(no, fo.cust, LJ_FIXTURES)) < 0) return;
+    fo.ncust = n;
+    fo_list();
+    lj_window_invalidate_all(fo.win);
+}
+static void fo_save(lj_widget *w, int ev, void *ud)           /* sbSave (no DFM handler): TSaveSelectionForm on the current order, cb1's entry to overwrite */
+{
+    int order[LJ_FIXTURES], n;
+    lj_widget *cb = lj_window_find(fo.win, "cb1");
+    (void)w; (void)ud;
+    if (ev != LJ_WEV_CLICK || (n = fo_order(order)) <= 0) return;
+    lj_desktop_dlg_save_selection(order, n, cb ? ((lj_w_combobox *)cb)->index + 1 : 0);
+}
+
 static const lj_binding lj_fo_bindings[] = {
     { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { "Lv1DragDrop", fo_drop, NULL }, { "Lv1DragOver", lj_handler_noop, NULL }, { "Lv1StartDrag", fo_start_drag, NULL },
-    { "sbNewClick", fo_clear, NULL }, { "sbDeleteClick", fo_clear, NULL }, { "cb1Change", lj_handler_noop, NULL },   /* ponytail: saved custom selections (TSaveSelectionForm) are not kept; the list is per session */
+    { "sbNewClick", fo_clear, NULL }, { "sbDeleteClick", fo_clear, NULL }, { "cb1Change", fo_cb_change, NULL },
     { "bPanClick", fo_pan, NULL }, { "bTiltClick", fo_tilt, NULL }, { "rg1Click", fo_rg, NULL }, { "pb1Paint", fo_paint_grid, NULL },
     { "DeleteAllCustomSettings1Click", fo_clear, NULL }, { "help1Click", help, NULL },
     { NULL, NULL, NULL } };
@@ -795,6 +826,8 @@ lj_window *lj_fan_out_open(void)
         fo.dpan->on_event = fo.dtilt->on_event = fo_bar;
         fo.vt = *fo.dpan->vt; fo.paint0 = fo.dpan->vt->paint; fo.vt.paint = fo_bar_paint; fo.dpan->vt = fo.dtilt->vt = &fo.vt;
     }
+    if ((p1 = lj_window_find(fo.win, "sbSave")) != NULL) p1->on_event = fo_save;
+    fo.cb_n = -1; fo_cb_fill();
     fo_list();
     lj_win_show(fo.win, LJ_WIN_STAY_ON_TOP);
     return fo.win;
@@ -807,6 +840,7 @@ void lj_fan_out_refresh(void)
     if (fo.win && fo.mv_seen && !mv) { lj_fan_out_close(); return; }   /* "close automatically with the position control since 2.5" [04 s4, RN 2.5] (LORD_FIDELITY-11) */
     if (fo.win && mv) fo.mv_seen = 1;
     if (fo.win && lj_sel_serial() != fo.serial) { fo_list(); lj_window_invalidate_all(fo.win); }
+    if (fo.win) fo_cb_fill();
 }
 
 /* W4 Position Options (TMovementOptionsForm, 17 s4.1): Mirror Pan / Mirror Tilt / Swap Pan/Tilt on the selected fixtures' programmed

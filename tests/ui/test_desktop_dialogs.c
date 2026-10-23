@@ -392,9 +392,9 @@ int lj_test_desktop_dialogs(int argc, char **argv)
     lj_win_refresh(LJ_WIN_LASER_WARNING);                      /* the box goes on the next poll (it was clicked on mouse down) */
     CHECK(lj_win_get(LJ_WIN_LASER_WARNING) == NULL && lj_laser_enabled() == 0 && out_at(200) == 0);
 
-    /* ---- 14. LJ_WIN_DEFAULT_OUTPUT has no window; LORD_FIDELITY-12 source tags; ME-16 ---- */
+    /* ---- 14. (W4-WIN: the default_output id is deleted, fidelity row); LORD_FIDELITY-12 source tags; ME-16 ---- */
     logged[0] = 0;
-    CHECK(lj_win_open(LJ_WIN_DEFAULT_OUTPUT) == NULL && strstr(logged, "default_output: no window") != NULL && strstr(logged, "has no behaviour file yet") == NULL);
+    for (i = 0; i < LJ_WIN_COUNT; i++) CHECK(strcmp(lj_win_id_name((enum lj_win)i), "default_output") != 0 && strcmp(lj_win_id_name((enum lj_win)i), "save_preset") != 0);
     for (i = 0; i < LJ_WARN_COUNT; i++) CHECK(lj_warnings_status_text((enum lj_warning)i)[0] && lj_warnings_status_source((enum lj_warning)i)[0]);
     for (i = LJ_WIN_AUTO_ARRANGE; i <= LJ_WIN_UNBLOCK_LASERS; i++) {   /* every id of the family opens by id too */
         CHECK(lj_win_open((enum lj_win)i) != NULL);

@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "core/lj_log.h"
+#include "core/lj_str.h"
+#include "desktop/lj_desktop.h"
+#include "model/lj_show.h"
 #include "gfx/lj_draw.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
@@ -130,7 +133,8 @@ static void panel_xy(int u, int *x, int *y) { *x = (u % 5) * (LJ_RP_PW + LJ_RP_G
 static void status_paint(lj_widget *w, lj_surface *s)
 {
     const lj_font *f = lj_w_font_of(w);
-    int ax, ay, u, k;
+    int ax, ay, u, k, mf = lj_sel_master();
+    const lj_show *sh = lj_ctx_get()->show;
     lj_widget_abs(w, &ax, &ay);
     for (u = 0; u < rp.units; u++) {
         int px, py, tw;
@@ -139,7 +143,8 @@ static void status_paint(lj_widget *w, lj_surface *s)
         panel_xy(u, &px, &py);
         px += ax; py += ay;
         lj_edge_sunken(s, px, py, LJ_RP_PW, LJ_RP_PH, LJ_CLR_BTNFACE);
-        snprintf(cap, sizeof cap, "Unit %d", u + 1);       /* rgbcolorcontrol.gif; custom captions come with Define Fixture Profile (W3) */
+        if (mf >= 0 && sh && sh->fixture[mf].ch_caption[3 * u][0]) lj_str_copy(cap, sizeof cap, sh->fixture[mf].ch_caption[3 * u]);   /* RGBPack configuration (TRGBPackDefForm) */
+        else snprintf(cap, sizeof cap, "Unit %d", u + 1);  /* rgbcolorcontrol.gif */
         lj_fill(s, px + 2, py + 2, LJ_RP_PW - 4, LJ_RP_CAP_H - 2, (rp.enabled >> u & 1) ? 0x0000FFu : LJ_CLR_BTNSHADOW);
         tw = lj_text_width(f, cap);
         lj_text(s, f, px + (LJ_RP_PW - tw) / 2, py + 2, cap, 0xFFFFFFu, 0);

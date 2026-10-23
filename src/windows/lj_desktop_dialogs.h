@@ -14,7 +14,6 @@
  *   LJ_WIN_HARDWARE_WARNING  TShowHardwareWarningForm: startup without transmitter hardware 'Notification !' [12 Q9]
  *   LJ_WIN_LASER_WARNING  TLaserWarningForm: laser output active 'Warning!' Laser(s) emitting! [12 Q9]
  *   LJ_WIN_UNBLOCK_LASERS  TUnblockLasersForm: 'Enable laser output ?' before laser output opens [12 Q9]
- *   LJ_WIN_DEFAULT_OUTPUT  (existing id)
  */
 #ifndef LJ_WINDOWS_DESKTOP_DIALOGS_H
 #define LJ_WINDOWS_DESKTOP_DIALOGS_H
@@ -28,8 +27,8 @@ void       lj_desktop_dlg_refresh(enum lj_win id);   /* repaint from the model /
 void       lj_desktop_dlg_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
 
 /* ---- dlg-desktop additions (below the contract block) ----
- * LJ_WIN_DEFAULT_OUTPUT has no window (windows/lj_default_output.h: the two Setup > Preferences > Default DMX Output leaves
- * act at once); opening it logs why and returns NULL (fidelity row). The four warning ids live in lj_warnings.c.
+ * Default DMX Output has no window (windows/lj_default_output.h: the two Setup > Preferences > Default DMX Output leaves
+ * act at once); its id is deleted (W4-WIN, fidelity row). The four warning ids live in lj_warnings.c.
  * The OS file dialog (Desktop Image Get Image, Startup Options Browse) and the BMP decoder are the app's (platform/ and SDL
  * are not includable here): it installs them with lj_desktop_dlg_set_host; the result is polled on the 100 ms refresh. */
 enum lj_pick { LJ_PICK_NONE = 0, LJ_PICK_IMAGE, LJ_PICK_LAUNCH };

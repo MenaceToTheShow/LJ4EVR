@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_w_checkbox.h"
 #include "ui/widgets/lj_w_edit.h"
 #include "ui/widgets/lj_w_radiobutton.h"
+#include "windows/lj_show_dialogs.h"
 #include "windows/lj_warnings.h"
 
 #define LJ_GP_ROW 192
@@ -234,6 +235,16 @@ static int lj_gp_pending;   /* the Options clear waiting for its "Please Confirm
 static void confirm_clear(int yes, void *ud) { (void)ud; if (yes && gp) clear_rows(lj_gp_pending, -1); }
 static void ask(const char *text, int what) { lj_gp_pending = what; lj_win_confirm("Please Confirm..", text, NULL, confirm_clear, NULL); }
 
+static void out_seq_done(int start, void *ud)   /* "Start Sequence at :" 1..2048 -> the selected channel's DMX out */
+{
+    lj_patch_ch *p;
+    (void)ud;
+    if (!gp || gp->sel < 0 || start < 1 || start > LJ_CHANS) return;
+    p = &gp->work[gp->sel];
+    p->src_kind = LJ_SRC_DMX_OUT; p->src_link = (uint8_t)((start - 1) / LJ_LINK_CH + 1); p->src_ch = (uint16_t)((start - 1) % LJ_LINK_CH + 1);
+    gp->changed = 1; row_text(gp->sel); panel_fill();
+}
+
 int lj_global_patch_menu(const char *item)
 {
     static const char *const clears[] = { "P_ClearAll", "P_ClearOut", "P_ClearIn", "P_ClearInverted", "P_ClearMin", "P_ClearMax", "P_ClearChannelGroups" };
@@ -272,8 +283,9 @@ int lj_global_patch_menu(const char *item)
         lj_menu_set_checked(lj_window_menus(gp->win), item, on);
         gp->htp_changed = 1;
     }
-    else if (strcmp(item, "P_OutSeq") == 0 || strcmp(item, "P_InSeq") == 0 || strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0)
-        lj_log("global patch: %s: Not available in LJ4EVR", item);   /* the DMX-in three are greyed at open (I7: input W5); P_OutSeq's dialog is not built (ponytail: no DFM names it) */
+    else if (strcmp(item, "P_OutSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, out_seq_done, NULL); }   /* TSetSequenceForm; ponytail: the list is single-select, so one channel */
+    else if (strcmp(item, "P_InSeq") == 0 || strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0)
+        lj_log("global patch: %s: Not available in LJ4EVR", item);   /* the DMX-in three are greyed at open (I7: input W5) */
     else return -1;
     return 0;
 }

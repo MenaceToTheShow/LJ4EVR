@@ -137,7 +137,7 @@ static int lj_ss_commit(uint32_t number, int use_options)
             lj_lock(); lj_str_copy(c->show->current_cue->name, sizeof c->show->current_cue->name, s->name); lj_unlock();   /* "The cue will be given the name of the sequence" */
             lj_cue_form_add_sequence(number);
         } else if (lj_ss_pref("AddToCue", 0)) {
-            if (lj_cue_form_add_sequence(number) < 0) lj_win_message("Add Sequence to Cue", "No free sequence slots available");   /* ponytail: "Add to Cue in Slot" picks a specific slot; the cue API takes the first free one */
+            lj_cue_form_add_sequence_at(number, lj_ss_pref("Slot", 0) % (int)LJ_COUNT_OF(lj_ss_slots));   /* "Add to Cue in Slot" (0 = Default = first free); the cue form raises the two [12 Q9] prompts */
         }
         if (lj_ss_pref("AutoSave", 0) && c->show->current_cue) lj_cue_form_save(c->show->current_cue->number ? 0 : 1, 0);
         if (lj_ss_pref("Clear", 0)) lj_seq_form_new(1);

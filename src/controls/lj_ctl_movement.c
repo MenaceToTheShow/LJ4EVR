@@ -415,6 +415,7 @@ static void on_menu(lj_widget *w, void *ud)
     else if (strcmp(n, "M_Help") == 0) lj_log("movement: Help: no help file is shipped (D2)");
     else if (strcmp(n, "M_Macro") == 0) lj_win_open(LJ_WIN_MOVEMACRO_EDITOR);   /* W3 movement [04 s4.4] */
     else if (strcmp(n, "M_FanOut") == 0) lj_win_open(LJ_WIN_FAN_OUT);          /* W3 movement [04 s4.2] */
+    else if (strcmp(n, "M_PosOptions") == 0) lj_win_open(LJ_WIN_MOVEMENT_OPTIONS);   /* W4 [04 s4] */
 }
 
 /* ---- the menu: top-level captions verbatim [04 s1.6]; accelerators and the children's captions follow the help text (PROPOSAL, the control is code-built) ---- */
@@ -423,7 +424,7 @@ static const lj_menu_item_desc mv_pref_items[] = {
     { "M_LockCursor", "&Lock Cursor in Grid", .on_click = "MenuClick", .radio_item = LJ_YES, .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },
 };
 static const lj_menu_item_desc mv_options_items[] = {
-    { "M_PosOptions", "&Position Options", .on_click = "MenuClick", .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },   /* W2: TMOVEMENTOPTIONSFORM */
+    { "M_PosOptions", "&Position Options", .on_click = "MenuClick" },   /* W4: TMOVEMENTOPTIONSFORM */
     { "M_FanOut", "&Fan Out", .on_click = "MenuClick" },                                                          /* W3 movement: TFANOUTFORM (lj_movemacro_editor.c) */
 };
 static const lj_menu_item_desc mv_menu_items[] = {

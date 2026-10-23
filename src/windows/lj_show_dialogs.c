@@ -813,7 +813,6 @@ lj_window *lj_show_dlg_open(enum lj_win id)
     case LJ_WIN_STATICS_CONTROL:      return lj_win_open(LJ_WIN_STATICS2_FORM);   /* D11: View > Statics Control opens Statics 2; the 20-entry form is not built */
     case LJ_WIN_SAVE_STATIC:          dropped(id, "the 20-entry Statics Control's Save is not built (D11); Statics 2 names a slot with Static Slot Name"); return NULL;
     case LJ_WIN_STATICS_REPLACE:      dropped(id, "the 20-entry Statics Control's replace matrix is not built (D11); Statics 2 replaces by scope"); return NULL;
-    case LJ_WIN_SAVE_PRESET:          dropped(id, "unused by design: Position Presets save into the highlighted or first free number (W1); the id is for deletion"); return NULL;
     default: lj_log("lj_win_open: %s is not a SHOW id", lj_win_id_name(id)); return NULL;
     }
     return shown(id);

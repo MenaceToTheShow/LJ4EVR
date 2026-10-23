@@ -387,7 +387,7 @@ static void test_statics(void)
     lj_window *w = lj_win_open(LJ_WIN_STATICS_CONTROL);         /* D11: View > Statics Control = Statics 2 */
     lj_window *pw;
     CHECK(w != NULL && w == lj_win_get(LJ_WIN_STATICS2_FORM));
-    CHECK(lj_win_open(LJ_WIN_SAVE_STATIC) == NULL && lj_win_open(LJ_WIN_STATICS_REPLACE) == NULL && lj_win_open(LJ_WIN_SAVE_PRESET) == NULL);
+    CHECK(lj_win_open(LJ_WIN_SAVE_STATIC) == NULL && lj_win_open(LJ_WIN_STATICS_REPLACE) == NULL);   /* W4-WIN: save_preset deleted */
     seq5()->number = 7;                                        /* Record Current Scene on slot 1, then its name (TStaticSlotNameForm) */
     lj_statics2_popup(1, 10, 10);
     menu_fire(w, "M_RecordCurrentScene");

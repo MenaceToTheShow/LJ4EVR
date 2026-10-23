@@ -182,7 +182,9 @@ static int lj_fixture_footprint(const lj_fixture *f)
     return p ? p->footprint : 1;   /* .GS2 profiles are parsed in W3 (lj_gs2_parse stub): footprint 1 until then */
 }
 
-const char *lj_config_validate(const lj_show *show)
+/* warn_ok: the three F41 save-time warning states (no DMX address, past channel 512, a shared channel) pass, because
+ * TConfigWarnForm's Save Anyway writes them as LJ2 does; every other check still refuses the file. */
+static const char *config_check(const lj_show *show, int warn_ok)
 {
     static uint8_t owner[LJ_CHANS];   /* UI-thread only (library calls are UI-thread file I/O) */
     int i, c;
@@ -192,22 +194,25 @@ const char *lj_config_validate(const lj_show *show)
         int base, fp;
         if (!f->link) { if (f->kind || f->profile_id || f->gs2_file[0]) return "unused row carries a profile"; continue; }
         if (f->link > LJ_LINKS) return "link not 1..4";
-        if (f->address < 1 || f->address > LJ_LINK_CH) return "address not 1..512";
+        if (f->address > LJ_LINK_CH) return "address not 1..512";
+        if (f->address < 1) { if (warn_ok) continue; return "fixture has no DMX address"; }
         if (f->kind > LJ_FX_GS2) return "fixture kind unknown";
         if (!memchr(f->user_name, 0, sizeof f->user_name) || !memchr(f->gs2_file, 0, sizeof f->gs2_file)) return "user name or gs2 file not NUL-terminated";
         if (f->kind == LJ_FX_BUILTIN ? lj_fixlib_by_id(f->profile_id) == NULL : !f->gs2_file[0]) return "profile unknown";
         if (f->intensity_group > LJ_SUBMASTERS) return "intensity group not 0..8";
         fp = lj_fixture_footprint(f);
-        if (f->address + fp - 1 > LJ_LINK_CH) return "fixture runs past channel 512";
+        if (f->address + fp - 1 > LJ_LINK_CH) { if (!warn_ok) return "fixture runs past channel 512"; fp = LJ_LINK_CH - f->address + 1; }
         base = lj_addr_code(f->link, f->address);
         for (c = 0; c < fp; c++) {
-            if (owner[base + c]) return "two fixtures share a channel";
+            if (owner[base + c] && !warn_ok) return "two fixtures share a channel";
             owner[base + c] = 1;
         }
     }
     for (i = 0; i < LJ_SUBMASTERS; i++) if (!memchr(show->submaster_name[i], 0, sizeof show->submaster_name[i])) return "submaster name not NUL-terminated";
     return NULL;
 }
+
+const char *lj_config_validate(const lj_show *show) { return config_check(show, 0); }
 
 /* ---- DefaultOut.dat ---- */
 
@@ -251,7 +256,8 @@ int lj_show_load(lj_show *show, const lj_library *lib)
     memset(show->fixture, 0, sizeof show->fixture);
     if (lj_fs_exists(path)) {
         if (lj_config_load(path, show, err, sizeof err) != 0) return -1;
-        if ((bad = lj_config_validate(show)) != NULL) { lj_log("%s: %s", path, bad); memset(show->fixture, 0, sizeof show->fixture); return -1; }
+        if ((bad = config_check(show, 1)) != NULL) { lj_log("%s: %s", path, bad); memset(show->fixture, 0, sizeof show->fixture); return -1; }
+        if ((bad = config_check(show, 0)) != NULL) lj_log("%s: %s (F41 warning, saved with Save Anyway; kept)", path, bad);
     }
     lj_library_path(lib, "DefaultOut.dat", path, sizeof path);
     memset(show->default_out, 0, sizeof show->default_out);
@@ -305,7 +311,7 @@ int lj_show_fixture_count(const lj_show *show)
 
 int lj_show_fixture_base(const lj_show *show, int i)
 {
-    if (i < 0 || i >= LJ_FIXTURES || !show->fixture[i].link) return -1;
+    if (i < 0 || i >= LJ_FIXTURES || !show->fixture[i].link || show->fixture[i].address < 1) return -1;   /* no DMX address yet (F41): unpatched */
     return lj_addr_code(show->fixture[i].link, show->fixture[i].address);
 }
 

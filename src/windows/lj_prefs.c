@@ -12,6 +12,7 @@
 #include "core/lj_str.h"
 #include "windows/lj_desktop_dialogs.h"
 #include "windows/lj_help_viewer.h"
+#include "windows/lj_show_dialogs.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
 
@@ -104,10 +105,13 @@ static void on_clear(lj_widget *w, void *ud)
     page_fill();
 }
 
+static void cl_picked(uint32_t number, void *ud) { (void)ud; lj_startup_options_set_cl((int32_t)number); }
+static void on_cl_select(lj_widget *w, void *ud) { (void)w; (void)ud; lj_show_dlg_select_cuelist(cl_picked, NULL); }   /* TSelectCuelist2ModalForm picks back */
+
 static const lj_binding lj_so_bindings[] = {
     { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "BOkClick", on_ok, NULL }, { "Help1Click", on_help, NULL },
     { "SeqSelectClick", on_select, (void *)(intptr_t)LJ_WIN_LIST_SEQ }, { "CueSelectClick", on_select, (void *)(intptr_t)LJ_WIN_LIST_CUE },
-    { "ClSelectClick", on_select, (void *)(intptr_t)LJ_WIN_SELECT_CUELIST_MODAL }, { "sbPCueSelectClick", on_select, (void *)(intptr_t)LJ_WIN_SELECT_BGCUE },
+    { "ClSelectClick", on_cl_select, NULL }, { "sbPCueSelectClick", on_select, (void *)(intptr_t)LJ_WIN_SELECT_BGCUE },
     { "SeqClearClick", on_clear, NULL }, { "CueClearClick", on_clear, NULL }, { "ClClearClick", on_clear, NULL }, { "sbPCueClearClick", on_clear, NULL },
     { "bBrowseClick", on_browse, NULL }, { "lbautoClick", lj_handler_noop, NULL }, { "P_DeleteClick", on_delete, NULL }, { "AutoPopPopup", lj_handler_noop, NULL },
     { NULL, NULL, NULL }

@@ -21,6 +21,7 @@ key Down 60
 key Right
 key Right
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "1"
 key Enter
@@ -30,6 +31,7 @@ key Right
 key Right
 key Right
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "17"
 key Enter
@@ -40,6 +42,7 @@ key Down 60
 key Right
 key Right
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "33"
 key Enter
@@ -50,6 +53,7 @@ key Down 60
 key Right
 key Right
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "49"
 key Enter
@@ -60,6 +64,7 @@ key Down 60
 key Right
 key Right
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "65"
 key Enter
@@ -70,11 +75,13 @@ key Down 60
 key Right
 key Right
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "81"
 key Enter
 assert_text TLinkConfigForm3.LFixtures "6 Fixtures configured"
 click TLinkConfigForm3.bSave
+click confirm.BOk                                 # W4: "Clear data for new fixtures ?" (12 Q9)
 close fixture_config
 wait 300
 close cue_form

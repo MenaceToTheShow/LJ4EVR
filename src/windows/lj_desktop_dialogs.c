@@ -419,7 +419,6 @@ lj_window *lj_desktop_dlg_open(enum lj_win id)
     static const lj_binding al_b[] = { { "FormActivate", lj_handler_noop, NULL }, { "bCancelClick", on_close, (void *)(intptr_t)LJ_WIN_AUTO_LAUNCH }, { "Timer1Timer", lj_handler_noop, NULL } /* stepped from the 100 ms refresh */, { NULL, NULL, NULL } };
     lj_window *w;
     if (is_warning(id)) return lj_warnings_w4_open(id);
-    if (id == LJ_WIN_DEFAULT_OUTPUT) { lj_log("lj_win_open: default_output: no window (Setup > Preferences > Default DMX Output is two menu leaves, windows/lj_default_output.h)"); return NULL; }
     if (!mine(id)) return NULL;
     if ((w = W(id)) != NULL) { lj_win_show(w, 0); return w; }
     switch (id) {

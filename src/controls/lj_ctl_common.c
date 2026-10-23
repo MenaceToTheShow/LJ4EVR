@@ -23,6 +23,7 @@
 #include "gfx/lj_draw.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "windows/lj_windows.h"
 
 static lj_ctl_win lj_ctls[LJ_CTL_COUNT];
 static const lj_win_host *lj_ctl_host;
@@ -467,6 +468,7 @@ static void menu_click(lj_widget *root, void *ud)
     const char *name = it && it->name ? it->name : "?";
     (void)root;
     if (strcmp(name, "Preferences") == 0 && c->kind == LJ_CTL_INTENSITY) { lj_ctl_intensity_prefs(c); return; }
+    if (strcmp(name, "Palette") == 0 && c->kind == LJ_CTL_RGBPACK) { lj_win_open(LJ_WIN_RGB_PALETTE); return; }   /* W4: RGB Palette [04 s5.3] */
     lj_log("lj_ctl: %s menu %s: not in W1 (UserPalette, Fades = W2; Help = W5)", lj_ctl_chrome[c->kind].name, name);   /* PROPOSAL: a childless bar item fires like a button */
 }
 

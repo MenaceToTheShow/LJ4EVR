@@ -94,6 +94,7 @@ static void lj_engine_rebuild(lj_engine *e)
         const lj_profile *p;
         int base, ofs;
         if (!fx->link) { e->post.profile_of[f] = NULL; continue; }
+        if (fx->address < 1) continue;                             /* no DMX address yet (F41 warning state): unpatched */
         if (fx->kind == LJ_FX_BUILTIN) { p = lj_fixlib_by_id(fx->profile_id); if (p) e->post.profile_of[f] = p; }   /* built-ins resolve here; a GS2 (or test) profile stays from lj_engine_bind_profile */
         p = e->post.profile_of[f];
         if (!p) continue;

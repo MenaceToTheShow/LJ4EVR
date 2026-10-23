@@ -10,6 +10,7 @@
 #include "ui/lj_dnd.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
+#include "windows/lj_warnings.h"
 
 static lj_window   *lj_una;
 static lj_widget   *lj_una_lv;
@@ -20,15 +21,17 @@ static lj_widget_vt lj_una_vt; static int (*lj_una_mouse_orig)(lj_widget *, cons
 
 /* h_noop = lj_handler_noop: FormCreate / FormShow / ColumnClick / Compare / EndDrag: the VCL sort hooks; the list is rebuilt by number */
 static void h_move_icons(lj_widget *w, void *ud) { (void)ud; lj_desktop_move_mode(!lj_w_checkbox_checked(w)); }   /* OnMouseDown fires before the toggle */
-static void h_place_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_auto_place(0); }
-static void h_unassign_all(lj_widget *w, void *ud)   /* "Unassign All Fixtures ?" (13 exe strings) is the app's prompt; PROPOSAL: W1 unassigns straight away */
+static void place_all(int yes, void *ud) { (void)ud; if (yes) lj_desktop_auto_place(0); }
+static void h_place_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_confirm("Please Confirm..", "Place all Fixtures on this tab ?", NULL, place_all, NULL); }   /* exe 0x38A0EC, 12 Q9 */
+static void unassign_all(int yes, void *ud)
 {
     const lj_ctx *ctx = lj_ctx_get();
     int i;
-    (void)w; (void)ud;
-    for (i = 0; ctx->show && i < LJ_FIXTURES; i++)
+    (void)ud;
+    for (i = 0; yes && ctx->show && i < LJ_FIXTURES; i++)
         if (ctx->show->fixture[i].link && ctx->show->fixture[i].placed) lj_desktop_unassign_icon(i);
 }
+static void h_unassign_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_confirm("Please Confirm..", "Unassign All Fixtures ?", NULL, unassign_all, NULL); }   /* exe 0x389D2C, 12 Q9 */
 static void h_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_HELP, 0); }
 
 static const lj_binding lj_una_bindings[] = {

@@ -169,8 +169,9 @@ int lj_test_uiscript(int argc, char **argv)
         CHECK(lj_library_path(&lib, "DirInfo.Ini", path, sizeof path) == 0 && file_exists(path));
     } else printf("SKIP: lj_library_open_default returned -1 (model stub); the fallback root is %s\n", lib.root);
     CHECK(strcmp(lib.name, "Default") == 0);
-    r = lj_startup_library("lj_test_uiscript_userdir/", "NoSuchLib", &lib);   /* an unknown U:<folder> falls back to Default */
-    CHECK(strcmp(lib.name, "Default") == 0);
+    r = lj_startup_library("lj_test_uiscript_userdir/", "NoSuchLib", &lib);   /* ME-130: U:<new folder> is created by the lj_library_create step */
+    CHECK(strcmp(lib.name, "NoSuchLib") == 0);
+    lj_library_delete("lj_test_uiscript_userdir/", "NoSuchLib");
     ini = lj_ini_new();
     lj_startup_last_run(ini);
     CHECK(strcmp(lj_ini_gets(ini, "OTHER", "LastRun", ""), "LJ4EVR " LJ_VERSION_STR) == 0);

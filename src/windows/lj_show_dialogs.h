@@ -17,7 +17,6 @@
  *   LJ_WIN_SORT_TIMECODE  TSortTimeCodeForm: Cuelist Tools Sort Waits (ME-120) [03 s6]
  *   LJ_WIN_TIMECODE_OFFSET  TTimeCodeOffsetForm: Cuelist Tools Offset TimeCode (ME-120) [03 s6]
  *   LJ_WIN_MOVEMENT_OPTIONS  TMovementOptionsForm: Movement window Options > Position Options [04 s4]
- *   LJ_WIN_SAVE_PRESET  (existing id)
  */
 #ifndef LJ_WINDOWS_SHOW_DIALOGS_H
 #define LJ_WINDOWS_SHOW_DIALOGS_H

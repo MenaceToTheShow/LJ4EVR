@@ -62,9 +62,9 @@ static const char *const lj_win_classes[LJ_WIN_COUNT] = {
     "TMasterIntensityForm", "THardwareSetupForm2" /* windows-c: the DFM class */, "TDMXOutForm", "TStartupForm", "TStatusWarningForm", "TCloseOrSaveForm" /* windows-c: "Close Lightjockey ?" is this form; TConfirmForm is "Please Confirm.." */, "TStatusForm",
     /* W2 (docs/w2-contracts.md section 4; "code-built" windows carry the class the builder gives their lj_window) */
     "TLoopToolsForm", "TCueTimeForm", "TGetPageInfoForm", "TReorderCuePagesForm", "TBGCueForm", "TSelectBGCueForm2", "TSaveBGForm",
-    "TStatics2Form", "TStatics2PrefsForm", "TStaticEntryPropertiesForm", "TSmokeForm", "TPresetForm", "TSavePresetForm",
+    "TStatics2Form", "TStatics2PrefsForm", "TStaticEntryPropertiesForm", "TSmokeForm", "TPresetForm",
     "TUserPaletteForm" /* code-built */, "TGroupForm" /* code-built [01 s4] */, "TIntensityGroupForm", "THTPGroupsForm" /* code-built */,
-    "TGlobalPatchForm", "" /* LJ_WIN_DEFAULT_OUTPUT has no window; TDefault2Form "Set Fade Status" is LJ_WIN_SEQ_FADES (W3) */, "TSnapshotSceneForm", "TFunctionsForm", "THotkeyFunctionDialog", "TMidiInForm" /* code-built */,
+    "TGlobalPatchForm", "TSnapshotSceneForm", "TFunctionsForm", "THotkeyFunctionDialog", "TMidiInForm" /* code-built */,
     "TSystemPrefsForm", "TDeleteSequencesForm", "TDeleteCuesForm", "TDeleteCuelistsForm", "TDeleteBGCuesForm", "TDeleteGenericMacrosForm",
     "TUserLibForm", "TGetUserLibNameForm", "TLibraryBackupForm", "TLibraryRestoreForm", "TNoteForm", "TAboutForm2", "TAutoLampForm",
     /* W3 */
@@ -76,9 +76,9 @@ static const char *const lj_win_ids[LJ_WIN_COUNT] = {
     "master_intensity", "hardware_setup", "dmx_monitor", "startup_options", "warnings", "close_prompt", "please_wait",
     /* W2 */
     "loop_options", "cue_time", "cue_page_name", "cue_pages_reorder", "bgcue_form", "select_bgcue", "save_bgcue",
-    "statics2_form", "statics2_prefs", "static_props", "smoke_control", "position_presets", "save_preset",
+    "statics2_form", "statics2_prefs", "static_props", "smoke_control", "position_presets",
     "user_palettes", "fixture_groups", "intensity_groups", "htp_groups",
-    "global_patch", "default_output", "snapshot", "edit_hotkeys", "hotkey_function", "midi_in",
+    "global_patch", "snapshot", "edit_hotkeys", "hotkey_function", "midi_in",
     "system_prefs", "delete_seq", "delete_cue", "delete_cl", "delete_bg", "delete_macro",
     "user_libraries", "user_lib_name", "backup", "restore", "notes", "about", "striking_lamps",
     /* W3 */
@@ -117,7 +117,7 @@ static const lj_win_ops lj_win_table[LJ_WIN_COUNT] = {
     [LJ_WIN_CUE_TIME]          = { lj_cue_time_open, lj_cue_time_close, lj_cue_time_get, lj_cue_time_refresh },
     [LJ_WIN_CUE_PAGE_NAME]     = { lj_cue_page_name_open, lj_cue_page_name_close, lj_cue_page_name_get, NULL },
     [LJ_WIN_CUE_PAGES_REORDER] = { lj_cue_pages_reorder_open, lj_cue_pages_reorder_close, lj_cue_pages_reorder_get, NULL },
-    /* W2 windows-c (LJ_WIN_DEFAULT_OUTPUT has no window: windows/lj_default_output.h; LJ_WIN_SAVE_PRESET unused: lj_position_presets.h) */
+    /* W2 windows-c (W4-WIN: the ids default_output (no window, windows/lj_default_output.h) and save_preset (unused, lj_position_presets.h) are deleted) */
     [LJ_WIN_POSITION_PRESETS]  = { lj_position_presets_open, lj_position_presets_close, lj_position_presets_window, lj_position_presets_refresh },
     [LJ_WIN_USER_PALETTES]     = { lj_user_palettes_open, lj_user_palettes_close, lj_user_palettes_window, lj_user_palettes_refresh },
     [LJ_WIN_FIXTURE_GROUPS]    = { lj_fixture_groups_open, lj_fixture_groups_close, lj_fixture_groups_window, lj_fixture_groups_refresh },
@@ -289,8 +289,6 @@ static const unsigned char lj_win_fam_of[LJ_WIN_COUNT] = {
     [LJ_WIN_MEMORY_VIEW] = LJ_WFAM_DEBUG,
     [LJ_WIN_HELP] = LJ_WFAM_HELP,
     [LJ_WIN_PLEASE_WAIT] = LJ_WFAM_FILES,   /* existing id, the files track gives it a row (the startup status window lives in app/lj_startup.c) or deletes it with a fidelity row (W4-WIN) */
-    [LJ_WIN_DEFAULT_OUTPUT] = LJ_WFAM_DESKTOP,   /* existing id, the desktop track gives it a row or deletes it with a fidelity row (W4-WIN) */
-    [LJ_WIN_SAVE_PRESET] = LJ_WFAM_SHOW,   /* existing id, the show track gives it a row or deletes it with a fidelity row (W4-WIN) */
 };
 static const lj_win_fam_ops *lj_win_fam(enum lj_win id) { return (int)id >= 0 && id < LJ_WIN_COUNT && lj_win_fam_of[id] ? &lj_win_fams[lj_win_fam_of[id]] : NULL; }
 
@@ -355,7 +353,7 @@ void lj_win_hide(lj_window *w) { if (w && lj_win_the_host && lj_win_the_host->cl
 int  lj_win_is_dialog(enum lj_win id)
 {
     switch (id) {
-    case LJ_WIN_SAVE_SEQ: case LJ_WIN_SAVE_CUE: case LJ_WIN_CUE_PAGE_NAME: case LJ_WIN_SAVE_BGCUE: case LJ_WIN_STATIC_PROPS: case LJ_WIN_SAVE_PRESET:
+    case LJ_WIN_SAVE_SEQ: case LJ_WIN_SAVE_CUE: case LJ_WIN_CUE_PAGE_NAME: case LJ_WIN_SAVE_BGCUE: case LJ_WIN_STATIC_PROPS:
     case LJ_WIN_SYSTEM_PREFS: case LJ_WIN_USER_LIB_NAME: case LJ_WIN_BACKUP: case LJ_WIN_RESTORE: case LJ_WIN_NOTES: case LJ_WIN_EDIT_HOTKEYS:
     case LJ_WIN_STATICS2_PREFS: case LJ_WIN_SNAPSHOT: case LJ_WIN_MIDI_IN:
     /* W3 typing dialogs (GDC_FORM is not one: its command line yields to assigned hotkeys, CHM thegenericdmxcontrol) */

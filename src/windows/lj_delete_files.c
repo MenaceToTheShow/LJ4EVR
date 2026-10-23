@@ -19,6 +19,7 @@
 #include "model/lj_sequence.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
+#include "windows/lj_show_dialogs.h"
 #include "windows/lj_warnings.h"
 
 enum { LJ_DF_MAX = 9999 };                                     /* the 4-digit record space [F28] */
@@ -168,12 +169,13 @@ static void check_used(void)
     lj_ctx *c = lj_ctx_get();
     uint32_t *nums = calloc(LJ_DF_MAX, sizeof *nums);
     char path[LJ_PATH_CAP], err[64];
-    int n, i, s;
+    int n, i, s, ncue;
     if (!nums) lj_fatal("delete files: out of memory");
     for (i = 0; i < df[LJ_REC_SEQ].n; i++) df[LJ_REC_SEQ].rows[i].used = 0;
-    n = c->lib ? lj_library_list_records(c->lib, LJ_REC_CUE, nums, LJ_DF_MAX) : 0;
+    n = ncue = c->lib ? lj_library_list_records(c->lib, LJ_REC_CUE, nums, LJ_DF_MAX) : 0;
     for (i = 0; i < n; i++) {
         lj_cue *q = lj_cue_new_rec();
+        lj_show_dlg_seq_used(i, ncue, 0, 0);                   /* TSeqUsedForm "Checking, please wait.." (dlg-show) */
         if (lj_library_record_path(c->lib, LJ_REC_CUE, nums[i], path, sizeof path) == 0 && lj_cue_load(path, q, err, sizeof err) == 0)
             for (s = 0; s < LJ_CUE_SLOTS; s++) if (q->slot[s].seq) mark_used(q->slot[s].seq);
         lj_cue_free(q);
@@ -181,11 +183,13 @@ static void check_used(void)
     n = c->lib ? lj_library_list_records(c->lib, LJ_REC_BG, nums, LJ_DF_MAX) : 0;
     for (i = 0; i < n; i++) {
         lj_bgcue *b = lj_bgcue_new_rec();
+        lj_show_dlg_seq_used(ncue, ncue, i, n);
         if (lj_library_record_path(c->lib, LJ_REC_BG, nums[i], path, sizeof path) == 0 && lj_bgcue_load(path, b, err, sizeof err) == 0)
             for (s = 0; s < LJ_BG_SLOTS; s++) if (b->slot[s].seq) mark_used(b->slot[s].seq);
         lj_bgcue_free(b);
     }
     free(nums);
+    lj_win_close(LJ_WIN_SEQ_USED);
     for (i = 0; i < df[LJ_REC_SEQ].n; i++) row_line(LJ_REC_SEQ, &df[LJ_REC_SEQ].rows[i]);
     df[LJ_REC_SEQ].checked = 1;
     show_rows(LJ_REC_SEQ);

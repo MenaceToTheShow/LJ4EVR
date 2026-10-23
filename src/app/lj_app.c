@@ -45,6 +45,7 @@
 #include <SDL3/SDL_dialog.h>                    /* W4 dlg-desktop: SDL_ShowOpenFileDialog */
 #include "windows/lj_prefs.h"
 #include "windows/lj_windows.h"
+#include "ui/widgets/lj_widgets_lists.h"
 #include "version.h"
 
 /* ponytail: one process, one app; the lj_app_* entry points of lj_app.h carry no handle. */
@@ -342,6 +343,15 @@ static int lj_app_selftest(lj_window *seq, int startup_ok)
         printf("selftest MIDI-IN: %d input device(s) listed, injected 90 3C 7F polled back: %s\n", ndev, ok ? "OK" : "FAIL");
         if (!ok) startup_ok = 0;
     }
+    {   /* W4-WIN: the Startup Status window stays open after the load with the selfdestruct countdown as its last row (12 Q9) */
+        lj_window *pw = lj_win_get(LJ_WIN_PLEASE_WAIT);
+        lj_widget *re = pw ? lj_window_find(pw, "Re1") : NULL;
+        const lj_w_memo *m = (const lj_w_memo *)re;
+        const char *last = m && m->n > 0 ? m->lines[m->n - 1] : "";
+        int ok = strncmp(last, "This window will selfdestruct in ", 33) == 0;
+        printf("selftest Startup Status: \"%s\": %s\n", last, ok ? "OK" : "FAIL");
+        if (!ok) startup_ok = 0;
+    }
     {   /* W3 (ME-2): the cue-list runner is stepped once per idle pass of the UI loop, never by the engine */
         uint32_t s0 = lj_app_cuelist_steps();
         for (i = 0; i < 3; i++) lj_app_idle(NULL);
@@ -466,6 +476,7 @@ int lj_app_main(int argc, char **argv)
     lj_unlock();
     lj_log_set_sink(NULL, NULL);
     lj_app_close_form(&lj_a.status_own);
+    lj_win_open(LJ_WIN_PLEASE_WAIT);                                 /* W4 dlg-files: LJ2 keeps Startup Status open with the selfdestruct countdown */
     if (lj_win_caption_main(caption, sizeof caption, lj_a.lib.name) == 0) lj_window_set_caption(lj_a.main, caption);
 
     /* 7. prefs + MIDI + hotkey setup + the lj_fn rows that need the disk + the W2 actions (lj_app_seam.c), the W1 windows, Startup Options */

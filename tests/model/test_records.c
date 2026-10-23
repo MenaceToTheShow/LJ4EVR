@@ -211,6 +211,17 @@ static void lj_test_config(const lj_library *lib)
     CHECK(lj_config_validate(b) != NULL);
     lj_show_remove_fixture(b, 0);
     CHECK(lj_show_fixture_count(b) == 1 && lj_config_validate(b) == NULL);
+    /* W4 integration (F41): a Config.dat saved with Save Anyway (no address, a shared channel) loads and keeps every fixture */
+    a->fixture[1].address = 0;
+    CHECK(lj_show_save_config(a, lib) == 0 && lj_show_load(b, lib) == 0 && lj_show_fixture_count(b) == 2);
+    CHECK(b->fixture[1].address == 0 && lj_show_fixture_base(b, 1) == -1 && lj_config_validate(b) != NULL);
+    a->fixture[1].address = 10;                                  /* shares channel 2:10 with fixture 0 */
+    CHECK(lj_show_save_config(a, lib) == 0 && lj_show_load(b, lib) == 0 && lj_show_fixture_count(b) == 2 && lj_config_validate(b) != NULL);
+    b->fixture[1].link = 5;                                      /* a hard error still refuses the file */
+    CHECK(lj_show_save_config(b, lib) == 0 && lj_show_load(b, lib) == -1);
+    a->fixture[1].address = 11;
+    CHECK(lj_show_save_config(a, lib) == 0 && lj_show_load(b, lib) == 0);
+    lj_show_remove_fixture(b, 0);
     /* ME-107: a 63-char gs2= (the gs2_file cap) no longer drops ipan / swap / placed after it */
     memset(b->fixture[1].gs2_file, 'G', sizeof b->fixture[1].gs2_file - 1); b->fixture[1].gs2_file[sizeof b->fixture[1].gs2_file - 1] = 0;
     b->fixture[1].invert_pan = 1; b->fixture[1].swap_pt = 1; b->fixture[1].placed = 1;

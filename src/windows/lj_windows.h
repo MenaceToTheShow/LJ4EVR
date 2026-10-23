@@ -48,13 +48,11 @@ enum lj_win {
     LJ_WIN_STATIC_PROPS,     /* TStaticEntryPropertiesForm "Static entry properties" 540x300 [14 sB.5] (+ TGetStaticsPageNameForm, TStaticSlotNameForm) */
     LJ_WIN_SMOKE_CONTROL,    /* TSmokeForm          "Smoke Control" 310x213 [04 s12]; Main.Ini [SMOKE] */
     LJ_WIN_POSITION_PRESETS, /* TPresetForm         DFM caption "PresetForm" (runtime caption UNVERIFIED) [04 s4.3, F36]; forms.ini [MOVEPRE] */
-    LJ_WIN_SAVE_PRESET,      /* TSavePresetForm     "Save Preset" 359x73 */
     LJ_WIN_USER_PALETTES,    /* code-built: usercolorpalette.gif 169x208 is reduced (not in 07 s14's 1:1 list) -> every size PROPOSAL rig [07 s9.10] */
     LJ_WIN_FIXTURE_GROUPS,   /* code-built tree + TAddGroupForm "Add Fixture Group": fixturegroupwindow.gif 225x205 reduced, INI 220x250 -> PROPOSAL rig [01 s3.4, 07 s12]; forms.ini [GROUPS] */
     LJ_WIN_INTENSITY_GROUPS, /* TIntensityGroupForm "Intensity Groups" 325x348, 9 tabs [01 s4] */
     LJ_WIN_HTP_GROUPS,       /* code-built: no DFM; the Global Patch "HTP Groups" column edited per channel (02 s7.1) plus the 24 names of lj_htp_names; no GIF */
     LJ_WIN_GLOBAL_PATCH,     /* TGlobalPatchForm    "Global Patch" [02 s7.1]; File > New / Load / Save Global Patch (.GPA) */
-    LJ_WIN_DEFAULT_OUTPUT,   /* TDefault2Form       DFM caption "Set Fade Status" 239x226: the only Default* dialog; its role (Use Current Scene fade-state choice?) is UNVERIFIED, the windows track confirms from its controls; TApplyDefaultDMXForm is the progress box */
     LJ_WIN_SNAPSHOT,         /* TSnapshotSceneForm  "Snapshot from DMX Out" 375x281 [03 s4.7]; Main.Ini [MISC] SNAPSHOTSETTINGS RTSNAPSHOTPARAM RTSNAPSHOTSCENES SNAPSHOTINSETTINGSIN */
     LJ_WIN_EDIT_HOTKEYS,     /* TFunctionsForm      "Edit Hotkeys" 758x469 [01 s7]; Options > Save / Load / Default Hotkeys, Disable Hotkeys in Dialogs */
     LJ_WIN_HOTKEY_FUNCTION,  /* THotkeyFunctionDialog "Select Function" (+ TShowHotKeyWarningForm "Notification !" 271x122, Main.Ini [MISC] ShowHotkeyWarning) */

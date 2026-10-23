@@ -277,8 +277,8 @@ int lj_test_cuelist_form(int argc, char **argv)
     CHECK(strcmp(lj_w_caption(lj_window_find(win, "sbCMD3")), "Wait CD") == 0 && en(win, "sbCMD3") == 0);
     CHECK(menu_en(win, "Pop_CDCommands") == 0 && menu_en(win, "pop_DACommands") == 0 && menu_en(win, "Pop_MPCommands") == 0);
     CHECK(menu_en(win, "MediaPlayer1") == 0 && menu_en(win, "CueMediaFile1") == 0 && menu_en(win, "popWaitCD") == 0);
-    /* ME-120: no live-but-dead items: Offset MIDI Timecodes, Offset PC Time, Sort MIDI wait times, Import Old Format Cuelist */
-    CHECK(menu_en(win, "OffsetMIDITimecodes1") == 0 && menu_en(win, "OffsetPCTime1") == 0 && menu_en(win, "OffsetMIDITimecodes2") == 0 && menu_en(win, "M_ImportOldCuelist") == 0);
+    /* ME-120 (W4): the three alive, Import greyed */
+    CHECK(menu_en(win, "OffsetMIDITimecodes1") == 1 && menu_en(win, "OffsetPCTime1") == 1 && menu_en(win, "OffsetMIDITimecodes2") == 1 && menu_en(win, "M_ImportOldCuelist") == 0);
     CHECK(menu_en(win, "MPLoadFile1") == 1 && menu_en(win, "Pop_MTCCommands") == 1);   /* MPLoadFile1 carries aHotkeyCommand (D13) */
 
     /* the command list in note 03 s6.3 order, verbatim (the ListPop commands = lj_cl_cmd_caption 1..Hotkey Command) */

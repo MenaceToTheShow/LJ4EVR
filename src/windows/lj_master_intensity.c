@@ -157,10 +157,11 @@ static void prefs_click(lj_widget *w, void *ud)
     sync_checks();
 }
 static void w2(lj_widget *w, void *ud) { (void)ud; lj_log("lj_master_intensity: %s: W2", w->name ? w->name : "?"); }
+static void internal_patch(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_INTENSITY_PATCH); }   /* Patch Sub Masters [04 s11] */
 
 static const lj_binding lj_mi_bindings[] = {
     { "bAll100Click", b_all100, NULL }, { "bAll0Click", b_all0, NULL }, { "bFadeOutClick", b_fade_out, NULL }, { "bFadeInClick", b_fade_in, NULL },
-    { "bBlackOutClick", b_blackout, NULL }, { "bRestoreClick", b_restore, NULL }, { "InternalPatch1Click", w2, NULL }, { "PrefsClick", prefs_click, NULL },
+    { "bBlackOutClick", b_blackout, NULL }, { "bRestoreClick", b_restore, NULL }, { "InternalPatch1Click", internal_patch, NULL }, { "PrefsClick", prefs_click, NULL },
     { "M_IntGroupsClick", w2, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };

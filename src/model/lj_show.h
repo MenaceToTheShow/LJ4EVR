@@ -26,7 +26,7 @@ int         lj_show_load(lj_show *show, const lj_library *lib);  /* Config.dat, 
 int         lj_show_save_config(const lj_show *show, const lj_library *lib);   /* Config.dat + DefaultOut.dat + GroupInfo.dat */
 
 int         lj_show_fixture_count(const lj_show *show);          /* rows with link != 0 */
-int         lj_show_fixture_base(const lj_show *show, int i);    /* address code of fixture i's channel 1, or -1 when unused */
+int         lj_show_fixture_base(const lj_show *show, int i);    /* address code of fixture i's channel 1, or -1 when unused or without an address */
 int         lj_show_fixture_at(const lj_show *show, int addr_code);   /* fixture index owning an address code, or -1 */
 int         lj_show_add_fixture(lj_show *show, const lj_fixture *fx);  /* first free row; returns the index or -1 at LJ_FIXTURES */
 void        lj_show_remove_fixture(lj_show *show, int i);        /* clears the row; programming data keyed by address stays [02 s1.4] */

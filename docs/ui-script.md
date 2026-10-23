@@ -103,8 +103,8 @@ quit
 
 Window names gain the W2 ids of `lj_win_id_name()`: `loop_options cue_time cue_page_name
 cue_pages_reorder bgcue_form select_bgcue save_bgcue statics2_form statics2_prefs static_props
-smoke_control position_presets save_preset user_palettes fixture_groups intensity_groups
-htp_groups global_patch default_output snapshot edit_hotkeys hotkey_function midi_in
+smoke_control position_presets user_palettes fixture_groups intensity_groups
+htp_groups global_patch snapshot edit_hotkeys hotkey_function midi_in
 system_prefs delete_seq delete_cue delete_cl delete_bg delete_macro user_libraries user_lib_name
 backup restore notes about striking_lamps` (DFM classes in `docs/w2-contracts.md`), and `confirm` (or
 `TConfirmForm`) = the open "Please Confirm.." / message box (`lj_win_message_window`), and

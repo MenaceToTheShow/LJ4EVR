@@ -28,6 +28,7 @@ key Down 60                                       # ... MAC 500 (sorted case-ins
 key Right                                         # expand MAC 500
 key Right                                         # Mode 2/4 (exe row 12, the hand profile)
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "1"
 key Enter                                         # eAdrKeyUp commits the address (link 1 is the add default)
@@ -37,6 +38,7 @@ key Right                                         # DMX Dimmer folder
 key Right                                         # expand
 key Right                                         # " 1 Channel" (exe row 19)
 click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk                            # W4: Add Fixture (s) count / start number (TAddFixForm2)
 click TLinkConfigForm3.eAdr
 type "17"
 key Enter
@@ -44,6 +46,7 @@ assert_text TLinkConfigForm3.LFixtures "2 Fixtures configured"
 assert_text TLinkConfigForm3.lAddresses "17 DMX Addresses Used"
 shot docs/screenshots/w1/acceptance2-config.png
 click TLinkConfigForm3.bSave                      # Config.dat written, the Unassigned list opens [02 s2.6]
+click confirm.BOk                                 # W4: "Clear data for new fixtures ?" (12 Q9)
 assert_file Config.dat exists                     # relative to the cwd, else under the user library
 close fixture_config
 
