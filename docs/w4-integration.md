@@ -211,5 +211,5 @@ SDL-free `.c` file is clean.
 ### 10. CI record
 
     https://github.com/UnbannableGT/LJ4EVR/actions/runs/39887131384 (7d0b9c4): all six jobs green: windows-msvc,
-    linux-clang, linux-gcc-asan (with the 60 s fuzz step), macos-clang, generate-check, determinism (the three
+    linux-clang (with the 60 s fuzz_gs2 / fuzz_udf step), linux-gcc-asan, macos-clang, generate-check, determinism (the three
     frame dumps byte-equal)
