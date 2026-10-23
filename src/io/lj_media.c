@@ -2,6 +2,7 @@
  * integer only: the clock is sample frames consumed * 100 / rate, read from the host every UI pass, never the wall clock. */
 #include <string.h>
 #include "io/lj_media.h"
+#include "core/lj_fsinfo.h"
 #include "core/lj_str.h"
 #include "model/lj_cuelist.h"
 
@@ -114,6 +115,9 @@ int lj_media_check_file(const char *path, uint64_t size, char *err, size_t cap)
     const char *e;
     if (!n) return lj_media_err(err, cap, "No file name");                         /* ours */
     if (n >= sizeof ((lj_media *)0)->path) return lj_media_err(err, cap, "The file name is too long");   /* ours */
+    {   char tmp[sizeof ((lj_media *)0)->path];
+        if (lj_fs_media_path(NULL, path, tmp, sizeof tmp) != 0) return lj_media_err(err, cap, LJ_MEDIA_ERR_FORMAT);   /* ME-169: UNC, devices, not .wav */
+    }
     e = path + n;
     while (e > path && e[-1] != '.' && e[-1] != '/' && e[-1] != '\\') e--;
     if (e == path || e[-1] != '.' || strlen(e) != 3 || (e[0] | 0x20) != 'w' || (e[1] | 0x20) != 'a' || (e[2] | 0x20) != 'v')

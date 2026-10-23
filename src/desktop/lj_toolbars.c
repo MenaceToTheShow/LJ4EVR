@@ -116,7 +116,6 @@ static lj_widget *btn(int id)
 }
 
 static void fn(enum lj_fn f) { lj_fn_run(f, 1); }
-#define LJ_TB_NA "Not available in LJ4EVR"   /* ME-29 hint */
 
 static void right_click(int id)   /* [F9]: open this control, close the others; Save = quick save; Load = quick load; Follow spot = dialog; Prev/Next = dialog */
 {
@@ -295,7 +294,7 @@ void lj_desktop_toolbar_update(void)
     {   /* F8 / I13: CD, MC-X and 2518 dropped for good, greyed with the hint (desc->hint keeps LJ2's text for the F8 order); DMX In opens (W4) */
         static const int dropped[] = { B_CL_CD, B_CL_MCX, B_CL_2518 };
         int k;
-        for (k = 0; k < LJ_COUNT_OF(dropped); k++) { set_enabled(dropped[k], 0); if ((w = btn(dropped[k])) != NULL) w->hint = LJ_TB_NA; }
+        for (k = 0; k < LJ_COUNT_OF(dropped); k++) lj_widget_set_enabled(btn(dropped[k]), 0);
         set_enabled(B_CL_DMXIN, 1);
     }
     if ((w = btn(B_FX_INCL)) != NULL) lj_w_set_caption(w, lj_sel_mode() == LJ_SEL_INCLUSIVE ? "Inclusive" : "Exclusive");

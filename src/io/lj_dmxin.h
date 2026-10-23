@@ -156,6 +156,8 @@ extern const char *const lj_vtr_stock_text[LJ_VTR_STOCK][3];
 int  lj_vtr_stock(int i, lj_vtr *out);                                     /* 0..LJ_VTR_STOCK-1; 0 / -1 */
 
 void lj_dmxin_functions_reset(void);                                       /* edge memory back to "first frame" (a new library, tests) */
+int  lj_dmxin_functions_step(const lj_dmxin_map *m, int changed, int functions_off);   /* ME-167: the UI pass's call: lj_dmxin_functions on frame.out only while the frame is
+                                                                           * live (a source or a Fingers emulation), on a change, and once when functions_off changes; returns what it fired */
 void lj_dmxin_reset(void);                                                 /* tests: closes, forgets sources, tables, emulation and edges */
 
 #endif /* LJ_IO_DMXIN_H */

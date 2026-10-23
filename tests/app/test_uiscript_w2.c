@@ -21,6 +21,8 @@ static unsigned long long lj_t_tid(void) { return (unsigned long long)GetCurrent
 #define LJ_MKDIR(p) mkdir(p, 0777)
 static unsigned long long lj_t_tid(void) { return (unsigned long long)(uintptr_t)pthread_self(); }
 #endif
+#define NL "\n"
+#include "app/lj_app_io.h"
 #include "app/lj_app_seam.h"
 #include "app/lj_uiscript.h"
 #include "core/lj_clock.h"
@@ -29,6 +31,7 @@ static unsigned long long lj_t_tid(void) { return (unsigned long long)(uintptr_t
 #include "core/lj_log.h"
 #include "desktop/lj_desktop.h"
 #include "engine/lj_engine.h"
+#include "io/lj_audio.h"
 #include "io/lj_fn.h"
 #include "io/lj_hotkeys.h"
 #include "io/lj_midi.h"
@@ -226,6 +229,26 @@ int lj_test_uiscript_w2(int argc, char **argv)
     memset(&hit, 0, sizeof hit);
     lj_app_midi_dispatch();                                  /* the idle pass after the `midi` line */
     CHECK(hit.calls == 1 && hit.num == 1 && hit.edge == 1 && hit.tid == ui_tid);
+    /* ME-182: Pass Keypresses. The Analyzer (flag off by default) and the MediaPlayer keep a hotkey while their flag is 0;
+     * with it 1 the hotkey acts (F1 of setup 2 = Cue 1) */
+    lj_app_io_set_platform(NULL);
+    lj_app_io_start();
+    c->forms_ini = lj_ini_new();
+    {   static const char *const opens[2] = { "open audio_analyzer", "open media_player" };
+        static const char *const closes[2] = { "close audio_analyzer", "close media_player" };
+        char text[160];
+        int w2, pass;
+        for (w2 = 0; w2 < 2; w2++)
+            for (pass = 0; pass <= 1; pass++) {
+                if (w2 == 0) c->audio->pass_keys = (uint8_t)pass; else lj_ini_seti(c->forms_ini, "LJMEDIAPLAYER", "KeyPass", pass);
+                snprintf(text, sizeof text, "%s%shotkey 2 F1%s%s%squit%s", opens[w2], NL, NL, closes[w2], NL, NL);
+                write_file("lj_w2_pass.lj4s", text);
+                memset(&hit, 0, sizeof hit);
+                CHECK(run_script("lj_w2_pass.lj4s") == 0 && hit.calls == pass);
+            }
+    }
+    lj_ini_free(c->forms_ini); c->forms_ini = NULL;
+    lj_app_io_stop();
     write_file("lj_w2_fail.lj4s", "log \"a\"\nassert_view gm=10\n");
     CHECK(run_script("lj_w2_fail.lj4s") == -1 && lj_uiscript_line() == 2);
     write_file("lj_w2_fail.lj4s", "assert_file_line w2.txt \"[Y]\"\n");

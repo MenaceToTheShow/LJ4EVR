@@ -41,7 +41,7 @@ typedef struct {
     char     device[LJ_AUDIO_DEV_NAME];   /* "" = the default device (listed first) */
     uint8_t  noise_range;          /* enum lj_audio_range */
     uint8_t  noise;                /* threshold 0..255 inside the range */
-    uint16_t decay_ms;             /* 50..600 */
+    uint16_t decay_ms;             /* LJ_AUDIO_DECAY_MIN..MAX (24..600) */
     uint8_t  sensitivity_x10;      /* 20..100 = factor 2.0 .. 10.0 */
     uint16_t gain_pct;             /* input gain, 100 = unity, PROPOSAL range 10..1000 */
     uint8_t  use_eq; uint8_t eq[LJ_AUDIO_BANDS];   /* 0..255 per band, 128 = flat (Set default) */
@@ -63,7 +63,7 @@ typedef struct {
     uint16_t peak;                 /* the last block's raw peak (clip indicator) */
 } lj_audio_state;
 
-void lj_audio_cfg_default(lj_audio_cfg *c);                                /* off, default device, Medium, decay 200 ms, factor 3.0, gain 100, EQ flat (PROPOSAL rig W5-AUD-2) */
+void lj_audio_cfg_default(lj_audio_cfg *c);                                /* off, default device, Medium, decay 312 ms, factor 6.0, gain 100, EQ flat (the DFM fader defaults; noise PROPOSAL rig W5-AUD-2) */
 void lj_audio_cfg_load(lj_ini *hardware_ini, lj_audio_cfg *c);
 void lj_audio_cfg_save(lj_ini *hardware_ini, const lj_audio_cfg *c);
 

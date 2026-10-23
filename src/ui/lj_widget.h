@@ -92,6 +92,10 @@ int        lj_widget_remove(lj_widget *child);                           /* unli
 lj_widget *lj_widget_find(lj_widget *root, const char *name);            /* depth-first by DFM name; NULL when absent */
 void       lj_widget_abs(const lj_widget *w, int *x, int *y);            /* origin relative to the root */
 void       lj_widget_invalidate(lj_widget *w);                           /* marks w (and so its covered children) for repaint */
+/* ME-173: enabled and the hint move together: greyed = LJ_NA_HINT, live = the NA hint cleared (any other hint kept).
+ * Invalidates. NULL is a no-op. A greyed widget that keeps its DFM hint (the DMX-in inputs, caption diff F55) or a
+ * disabled-for-now control (no sacrifice) writes `enabled` alone. */
+void       lj_widget_set_enabled(lj_widget *w, int on);
 int        lj_widget_collect_dirty(lj_widget *root, lj_rect *out, int cap);   /* absolute rects of dirty widgets, flags cleared; returns the count, which may exceed cap (then repaint everything) */
 void       lj_widget_layout_hooks(lj_widget *parent);                    /* vt->layout only, recursively: the creation pass, DFM rects stand (ME-41) */
 void       lj_widget_layout(lj_widget *parent);                          /* Align pass over the children as TWinControl.AlignControls resolves it (ME-43: alTop by Top, alBottom by bottom edge descending, alLeft by Left, alRight by right edge descending, alClient in creation order; inside vt->client), then vt->layout, recursively */

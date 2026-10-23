@@ -12,6 +12,14 @@
 #define LJ_CL_PARAM_MAX 86399999L   /* the widest param= in ms: 23:59:59.999 (Wait PC-Clock, MTC); Wait Elapsed 99:59:99 and the rest fit below */
 #define LJ_CL_TRIG_ALL  0xFFFL      /* slots 1-12 */
 
+static void lj_cl_lib_root(const char *path, char *root, size_t cap)   /* <root>CueLists<sep>N.Cl2 -> <root> (ME-169); "" when shallower */
+{
+    size_t n = strlen(path), k = 0;
+    while (n && k < 2) { n--; if (path[n] == '/' || path[n] == 0x5C) k++; }
+    n = k == 2 && n + 1 < cap ? n + 1 : 0;
+    memcpy(root, path, n); root[n] = 0;
+}
+
 /* The cmd= words, in the order of 03 s6.3 (index = lj_cl_line.cmd; W3 derives its enum from this order). */
 const char *const lj_cl_cmd_words[] = {
     "none", "wait_cd", "cd_play_from_track", "cd_play_from_time", "cd_stop",
@@ -38,10 +46,12 @@ static int lj_cuelist_reserve(lj_cuelist *cl, uint32_t n)
 int lj_cuelist_load(const char *path, lj_cuelist *out, char *err, size_t cap)
 {
     char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP], *e;
+    char root[LJ_CL_PATH_CAP], full[LJ_CL_PATH_CAP];
     int fmt, r, item = 0;
     const char *bad = NULL;
     lj_rec *rec = lj_rec_open_read(path, "cl", &fmt);
     if (!rec) { lj_kv_err(err, cap, path, 0, "not an LJ4 cl file"); return -1; }
+    lj_cl_lib_root(path, root, sizeof root);
     free(out->lines);                                   /* out is a zeroed or valid record */
     memset(out, 0, sizeof *out);
     while ((r = lj_rec_next(rec, k, sizeof k, v, sizeof v)) == 1) {
@@ -58,6 +68,7 @@ int lj_cuelist_load(const char *path, lj_cuelist *out, char *err, size_t cap)
             char w[32];
             int x = 0, wr;
             if (strtol(v, &e, 10) != (long)out->n + 1 || e == v) { bad = "line index out of order"; break; }
+            if (out->n >= LJ_CL_LINES_MAX) { bad = "more than 9999 lines"; break; }   /* ME-171 (d): before the realloc */
             lj_cuelist_reserve(out, out->n + 1);
             l = &out->lines[out->n];
             memset(l, 0, sizeof *l);
@@ -84,7 +95,8 @@ int lj_cuelist_load(const char *path, lj_cuelist *out, char *err, size_t cap)
                 l->cmd = (uint8_t)c;
             }
             if (lj_cl_cmd_inert(l->cmd) || l->cmd == LJ_CL_SET_CURRENT_CUE || l->cmd == LJ_CL_SET_CUE_TRIG) l->load_error = 1;   /* CD / DA (design 8.5, ME-11), panel actions stored as a cmd */
-            if (l->cmd == LJ_CL_MP_LOAD_FILE && !l->load_error && !lj_fs_exists(l->param)) { l->load_error = 1; lj_log("%s line %u: MP Load File %s: file not found, kept and skipped (load error)", path, (unsigned)l->line, l->param); }   /* W5 media (design 8.5) */
+            if (l->cmd == LJ_CL_MP_LOAD_FILE && !l->load_error && lj_fs_media_path(root, l->param, full, sizeof full) != 0) { l->load_error = 1; lj_log("%s line %u: MP Load File %s: not a local .wav file, kept and skipped (load error)", path, (unsigned)l->line, l->param); }   /* ME-169: before any file call */
+            else if (l->cmd == LJ_CL_MP_LOAD_FILE && !l->load_error && !lj_fs_exists(full)) { l->load_error = 1; lj_log("%s line %u: MP Load File %s: file not found, kept and skipped (load error)", path, (unsigned)l->line, l->param); }   /* W5 media (design 8.5); relative = the library root */
             else if (l->load_error) lj_log("%s line %u: %s not available, kept and skipped (load error)", path, (unsigned)l->line, l->cmd ? lj_cl_cmd_words[l->cmd] : l->param);
             out->n++;
         }
@@ -158,6 +170,7 @@ static void lj_cuelist_renumber(lj_cuelist *cl) { uint32_t i; for (i = 0; i < cl
 
 int lj_cuelist_insert(lj_cuelist *cl, uint32_t before, const lj_cl_line *line)
 {
+    if (cl->n >= LJ_CL_LINES_MAX) return -1;                       /* ME-171 (d): a list the loader refuses is never written */
     if (before > cl->n) before = cl->n;
     lj_cuelist_reserve(cl, cl->n + 1);
     memmove(cl->lines + before + 1, cl->lines + before, (size_t)(cl->n - before) * sizeof *cl->lines);

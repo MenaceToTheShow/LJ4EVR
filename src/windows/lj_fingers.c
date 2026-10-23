@@ -31,7 +31,6 @@
 
 #define LJ_FG_STAY_ON_TOP 2u              /* = LJ_WF_STAY_ON_TOP of platform/lj_platform.h (not includable from windows/) */
 #define LJ_FG_FILE        "Fingers.Ini"   /* LJ2's name (exe 0x20274C); the keys are ours, PROPOSAL rig 05 s5 */
-#define LJ_FG_NA_HINT     "Not available in LJ4EVR"
 
 /* ---- the catalogues, verbatim from the help (05 s5.3); the lj_fn each one reaches, LJ_FN_NONE = listed, not in LJ4EVR yet ---- */
 const char *const lj_fingers_slot_functions[] = { "Slot On/Off", "Slot on flash", "Slot On Solo", "Slot OnSolo Flash", "Slot Clear", "Slot Stop",
@@ -166,7 +165,7 @@ int lj_fingers_slot(int row, int slot, int down)
     ensure_loaded();
     if (!in(row, 1, LJ_FG_ROWS) || !in(slot, 1, LJ_FG_SLOTS)) return -1;
     if (!down) { f = fg.held_slot[row - 1][slot - 1]; fg.held_slot[row - 1][slot - 1] = LJ_FN_NONE; if (f) lj_fn_run(f, 0); return f ? 0 : -1; }
-    if (lj_fg_slot_fn[fg.row_fn[row - 1]] == LJ_FN_NONE) { lj_log("fingers: %s - " LJ_FG_NA_HINT, lj_fingers_slot_functions[fg.row_fn[row - 1]]); return -1; }
+    if (lj_fg_slot_fn[fg.row_fn[row - 1]] == LJ_FN_NONE) { lj_log("fingers: %s - " LJ_NA_HINT, lj_fingers_slot_functions[fg.row_fn[row - 1]]); return -1; }
     f = (enum lj_fn)(lj_fg_slot_fn[fg.row_fn[row - 1]] + slot - 1);   /* the 1-12 families are contiguous in lj_actions.h */
     fg.held_slot[row - 1][slot - 1] = f;
     lj_fn_run(f, 1);
@@ -186,7 +185,7 @@ int lj_fingers_fader(int fader, int pct)
     if (f == PF_STATICS1) return lj_statics2_set_level(fader, pct);
     if (f == PF_STATICS13 && fader <= 8) return lj_statics2_set_level(12 + fader, pct);
     if (f >= PF_DMXIN1 && f <= PF_DMXIN37) { lj_dmxin_emulate((f - PF_DMXIN1) * 12 + fader, (pct * 255 + 50) / 100, lj_clock_us()); return 0; }   /* W5: DMX-in channels 1-48, one more source (05 s3.3) */
-    lj_log("fingers: %s - " LJ_FG_NA_HINT, lj_fingers_page_functions[f]);
+    lj_log("fingers: %s - " LJ_NA_HINT, lj_fingers_page_functions[f]);
     return -1;
 }
 int lj_fingers_bump(int fader, int down)
@@ -228,7 +227,7 @@ int lj_fingers_jog(int jog, int delta)
         if (f == JF_AUDIO_GAIN) lj_audio_set_gain_pos(a, lj_audio_gain_pos(a) + delta); else lj_audio_set_noise(a, a->noise + delta);
         return 0;
     }
-    lj_log("fingers: %s - " LJ_FG_NA_HINT, lj_fingers_jog_functions[f]);
+    lj_log("fingers: %s - " LJ_NA_HINT, lj_fingers_jog_functions[f]);
     return -1;
 }
 int lj_fingers_fader_value(int fader) { return in(fader, 0, LJ_FG_FADERS) ? fg.fader[fader] : -1; }
@@ -252,7 +251,7 @@ int lj_fingers_set_jog_function(int jog, int index) { if (!in(jog, 1, LJ_FG_JOGS
 static void scroll(int which /* 0 up, 1 down, 2 R/S */)
 {
     if (fg.ud_fn == UF_CL_MANUAL) { static const enum lj_fn f[3] = { LJ_FN_CUELIST_BACK, LJ_FN_CUELIST_GO, LJ_FN_CUELIST_STOP }; lj_fn_run(f[which], 1); return; }   /* [up = back, down = go, R/S = start/stop] (05 s5.3) */
-    lj_log("fingers: %s - " LJ_FG_NA_HINT, lj_fingers_ud_functions[fg.ud_fn]);
+    lj_log("fingers: %s - " LJ_NA_HINT, lj_fingers_ud_functions[fg.ud_fn]);
 }
 
 /* ---- MIDI Learn (Alt+click on a control) ---- */
@@ -396,7 +395,7 @@ static void vf_event(lj_widget *w, int ev, void *ud)
         c = &lj_fg_ctl[i];
         if (m->alt) { if (ext_of(c)) lj_fingers_learn(ext_of(c)); return; }
         if (m->button == 2) {                                         /* right-click: the square = hold (deactivate), pages = multi-select (05 s5.2): neither in LJ4EVR */
-            if (c->kind == K_SQUARE || c->kind == K_PAGE) lj_log("fingers: right-click %s - " LJ_FG_NA_HINT, c->kind == K_SQUARE ? "square" : "page");
+            if (c->kind == K_SQUARE || c->kind == K_PAGE) lj_log("fingers: right-click %s - " LJ_NA_HINT, c->kind == K_SQUARE ? "square" : "page");
             return;
         }
         if (m->button != 1) return;
@@ -571,9 +570,9 @@ static void setup_load(lj_window *win)
     lj_w_edit_set_text(lj_window_find(win, "eVirtualSkinFile"), lj_ini_gets(fg_ini, "VIRTUAL", "SkinFile", "Default"));
     if (rg) {
         lj_w_radiogroup_set_index(rg, seti("SETUP", "Mode", LJ_FG_DISABLED));
-        for (i = 0, r = rg->first; r; r = r->next, i++) if (i == 2) { r->enabled = 0; r->hint = LJ_FG_NA_HINT; }   /* Serial connection (RS-232): never (D16) */
+        for (i = 0, r = rg->first; r; r = r->next, i++) if (i == 2) lj_widget_set_enabled(r, 0);   /* Serial connection (RS-232): never (D16) */
     }
-    if ((r = lj_window_find(win, "cbPort")) != NULL) { r->enabled = 0; r->hint = LJ_FG_NA_HINT; }
+    lj_widget_set_enabled(lj_window_find(win, "cbPort"), 0);
     if ((r = lj_window_find(win, "StaticText1")) != NULL) r->enabled = 0;
 }
 static void setup_ok(lj_widget *w, void *ud)

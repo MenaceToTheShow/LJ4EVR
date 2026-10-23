@@ -20,6 +20,7 @@ typedef struct {
 
 lj_widget  *lj_w_edit_create(lj_widget *parent, const lj_ctl_desc *d);
 const char *lj_w_edit_text(const lj_widget *w);                      /* NULL for a non-edit */
+int         lj_w_edit_int(const lj_widget *w, int lo, int hi, int dflt);   /* ME-173: the text as a decimal in lo..hi (spaces around allowed); empty, not a number or out of range = dflt */
 int         lj_w_edit_set_text(lj_widget *w, const char *s);          /* clamps to MaxLength, caret home, fires OnChange; -1 for a non-edit */
 void        lj_w_edit_select(lj_widget *w, int start, int len);       /* SelStart/SelLength; len < 0 = to the end */
 int         lj_w_edit_insert(lj_w_edit *e, int ch);                   /* one validated CP1252 byte at the caret (replaces the selection); 1 when the text changed */

@@ -16,7 +16,11 @@ network. Pick a topic from the list on the left.
 - Cue lists: running a show line by line.
 - Background cues and statics: layers under and over the cue.
 - Macros: movement macros and generic macros.
-- Output: sACN, masters, blackout, freeze and offline.
+- Output: sACN, Art-Net, masters, blackout, freeze and offline.
+- DMX-in and remote control: DMX from the network, the TCP and serial
+  remote, External Application.
+- Audio Analyzer and MediaPlayer: audio trig and WAV playback.
+- Importing a LightJockey 2 backup: .LJB files.
 - Hotkeys and MIDI: keyboard and MIDI control, 2532 and Fingers.
 - Files and libraries: where your show lives, backups and restore data.
 - Not available in LJ4EVR: what this version leaves out.

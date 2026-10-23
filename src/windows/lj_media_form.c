@@ -2,7 +2,7 @@
  * W5-MED-5; docs/media.md). Code-built: LightJockey.exe carries no TLJMediaForm, so the rows below are the harvested TPF0 of
  * LJMediaPlayer.exe 2.209 (offset 0x77d00, read by a scratch decoder; facts only: geometry, captions, hints, colours, menu
  * tree), every number as the DFM writes it except the three marked PROPOSAL. Audio only (W5-MED-2): the black pPlayer area
- * stays empty, the video and playback-file (.mps) items are greyed with LJ_CL_NOT_AVAILABLE. The window and the cue list
+ * stays empty, the video and playback-file (.mps) items are greyed with LJ_NA_HINT. The window and the cue list
  * drive the one clip of ctx->media through its host (05 s8.1 "only one instance returns timecode"). */
 #include <stdio.h>
 #include <string.h>
@@ -142,6 +142,7 @@ static struct { lj_window *win; int minimum, pending_close, seeking; char recent
 static lj_media *med(void) { return lj_ctx_get()->media; }
 static lj_widget *find(const char *n) { return mf.win ? lj_window_find(mf.win, n) : NULL; }
 static lj_ini *fini(void) { return lj_ctx_get()->forms_ini; }
+int lj_media_form_keypass(void) { return lj_ini_geti(fini(), MF_SEC, "KeyPass", 1) != 0; }
 
 static void run(int cmd, const char *param, uint32_t ms)
 {
@@ -194,7 +195,7 @@ static void on_action(lj_widget *w, void *ud)
     else if (!strcmp(a, "aLoadMediaFile")) pick();
     else if (!strcmp(a, "aToggleControls")) { lj_widget *c = find("pControls"); show_controls(!(c && c->visible)); }
     else if (!strcmp(a, "aExit")) mf.pending_close = 1;
-    else lj_log("media: %s: %s", a, LJ_CL_NOT_AVAILABLE);   /* the greyed video / playback-file items */
+    else lj_log("media: %s: %s", a, LJ_NA_HINT);   /* the greyed video / playback-file items */
 }
 static void on_recent(lj_widget *w, void *ud)
 {

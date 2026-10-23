@@ -322,7 +322,22 @@ separator.
 | `Tabs.Ini` | `[IMAGE]` | `File Stretch Center` (wallpaper) | desktop |
 | `Startup.ini` (per library) | `[STARTUP]` | `AutoLampOn Seq Cue Cl PCUE SeqRun ClRun Minimized ShowNotes` | app |
 | `Hardware.Ini` (installation-wide) | `[SACN]` | `Nic Name CID Priority TTL Preview UnlockRate U1..U4 Unicast1..4` (ours) | sacn (`lj_sacn_cfg_load`) |
-| `Hardware.Ini` | `[MIDI]` | device (W5) | - |
+| `Hardware.Ini` | `[ARTNET]` | `Proto1..4 Addr1..4` (ours, W5; the table below "W5 artnet") | artnet (`lj_artnet_cfg_load`) |
+| `Hardware.Ini` | `[DMXIN]` | `Enabled Source Universe Nic Loss FunctionsOff` (ours, W5; meaning in `docs/dmx-in.md`) | dmxin (`lj_dmxin_cfg_load`) |
+| `Hardware.Ini` | `[AUDIO]` | `Enabled Device UseFFT NoiseLevelSwitch NoiseLevelValue TrigDecay TrigAggr Gain EqualizerBand1..n ShowInput TriggerFaders SoundCard StayOnTop RunMinimized AutoSaveChanges PassKeys` (W5; LJSound's names where it had one, `docs/audio.md`) | audio (`lj_audio_cfg_load`) |
+| `Hardware.Ini` | `[REMOTE]` | `TcpEnabled TcpIp TcpPort SerialEnabled SerialPort Baud` (ours, W5; `docs/remote.md`) | remote (`lj_remote_cfg_load`) |
+| `Hardware.Ini` | `[EXTAPP]` | the External Application links (W5; the table below "W5 extapp") | extapp |
+| `Main.Ini` | `[CUELIST2]` | `AllowExecute UseColor IgnoreFirstWait LoadCueOnDblClick StopAudio AutoCue AutoSeekAudio Autosave` (ours; `StopAudio AutoSeekAudio` W5, `docs/media.md`) | windows (cue list) |
+| `forms.ini` | `[CUELIST2]` | also `TCSource` (the shown time-code source, W5) and `Cmd1..8` (the recent-command buttons) | windows (cue list) |
+| `forms.ini` | `[LJMEDIAPLAYER]` | `OnTop ShowControls KeyPass File0..File4` (ours, W5; LJ2 kept them in `LJMediaPlayer.Ini`, `docs/media.md`) | windows (media) |
+
+Files W5 adds (each read as hostile input, every length checked; the grammar is in the feature doc):
+
+| File | Written by | Meaning |
+|---|---|---|
+| `<library>\DmxIn\DmxIn.dat` (kind `dmxin`) | the DMX In window's Save | the channel functions and the per-channel value tables; a function number outside its own range refuses the file (ME-172) (`docs/dmx-in.md`) |
+| `<userdata>\User\ValueTables\<name>.vtr` | Value-translations > Save | one value table in LJ2's own `.vtr` text form, at most 16 KB (`docs/dmx-in.md`) |
+| `<library>\LJBImport.txt` | `.LJB` import | the import report: what converted and what did not (`docs/ljb-import.md`) |
 
 Sources for the LJ2 names: 07 s2, 01 s8, 11 E27, 18 s2 (design 5.1).
 
@@ -543,7 +558,7 @@ each recorded in `docs/fidelity.md`.
 |---|---|---|
 | `Import\` | Fixture Configuration > Import Profile (`windows/lj_gs2_dialogs.c`) | `.GS2`, `.Udf`, `.Udo` profiles to import; listed in the import dialog, each file untrusted (every length and offset checked, `fixlib/lj_gs2.c`) |
 | `Export\` | Create Export File / Export All (`windows/lj_gs2_dialogs.c`) | the `.GS2` / `.Udf` files LJ4EVR writes |
-| `Override\` | startup and Generic Macro Editor > Options > Update User Shapes (`app/lj_app_w3.c`, ME-34) | a user's own `Macros.Mac` (+ `UserMacros.Mac` beside it) that replaces the 66 built-in generic macro shapes; nothing is shipped there |
+| `Override\` | startup and Generic Macro Editor > Options > Update User Shapes (`app/lj_app_cuelist_host.c`, ME-34) | a user's own `Macros.Mac` (+ `UserMacros.Mac` beside it) that replaces the 66 built-in generic macro shapes; nothing is shipped there |
 
 `Source-Images\` is not in the library: it sits in the data folder (the pref path)
 with `Glyphs\`, `Fixtures\`, `Colors\` and `Gobos\` sub-folders of `.bmp` files
@@ -755,8 +770,11 @@ are shown and never acted on (docs/extapp.md).
 |---|---|
 | `Proto1`..`Proto4` | the protocol of link n: `0` sACN (also the value of a missing key or any other number), `1` Art-Net |
 | `Addr1`..`Addr4` | the Art-Net Port-Address of link n, 1..32767 (15 bits: Net 0-127, Sub-Net 0-15, Universe 0-15); missing or out of range = n (PROPOSAL rig W5-ART-4) |
-| `In` | the Art-Net input Port-Address handed to DMX-in, 0 = off (written by the app from `[DMXIN]`, see dmxin) |
+
+`In` is no longer a key (ME-178): the Art-Net input Port-Address is derived at run time from `[DMXIN]` (enabled, source
+Art-Net, its universe) and never written; an older file's `In` is ignored, so it can no longer bind UDP 6454 with
+DMX-in off.
 
 A file from v1.0.0 has no `[ARTNET]` section and loads as sACN on every link. The Hardware Setup OK button writes all
-nine keys. Two Art-Net links with one Port-Address, or Port-Address 0 on an Art-Net link, are refused by the page
+eight keys. Two Art-Net links with one Port-Address, or Port-Address 0 on an Art-Net link, are refused by the page
 (`lj_artnet_cfg_validate`); a hand-edited file with either keeps the offending link silent and logs it.

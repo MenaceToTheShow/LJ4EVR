@@ -1,7 +1,7 @@
 /* lj_artnet.h - Art-Net 4 output beside sACN (design 1 D14, 10 W5; note 08 s9; docs/w5-contracts.md seam 1; track artnet).
  *
  * The same Sender shape as io/lj_sacn.h (design 8.1, ME-6): lj_artnet_set copies and marks, lj_artnet_pump sends at most
- * one ArtDmx per subscriber per link per call (the change, else a keep-alive every LJ_ARTNET_KEEPALIVE_US), under the
+ * one ArtDmx per subscriber per link per call (the change, else a keep-alive every LJ_SACN_KEEPALIVE_US), under the
  * same ~44 Hz cap and cfg->unlock_rate (ME-24). It shares the sACN frame tap: the engine thread (platform/sdl/lj_sdl.c)
  * hands frame->out[link] to lj_artnet_set for every link whose lj_sacn_cfg.proto is LJ_OUT_ARTNET and to lj_sacn_set
  * for the rest, then pumps both. The per-link choice and Port-Address live in the one output record, lj_sacn_cfg
@@ -38,10 +38,10 @@ enum {
     LJ_ARTNET_NODES = 32,          /* subscriber table rows, PROPOSAL rig W5-ART-2 */
     LJ_ARTNET_NODE_PORTS = 4,      /* SwOut[4] of one ArtPollReply (BindIndex pages are separate rows) */
     LJ_ARTNET_EXPIRE_POLLS = 3,    /* a node not heard for 3 polls expires at the next one (7.5-10 s after its last reply), PROPOSAL rig W5-ART-2 */
-    LJ_ARTNET_RX_BUDGET = 64       /* datagrams drained per pump (W5-X-THREAD), PROPOSAL */
+    LJ_ARTNET_RX_BUDGET = 64,      /* datagrams drained per pump (W5-X-THREAD), PROPOSAL */
+    LJ_ARTNET_ROWS_PER_IP = 4      /* ME-176: subscriber rows one source address may hold (BindIndex pages), PROPOSAL rig W5-ART-2 */
 };
 #define LJ_ARTNET_POLL_US      2500000u   /* spec p.16: every 2.5 to 3 s */
-#define LJ_ARTNET_KEEPALIVE_US  900000u   /* spec p.62: 800-1000 ms recommended */
 #define LJ_ARTNET_OEM           0x00FFu   /* OemUnknown; PROPOSAL rig W5-ART-7 (Joey applies for an OemCode, or this stays with its reason) */
 
 typedef struct { uint32_t ip; uint16_t port_addr[LJ_ARTNET_NODE_PORTS]; uint8_t nports; uint8_t missed; char short_name[18]; char long_name[64]; uint8_t bind_index; } lj_artnet_node;   /* names CP1252, NUL-terminated after a bounded copy (W5-X-TEXT) */
@@ -53,7 +53,7 @@ void lj_artnet_set(int link, const uint8_t slots[LJ_LINK_CH]);        /* link 0.
 void lj_artnet_pump(uint64_t now_us);                                 /* ArtPoll when due; drain received packets (budget); per link at most one ArtDmx per subscriber (change, else keep-alive); expiry */
 void lj_artnet_close(void);                                           /* closes the socket; no-op when closed */
 void lj_artnet_stats_get(lj_artnet_stats *out);
-int  lj_artnet_nodes(lj_artnet_node *out, int max);                   /* engine thread: a copy of the table (the Hardware Setup node list reads the engine view copy) */
+int  lj_artnet_nodes(lj_artnet_node *out, int max);                   /* tests: a copy of the subscriber table (engine thread) */
 void lj_artnet_feed(const uint8_t *pkt, size_t n, uint32_t src_ip, uint64_t now_us);   /* one received datagram as the pump handles it (tests, the artnet fuzz row) */
 
 /* bind_index (appended by the artnet track): ArtPollReply BindIndex (offset 211, 0 when the reply is shorter); one table
@@ -67,7 +67,7 @@ int lj_artnet_opcode(const uint8_t *pkt, size_t n);                   /* the OpC
 int lj_artnet_parse_dmx(const uint8_t *pkt, size_t n, uint16_t *port_addr, uint8_t *seq, uint8_t slots[LJ_LINK_CH], int *nslots);   /* 0 / -1 (ProtVer < 14, Length odd / 0 / > 512 / past n); slots past nslots are 0 */
 int lj_artnet_parse_reply(const uint8_t *pkt, size_t n, lj_artnet_node *out);   /* 0 / -1 (short, wrong op); names bounded */
 
-/* ---- the output record (Hardware.Ini [ARTNET] Proto1..4 Addr1..4 In, ours, additive: W5-X-FORMAT) ---- */
+/* ---- the output record (Hardware.Ini [ARTNET] Proto1..4 Addr1..4, ours, additive: W5-X-FORMAT; artnet_in is runtime only, ME-178) ---- */
 void lj_artnet_cfg_load(lj_ini *hardware_ini, lj_sacn_cfg *cfg);      /* missing keys = sACN on every link, Port-Address = link number, input off */
 void lj_artnet_cfg_save(lj_ini *hardware_ini, const lj_sacn_cfg *cfg);
 const char *lj_artnet_cfg_validate(const lj_sacn_cfg *cfg);           /* NULL = usable; Port-Address 0 / > 32767 on an Art-Net link, a duplicate Art-Net Port-Address */

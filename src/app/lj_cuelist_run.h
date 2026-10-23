@@ -44,9 +44,12 @@ typedef struct {
     int  (*timecode)(void *ud, int src, uint32_t *ms);           /* enum lj_cl_tc_src: 0 with the time, -1 when that source has none (CD / DA always -1; MP = the clip clock from W5, lj_app_io_mp_time) */
     int  (*clock)(void *ud, uint32_t *ms_of_day, uint32_t *day); /* local wall clock for Wait PC-Clock / Wait Date-Change (day = any monotonic day number) */
     /* W5 (appended, docs/w5-contracts.md seam 7; media track): an MP line (LJ_CL_MP_LOAD_FILE .. LJ_CL_MP_CLOSE) once lj_cl_cmd_inert
-     * no longer lists the MP family; 0 = done, 1 = still waiting (MP Load File / MP Seek up to 5 s, MP Wait), -1 = failed (the list goes on).
-     * NULL = MP lines stay inert. The app: lj_app_io_cl_media. */
+     * no longer lists the MP family; 0 = done, -1 = failed (the list goes on). MP Wait is the runner's condition on the
+     * LJ_TC_MP time code, never this call. NULL = MP lines stay inert. The app: lj_app_io_cl_media. */
     int  (*media)(void *ud, const lj_cl_line *l, uint64_t now_us);
+    /* ME-171 (g) (appended): 1 when cue `number` is transparent, 0 when not, -1 unknown; Run with Automatic Cue update
+     * latches from the last non-transparent cue line before the run line. NULL = every cue line from line 1. */
+    int  (*cue_transparent)(void *ud, uint32_t number);
 } lj_cl_host;
 
 enum lj_cl_mtc_timeout { LJ_CL_MTC_STOP = 0 /* M_MTCStop */, LJ_CL_MTC_RESTART /* M_MTCRestart */, LJ_CL_MTC_IGNORE /* MTC_NoTimeout */ };

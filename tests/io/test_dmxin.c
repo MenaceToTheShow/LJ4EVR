@@ -2,8 +2,9 @@
  *   fuzz_sacn_rx  a data packet from lj_sacn_pack_data (our own sender, design 8.1) must parse, then LJ_FUZZ_ITERS
  *                 mutations of it through lj_sacn_rx_parse and lj_dmxin_rx; the frame stays within its bounds
  *   fuzz_vtr      a synthetic .vtr text must parse, then mutations through lj_vtr_parse
- * Both print PENDING dmxin and fail until the track lands the parsers (CMakeLists.txt marks them DISABLED until then).
+ * Each fails (FAIL, rc 1) when its seed no longer parses.
  * The track appends its rule rows (W5-DMXIN-1..8) to this file. */
+#define _CRT_SECURE_NO_WARNINGS 1   /* fopen in the ME-172 rows */
 #include <stdio.h>
 #include <string.h>
 #include "io/lj_dmxin.h"
@@ -24,9 +25,10 @@ int lj_test_fuzz_sacn_rx(int argc, char **argv)
     lj_sacn_cfg_default(&cfg, "fuzz");
     for (i = 0; i < LJ_LINK_CH; i++) slots[i] = (uint8_t)i;
     if (lj_sacn_pack_data(seed, &cfg, 10, 1, 0, slots) != 0 || lj_sacn_rx_parse(seed, sizeof seed, &rx) != 0 || rx.universe != 10 || rx.n != LJ_LINK_CH || rx.slots[7] != 7) {
-        printf("PENDING dmxin: lj_sacn_rx_parse does not accept our own data packet yet\n");
+        printf("FAIL fuzz_sacn_rx: lj_sacn_rx_parse refuses our own data packet\n");
         return 1;
     }
+    if (lj_fuzz_seed(argc, argv, "sacn_data", seed, sizeof seed)) return 0;   /* ME-186 */
     for (i = 0; i < LJ_FUZZ_ITERS; i++) {
         memcpy(buf, seed, sizeof seed); n = sizeof seed;
         for (k = (int)(lj_fuzz_next(&s) % 8); k >= 0; k--) lj_fuzz_mutate(buf, &n, sizeof buf, &s);
@@ -50,9 +52,10 @@ int lj_test_fuzz_vtr(int argc, char **argv)
     int i, k;
     (void)argc; (void)argv;
     if (lj_vtr_parse(text, sizeof text - 1, &t, err, sizeof err) != 0 || t.map[128] != 255 || t.map[1] != 1 || t.map[255] != 0) {
-        printf("PENDING dmxin: lj_vtr_parse does not accept the synthetic table yet (the track sets the header line to the reference format)\n");
+        printf("FAIL fuzz_vtr: lj_vtr_parse refuses the synthetic table\n");
         return 1;
     }
+    if (lj_fuzz_seed(argc, argv, "table.vtr", text, sizeof text - 1)) return 0;   /* ME-186 */
     for (i = 0; i < LJ_FUZZ_ITERS; i++) {
         memcpy(buf, text, sizeof text - 1); n = sizeof text - 1;
         for (k = (int)(lj_fuzz_next(&s) % 8); k >= 0; k--) lj_fuzz_mutate(buf, &n, sizeof buf, &s);
@@ -192,7 +195,7 @@ static void di_artnet(void)   /* W5-ART-IN: an ArtDmx for the input Port-Address
     const lj_dmxin_frame *f = lj_dmxin_frame_get();
     lj_dmxin_cfg c;
     memset(slots, 42, sizeof slots);
-    if (lj_artnet_pack_dmx(a, 1, 0, 0x0102, slots) != LJ_ARTNET_DMX_LEN) { printf("PENDING artnet: lj_artnet_pack_dmx\n"); return; }
+    DCHECK(lj_artnet_pack_dmx(a, 1, 0, 0x0102, slots) == LJ_ARTNET_DMX_LEN);   /* ME-186: a broken builder fails the row, never passes it */
     lj_dmxin_reset(); lj_dmxin_cfg_default(&c); c.source = LJ_DMXIN_ARTNET; c.universe = 0x0102; lj_dmxin_open(&c, NULL);
     lj_dmxin_post(LJ_DMXIN_ARTNET, a, sizeof a, 0x7F000003u, 1);
     DCHECK(lj_dmxin_poll(1) == 1 && f->nsources == 1 && f->raw[511] == 42 && f->src[0].priority == 100);
@@ -400,6 +403,56 @@ int lj_test_dmxin_functions(int argc, char **argv)
     di_frame(m, in, 1, 101, 0); DCHECK(di_count(LJ_FN_DMXIN_TIME) == 0);
     di_frame(m, in, 1, 102, 0); DCHECK(di_has(LJ_FN_DMXIN_TIME, 102u));
     m->time_mode = LJ_DMXIN_TIME_ALWAYS; di_frame(m, in, 1, 103, 0); DCHECK(di_count(LJ_FN_DMXIN_TIME) == 1);
+    /* ME-167: the functions run only on a frame someone sent (the UI pass's lj_dmxin_functions_step). Master Intensity on
+     * ch 14, Overwrite Enable on ch 20 */
+    {
+        static uint8_t a[LJ_ARTNET_DMX_LEN], sl[LJ_LINK_CH];
+        lj_dmxin_cfg cf;
+        lj_dmxin_map_init(m); m->ch[13].fn = LJ_DIF_MASTER_INTENSITY; m->ch[19].fn = LJ_DIF_OVERWRITE_ENABLE;
+        lj_dmxin_reset(); lj_dmxin_cfg_default(&cf); lj_dmxin_open(&cf, NULL); di_log.n = 0;
+        lj_dmxin_functions_step(m, lj_dmxin_poll(1000), 0); lj_dmxin_functions_step(m, lj_dmxin_poll(2000), 0);
+        DCHECK(di_log.n == 0);                                                     /* DMX-in off, no packet: the GM keeps its level (was 0: black stage) */
+        cf.enabled = 1; cf.source = LJ_DMXIN_ARTNET; cf.universe = 0x0102; lj_dmxin_open(&cf, NULL);
+        lj_dmxin_functions_step(m, lj_dmxin_poll(3000), 0); DCHECK(di_log.n == 0);   /* on, nothing received yet */
+        memset(sl, 0, sizeof sl); sl[13] = 200;                                    /* GM 200, the Overwrite Enable channel at 0 */
+        DCHECK(lj_artnet_pack_dmx(a, 1, 0, 0x0102, sl) == LJ_ARTNET_DMX_LEN);
+        lj_dmxin_post(LJ_DMXIN_ARTNET, a, sizeof a, 0x7F000003u, 4000);
+        lj_dmxin_functions_step(m, lj_dmxin_poll(4000), 0);
+        DCHECK(di_has(LJ_FN_DMXIN_MASTER, 200u) && di_has(LJ_FN_DMXIN_OVERWRITE, 0u));
+        /* disable / enable (the apply posts the gate open): the reopened input re-primes, so the same frame closes it again */
+        lj_dmxin_open(&cf, NULL); di_log.n = 0;
+        lj_dmxin_post(LJ_DMXIN_ARTNET, a, sizeof a, 0x7F000003u, 5000);
+        lj_dmxin_functions_step(m, lj_dmxin_poll(5000), 0);
+        DCHECK(di_has(LJ_FN_DMXIN_OVERWRITE, 0u));
+        /* Disable DMX-in functions on a static frame opens the gate at once; enabling them closes it again */
+        di_log.n = 0; lj_dmxin_functions_step(m, lj_dmxin_poll(6000), 1); DCHECK(di_has(LJ_FN_DMXIN_OVERWRITE, 1u));
+        di_log.n = 0; lj_dmxin_functions_step(m, lj_dmxin_poll(7000), 0); DCHECK(di_has(LJ_FN_DMXIN_OVERWRITE, 0u));
+        di_log.n = 0; lj_dmxin_functions_step(m, lj_dmxin_poll(8000), 0); DCHECK(di_log.n == 0);   /* static, unchanged: nothing */
+        /* ME-177: with a Nic set, a datagram from off its subnet changes nothing (the input binds every interface) */
+        cf.nic_ipv4 = 0x7F000001u; lj_dmxin_open(&cf, NULL); di_log.n = 0;
+        lj_dmxin_post(LJ_DMXIN_ARTNET, a, sizeof a, 0xCB007109u, 9000);           /* 203.0.113.9 (TEST-NET-3) */
+        lj_dmxin_functions_step(m, lj_dmxin_poll(9000), 0);
+        DCHECK(di_log.n == 0 && !lj_dmxin_frame_get()->live && lj_dmxin_frame_get()->discarded == 1);
+        lj_dmxin_post(LJ_DMXIN_ARTNET, a, sizeof a, 0x7F000003u, 10000);          /* on the Nic's subnet: taken */
+        lj_dmxin_functions_step(m, lj_dmxin_poll(10000), 0);
+        DCHECK(lj_dmxin_frame_get()->live && di_has(LJ_FN_DMXIN_MASTER, 200u));
+        lj_dmxin_close(); lj_dmxin_reset();
+    }
+    /* ME-172: DmxIn.dat numbers outside the function's own range are refused (htp_group 16777219 aliased group 3) */
+    {
+        static const char *const bad[] = { "ch=12 htp_group 16777219", "ch=12 htp_group 25", "ch=12 htp_group 0", "ch=3 static_activate 21",
+                                           "ch=3 seq_onoff 13", "ch=14 master_intensity 1", "ch=5 flash_seq 0", "ch=5 htp_group 3x" };
+        char err[128];
+        size_t k;
+        FILE *fp;
+        for (k = 0; k < sizeof bad / sizeof bad[0]; k++) {
+            if ((fp = fopen("test_dmxin_alias.dat", "wb")) != NULL) { fprintf(fp, "LJ4 dmxin 1\n%s\n", bad[k]); fclose(fp); }
+            if (lj_dmxin_map_load("test_dmxin_alias.dat", m, err, sizeof err) != -1) { DCHECK(0); printf("  accepted: %s\n", bad[k]); }
+        }
+        if ((fp = fopen("test_dmxin_alias.dat", "wb")) != NULL) { fputs("LJ4 dmxin 1\nch=12 htp_group 24\nch=14 master_intensity 0\nch=5 flash_seq 99999999\n", fp); fclose(fp); }
+        DCHECK(lj_dmxin_map_load("test_dmxin_alias.dat", m, err, sizeof err) == 0 && m->ch[11].num == 24 && m->ch[4].num == 99999999u);
+        remove("test_dmxin_alias.dat");
+    }
     lj_fn_unbind_all(); lj_dmxin_functions_reset();
     printf("dmxin_functions: %s\n", di_fails ? "FAIL" : "PASS");
     return di_fails ? 1 : 0;

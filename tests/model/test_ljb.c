@@ -108,11 +108,12 @@ int lj_test_fuzz_ljb(int argc, char **argv)
     if (!sn) { printf("FAIL ljb_build\n"); return 1; }
     if (lj_ljb_open(&b, seed, sn, err, sizeof err) != 0 || b.n != 3 || strcmp(b.e[1].folder, "Sequences\\") != 0
         || lj_ljb_extract(&b, 2, &x, &xn, err, sizeof err) != 0 || xn != 19 || memcmp(x, "[Info]\r\n", 8) != 0) {
-        printf("PENDING ljb: lj_ljb_open / lj_ljb_extract do not read the synthetic container yet\n");
+        printf("FAIL fuzz_ljb: lj_ljb_open / lj_ljb_extract do not read the synthetic container\n");
         free(x);
         return 1;
     }
     free(x); x = NULL; lj_ljb_free(&b);
+    if (lj_fuzz_seed(argc, argv, "show.LJB", seed, sn)) return 0;   /* ME-186 */
     for (i = 0; i < LJ_FUZZ_ITERS; i++) {
         memcpy(buf, seed, sn); n = sn;
         for (k = lj_fuzz_next(&s) % 8 + 1; k > 0; k--) lj_fuzz_mutate(buf, &n, sizeof buf, &s);

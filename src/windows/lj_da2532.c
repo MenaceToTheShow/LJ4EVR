@@ -9,6 +9,7 @@
  * the six sub-dialogs bind theirs below. Never serial: Import old-style Setup (the undocumented 2532.cfg / .D25) and
  * Print Layout (TPrint2532Form) are greyed with LJ_NA_HINT. */
 #define _CRT_SECURE_NO_WARNINGS 1   /* sscanf under /W4 /WX on MSVC (as io/lj_midi.c) */
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +32,6 @@
 #define LJ_DA_FILE        "2532Setup.Ini" /* ours (design 5.2 spirit, INI grammar); LJ2's 2532_2.Cfg is binary and undocumented */
 #define LJ_DA_SEC         "2532"          /* Main.Ini section of the window preferences (keys = the menu item names) */
 #define LJ_DA_DND_FN      0x7532          /* lj_dnd kind private to this family: a function from the 2532 Function List */
-#define LJ_DA_NA_HINT     "Not available in LJ4EVR"
 #define LJ_DA_SEL_RGB     0x00FFFFu       /* the selected key: cyan in 2532control_1.gif (reduced), PROPOSAL rig 05 s4 */
 #define LJ_DA_FIX_W       16              /* the bank-letter column; measured from 2532matrixkeys.gif (reduced), PROPOSAL rig 05 s4 */
 
@@ -58,7 +58,7 @@ static struct {
     char page_name[LJ_DA_PAGES][LJ_DA_TEXT];
     int page, bank;                                   /* 0-based */
     int record;                                       /* enum lj_da2532_type armed by a Record panel, LJ_DA_NONE = off */
-    lj_da_val held_latch[LJ_DA_KEYS], held_flash[LJ_DA_KEYS], held_user[LJ_DA_USER];   /* what a press fired: its release reaches the same value */
+    lj_da_val held_latch[LJ_DA_BANKS][LJ_DA_KEYS], held_flash[LJ_DA_BANKS][LJ_DA_KEYS], held_user[LJ_DA_USER];   /* what a press fired: its release reaches the same value (ME-171: per bank, so bank B key 3 never overwrites bank A key 3) */
     char last[48];                                    /* lFunction: the last function run */
     int loaded;
 } da;
@@ -128,7 +128,7 @@ static int parse_val(const char *s, int flash, lj_da_val *out)
     for (t = 1; t < LJ_DA_TYPES && strcmp(word, lj_da_words[t]) != 0; t++) {}
     if (t >= LJ_DA_TYPES) return -1;
     if (t == LJ_DA_FN) n = (unsigned long)lj_fn_by_name(arg);
-    else { n = strtoul(arg, &end, 10); if (*end || arg[0] == '-') return -1; }
+    else { errno = 0; n = strtoul(arg, &end, 10); if (errno == ERANGE || end == arg || *end || arg[0] == '-' || n > 0xFFFFFFFFul) return -1; }   /* W4 LORD_C-10: LP64 never truncates */
     if (!val_ok(t, (uint32_t)n, flash) || (flash < 0 && t != LJ_DA_FN)) return -1;   /* flash < 0: a user key */
     out->type = (uint8_t)t; out->num = (uint32_t)n;
     return 0;
@@ -239,7 +239,7 @@ static uint32_t current_of(int type)
 static void refresh_main(void);
 static int press(int bank, int key, int flash, int down)   /* bank / key 0-based */
 {
-    lj_da_val *v = flash ? &da.flash[da.page][bank][key] : &da.latch[da.page][bank][key], *held = flash ? &da.held_flash[key] : &da.held_latch[key];
+    lj_da_val *v = flash ? &da.flash[da.page][bank][key] : &da.latch[da.page][bank][key], *held = flash ? &da.held_flash[bank][key] : &da.held_latch[bank][key];
     int p;
     if (!down) { lj_da_val h = *held; memset(held, 0, sizeof *held); return h.type ? run(&h, 0) : -1; }
     if (da.record && (da.record == LJ_DA_SEQ) == (flash != 0)) {     /* "the next key press on the 2532 will 'record' the active program" (05 s4.3) */
@@ -260,8 +260,16 @@ static int press(int bank, int key, int flash, int down)   /* bank / key 0-based
     refresh_main();
     return 0;
 }
-int lj_da2532_latch(int key, int down) { ensure_loaded(); return in(key, 1, LJ_DA_KEYS) ? press(da.bank, key - 1, 0, down) : -1; }
-int lj_da2532_flash(int key, int down) { ensure_loaded(); return in(key, 1, LJ_DA_KEYS) ? press(da.bank, key - 1, 1, down) : -1; }
+static int held_bank(int key, int flash)   /* a key-only release (MIDI): the active bank's held value, else the bank that holds that key */
+{
+    lj_da_val (*h)[LJ_DA_KEYS] = flash ? da.held_flash : da.held_latch;
+    int b;
+    if (h[da.bank][key].type) return da.bank;
+    for (b = 0; b < LJ_DA_BANKS; b++) if (h[b][key].type) return b;
+    return da.bank;
+}
+int lj_da2532_latch(int key, int down) { ensure_loaded(); return in(key, 1, LJ_DA_KEYS) ? press(down ? da.bank : held_bank(key - 1, 0), key - 1, 0, down) : -1; }
+int lj_da2532_flash(int key, int down) { ensure_loaded(); return in(key, 1, LJ_DA_KEYS) ? press(down ? da.bank : held_bank(key - 1, 1), key - 1, 1, down) : -1; }
 int lj_da2532_user(int key, int down)
 {
     lj_da_val *held;
@@ -467,7 +475,7 @@ static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
             ui.sel_bank = row - 1; ui.sel_key = col - 1;
             flash = m->button == 3 || (m->button == 1 && (m->ctrl || ui.mouse_flash));   /* Ctrl+click or the middle button = flash (05 s4.4) */
             if ((m->button == 1 || m->button == 3) && pref(P_MOUSESELECT)) {
-                if (flash && !pref(P_RELEASEFLASH) && da.held_flash[col - 1].type) press(row - 1, col - 1, 1, 0);   /* no Release on Mouse-Up: a second click releases */
+                if (flash && !pref(P_RELEASEFLASH) && da.held_flash[row - 1][col - 1].type) press(row - 1, col - 1, 1, 0);   /* no Release on Mouse-Up: a second click releases */
                 else if (press(row - 1, col - 1, flash, 1) == 0) { ui.down_flash = flash; ui.down_bank = row - 1; ui.down_key = col - 1; }
             }                                                            /* else select only: Emulate with Mouse is off by default (DFM) */
             refresh_main();
@@ -550,7 +558,7 @@ static void on_load(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_da2532_l
 static void on_save(lj_widget *w, void *ud) { (void)w; (void)ud; lj_da2532_save(); }
 static void clear_answer(int yes, void *ud) { (void)ud; if (yes) { memset(da.latch, 0, sizeof da.latch); memset(da.flash, 0, sizeof da.flash); lj_da2532_save(); refresh_main(); } }
 static void on_clear_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_confirm("Confirm", "Clear all Pages ?", "", clear_answer, NULL); }   /* PROPOSAL: no exe string for this prompt */
-static void on_na(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("2532: %s - " LJ_DA_NA_HINT, item_name()); }
+static void on_na(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("2532: %s - " LJ_NA_HINT, item_name()); }
 static void on_font(lj_widget *w, void *ud) { (void)w; (void)ud; if (!strcmp(item_name(), "M_ColorScheme")) lj_win_open(LJ_WIN_DA2532_COLORS); else on_na(w, ud); }
 static void on_name_tabs(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_DA2532_PAGE_NAMES); }
 static void on_tab_size(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_DA2532_TAB_HEIGHT); }

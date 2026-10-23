@@ -55,7 +55,6 @@ static lj_static_groups *groups(void)                  /* the names live in Stat
 }
 
 static void set_edit_int(lj_widget *e, int v) { char t[16]; snprintf(t, sizeof t, "%d", v); lj_w_edit_set_text(e, t); }
-static int edit_int(lj_widget *e, int dflt) { const char *t = lj_w_edit_text(e); char *end; long v; if (!t || !*t) return dflt; v = strtol(t, &end, 10); return *end ? dflt : (int)v; }
 
 /* ---- the lists ---- */
 static void fill_pages(void)
@@ -190,10 +189,10 @@ static int prefs_apply(void)
     v.slot_no_visible = lj_w_checkbox_checked(find("cbViewSlot"));
     v.mode_visible = lj_w_checkbox_checked(find("cbViewMode"));
     v.lvl_visible = lj_w_checkbox_checked(find("cbViewLevels"));
-    v.slots_visible = edit_int(find("eRows"), v.slots_visible);              /* clamped 1..64 by lj_statics2_view_set */
+    v.slots_visible = lj_w_edit_int(find("eRows"), 0, 99999, v.slots_visible);              /* clamped 1..64 by lj_statics2_view_set */
     v.multiline = lj_w_checkbox_checked(find("cbTabsMultiLine"));
-    v.tab_width = lj_w_checkbox_checked(find("cbTabsAutoWidth")) ? 0 : edit_int(find("eTabsWidth"), 0);
-    v.tab_height = lj_w_checkbox_checked(find("cbTabsAutoHeight")) ? 0 : edit_int(find("eTabsHeight"), 0);
+    v.tab_width = lj_w_checkbox_checked(find("cbTabsAutoWidth")) ? 0 : lj_w_edit_int(find("eTabsWidth"), 0, 99999, 0);
+    v.tab_height = lj_w_checkbox_checked(find("cbTabsAutoHeight")) ? 0 : lj_w_edit_int(find("eTabsHeight"), 0, 99999, 0);
     if (v.tab_width < 0 || v.tab_width > 1023) v.tab_width = 0;
     if (v.tab_height < 0 || v.tab_height > 1023) v.tab_height = 0;
     lj_statics2_view_set(&v);

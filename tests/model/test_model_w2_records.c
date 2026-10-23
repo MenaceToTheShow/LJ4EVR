@@ -137,6 +137,12 @@ static void lj_test_statics2(void)
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 kind=link link=4294967297,0\n"); CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 kind=link link=4,999\n");        CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 groups=-1\n");                   CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
+    /* ME-171 (a), (c): a slot listed twice is refused (it leaked the first scene); groups=2^64 is ERANGE, never all 64 groups */
+    lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 3 kind=recorded\nslot 3 kind=recorded\n"); CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1 && strstr(err, "twice") && !back);
+    lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 3 name=x\npage 2 name=b\nslot 3 name=y\n");  CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == 0 && nb == 2); lj_statics_free(back, nb);
+    lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 groups=18446744073709551616\n");       CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1 && strstr(err, "out of range"));
+    lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 groups=18446744073709551615\n");       CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == 0 && nb == 1 && back[0].slot[0].groups == UINT64_MAX); lj_statics_free(back, nb);
+    lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 1 groups=+5\n");                        CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\npage 1 name=a\nslot 65 name=s\n");                     CHECK(lj_statics_load(P1, &back, &nb, err, sizeof err) == -1);
     lj_put(P1, "LJ4 statics 1\ngroup 65 name=x\n");                                   CHECK(lj_statics_groups_load(P1, &gb, err, sizeof err) == -1);
     lj_statics_free(pages, n);

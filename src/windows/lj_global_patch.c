@@ -297,7 +297,7 @@ int lj_global_patch_menu(const char *item)
     else if (strcmp(item, "P_OutSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, out_seq_done, NULL); }   /* TSetSequenceForm; ponytail: the list is single-select, so one channel */
     else if (strcmp(item, "P_InSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, in_seq_done, NULL); }   /* W5 dmxin: TSetSequenceForm, as P_OutSeq */
     else if (strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0)
-        lj_log("global patch: %s: Not available in LJ4EVR", item);   /* W5 dmxin: the per-channel "Ignore DMX In Enable" flag needs a lj_patch_ch field and an S1 rule (model + engine, integrator): still greyed */
+        lj_log("global patch: %s: " LJ_NA_HINT, item);   /* W5 dmxin: the per-channel "Ignore DMX In Enable" flag needs a lj_patch_ch field and an S1 rule (model + engine, integrator): still greyed */
     else return -1;
     return 0;
 }

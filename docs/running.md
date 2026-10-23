@@ -81,6 +81,22 @@ of User Libraries use it so no account path shows (ME-148).
 
 Cue lists, Execute File: the line runs only with `Main.Ini [CUELIST2] AllowExecute=1` (default 0). AllowExecute=1 lets a cue list start any program through the shell; enable it only for cue lists you wrote.
 
+### Network listeners (W5)
+
+Every listener is off on a fresh `Hardware.Ini`; each one logs the address it binds when it opens (the security view is
+`SECURITY.md` "Network listeners").
+
+| Listener | Opens when | Binds | Filter |
+|---|---|---|---|
+| UDP 5568, sACN DMX-in | Hardware Setup > Enable DMX in, source sACN (`[DMXIN] Enabled=1`) | every interface (multicast) | with `[DMXIN] Nic` set, packets from off that subnet are dropped |
+| UDP 6454, Art-Net | an output link on Art-Net, or DMX-in from Art-Net | the output interface (every interface when none is chosen) | ArtPollReply only from that subnet, at most 4 rows per address; Art-Net DMX-in from off the subnet dropped |
+| TCP 7232, remote | Setup > RS-232 / TCP Remote > TCP enabled (`[REMOTE] TcpEnabled=1`) | 127.0.0.1 unless you choose an interface; never 0.0.0.0 | at most 4 connections |
+| serial, remote | the RS-232 remote enabled (`[REMOTE] SerialEnabled=1`) | the chosen port only | none |
+| External Application | a patched External Application fixture with its link set | no listener: a TCP client to the definition file's host and port, or a serial port | none |
+
+The remote has no authentication: on a LAN interface anyone on that network can drive the show. Keep it on 127.0.0.1
+unless the controller sits on a lighting network you trust.
+
 ## lj4evr_render (headless, no SDL)
 
 ```

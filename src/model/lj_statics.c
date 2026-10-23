@@ -1,6 +1,7 @@
 /* lj_statics.c - Statics.dat (lj_statics.h, design 5.2, 14 sB). Recorded slots own
  * their lj_scene; link slots name a sequence number + scene index. Every numeric
  * field goes through lj_kv_range (ME-77). */
+#include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@ int lj_statics_load(const char *path, lj_static_page **pages, int *npages, char 
 {
     char k[32], v[LJ_KV_VAL_CAP], q[LJ_KV_VAL_CAP], *e;
     int fmt, r, item = 0, cur = -1, rbad = 0;
+    uint64_t seen = 0;                                                              /* ME-171 (a): slot indices on this page */
     lj_static_slot *slot = NULL;
     const char *bad = NULL;
     lj_rec *rec = lj_rec_open_read(path, "statics", &fmt);
@@ -26,11 +28,13 @@ int lj_statics_load(const char *path, lj_static_page **pages, int *npages, char 
             if (strtol(v, &e, 10) != *npages + 1 || e == v) { bad = "page index out of order"; break; }
             if (lj_kv_get(v, "name", q, sizeof q) < 0 || (cur = lj_statics_add_page(pages, npages, q)) < 0) { bad = "too many pages"; break; }
             (*pages)[cur].n = (uint16_t)lj_kv_range(v, "n", LJ_STATICS2_SLOTS_PER_PAGE, 1, LJ_STATICS2_SLOTS_MAX, &rbad);   /* ME-30: Visible Slots 1..64 */
-            slot = NULL;
+            slot = NULL; seen = 0;
         } else if (strcmp(k, "slot") == 0) {
             long i = strtol(v, &e, 10);
             if (cur < 0) { bad = "slot before the first page"; break; }
             if (e == v || i < 1 || i > LJ_STATICS2_SLOTS_MAX) { bad = "slot index not 1..64"; break; }
+            if (seen & (1ull << (i - 1))) { bad = "slot listed twice"; break; }        /* ME-171 (a): never overwrite (or leak) an earlier slot */
+            seen |= 1ull << (i - 1);
             slot = &(*pages)[cur].slot[i - 1];
             if (lj_kv_get(v, "name", q, sizeof q) == 1) lj_str_copy(slot->name, sizeof slot->name, q);
             if (lj_kv_get(v, "type", q, sizeof q) == 1) lj_str_copy(slot->type, sizeof slot->type, q);
@@ -41,8 +45,9 @@ int lj_statics_load(const char *path, lj_static_page **pages, int *npages, char 
             slot->transparent = (uint8_t)lj_kv_range(v, "transparent", 0, 0, 1, &rbad);
             slot->groups = 0;
             if (lj_kv_get(v, "groups", q, sizeof q) == 1) {                                 /* the 64-bit mask: digits only */
+                errno = 0;                                                                  /* ME-171 (c): 2^64 is ERANGE, never every group */
                 slot->groups = strtoull(q, &e, 10);
-                if (e == q || *e || q[0] == '-') rbad = 1;
+                if (errno == ERANGE || e == q || *e || q[0] < '0' || q[0] > '9') rbad = 1;
             }
             slot->kind = (uint8_t)lj_kv_word(v, "kind", lj_static_kind_words, LJ_STATIC_EMPTY);
             slot->link_seq = 0; slot->link_scene = 0;

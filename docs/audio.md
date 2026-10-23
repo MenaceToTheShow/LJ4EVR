@@ -80,8 +80,10 @@ percent, 0..255. LJ2 never documented its units, and LJ4EVR does not read LJ2's 
 
 ## Differences from LJ2
 
-- One process. *Pass Keypresses to LightJockey* is kept and saved, but keys always reach LightJockey's hotkeys. *Run
-  Minimized* is kept and saved, but the window opens from &Audio rather than at startup.
+- One process. *Pass Keypresses to LightJockey* works as in LJ2: off (the default), a hotkey pressed while the
+  Analyzer has focus stays with it; on, LightJockey's hotkeys act on it (ME-182). *Run Minimized* keeps the Analyzer
+  closed at startup; off, it opens with the show while audio is enabled (no minimized state).
+- The &Audio menu shows only while the Audio Analyzer is enabled in Hardware Setup (the DFM's `Visible = False`, ME-181).
 - *Stay On Top* takes effect the next time the window opens.
 - The device list's first entry is *Default device*, not *Microsoft Sound Mapper*.
 - Labels `Label2` / `Label3` of the form are hidden. No screenshot shows them in use.

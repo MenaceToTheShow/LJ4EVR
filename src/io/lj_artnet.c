@@ -13,7 +13,6 @@
 
 enum { LJ_ARTNET_POLL_SEND = 22,   /* ID .. OemLo (spec p.18-19); a node accepts >= 14 */
        LJ_ARTNET_RX_CAP = LJ_ARTNET_DMX_LEN + 1 };   /* one past the largest packet we read: a full buffer is a truncated datagram */
-#define LJ_ARTNET_MIN_INTERVAL_US 22727u   /* the sACN 44 Hz cap (ME-24), spec p.64 "always ... 44Hz" into a gateway */
 
 typedef struct { uint8_t slots[LJ_LINK_CH]; uint8_t seq, changed, active; uint64_t last_us; uint32_t in_window; } lj_artnet_link;
 
@@ -21,7 +20,7 @@ static struct {
     int open;
     lj_socket sock;
     lj_sacn_cfg cfg;
-    uint32_t own_ip, bcast;          /* the NIC address we bound / ignore, its directed broadcast (0 = no ArtPoll) */
+    uint32_t own_ip, bcast, mask;    /* the NIC address we bound / ignore, its directed broadcast (0 = no ArtPoll), its netmask (ME-176: replies only from that subnet) */
     lj_artnet_link l[LJ_LINKS];
     lj_artnet_node node[LJ_ARTNET_NODES]; int nnodes;
     uint64_t next_poll_us, window_us;
@@ -119,8 +118,7 @@ void lj_artnet_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
         if (v < 1 || v > LJ_ARTNET_ADDR_MAX) { lj_log("artnet: Hardware.Ini [ARTNET] %s=%d not 1..32767, using %d", key, v, i + 1); v = i + 1; }
         cfg->artnet_addr[i] = (uint16_t)v;   /* default link N -> Port-Address N: PROPOSAL rig W5-ART-4 */
     }
-    v = lj_ini_geti(ini, "ARTNET", "In", 0);
-    cfg->artnet_in = (uint16_t)(v < 0 || v > LJ_ARTNET_ADDR_MAX ? 0 : v);
+    cfg->artnet_in = 0;                                                 /* ME-178: runtime only, set from [DMXIN] by the app's DMX-in apply; never read */
 }
 
 void lj_artnet_cfg_save(lj_ini *ini, const lj_sacn_cfg *cfg)
@@ -132,7 +130,7 @@ void lj_artnet_cfg_save(lj_ini *ini, const lj_sacn_cfg *cfg)
         { if (snprintf(key, sizeof key, "Proto%d", i + 1) < 0) key[0] = 0; } lj_ini_seti(ini, "ARTNET", key, cfg->proto[i]);
         { if (snprintf(key, sizeof key, "Addr%d", i + 1) < 0) key[0] = 0; }  lj_ini_seti(ini, "ARTNET", key, cfg->artnet_addr[i]);
     }
-    lj_ini_seti(ini, "ARTNET", "In", cfg->artnet_in);
+    /* ME-178: no In key: artnet_in is derived from [DMXIN] at run time, and an older file's In is never read */
 }
 
 const char *lj_artnet_cfg_validate(const lj_sacn_cfg *cfg)
@@ -184,10 +182,11 @@ int lj_artnet_open(const lj_sacn_cfg *cfg)
     for (k = 0; k < nn; k++)
         if (cfg->nic_ipv4 ? nic[k].ipv4 == cfg->nic_ipv4 : (nic[k].up && !nic[k].loopback)) {   /* 0.0.0.0 = the first up interface (polled there, bound to any) */
             la.own_ip = nic[k].ipv4;
-            if (nic[k].mask) la.bcast = nic[k].ipv4 | ~nic[k].mask;   /* directed broadcast, never 255.255.255.255 (p.16) */
+            if (nic[k].mask) { la.bcast = nic[k].ipv4 | ~nic[k].mask; la.mask = nic[k].mask; }   /* directed broadcast, never 255.255.255.255 (p.16) */
             break;
         }
-    if (!la.bcast) lj_log("artnet: no netmask for the chosen interface: ArtPoll off, no node can subscribe");
+    if (!la.mask && la.own_ip >> 24 == 127) la.mask = 0xFF000000u;   /* a loopback alias (127.0.0.2) is not listed: its subnet is 127/8 (RFC 1122) */
+    if (!la.bcast) lj_log("artnet: no netmask for the chosen interface: ArtPoll off%s", la.mask ? "" : ", no node can subscribe");
     la.sock = lj_socket_udp(cfg->nic_ipv4, LJ_ARTNET_PORT, LJ_SOCK_BROADCAST);
     if (la.sock == LJ_SOCKET_BAD) {                                     /* W5-ART-5: another Art-Net program owns 6454; logged by the seam, shown in the status line */
         la.st.last_err = lj_socket_error();
@@ -219,17 +218,20 @@ void lj_artnet_feed(const uint8_t *pkt, size_t n, uint32_t src_ip, uint64_t now_
     int i, op = lj_artnet_opcode(pkt, n);
     if (op < 0 || (la.own_ip && src_ip == la.own_ip)) { la.st.discarded++; return; }   /* not Art-Net, or our own ArtPoll / ArtDmx */
     if (op == LJ_ARTNET_OP_POLLREPLY) {
+        int same = 0;
+        if (!la.mask || ((src_ip ^ la.own_ip) & la.mask) != 0) { la.st.discarded++; return; }   /* ME-176: off-subnet = a spoof that would make us a unicast reflector */
         if (lj_artnet_parse_reply(pkt, n, &nd) != 0) { la.st.discarded++; return; }
         nd.ip = src_ip;
         la.st.replies++;
-        for (i = 0; i < la.nnodes && (la.node[i].ip != src_ip || la.node[i].bind_index != nd.bind_index); i++) {}
+        for (i = 0; i < la.nnodes && (la.node[i].ip != src_ip || la.node[i].bind_index != nd.bind_index); i++) same += la.node[i].ip == src_ip;
         if (i == la.nnodes) {
-            if (la.nnodes == LJ_ARTNET_NODES) { la.st.discarded++; return; }   /* table full: the node waits for an expiry */
+            if (la.nnodes == LJ_ARTNET_NODES || same >= LJ_ARTNET_ROWS_PER_IP) { la.st.discarded++; return; }   /* table full: the node waits for an expiry; one host cannot fill it */
             la.nnodes++;
         }
         la.node[i] = nd;                                                /* missed = 0: heard */
     } else if (op == LJ_ARTNET_OP_DMX) {
         if (lj_artnet_parse_dmx(pkt, n, &pa, NULL, NULL, NULL) != 0) { la.st.discarded++; return; }
+        if (la.mask && ((src_ip ^ la.own_ip) & la.mask) != 0) { la.st.discarded++; return; }   /* ME-177: input only from the bound subnet */
         if (la.cfg.artnet_in && pa == la.cfg.artnet_in) lj_dmxin_post(LJ_DMXIN_ARTNET, pkt, n, src_ip, now_us);   /* W5-ART-IN: the UI thread parses it again */
     }
     la.st.nodes = (uint32_t)la.nnodes;
@@ -262,8 +264,8 @@ void lj_artnet_pump(uint64_t now_us)
     for (i = 0; i < LJ_LINKS; i++) {
         lj_artnet_link *l = &la.l[i];
         if (!l->active) continue;
-        if (!l->changed && now_us - l->last_us < LJ_ARTNET_KEEPALIVE_US) continue;
-        if (!la.cfg.unlock_rate && now_us - l->last_us < LJ_ARTNET_MIN_INTERVAL_US) continue;   /* ME-24, latest frame wins */
+        if (!l->changed && now_us - l->last_us < LJ_SACN_KEEPALIVE_US) continue;
+        if (!la.cfg.unlock_rate && now_us - l->last_us < LJ_SACN_MIN_INTERVAL_US) continue;   /* ME-24, latest frame wins */
         lj_artnet_pack_dmx(pkt, l->seq, (uint8_t)i /* Physical = link - 1, PROPOSAL rig W5-ART-1 */, la.cfg.artnet_addr[i], l->slots);
         for (j = sent = 0; j < la.nnodes; j++) {
             if (!lj_artnet_subscribed(&la.node[j], la.cfg.artnet_addr[i])) continue;

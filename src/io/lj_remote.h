@@ -60,6 +60,11 @@ enum lj_remote_q { LJ_REMQ_SMOKE_TIMER, LJ_REMQ_STATIC /* n 1..20, current page:
                    LJ_REMQ_SLOT /* n 1..12 enabled */, LJ_REMQ_BGSLOT /* n 1..5 enabled */, LJ_REMQ_CL_MANUAL /* the current list waits on a manual line */ };
 typedef int (*lj_remote_query_fn)(enum lj_remote_q q, int n);             /* 1 / 0, -1 unknown */
 void lj_remote_set_query(lj_remote_query_fn fn);
+/* ME-168: the set-style commands (132 1 x smoke timer, 135 slot, 136 BG slot) post the set form through this hook (the
+ * cue record / BG / smoke setter), never a toggle against the engine view, which lags one tick: two equal frames in one
+ * tick set twice, they never toggle twice. 0 done, -1 = state unknown (ignored). */
+typedef int (*lj_remote_setter_fn)(enum lj_remote_q q, int n, int on);
+void lj_remote_set_setter(lj_remote_setter_fn fn);
 enum { LJ_REMOTE_BAUDS = 7 };
 extern const uint32_t lj_remote_bauds[LJ_REMOTE_BAUDS];                   /* rgBaudRate of TRS232SettingsForm (LJ_RS232.exe): 2400 .. 57600 */
 typedef struct { uint8_t tcp_open, serial_open; uint16_t tcp_port; int conns; uint32_t bytes, frames, ignored, refused; } lj_remote_stats;

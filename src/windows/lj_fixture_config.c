@@ -1,7 +1,7 @@
 /* lj_fixture_config.c - see lj_fixture_config.h. Every OnXxx of TLINKCONFIGFORM3 is
  * bound (ME-16). Import Profile, Export All, Create Export File and Reload profile
  * data open lj_gs2_dialogs.c / run the app's reload (ME-31, W3); Print and the
- * Offline Visualizer exports log "Not available in LJ4EVR". W4 (dlg-config): Add Fixture(s),
+ * Offline Visualizer exports log LJ_NA_HINT. W4 (dlg-config): Add Fixture(s),
  * Calculate addresses, Find profile, Copy From Fixture / Clear Fixture Data (F44) and the
  * save-time Warnings (F41) open the CONFIG dialogs of lj_config_dialogs.c; the Fixture
  * Configuration prompts of [12 Q9] are raised here verbatim. */
@@ -28,7 +28,6 @@
 #define LJ_FC_TREE_MAX  640                 /* 201 leaves + at most 201 name folders + manufacturers */
 #define LJ_FC_TEXT      112                 /* tabs + manufacturer 31 / name 61 + ", " + mode 31 */
 #define LJ_FC_NOTE_LINES 64
-#define LJ_FC_NA        "Not available in LJ4EVR"
 
 typedef struct {
     lj_window *win;
@@ -131,7 +130,7 @@ static void notes_show(int id)
     int maxw = re ? re->w - 2 * 2 - 2 * 3 - LJ_SB_W : 0;         /* the memo's text column beside its scrollbar (MM_BORDER / MM_PADX of lj_w_memo.c) */
     char *s;
     fc.note_n = 0;
-    lj_str_copy(fc.note_buf, sizeof fc.note_buf, p && p->notes ? p->notes : (id >= 0 ? LJ_FC_NA : ""));
+    lj_str_copy(fc.note_buf, sizeof fc.note_buf, p && p->notes ? p->notes : (id >= 0 ? LJ_NA_HINT : ""));
     for (s = fc.note_buf; fc.note_n < LJ_FC_NOTE_LINES && *s; ) {
         char *nl = strchr(s, '\n'), *q, *brk = NULL;
         if (nl) *nl = 0;
@@ -147,7 +146,7 @@ static void notes_show(int id)
     }
     if (re) lj_w_memo_set_lines(re, fc.note_lines, fc.note_n);
     if (p) snprintf(fc.padr, sizeof fc.padr, "Profile uses %d DMX addresses", p->footprint);
-    else lj_str_copy(fc.padr, sizeof fc.padr, id >= 0 ? LJ_FC_NA : "");
+    else lj_str_copy(fc.padr, sizeof fc.padr, id >= 0 ? LJ_NA_HINT : "");
     lj_w_set_caption(find("pAdr"), fc.padr);
 }
 
@@ -357,7 +356,7 @@ static int fc_write(void)
 }
 
 /* ---- handlers (DFM names) ---- */
-static void na(lj_widget *w, void *ud) { (void)ud; lj_log("fixture config: %s: " LJ_FC_NA, w && w->name ? w->name : "menu"); }
+static void na(lj_widget *w, void *ud) { (void)ud; lj_log("fixture config: %s: " LJ_NA_HINT, w && w->name ? w->name : "menu"); }
 
 static void on_tree_change(lj_widget *w, void *ud)
 {
@@ -604,7 +603,7 @@ static void on_print(lj_widget *w, void *ud)                          /* M_Print
     const lj_menu_item_desc *it = lj_window_menu_item(fc.win);
     (void)w; (void)ud;
     if (it && it->name && !strcmp(it->name, "M_ExportConfig")) export_open();
-    else lj_log("fixture config: Print Configuration: " LJ_FC_NA);   /* ME-31: no printing path (docs/fidelity.md) */
+    else lj_log("fixture config: Print Configuration: " LJ_NA_HINT);   /* ME-31: no printing path (docs/fidelity.md) */
 }
 static void on_gs2(lj_widget *w, void *ud)                            /* ME-31: Import Profile, Export All, Create Export File, Reload profile data */
 {

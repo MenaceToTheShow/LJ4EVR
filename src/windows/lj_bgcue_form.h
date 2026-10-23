@@ -17,6 +17,7 @@ void       lj_bgcue_form_close(void);
 lj_window *lj_bgcue_form_get(void);
 void       lj_bgcue_form_refresh(void);                     /* the 100 ms hook: rows, buttons and the BG LED from ctx->view */
 void       lj_bgcue_form_bind_fns(void);                    /* Toggle BGCue control, Clear BGCue, Toggle BG Cue List, BGCue Toggle slot 1-5, All Slots Off/On */
+int        lj_bgcue_form_set_slot(int slot, int on);        /* ME-168: 1..5: LJ_CMD_BG_ON with b = on (the remote 136 set form); -1 out of range */
 void       lj_bgcue_form_toggle_slot(int slot);             /* 1..5: LJ_CMD_BG_ON with the inverse of the view's bg_enabled */
 int        lj_bgcue_form_row(int slot, char *dst, size_t cap);   /* 1..5: the LV1 row as shown, sub-items separated by '\t'; -1 out of range */
 lj_widget *lj_bgcue_form_slot_button(int slot);             /* 1..5, NULL when closed */

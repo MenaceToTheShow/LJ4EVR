@@ -50,7 +50,6 @@ static uint8_t sd_shown[LJ_WIN_COUNT];                          /* lj_win_show o
 static lj_ctx *C(void) { return lj_ctx_get(); }
 static lj_widget *in(enum lj_win id, const char *n) { return sd_win[id] ? lj_window_find(sd_win[id], n) : NULL; }
 static void enable(lj_widget *w, int on) { if (w && w->enabled != (unsigned)(on != 0)) { w->enabled = on != 0; lj_widget_invalidate(w); } }
-static int edit_int(lj_widget *w, int dflt) { const char *t = lj_w_edit_text(w); return t && strspn(t, " ") < strlen(t) ? atoi(t) : dflt; }
 static void set_int(lj_widget *w, const char *fmt, int v) { char b[16]; snprintf(b, sizeof b, fmt, v); lj_w_edit_set_text(w, b); }
 static void hook(enum lj_win id, const char *name, void (*fn)(lj_widget *w, int ev, void *ud), void *ud) { lj_widget *w = in(id, name); if (w) { w->on_event = fn; w->ud = ud; } }
 static void help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_help_viewer_topic(NULL); }   /* every Help item: the bundled viewer's index (W4-HELP) */
@@ -75,7 +74,7 @@ static void close_ev(lj_widget *w, void *ud) { lj_window *win = lj_window_of(w);
 static void ds_ok(lj_widget *w, void *ud)
 {
     lj_sequence *s = C()->show ? C()->show->current_seq : NULL;
-    int from = edit_int(in(DS, "eFrom"), 0), to = edit_int(in(DS, "eTo"), from);
+    int from = lj_w_edit_int(in(DS, "eFrom"), 0, 99999, 0), to = lj_w_edit_int(in(DS, "eTo"), 0, 99999, from);
     (void)w; (void)ud;
     if (s && from >= 1 && to >= 1) lj_seq_form_delete_range(from - 1, to - 1);
     lj_show_dlg_close(DS);
@@ -138,9 +137,9 @@ static void is_ok(lj_widget *w, void *ud)
 {
     int m = is_mode(), rc;
     (void)w; (void)ud;
-    if (m == 0) rc = lj_seq_form_insert_copies(edit_int(in(IS, "eSceneCount"), 1));
-    else if (m == 1) rc = lj_seq_form_insert_from(NULL, edit_int(in(IS, "eCurrentFrom"), 1) - 1, edit_int(in(IS, "eCurrentTo"), 1) - 1);
-    else rc = is_src ? lj_seq_form_insert_from(is_src, edit_int(in(IS, "ESeqFrom"), 1) - 1, edit_int(in(IS, "ESeqTo"), 1) - 1) : -1;
+    if (m == 0) rc = lj_seq_form_insert_copies(lj_w_edit_int(in(IS, "eSceneCount"), 0, 99999, 1));
+    else if (m == 1) rc = lj_seq_form_insert_from(NULL, lj_w_edit_int(in(IS, "eCurrentFrom"), 0, 99999, 1) - 1, lj_w_edit_int(in(IS, "eCurrentTo"), 0, 99999, 1) - 1);
+    else rc = is_src ? lj_seq_form_insert_from(is_src, lj_w_edit_int(in(IS, "ESeqFrom"), 0, 99999, 1) - 1, lj_w_edit_int(in(IS, "ESeqTo"), 0, 99999, 1) - 1) : -1;
     if (rc != 0) { lj_log("insert scenes: nothing inserted (mode %d)", m); return; }
     lj_show_dlg_close(IS);
 }
@@ -373,9 +372,9 @@ int lj_show_dlg_offset(lj_cuelist *cl, int family, int32_t delta_ms, int apply, 
 }
 static int32_t to_delta(void)
 {
-    if (to_family == LJ_CLF_PC) return lj_show_dlg_offset_ms(edit_int(in(TO, "ePCHours"), 0), edit_int(in(TO, "ePCMinutes"), 0), edit_int(in(TO, "ePCSeconds"), 0), 0, 100);
-    if (to_family == LJ_CLF_MP) return lj_show_dlg_offset_ms(edit_int(in(TO, "eMPHours"), 0), edit_int(in(TO, "eMPMinutes"), 0), edit_int(in(TO, "eMPSeconds"), 0), edit_int(in(TO, "eMPFrames"), 0), 100);   /* W5 media */
-    return lj_show_dlg_offset_ms(edit_int(in(TO, "eMIDIHours"), 0), edit_int(in(TO, "eMIDIMinutes"), 0), edit_int(in(TO, "eMIDISeconds"), 0), edit_int(in(TO, "eMIDIFrames"), 0), to_fps);
+    if (to_family == LJ_CLF_PC) return lj_show_dlg_offset_ms(lj_w_edit_int(in(TO, "ePCHours"), -99999, 99999, 0), lj_w_edit_int(in(TO, "ePCMinutes"), -99999, 99999, 0), lj_w_edit_int(in(TO, "ePCSeconds"), -99999, 99999, 0), 0, 100);
+    if (to_family == LJ_CLF_MP) return lj_show_dlg_offset_ms(lj_w_edit_int(in(TO, "eMPHours"), -99999, 99999, 0), lj_w_edit_int(in(TO, "eMPMinutes"), -99999, 99999, 0), lj_w_edit_int(in(TO, "eMPSeconds"), -99999, 99999, 0), lj_w_edit_int(in(TO, "eMPFrames"), -99999, 99999, 0), 100);   /* W5 media */
+    return lj_show_dlg_offset_ms(lj_w_edit_int(in(TO, "eMIDIHours"), -99999, 99999, 0), lj_w_edit_int(in(TO, "eMIDIMinutes"), -99999, 99999, 0), lj_w_edit_int(in(TO, "eMIDISeconds"), -99999, 99999, 0), lj_w_edit_int(in(TO, "eMIDIFrames"), -99999, 99999, 0), to_fps);
 }
 static void to_check(lj_widget *w, void *ud)   /* bCheck "Check Changes": exe 0x171224.. "Overflow/UnderFlow (" n " Lines)", "Offsets Ok", "No Lines to Check" */
 {
@@ -486,9 +485,8 @@ static void mo_open(void)
     static const lj_binding b[] = { { "bMirrorPanClick", mo_click, NULL }, { "bMirrorTiltClick", mo_click, NULL }, { "bSwapClick", mo_click, NULL },
         { "b360Click", lj_handler_noop, NULL } /* greyed below */, { "FormActivate", lj_handler_noop, NULL }, { "FormClose", close_ev, NULL },
         { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
-    lj_widget *w;
     if (!mk(MO, &lj_form_TMOVEMENTOPTIONSFORM, b)) return;
-    if ((w = in(MO, "b360")) != NULL) { w->enabled = 0; w->hint = LJ_CL_NOT_AVAILABLE; }   /* "only enabled if supported by the fixture profile" (H26 p137): no profile carries its pan range in degrees */
+    lj_widget_set_enabled(in(MO, "b360"), 0);   /* "only enabled if supported by the fixture profile" (H26 p137): no profile carries its pan range in degrees */
     mo_mv_seen = lj_ctl_window_get(LJ_CTL_MOVEMENT) != NULL;
 }
 

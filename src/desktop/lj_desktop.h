@@ -141,7 +141,7 @@ enum lj_desktop_action {
     LJ_ACT_GS2_EXPORT_ALL /* TLINKCONFIGFORM3 Export All: one .GS2 per user profile through lj_gs2_save (ME-31) */,
     LJ_ACT_FOLLOWSPOT_APPLY /* arg = setting 1..20 (0 = Clear Followspot): lj_followspot_apply into the current scene, the associated static, Intensity + Movement opened */,
     LJ_ACT_FIXTURE_APPLY /* arg = fixture index: Customize Fixture / Channel Configuration Ok: Config.dat + Setup.<slot>.pal saved, lj_engine_rebind */,
-    /* W4 (appended; bound by app/lj_app_w4.c to their W4 windows) */
+    /* W4 (appended; bound by app/lj_app_cuelist_host.c to their W4 windows) */
     LJ_ACT_DEBUG_WINDOW /* View > De&bugWindow (hidden) */, LJ_ACT_FINGERS_SETUP /* &Fingers > Fingers Setup */, LJ_ACT_DMX_IN /* C-L toolbar DMX In, Global Patch DMX-in source */,
     /* W5 (appended; bound by app/lj_app_io.c, docs/w5-contracts.md seam 10) */
     LJ_ACT_IO_APPLY /* arg = enum lj_io_part: a W5 settings window changed its ctx record: save Hardware.Ini, close-old / open-new that part */,

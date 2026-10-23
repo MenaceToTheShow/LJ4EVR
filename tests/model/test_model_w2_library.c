@@ -114,6 +114,22 @@ int lj_test_model_w2_library(int argc, char **argv)
     CHECK(lj_same_file(a, b));                                    /* the archive's good entry was not written over the existing cue either */
     remove(UD "/evil1.lj4b"); remove(UD "/evil2.lj4b"); remove(UD "/evil3.lj4b");
 
+    /* ME-171 (b): pass 1 refuses a file entry ending in a separator, and an entry whose library path is over
+     * LJ_PATH_CAP, before the good entry (written first by pass 2) lands */
+    CHECK(lj_bad_zip(UD "/evil4.lj4b", "Cues\\x\\") == 0);
+    CHECK(lj_library_restore(&rest, UD "/evil4.lj4b") == -1);
+    {
+        static char longname[480];
+        lj_library deep = rest;
+        size_t k;
+        memset(longname, 'a', sizeof longname - 1);
+        strcpy(deep.root, UD "/");
+        for (k = 0; k < 300; k++) strcat(deep.root, "./");                 /* a real folder, 620 bytes long */
+        CHECK(lj_bad_zip(UD "/evil5.lj4b", longname) == 0);
+        CHECK(lj_library_restore(&deep, UD "/evil5.lj4b") == -1 && !lj_exists(UD "/Cues/00000001.cue"));
+    }
+    remove(UD "/evil4.lj4b"); remove(UD "/evil5.lj4b");
+
     /* ME-14: [NEXT] Bg= high-water: 1 2 3, save 3, delete 3, the next is 4 */
     CHECK(lj_library_next_number(&lib, LJ_REC_BG) == 1 && lj_library_next_number(&lib, LJ_REC_BG) == 2);
     bgn = lj_library_next_number(&lib, LJ_REC_BG);

@@ -1,0 +1,14 @@
+Importing a LightJockey 2 backup
+
+A LightJockey 2 backup file (.LJB) can be brought into LJ4EVR. Open
+System > User Libraries > Restore and pick the .LJB file. The window
+shows the name the backup carries. Restore asks before it starts and
+always makes a NEW user library: no library you already have is
+changed.
+
+The import converts the records LJ4EVR can read and lists the rest.
+The list is shown in the window and saved as LJBImport.txt in the new
+library. Answer OK to the restart question to open the new library.
+
+A damaged file, or one whose entries would write outside the library,
+is refused with a message and nothing is written.

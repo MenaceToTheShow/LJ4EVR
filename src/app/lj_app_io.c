@@ -5,9 +5,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "core/lj_clock.h"
+#include "core/lj_fsinfo.h"
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
 #include "desktop/lj_desktop.h"
+#include "desktop/lj_main_window.h"
 #include "engine/lj_engine.h"
 #include "io/lj_artnet.h"
 #include "io/lj_dmxin.h"
@@ -73,8 +75,8 @@ static void lj_io_action(enum lj_desktop_action a, int arg, void *ud)
     case LJ_ACT_IO_APPLY:
         switch (arg) {
         case LJ_IO_OUTPUT: if (c->sacn) { lj_cmd s; memset(&s, 0, sizeof s); s.kind = LJ_CMD_SACN_CFG; s.sacn = c->sacn; lj_ctx_post(&s); lj_artnet_cfg_save(c->hardware_ini, c->sacn); } break;
-        case LJ_IO_DMXIN:  lj_dmxin_cfg_save(c->hardware_ini, &lj_io.dmxin); lj_io_dmxin_apply(); if (c->sacn) lj_artnet_cfg_save(c->hardware_ini, c->sacn); break;   /* W5 integrator 2: [ARTNET] In follows [DMXIN] on disk too */
-        case LJ_IO_AUDIO:  lj_audio_cfg_save(c->hardware_ini, &lj_io.audio); lj_io_audio_apply(); break;
+        case LJ_IO_DMXIN:  lj_dmxin_cfg_save(c->hardware_ini, &lj_io.dmxin); lj_io_dmxin_apply(); break;   /* ME-178: [ARTNET] is not written here (artnet_in is runtime only) */
+        case LJ_IO_AUDIO:  lj_audio_cfg_save(c->hardware_ini, &lj_io.audio); lj_io_audio_apply(); lj_main_menu_sync(lj_desktop_window()); break;   /* ME-181: &Audio shows with the analyzer */
         case LJ_IO_REMOTE: lj_remote_cfg_save(c->hardware_ini, &lj_io.remote); lj_remote_open(&lj_io.remote); break;
         case LJ_IO_EXTAPP: lj_extapp_cfg_save(c->hardware_ini, &lj_io.extapp); lj_extapp_open(&lj_io.extapp); break;
         default: return;
@@ -134,7 +136,7 @@ void lj_app_io_idle(uint64_t now_us)
     lj_ctx *c = lj_ctx_get();
     int k, trigs = 0;
     size_t n;
-    if (lj_dmxin_poll(now_us)) {                                     /* seam 2: the UI-owned frame into the S1 source, then the functions */
+    if ((k = lj_dmxin_poll(now_us)) != 0) {                          /* seam 2: the UI-owned frame into the S1 source */
         const lj_dmxin_frame *f = lj_dmxin_frame_get();
         lj_cmd cmd;
         memset(&cmd, 0, sizeof cmd);
@@ -143,8 +145,8 @@ void lj_app_io_idle(uint64_t now_us)
         memcpy(lj_io.in, f->out, sizeof lj_io.in);                   /* the engine reads lj_io.in at the drain, under the same lock */
         if (c->engine) lj_engine_cmd(c->engine, &cmd);
         lj_unlock();
-        lj_dmxin_functions(&lj_io.map, f->out, lj_io.dmxin.functions_off);
     }
+    lj_dmxin_functions_step(&lj_io.map, k, lj_io.dmxin.functions_off);   /* ME-167: a live frame only; once more on a functions_off change */
     for (k = 0; k < LJ_IO_PCM_PASSES && (n = lj_audio_poll(lj_io.pcm, LJ_IO_PCM)) > 0; k++)   /* seam 4 */
         trigs += lj_audio_analyze(&lj_io.audio_state, &lj_io.audio, lj_io.pcm, n, now_us);
     for (k = 0; k < trigs; k++) lj_io_post(LJ_CMD_TRIG, LJ_RUN_ALL, LJ_TRIG_AUDIO_EVENT);
@@ -170,10 +172,12 @@ void lj_app_io_stop(void)
 
 int lj_app_io_cl_media(void *ud, const lj_cl_line *l, uint64_t now_us)
 {
-    char err[160];
+    char err[160], full[LJ_PATH_CAP];
+    const lj_ctx *c = lj_ctx_get();
     (void)ud; (void)now_us;
     if (!l) return -1;
-    if (lj_media_cmd(&lj_io.media, lj_io.plat.media, l->cmd, l->param, l->param_ms, err, sizeof err) != 0) { lj_log("cue list: %s", err); return -1; }
+    if (l->cmd == LJ_CL_MP_LOAD_FILE && lj_fs_media_path(c->lib ? c->lib->root : NULL, l->param, full, sizeof full) != 0) { lj_log("cue list: %s", LJ_MEDIA_ERR_FORMAT); return -1; }   /* ME-169: relative = the library root */
+    if (lj_media_cmd(&lj_io.media, lj_io.plat.media, l->cmd, l->cmd == LJ_CL_MP_LOAD_FILE ? full : l->param, l->param_ms, err, sizeof err) != 0) { lj_log("cue list: %s", err); return -1; }
     if (l->cmd == LJ_CL_MP_START) lj_win_open(LJ_WIN_MEDIA_PLAYER);          /* media track: "Start the LightJockey Mediaplayer" */
     else if (l->cmd == LJ_CL_MP_CLOSE) lj_win_close(LJ_WIN_MEDIA_PLAYER);   /* "Close the LightJockey Mediaplayer" */
     return 0;

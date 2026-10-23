@@ -38,7 +38,7 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
-      - name: SDL3 tag from CMakeLists.txt
+      - name: SDL3 commit from CMakeLists.txt
         id: sdl
         run: echo "tag=$(grep -oE 'GIT_TAG +\S+' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v4
@@ -47,7 +47,7 @@ jobs:
           path: ${{ runner.temp }}/sdl3-src
           key: sdl3-src-${{ steps.sdl.outputs.tag }}
       - if: steps.sdl-cache.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch "${{ steps.sdl.outputs.tag }}" https://github.com/libsdl-org/SDL.git "$RUNNER_TEMP/sdl3-src"
+        run: git init -q "$RUNNER_TEMP/sdl3-src" && git -C "$RUNNER_TEMP/sdl3-src" fetch -q --depth 1 https://github.com/libsdl-org/SDL.git "${{ steps.sdl.outputs.tag }}" && git -C "$RUNNER_TEMP/sdl3-src" checkout -q FETCH_HEAD
       - name: NSIS
         shell: pwsh
         run: if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { choco install nsis -y --no-progress }
@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: brew install ninja
-      - name: SDL3 tag from CMakeLists.txt
+      - name: SDL3 commit from CMakeLists.txt
         id: sdl
         run: echo "tag=$(grep -oE 'GIT_TAG +\S+' CMakeLists.txt | awk '{print $2}')" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v4
@@ -105,7 +105,7 @@ jobs:
           path: ${{ runner.temp }}/sdl3-src
           key: sdl3-src-${{ steps.sdl.outputs.tag }}
       - if: steps.sdl-cache.outputs.cache-hit != 'true'
-        run: git clone --depth 1 --branch "${{ steps.sdl.outputs.tag }}" https://github.com/libsdl-org/SDL.git "$RUNNER_TEMP/sdl3-src"
+        run: git init -q "$RUNNER_TEMP/sdl3-src" && git -C "$RUNNER_TEMP/sdl3-src" fetch -q --depth 1 https://github.com/libsdl-org/SDL.git "${{ steps.sdl.outputs.tag }}" && git -C "$RUNNER_TEMP/sdl3-src" checkout -q FETCH_HEAD
       - run: cmake --preset release-mac -DFETCHCONTENT_SOURCE_DIR_SDL3="$RUNNER_TEMP/sdl3-src"
       - run: cmake --build --preset release-mac
       - run: ctest --preset release-mac

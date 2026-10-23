@@ -7,8 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "app/lj_app_seam.h"
-#include "app/lj_app_w3.h"
-#include "app/lj_app_w4.h"
+#include "app/lj_app_cuelist_host.h"
 #include "app/lj_app_io.h"
 #include "platform/sdl/lj_sdl_audio.h"
 #include "platform/sdl/lj_sdl_media.h"
@@ -254,7 +253,7 @@ static void lj_app_idle(void *ud)
     lj_app_midi_dispatch();                                            /* seam 2: MIDI events run on this thread */
     now = lj_clock_us();
     lj_app_cuelist_step(now);                                          /* W3: the cue list runs here, once per 10 ms wake, never in the engine (design 2.3 rule 4) */
-    lj_app_w4_idle(now);                                               /* W4: the LightCorder recorder samples frames here (UI thread, ME-2) */
+    lj_app_cuelist_host_idle(now);                                               /* W4: the LightCorder recorder samples frames here (UI thread, ME-2) */
     lj_app_io_idle(now);                                               /* W5: DMX-in, audio, remote, External Application, MediaPlayer (app/lj_app_io.c) */
     lj_app_seam_idle(now);
     if (now - lj_a.last_refresh >= 100000u) { lj_a.last_refresh = now; lj_app_refresh(); }   /* the 100 ms cadence [11 E24] */
@@ -487,8 +486,8 @@ int lj_app_main(int argc, char **argv)
 
     /* 7. prefs + MIDI + hotkey setup + the lj_fn rows that need the disk + the W2 actions (lj_app_seam.c), the W1 windows, Startup Options */
     lj_app_seam_start();
-    lj_app_w3_start();                                               /* W3: cue-list runner, editor record, reloads, the W3 actions (lj_app_w3.c) */
-    lj_app_w4_start();                                               /* W4: the actions that open W4 windows (lj_app_w4.c) */
+    lj_app_cuelist_host_start();                                               /* W3: cue-list runner, editor record, reloads, the W3 actions (lj_app_cuelist_host.c) */
+    lj_app_cuelist_host_windows_start();                                               /* W4: the actions that open W4 windows (lj_app_cuelist_host.c) */
     { lj_app_io_platform io; io.audio_list = lj_sdl_audio_list; io.audio_open = lj_sdl_audio_open; io.audio_close = lj_sdl_audio_close; io.media = lj_sdl_media_host();
       lj_app_io_set_platform(&io); }
     lj_app_io_start();                                               /* W5: the W5 records, cfg loads, opens only what Hardware.Ini enables (W5-X-OFF) */
@@ -533,7 +532,7 @@ out:
     c->engine = NULL;
     lj_unlock();
     lj_engine_destroy(engine);
-    lj_app_w3_stop();                                              /* the editor record and the shape override, now that no engine reads them */
+    lj_app_cuelist_host_stop();                                              /* the editor record and the shape override, now that no engine reads them */
     lj_lock(); lj_show_free(show); c->show = NULL; lj_unlock();
     if (!lj_a.no_save) { lj_app_save_ini(c->forms_ini, forms_path); lj_app_save_ini(c->main_ini, main_path); lj_app_save_ini(c->hardware_ini, hw_path); }
     lj_ini_free(c->forms_ini); lj_ini_free(c->main_ini); lj_ini_free(c->hardware_ini);

@@ -1,4 +1,4 @@
-/* test_uiscript_w3.c - the runnable check for the W3 desktop-app track (src/app/lj_app_w3.c, the W3 verbs of
+/* test_uiscript_w3.c - the runnable check for the W3 desktop-app track (src/app/lj_app_cuelist_host.c, the W3 verbs of
  * src/app/lj_uiscript.c, the ME-102 paths of src/app/lj_app_seam.c, the W3 rows of src/desktop): every new verb
  * parses and a bad line reports its number; every W3 menu leaf and C-L / follow spot toolbar button reaches a binding
  * (no "is not bound" / "no binding for" line); lj_app_cuelist_step counts its calls (the loop calls it once per idle
@@ -19,7 +19,8 @@
 #define LJ_MKDIR(p) mkdir(p, 0777)
 #endif
 #include "app/lj_app_seam.h"
-#include "app/lj_app_w3.h"
+#include "app/lj_app_cuelist_host.h"
+#include "app/lj_app_io.h"
 #include "app/lj_uiscript.h"
 #include "controls/lj_ctl.h"
 #include "controls/lj_ctl_movement.h"
@@ -177,7 +178,7 @@ int lj_test_uiscript_w3(int argc, char **argv)
     desk = lj_desktop_create();
     CHECK(desk != NULL);
     lj_app_seam_start();
-    lj_app_w3_start();
+    lj_app_cuelist_host_start();
     CHECK(c->cl != NULL && c->gm_edit != NULL && c->gm_shapes != NULL && c->gdc != NULL && show->current_cl != NULL);
 
     /* ---- 3. every W3 menu leaf / C-L and follow spot toolbar button has a binding ---- */
@@ -445,13 +446,23 @@ int lj_test_uiscript_w3(int argc, char **argv)
         tick(e, &t); tick(e, &t);
         CHECK(c->view.gm_cue_number == 0); }
 
+#ifdef LJ_SOURCE_DIR
+    /* ---- 9c. ME-175 / ME-181: the W5 entry points on a fresh Hardware.Ini (tests/ui/scripts/w5_entry_points.lj4s) ---- */
+    lj_app_io_set_platform(NULL);
+    lj_app_io_start();
+    {   char p[512];
+        snprintf(p, sizeof p, "%s/tests/ui/scripts/w5_entry_points.lj4s", LJ_SOURCE_DIR);
+        CHECK(run_script(p) == 0); }
+    lj_app_io_stop();
+#endif
+
     /* ---- teardown ---- */
     lj_win_close_all();
     lj_app_seam_stop();
     lj_fn_unbind_all();
     lj_lock(); lj_engine_bind(e, NULL); c->engine = NULL; lj_unlock();
     lj_engine_destroy(e);
-    lj_app_w3_stop();
+    lj_app_cuelist_host_stop();
     lj_desktop_destroy(desk);
     lj_lock(); lj_show_free(show); c->show = NULL; lj_unlock();
     lj_ini_free(c->main_ini); c->main_ini = NULL;

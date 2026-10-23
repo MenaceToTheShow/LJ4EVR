@@ -2,7 +2,7 @@
  * except that the library is ctx->lib and the view copy is ctx->view (the desktop LEDs, the cue and
  * master windows and the script read that one copy; w1-contracts seam 3). */
 #include "app/lj_app_seam.h"
-#include "app/lj_app_w3.h"
+#include "app/lj_app_cuelist_host.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +16,7 @@
 #include "desktop/lj_desktop.h"
 #include "engine/lj_engine.h"
 #include "fixlib/lj_profile.h"
+#include "io/lj_audio.h"
 #include "io/lj_fn.h"
 #include "io/lj_hotkeys.h"
 #include "io/lj_midi.h"
@@ -34,6 +35,7 @@
 #include "windows/lj_delete_files.h"
 #include "windows/lj_global_patch.h"
 #include "windows/lj_master_intensity.h"
+#include "windows/lj_media_form.h"
 #include "windows/lj_prefs.h"
 #include "windows/lj_snapshot.h"
 #include "windows/lj_striking_lamps.h"
@@ -454,7 +456,7 @@ void lj_app_midi_dispatch(void)
 {
     uint8_t m[3];
     while (lj_midi_poll(m)) {
-        if (m[0] == 0xF1) { lj_app_mtc_feed(m[1]); continue; }       /* W3: MTC quarter-frames feed the cue list's MIDI time code (lj_app_w3.c) */
+        if (m[0] == 0xF1) { lj_app_mtc_feed(m[1]); continue; }       /* W3: MTC quarter-frames feed the cue list's MIDI time code (lj_app_cuelist_host.c) */
         if (lj_ctx_get()->midi) lj_midi_dispatch(lj_ctx_get()->midi, m);   /* lj_fn_run on this (the UI) thread */
     }
 }
@@ -650,9 +652,19 @@ int lj_app_hotkey_setup(int setup)
     return 0;
 }
 
+int lj_app_key_passes(const lj_window *win)
+{
+    const lj_ctx *c = lj_ctx_get();
+    if (!win) return 1;
+    if (win == lj_win_get(LJ_WIN_AUDIO_ANALYZER)) return c->audio && c->audio->pass_keys;   /* Analyzer > Pass Keypresses to LightJockey */
+    if (win == lj_win_get(LJ_WIN_MEDIA_PLAYER)) return lj_media_form_keypass();             /* Options > Pass Keypresses */
+    return 1;
+}
+
 void lj_app_key(const lj_key_ev *ev, lj_window *win)
 {
     int id, in_dialog = 0;
+    if (!lj_app_key_passes(win)) return;                                  /* ME-182 (ME-17: no stub widget) */
     for (id = 0; win && id < LJ_WIN_COUNT; id++) if (lj_win_get((enum lj_win)id) == win) { in_dialog = lj_win_is_dialog((enum lj_win)id); break; }
     lj_desktop_key(ev, in_dialog);
 }
@@ -830,4 +842,4 @@ void lj_app_seam_idle(uint64_t now_us)
     lj_app_strike_idle(now_us);
 }
 
-/* W3: the lj_app.h W3 block (cue-list runner, reloads, follow spot) lives in lj_app_w3.c */
+/* W3: the lj_app.h W3 block (cue-list runner, reloads, follow spot) lives in lj_app_cuelist_host.c */

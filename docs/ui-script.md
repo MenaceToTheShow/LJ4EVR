@@ -125,7 +125,7 @@ Every W2 line is checked at load like the W1 verbs: unknown view fields, LED nam
 the first line runs (`tests/app/test_uiscript_w2.c`). The W2 walkthrough is
 `tests/ui/scripts/w2_acceptance.lj4s` (design 10 W2 acceptance, shots in `docs/screenshots/w2/`).
 
-## W3 verbs (contracts seat 2026-10-22; bodies by the desktop-app track in `src/app/lj_uiscript.c` + `src/app/lj_app_w3.c`)
+## W3 verbs (contracts seat 2026-10-22; bodies by the desktop-app track in `src/app/lj_uiscript.c` + `src/app/lj_app_cuelist_host.c`)
 
 Window names gain the W3 ids of `lj_win_id_name()`: `cuelist_form save_cuelist select_cuelist cl_set_cue_trig
 log_timecode genmacro_editor save_genmacro select_genmacro movemacro_editor delete_movemacro fan_out auto_delay
@@ -194,3 +194,15 @@ TSpinEdit (the value) and a TTrackBar (Position), so the Hardware Setup protocol
 faders can be asserted (a TRadioGroup still reads its caption). The W5 walkthrough is `tests/ui/scripts/w5_acc_*.lj4s`,
 run in a scratch userdata made by `tools/ref/w5_wire.py prep` with the loopback peers of the same tool
 (`docs/w5-integration.md`, "Acceptance").
+
+## W5 fix pass r1 (2026-10-23)
+
+| Verb | Effect |
+|---|---|
+| `assert_down <Form>.<widget> 0\|1` | a TSpeedButton's `Down` (the latched time-code button of the cue list, ME-181); any other kind fails the line |
+
+`assert_enabled` and `assert_visible` also take a menu item, `<Form>.<item name>` (for example `main.M_Audio`,
+`TCuelist2Form.CueMediaFile1`), when no widget of that name is drawn: they read the item's runtime state, since the
+item's own widget is non-visual. The `hotkey` verb follows the Pass Keypresses rule of the current window (ME-182): with
+the Audio Analyzer or the MediaPlayer current and its flag off, the key is dropped. `tests/ui/scripts/w5_entry_points.lj4s`
+(run headless by `test_uiscript_w3`, a CTest row) asserts every W5 entry point live and the CD / DA chrome greyed (ME-175).

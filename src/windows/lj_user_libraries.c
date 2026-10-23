@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "core/lj_log.h"
+#include "core/lj_fsinfo.h"
 #include "core/lj_str.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
@@ -17,7 +18,7 @@ enum { LJ_UL_MAX = 64 };   /* ponytail: libraries listed; raise when someone kee
 
 static struct {
     lj_window *win, *name_win; int close_pending, name_close_pending;
-    int n, row; char names[LJ_UL_MAX][LJ_LIBNAME_CAP]; char line[LJ_UL_MAX][LJ_PATH_CAP + LJ_LIBNAME_CAP + 8]; const char *items[LJ_UL_MAX];
+    int n, row; char names[LJ_UL_MAX][LJ_LIBNAME_CAP]; char line[LJ_UL_MAX][LJ_PATH_CAP + LJ_LIBNAME_CAP + 32]; const char *items[LJ_UL_MAX];
 } ul;
 
 static lj_widget *find(const char *n) { return lj_window_find(ul.win, n); }
@@ -42,8 +43,14 @@ static void rebuild(void)
     if (ul.n < 0) ul.n = 0;
     for (i = 0; i < ul.n; i++) {
         lj_library lib;
+        char dir[LJ_PATH_CAP], date[24];
+        size_t dn;
         if (lj_library_open(c->userdir, ul.names[i], &lib) != 0) lib.root[0] = 0;
-        snprintf(ul.line[i], sizeof ul.line[i], "%s\t%s\t", ul.names[i], lib.root);   /* ponytail: Date blank, no folder time without an OS call in windows/ */
+        lj_str_copy(dir, sizeof dir, lib.root);                            /* ME-163: the folder's mtime (stat refuses a trailing separator on Windows) */
+        dn = strlen(dir);
+        if (dn > 1 && (dir[dn - 1] == '/' || dir[dn - 1] == '\\')) dir[dn - 1] = 0;
+        if (!dir[0] || lj_fs_mtime_text(dir, date, sizeof date) != 0) date[0] = 0;
+        if (snprintf(ul.line[i], sizeof ul.line[i], "%s\t%s\t%s", ul.names[i], lib.root, date) < 0) ul.line[i][0] = 0;
         ul.items[i] = ul.line[i];
     }
     ul.row = -1;

@@ -4,6 +4,7 @@
  *    counts (one scene per Audio-Trigs / Trig).
  *  - the four W5 UI script verbs pass their load-time checks with good arguments and refuse bad ones; executing them
  *    never crashes whether or not the tracks' modules have landed. */
+#define _CRT_SECURE_NO_WARNINGS 1   /* fopen in the ME-167 row */
 #include <stdio.h>
 #include <string.h>
 #include "app/lj_app_io.h"
@@ -13,11 +14,16 @@
 #include "core/lj_lock.h"
 #include "desktop/lj_desktop.h"
 #include "engine/lj_engine.h"
+#include "io/lj_artnet.h"
 #include "io/lj_fn.h"
+#include "model/lj_library.h"
 
 static int fails;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
 #define TMP "test_uiscript_w5_tmp/"
+
+static int gm_calls;
+static void gm_rec(enum lj_fn fn, int edge, uint32_t prog, void *ud) { (void)fn; (void)edge; (void)prog; (void)ud; gm_calls++; }
 
 static int load_text(const char *text)
 {
@@ -46,11 +52,32 @@ int lj_test_uiscript_w5(int argc, char **argv)
     int i;
     (void)argc; (void)argv;
     if (!e) { printf("FAIL lj_engine_create\n"); return 1; }
+    static lj_library lib;
+    lj_artnet_stats ast;
+    char path[LJ_PATH_CAP];
+    FILE *fp;
     lj_fs_mkdir(TMP);
     memset(&sacn, 0, sizeof sacn);
+    /* ME-178: a Hardware.Ini with [ARTNET] In=10 and no [DMXIN] (an older or hand-edited file) binds no 6454 */
+    c->hardware_ini = lj_ini_new();
+    lj_ini_seti(c->hardware_ini, "ARTNET", "In", 10);
+    lj_artnet_cfg_load(c->hardware_ini, &sacn);
+    /* ME-167: a saved Master Intensity assignment with DMX-in off and no packet never runs (the GM stayed at 0: black stage) */
+    lj_library_delete(TMP, "W5");
+    CHECK(lj_library_create(TMP, "W5", &lib) == 0);
+    c->lib = &lib;
+    if (lj_library_path(&lib, "DmxIn", path, sizeof path) == 0) lj_fs_mkdir(path);
+    if (lj_library_path(&lib, "DmxIn/DmxIn.dat", path, sizeof path) == 0 && (fp = fopen(path, "wb")) != NULL) { fputs("LJ4 dmxin 1\nch=14 master_intensity 0\n", fp); fclose(fp); }
+    lj_fn_bind(LJ_FN_DMXIN_MASTER, gm_rec, NULL);
     c->engine = e; c->sacn = &sacn;
     lj_app_io_set_platform(NULL);
     lj_app_io_start();
+    CHECK(c->dmxin_map && c->dmxin_map->ch[13].fn == LJ_DIF_MASTER_INTENSITY);
+    for (i = 0; i < 5; i++) lj_app_io_idle(now + (uint64_t)i * 10000u);
+    CHECK(gm_calls == 0);
+    CHECK(sacn.artnet_in == 0 && lj_artnet_open(&sacn) == 0);
+    lj_artnet_stats_get(&ast); CHECK(ast.bound == 0);                            /* no "bound to ...:6454" */
+    lj_artnet_close();
     CHECK(c->dmxin && c->dmxin_map && c->audio && c->audio_state && c->remote && c->extapp && c->media);
     CHECK(!c->dmxin->enabled && !c->audio->enabled && !c->remote->tcp_on && !c->remote->serial_on);   /* W5-X-OFF on a fresh Hardware.Ini */
     CHECK(c->remote->tcp_ip == 0x7F000001u);                                                          /* bound to 127.0.0.1 unless the user picks an interface */
@@ -88,6 +115,7 @@ int lj_test_uiscript_w5(int argc, char **argv)
     run_text("remote 129 1 2\nquit\n");
 
     lj_app_io_stop();
+    lj_ini_free(c->hardware_ini); c->hardware_ini = NULL; c->lib = NULL;
     c->engine = NULL; c->sacn = NULL;
     lj_engine_destroy(e);
     printf("test_uiscript_w5: %s (%d failure%s)\n", fails ? "FAIL" : "PASS", fails, fails == 1 ? "" : "s");

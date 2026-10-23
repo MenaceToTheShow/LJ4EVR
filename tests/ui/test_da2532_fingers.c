@@ -131,6 +131,14 @@ static void test_2532(lj_library *lib)
     CHECK(lj_da2532_flash(1, 1) == 0 && hit.fn == LJ_FN_PROG_SEQ_FLASH && hit.num == 3 && hit.edge == 1);
     lj_da2532_set_bank(2);                                                         /* the release reaches the flashed value even after a bank change */
     CHECK(lj_da2532_flash(1, 0) == 0 && hit.fn == LJ_FN_PROG_SEQ_FLASH && hit.num == 3 && hit.edge == 0);
+    /* ME-171 (W4 LORD_ENGINE-8): bank A key 1 flashed, then bank B key 1 flashed: two held values, each released once */
+    CHECK(lj_da2532_assign(1, 2, 1, 1, LJ_DA_SEQ, 7) == 0);
+    lj_da2532_set_bank(1); CHECK(lj_da2532_flash(1, 1) == 0 && hit.num == 3 && hit.edge == 1);
+    lj_da2532_set_bank(2); CHECK(lj_da2532_flash(1, 1) == 0 && hit.num == 7 && hit.edge == 1);
+    CHECK(lj_da2532_flash(1, 0) == 0 && hit.num == 7 && hit.edge == 0);
+    CHECK(lj_da2532_flash(1, 0) == 0 && hit.num == 3 && hit.edge == 0);            /* was lost: bank B overwrote bank A's held value */
+    CHECK(lj_da2532_flash(1, 0) == -1);
+    lj_da2532_assign(1, 2, 1, 1, LJ_DA_NONE, 0);
     memset(&hit, 0, sizeof hit);
     CHECK(lj_da2532_latch(8, 1) == 0 && hit.fn == LJ_FN_BLACKOUT_RESTORE);
     CHECK(lj_da2532_latch(7, 1) == -1);                                            /* an empty key */

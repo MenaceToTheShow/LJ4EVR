@@ -37,7 +37,6 @@
 #include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_PE_CAPTION "Generic Fixture Profile"
-#define LJ_PE_NA      "Not available in LJ4EVR"
 
 /* ---- shared helpers ---- */
 typedef struct { char t[LJ_PROFILE_CH][112]; const char *p[LJ_PROFILE_CH]; int n; } lj_rows;

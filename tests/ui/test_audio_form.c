@@ -114,10 +114,16 @@ static int run_script(const char *text)
 static void test_menu_and_window(lj_window *desk)
 {
     lj_menu *m = desk ? lj_window_menus(desk) : NULL;
-    lj_menu_rt *rt;
+    lj_menu_rt *rt = NULL;
     lj_window *w;
     lj_ctx *c = lj_ctx_get();
-    CHECK(m && (rt = lj_menu_rt_named(m, "M_Audio")) != NULL && rt->visible);          /* &Audio shown (fidelity row 10) */
+    CHECK(m && (rt = lj_menu_rt_named(m, "M_Audio")) != NULL && rt->visible == (unsigned)(c->audio && c->audio->enabled));   /* ME-181: &Audio only while the analyzer is enabled */
+    if (c->audio && rt) {
+        uint8_t was = c->audio->enabled;
+        c->audio->enabled = 1; lj_main_menu_sync(desk); CHECK(rt->visible);
+        c->audio->enabled = 0; lj_main_menu_sync(desk); CHECK(!rt->visible);              /* DFM Visible = False: hidden on a fresh userdata */
+        c->audio->enabled = was; lj_main_menu_sync(desk);
+    }
     CHECK(m && (rt = lj_menu_rt_named(m, "M_RestartSound")) != NULL && rt->enabled);
     CHECK(m && (rt = lj_menu_rt_named(m, "M_StartDAPlayer")) != NULL && !rt->enabled); /* Digital Audio stays dropped (I5) */
     bad_log[0] = 0;

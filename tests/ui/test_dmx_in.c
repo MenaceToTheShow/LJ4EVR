@@ -44,7 +44,7 @@ static void sink(void *ud, const char *line)
     (void)ud;
     if (strstr(line, "no binding for handler") || strstr(line, "matches no DFM handler") || strstr(line, "unknown event") || strstr(line, "has no behaviour file")) { me16++; printf("  ME-16: %s\n", line); }
 }
-static void on_dmx_in(enum lj_desktop_action a, int arg, void *ud) { (void)a; (void)arg; (void)ud; lj_win_open(LJ_WIN_DMX_IN); }   /* = app/lj_app_w4.c */
+static void on_dmx_in(enum lj_desktop_action a, int arg, void *ud) { (void)a; (void)arg; (void)ud; lj_win_open(LJ_WIN_DMX_IN); }   /* = app/lj_app_cuelist_host.c */
 static int io_applied;
 static void on_io(enum lj_desktop_action a, int arg, void *ud) { (void)a; (void)ud; if (arg == LJ_IO_DMXIN) io_applied++; }
 
@@ -74,7 +74,7 @@ static int fire(lj_window *win, const char *item)   /* runs a menu item's bound 
     m->firing = NULL;
     return 0;
 }
-static int na(lj_window *win, const char *n) { lj_widget *w = win ? lj_window_find(win, n) : NULL; return w && !w->enabled && w->hint && strcmp(w->hint, LJ_DMX_IN_NA) == 0; }
+static int na(lj_window *win, const char *n) { lj_widget *w = win ? lj_window_find(win, n) : NULL; return w && !w->enabled && w->hint && strcmp(w->hint, LJ_NA_HINT) == 0; }
 static int live(lj_window *win, const char *n) { lj_widget *w = win ? lj_window_find(win, n) : NULL; return w && w->enabled; }
 static int menu_en(lj_window *win, const char *n) { lj_menu_rt *rt = win ? lj_menu_rt_named(lj_window_menus(win), n) : NULL; return rt ? (int)rt->enabled : -1; }
 static const char *row(lj_window *win, const char *lv, int r) { lj_widget *w = win ? lj_window_find(win, lv) : NULL; const lj_w_listview *l = (const lj_w_listview *)w; return l && r >= 0 && r < l->n ? l->items[r] : ""; }

@@ -39,7 +39,8 @@ static int  t_clock(void *ud, uint32_t *ms_of_day, uint32_t *day)
     return 0;
 }
 static int  t_media(void *ud, const lj_cl_line *l, uint64_t now) { (void)ud; (void)now; t_rec('m', l->cmd, 0); return 0; }   /* W5 media: MP lines execute (W5-MED-3) */
-static const lj_cl_host H = { NULL, t_load_cue, t_post, t_load_bg, t_flash, t_link, t_fn, t_exec, t_clear, t_timecode, t_clock, t_media };
+static int  t_cue_transparent(void *ud, uint32_t n) { (void)ud; return n >= 100; }   /* ME-171 (g): cues 100.. are transparent */
+static const lj_cl_host H = { NULL, t_load_cue, t_post, t_load_bg, t_flash, t_link, t_fn, t_exec, t_clear, t_timecode, t_clock, t_media, t_cue_transparent };
 static lj_cl_run R;
 static struct { int op, depth, max_depth, rc; } RE;   /* ME-108: a Hotkey Command that drives the runner it runs in */
 static void t_fn(void *ud, int fn)
@@ -296,6 +297,30 @@ static void t_ops(void)
             t_run_to(1000); CHECK(t_count('c') == (mode == LJ_CL_MTC_RESTART ? 2 : 1));   /* one edge, one action */
         }
         free(mt.lines);
+    }
+    /* ME-171 (f): three Wait Elapsed 1.00 s lines on a 15.6 ms wake (the default Windows timer): each counts from the
+     * previous one's due time, so line 3 fires at the first wake after 3000 ms (3010.8), not 3042 (the drift of two wakes) */
+    {
+        lj_cuelist we; uint32_t k;
+        memset(&we, 0, sizeof we); we.number = 8;
+        for (k = 0; k < 3; k++) { l = t_line(0, LJ_CL_WAIT_ELAPSED, 1000, 0, k + 1, 0); lj_cuelist_insert(&we, k, &l); }
+        t_reset(0);
+        CHECK(t_op(&we, LJ_CL_OP_TOP, 0) == 0);
+        while (T.now < 4000000u) { T.now += 15600u; lj_cl_run_step(&R, T.now, &H); }
+        CHECK(t_at('c', 1) == 1014 && t_at('c', 2) == 2012 && t_at('c', 3) == 3010);
+        if (t_at('c', 3) != 3010) printf("  Wait Elapsed fired at %ld %ld %ld ms\n", t_at('c', 1), t_at('c', 2), t_at('c', 3));
+        free(we.lines);
+    }
+    /* ME-171 (g): Run from line 6 with Automatic Cue update: line 3 (cue 3) is the last non-transparent cue before it,
+     * so only cues 3, 104, 105 load (not 1 and 2), then line 6's own cue 6 */
+    {
+        lj_cuelist ac; static const uint32_t cues[6] = { 1, 2, 3, 104, 105, 6 }; uint32_t k;
+        memset(&ac, 0, sizeof ac); ac.number = 9;
+        for (k = 0; k < 6; k++) { l = t_line(0, LJ_CL_NONE, 0, 0, cues[k], 0); lj_cuelist_insert(&ac, k, &l); }
+        t_reset(0); R.auto_cue_on_run = 1;
+        CHECK(t_op(&ac, LJ_CL_OP_RUN, 6) == 0);
+        CHECK(t_count('c') == 4 && T.ev[0].a == 3 && T.ev[1].a == 104 && T.ev[2].a == 105 && T.ev[3].a == 6 && t_at('c', 1) == -1);
+        free(ac.lines);
     }
     free(cl.lines); free(other.lines);
 }

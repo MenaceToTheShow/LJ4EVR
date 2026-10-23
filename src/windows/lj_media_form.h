@@ -11,6 +11,7 @@ void       lj_media_form_close(enum lj_win id);     /* saves the position, destr
 lj_window *lj_media_form_get(enum lj_win id);       /* NULL when closed */
 void       lj_media_form_refresh(enum lj_win id);   /* repaint from the module state / engine view copy; no-op when closed */
 void       lj_media_form_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
+int        lj_media_form_keypass(void);             /* ME-182: Options > Pass Keypresses to LightJockey (forms.ini [LJMEDIAPLAYER] KeyPass, default 1) */
 
 /* ---- media track (below this line) ---- */
 

@@ -47,7 +47,6 @@
 
 #define CD_FIRST LJ_WIN_ADD_FIXTURES
 #define CD_N     ((int)LJ_WIN_RGB_PALETTE - (int)LJ_WIN_ADD_FIXTURES + 1)
-#define CD_NA    "Not available in LJ4EVR"
 #define CD_ROWS  256
 
 static lj_window *cd_win[CD_N];
@@ -58,7 +57,7 @@ static lj_widget *cw(enum lj_win id, const char *n) { int i = cd_idx(id); return
 static void close_ev(lj_widget *w, int ev, void *ud) { (void)w; if (ev == LJ_WEV_CLICK) lj_config_dlg_close((enum lj_win)(intptr_t)ud); }
 static void btn(enum lj_win id, const char *name, void (*fn)(lj_widget *, int, void *)) { lj_widget *b = cw(id, name); if (b) { b->on_event = fn; b->ud = (void *)(intptr_t)id; } }
 static void set_en(lj_widget *w, int on) { if (w) { w->enabled = on != 0; lj_widget_invalidate(w); } }
-static void grey(lj_widget *w) { if (w) { w->enabled = 0; w->hint = CD_NA; lj_widget_invalidate(w); } }
+static void grey(lj_widget *w) { lj_widget_set_enabled(w, 0); }
 static int used(const lj_fixture *f) { return f->link != 0 || f->profile_id != 0 || f->kind == LJ_FX_GS2; }
 static int footprint(int f) { const lj_profile *p = lj_show_profile(show(), f); return p && p->footprint ? p->footprint : 1; }
 static const char *fx_text(int f, char *buf, size_t cap)   /* "Martin Ego X5" (fixtureinfo.gif): manufacturer, name, ", mode" */
@@ -269,19 +268,18 @@ static void memo_text(lj_widget *re, const char *text)
 
 /* ---- Add Fixture(s) (TAddFixForm2) [02 s2.3] ---- */
 #define AF LJ_WIN_ADD_FIXTURES
-static int edit_int(lj_widget *e, int dflt) { const char *t = e ? lj_w_edit_text(e) : NULL; char *end = NULL; long v; if (!t || !t[0]) return dflt; v = strtol(t, &end, 10); return !*end && v >= 0 && v <= 99999 ? (int)v : dflt; }
 static void edit_int_set(lj_widget *e, int v) { char t[12]; snprintf(t, sizeof t, "%d", v); if (e) lj_w_edit_set_text(e, t); }
 static void af_ud(lj_widget *w, void *ud)
 {
     lj_widget *e = cw(AF, strcmp(w->name, "UdButton1") == 0 ? "ENum" : "eStart");
-    int v = edit_int(e, 1) + lj_w_udbutton_delta(w);
+    int v = lj_w_edit_int(e, 0, 99999, 1) + lj_w_udbutton_delta(w);
     (void)ud;
     edit_int_set(e, v < 1 ? 1 : v > LJ_FIXTURES ? LJ_FIXTURES : v);
 }
 static void af_ok(lj_widget *w, void *ud)
 {
     lj_show *sh = show();
-    int n = edit_int(cw(AF, "ENum"), 1), f = edit_int(cw(AF, "eStart"), 1) - 1, over = lj_w_radiogroup_index(cw(AF, "GP1")) == 0, done = 0;
+    int n = lj_w_edit_int(cw(AF, "ENum"), 0, 99999, 1), f = lj_w_edit_int(cw(AF, "eStart"), 0, 99999, 1) - 1, over = lj_w_radiogroup_index(cw(AF, "GP1")) == 0, done = 0;
     (void)w; (void)ud;
     for (; sh && f >= 0 && f < LJ_FIXTURES && done < n; f++)
         if (over || !used(&sh->fixture[f])) { if (lj_fixture_config_put(f, (uint16_t)cd.profile) == 0) done++; }
@@ -517,7 +515,7 @@ static void fn_init(lj_window *win)
     const lj_profile *p = show() ? lj_show_profile(show(), cd_target) : NULL;
     (void)win;
     if (p && p->gs2_raw) lj_str_rtf_strip(plain, sizeof plain, (const char *)p->notes_rtf, sizeof p->notes_rtf);   /* the user's RTF stripped (design 5.3) */
-    else lj_str_copy(plain, sizeof plain, p && p->notes ? p->notes : CD_NA);   /* built-ins: our own rewritten notes (D2) */
+    else lj_str_copy(plain, sizeof plain, p && p->notes ? p->notes : LJ_NA_HINT);   /* built-ins: our own rewritten notes (D2) */
     memo_text(cw(FN, "Re1"), plain);
 }
 static void fs_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_config_dlg_close(FS); }
@@ -735,9 +733,10 @@ static void bp_init(lj_window *win)
 {
     static const char *const libs[1] = { "SYSTEM BITMAPS" };    /* selectbitmapdialog2.gif: the library list; ours is one */
     lj_window_set_caption(win, cd.pick_colors ? "Get Color Bitmap" : "Get Gobo/Effects Bitmap");   /* "Get Gobo/Effects Bitmap" (07 s12); the colour caption PROPOSAL */
-    static const lj_column_desc col = { .caption = "", .width = 270, .image_index = -1 };   /* LV1 is a vsIcon view; ours lists the tile names in one column (fidelity row) */
-    lj_w_listview *lv = (lj_w_listview *)cw(BP, "LV1");
-    if (lv && !lv->ncols) { lv->cols = &col; lv->ncols = 1; lv->col_w[0] = 270; lv->show_headers = 0; }
+    /* ME-160: LV1 has no ViewStyle in the DFM, so the VCL default vsIcon: the tiles with their names under them
+     * (selectbitmapdialog2.gif, three columns). Pitch 75 x 75 = SM_CXICONSPACING / SM_CYICONSPACING at 96 dpi; PROPOSAL rig
+     * ME-160 (the GIF is reduced, so no size is taken from it) */
+    lj_w_listview_icon_view(cw(BP, "LV1"), 75, 75);
     lj_w_listview_set_items(cw(BP, "LV2"), libs, 1);
     bp_fill(cd.pick_colors);
 }

@@ -307,6 +307,11 @@ static void test_libraries(lj_library *lib)
     CHECK(lj_library_create(TMP, "Gig", &tmp) == 0);
     w = lj_win_open(LJ_WIN_USER_LIBRARIES);
     CHECK(w && lj_user_libraries_select(lib_row("Gig")) == 0);
+    {   /* ME-163: the Date column carries the folder's modification time, "dd-mm-yyyy hh:mm" (PROPOSAL format, lj_fs_mtime_text) */
+        const lj_w_listview *lv = w ? (const lj_w_listview *)lj_window_find(w, "LV1") : NULL;
+        const char *it = lv && lib_row("Gig") >= 0 && lv->items ? lv->items[lib_row("Gig")] : "", *t2 = strrchr(it, '\t');
+        CHECK(t2 && strlen(t2 + 1) == 16 && t2[3] == '-' && t2[6] == '-' && t2[14] == ':');
+    }
     click(lj_window_find(w, "bRename"));
     CHECK(lj_win_get(LJ_WIN_RENAME_FILE) && strcmp(lj_window_caption(lj_win_get(LJ_WIN_RENAME_FILE))->text, "Rename File") == 0);
     CHECK(strcmp(lj_w_edit_text(in(LJ_WIN_RENAME_FILE, "eFileName")), "Gig") == 0);

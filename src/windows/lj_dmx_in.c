@@ -80,9 +80,8 @@ void lj_dmx_in_grey(lj_widget *root, const char *const *keep, int nkeep)
     if (!root) return;
     for (k = 0; k < nkeep && root->name; k++) kept |= strcmp(root->name, keep[k]) == 0;
     if (!kept && is_input(root->kind)) {
-        root->enabled = 0;
-        if (!root->hint && !(root->desc && root->desc->hint)) root->hint = LJ_DMX_IN_NA;   /* a DFM hint stays, shown or not (caption diff, F55) */
-        lj_widget_invalidate(root);
+        if (root->hint || (root->desc && root->desc->hint)) { root->enabled = 0; lj_widget_invalidate(root); }   /* a DFM hint stays, shown or not (caption diff, F55) */
+        else lj_widget_set_enabled(root, 0);
     }
     for (c = root->first; c; c = c->next) lj_dmx_in_grey(c, keep, nkeep);
 }
@@ -613,7 +612,7 @@ void lj_dmx_in_hs_build(lj_window *hs)
     memset(&di_hs, 0, sizeof di_hs);
     if (!use || !use->parent || !c->dmxin) return;
     di_hs.win = hs; di_hs.use = use;
-    use->enabled = 1; use->hint = NULL;
+    lj_widget_set_enabled(use, 1);
     lj_w_checkbox_set_checked(use, c->dmxin->enabled);
     memset(d, 0, sizeof d);   /* right of the checkbox, PROPOSAL rig W5-DMXIN-1 (LJ2 picked the input card's port here) */
     d[0].kind = LJ_K_SPINEDIT; d[0].name = "seDmxInUniverse"; d[0].left = use->x + use->w + 4; d[0].top = use->y - 2; d[0].width = 64; d[0].height = 22;

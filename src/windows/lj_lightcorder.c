@@ -36,7 +36,7 @@ static struct {
     lj_window *win, *save;
     lj_llf_rec rec;
     int recording, close_pending, save_close_pending;
-    uint64_t next_us, sec_us; uint32_t sec_frames;
+    uint64_t t0_tick, k, sec_us; uint32_t sec_frames; int started;   /* ME-164: sample k is engine tick t0_tick + k * TickHz / hz */
     lj_memo_edit user, sys;                       /* the two notes tabs (RichEdits are read-only widgets; lj_memo_edit types into them) */
     char last[LJ_PATH_CAP];
 } lc;
@@ -207,7 +207,7 @@ static void on_record(lj_widget *w, void *ud)
         lj_win_message(LJ_LC_CAPTION_WARNING, "Error pre-allocating allocating sufficient memory for lightcorder file- Recording canceled");   /* exe 0x1FFD94 */
         return;
     }
-    lc.recording = 1; lc.next_us = 0; lc.sec_frames = 0;
+    lc.recording = 1; lc.started = 0; lc.sec_frames = 0;
     set_recording_ui(1);
     lj_log("lightcorder: recording link %d, %d channels, %d Hz, %d MB card, compression %s", lc.rec.link, lc.rec.channels, lc.rec.hz, sel_card_mb(), lc.rec.compress ? "on" : "off");
 }
@@ -216,25 +216,25 @@ void lj_lightcorder_step(uint64_t now_us)
 {
     lj_ctx *ctx = lj_ctx_get();
     uint8_t slots[LJ_LINK_CH];
-    uint32_t period;
+    uint64_t tick = 0, den, due;
+    const lj_frame *fr;
     int rc;
     if (lc.save_close_pending) save_destroy();
     if (lc.close_pending) lj_lightcorder_close(LJ_WIN_LIGHTCORDER);
-    if (!lc.recording) return;
-    period = 1000000u / lc.rec.hz;
-    if (lc.next_us == 0) lc.next_us = lc.sec_us = now_us;
-    if (now_us < lc.next_us) return;
-    memset(slots, 0, sizeof slots);
-    if (ctx->engine) {                                                       /* seam 3: copy under the lock, write outside it */
-        const lj_frame *fr;
-        lj_lock();
-        fr = lj_engine_frame(ctx->engine);
-        if (fr) memcpy(slots, fr->out[lc.rec.link - 1], lc.rec.channels);
-        lj_unlock();
-    }
+    if (!lc.recording || !ctx->engine) return;
+    den = (uint64_t)lc.rec.hz * lj_engine_tick_us(ctx->engine);             /* ME-164: keyed on the engine tick, never the wall clock */
+    if (!den) return;
+    lj_lock();                                                               /* seam 3: copy under the lock, write outside it */
+    fr = lj_engine_frame(ctx->engine);
+    if (fr) tick = fr->tick_no;
+    if (!lc.started) { lc.started = 1; lc.t0_tick = tick; lc.k = 0; lc.sec_us = now_us; }
+    due = lc.t0_tick + lc.k * 1000000u / den;
+    if (fr && tick >= due) memcpy(slots, fr->out[lc.rec.link - 1], lc.rec.channels);
+    lj_unlock();
+    if (!fr || tick < due) return;
+    memset(slots + lc.rec.channels, 0, sizeof slots - lc.rec.channels);
     rc = lj_llf_rec_push(&lc.rec, slots);
-    lc.next_us += period;
-    if (now_us > lc.next_us + period) lc.next_us = now_us + period;          /* one sample per pass, no catch-up burst (design 3.1's rule) */
+    do lc.k++; while (lc.t0_tick + lc.k * 1000000u / den <= tick);          /* each sample tick at most once; one the UI missed is skipped (no burst) */
     if (rc == 0) lc.sec_frames++;
     if (now_us - lc.sec_us >= 1000000u) {                                     /* ME-24: per-second counts while recording */
         lj_log("lightcorder: %u frames/s, tick %u us, sACN %u %u %u %u packets/s", (unsigned)lc.sec_frames, (unsigned)(ctx->engine ? lj_engine_tick_us(ctx->engine) : 0),

@@ -20,8 +20,8 @@ void       lj_main_menu_apply(lj_window *win);                   /* the ME-29 ta
 void       lj_main_menu_sync(lj_window *win);                    /* check marks from the toolbar / hotkey / option state (parent-item OnClicks call it) */
 
 /* The table, exported for tests/ui/test_desktop.c. */
-typedef struct { const char *name; uint8_t visible; const char *why; } lj_main_top_rule;   /* visible: 0 hidden, 1 shown, 2 = shown when a generic fixture is configured */
-typedef struct { const char *name; const char *hint; } lj_main_inert_leaf;               /* greyed, hint "Not available in LJ4EVR" */
+typedef struct { const char *name; uint8_t visible; const char *why; } lj_main_top_rule;   /* visible: 0 hidden, 1 shown, 2 = shown when a generic fixture is configured, 3 = while the Audio Analyzer is enabled (ME-181) */
+typedef struct { const char *name; const char *hint; } lj_main_inert_leaf;               /* greyed, hint LJ_NA_HINT */
 const lj_main_top_rule   *lj_main_menu_top_table(int *n);
 const lj_main_inert_leaf *lj_main_menu_inert_table(int *n);
 const char *lj_main_menu_removed_item(void);                     /* "Offlinebar1" (D12) */

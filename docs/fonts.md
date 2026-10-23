@@ -17,7 +17,7 @@ Delphi in 1999-2005. Numbers are facts and are not copyrightable; the pixels are
 |---|---|---|---|---|
 | 1 | (frozen, ME-53) | `reference/.../dfm_text/*.dfm.txt` (208 forms) | `tests/fonts/widths.tsv` (826 AutoSize `TLabel` rows), `tests/fonts/font_census.tsv` (19 fonts) | done once in W0 by `widthcorpus.py`, deleted in W4 track 0; the two files are frozen (`docs/generated-files.md`) |
 | 2 | `tools/fontharvest.c` | the census | `tests/fonts/advances_<name>.tsv` (17 files) | developer, Windows + GDI only, never CI |
-| 3 | `tools/fitfont.py` | `widths.tsv` alone | fitted advances vs the harvest | developer cross-check |
+| 3 | (deleted, ME-171 (e)) | - | - | `fitfont.py` was a one-off cross-check of the harvest; it was removed in the W5 fix pass, and `font_corpus` (step 6) is the check that stays |
 | 4 | `art/fonts/<name>.txt` | a human and the advances | pixel art (`FORMAT.md`) | drawing |
 | 5 | `tools/fontpack.py` | the sheets + advances | `src/gfx/lj_fonts_gen.c` | developer; CI runs `--check` |
 | 6 | `lj4evr_tests font_corpus`, `font_cells` | `widths.tsv`, the packed fonts | 0 mismatches | CI |
@@ -71,9 +71,9 @@ Delphi's `TLabel.AutoSize` measures, adds `tmOverhang` (1) once more per string.
 harvest carries `overhang` in its header, the sheets carry it in theirs, and
 `lj_text_width()` must add it (`lj_font.overhang`). TrueType faces (Arial, Arial Black)
 have a real bold and overhang 0. `tools/fontharvest.c` asserts the rule with
-`DrawText DT_CALCRECT` for every face; `fitfont.py` reproduces all 72 determinable
-`sans13` advances and all 60 `sans13b` advances from the corpus alone once the overhang
-is subtracted.
+`DrawText DT_CALCRECT` for every face; the deleted `fitfont.py` cross-check reproduced all 72
+determinable `sans13` advances and all 60 `sans13b` advances from the corpus alone once the
+overhang was subtracted (W0 record).
 
 ## Redrawing a glyph
 
@@ -92,7 +92,7 @@ Only on Windows, only when a new face appears in the census:
     (font_census.tsv is frozen, ME-53: add the new face's row by hand first)
     cl /nologo /W4 /WX /permissive- /utf-8 /std:c11 /D_CRT_SECURE_NO_WARNINGS tools\fontharvest.c gdi32.lib user32.lib
     fontharvest.exe tests\fonts\font_census.tsv tests\fonts
-    python -I tools/fitfont.py                       # sans13 cross-check, expect 72 / 72
+    build-msvc\Release\lj4evr_tests.exe font_corpus   # 0 mismatches against widths.tsv
 
 The harvest is deterministic for a given Windows font set; a different result on another
 PC means a different font version, and the committed numbers win (they match the DFMs).

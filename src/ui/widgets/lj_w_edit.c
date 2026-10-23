@@ -8,6 +8,8 @@
 #include "ui/widgets/lj_widgets_basic.h"
 
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 #include "core/lj_str.h"
 #include "gfx/lj_draw.h"
 
@@ -203,6 +205,18 @@ const lj_widget_vt lj_w_edit_vt = { paint, mouse, key, NULL, NULL };
 const char *lj_w_edit_text(const lj_widget *w)
 {
     return w && (w->kind == LJ_K_EDIT || w->kind == LJ_K_NUMEDIT || w->kind == LJ_K_MASKEDIT) ? ((const lj_w_edit *)w)->text : NULL;
+}
+
+int lj_w_edit_int(const lj_widget *w, int lo, int hi, int dflt)
+{
+    const char *t = lj_w_edit_text(w);
+    char *end;
+    long v;
+    if (!t) return dflt;
+    errno = 0;
+    v = strtol(t, &end, 10);
+    while (*end == ' ') end++;
+    return end != t && !*end && errno != ERANGE && v >= lo && v <= hi ? (int)v : dflt;
 }
 
 int lj_w_edit_set_text(lj_widget *w, const char *s)

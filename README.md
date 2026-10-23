@@ -73,8 +73,7 @@ protocol, External Application string output and the LJ MediaPlayer. It still le
 - video: SDL3 decodes WAV and nothing else, and no codec library is added, so the MediaPlayer plays WAV sound files
   only and its video options stay greyed;
 - the Global Patch per-channel "Use / Ignore DMX In Enable" items, which need a per-channel flag in the patch record
-  and an engine rule;
-- one container reader shared by `.LJB` and `.Udf`: `.Udf` keeps its own W3 reader (`fuzz_udf`).
+  and an engine rule.
 
 ## Docs
 

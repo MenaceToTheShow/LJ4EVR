@@ -6,7 +6,8 @@
  * --selftest proves equals the screen pixel for pixel. */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen/sscanf under /W4 /WX on MSVC (as gfx/lj_bmp.c) */
 #include "app/lj_uiscript.h"
-#include "app/lj_app_w3.h"
+#include "app/lj_app_cuelist_host.h"
+#include "app/lj_app_seam.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -51,7 +52,8 @@ enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLC
                   /* W3 (appended; assert_pos keeps its W1 row: a fixture number as the first word is the W3 form) */
                   LJ_US_CL_LOAD, LJ_US_CL_GOTO, LJ_US_CL_EXECUTE, LJ_US_CL_ASSERT_LINE, LJ_US_GS2_IMPORT, LJ_US_ASSERT_PROMPT, LJ_US_MM_SET,
                   /* W4 (appended) */ LJ_US_DUMP_CAPTIONS,
-                  /* W5 (appended) */ LJ_US_SACN_IN, LJ_US_ARTNET_IN, LJ_US_AUDIO_INJECT, LJ_US_REMOTE, LJ_US_VERBS };
+                  /* W5 (appended) */ LJ_US_SACN_IN, LJ_US_ARTNET_IN, LJ_US_AUDIO_INJECT, LJ_US_REMOTE,
+                  /* W5 fix pass (appended) */ LJ_US_ASSERT_DOWN, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
     { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
@@ -63,7 +65,9 @@ static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ
     /* W4 (appended; docs/ui-script.md "W4 verbs") */
     { "dump_captions", 1, 1 },
     /* W5 (appended; docs/ui-script.md "W5 verbs") */
-    { "sacn_in", 2, 6 }, { "artnet_in", 2, 6 }, { "audio_inject", 1, 2 }, { "remote", 1, 6 } };   /* assert_view gains W2 field names inside its W1 row */
+    { "sacn_in", 2, 6 }, { "artnet_in", 2, 6 }, { "audio_inject", 1, 2 }, { "remote", 1, 6 },
+    /* W5 fix pass (appended): a TSpeedButton's Down (ME-181) */
+    { "assert_down", 2, 2 } };   /* assert_view gains W2 field names inside its W1 row */
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -221,7 +225,7 @@ static const char *lj_us_check(const lj_us_stmt *st)
     case LJ_US_WAIT:
         if (lj_us_int(st->arg[0], &v) || v < 0) return "wait takes milliseconds";
         break;
-    case LJ_US_ASSERT_TEXT: case LJ_US_ASSERT_ENABLED: case LJ_US_ASSERT_VISIBLE:
+    case LJ_US_ASSERT_TEXT: case LJ_US_ASSERT_ENABLED: case LJ_US_ASSERT_VISIBLE: case LJ_US_ASSERT_DOWN:
         if (!strchr(st->arg[0], '.')) return "expected <Form>.<widget>";
         if (st->verb != LJ_US_ASSERT_TEXT && strcmp(st->arg[1], "0") != 0 && strcmp(st->arg[1], "1") != 0) return "expected 0 or 1";
         break;
@@ -514,6 +518,17 @@ static int lj_us_menu_click(char *spec)
 }
 
 /* <Form>.<item> names a menu item (main or popup) and no widget: its caption (the TAction's, resolved by dfm2c), for assert_text (W2: the Statics 2 popup's duplicated items). */
+static lj_menu_rt *lj_us_menu_rt(char *spec)   /* <Form>.<menu item> when no widget of that name is drawn */
+{
+    char *dot = strchr(spec, '.');
+    lj_window *win;
+    lj_menu *m;
+    *dot = 0; win = lj_us.host.resolve ? lj_us.host.resolve(lj_us.host.ud, spec) : lj_uiscript_resolve_default(spec); *dot = '.';
+    if (!win || strchr(dot + 1, '.')) return NULL;
+    m = lj_window_menus(win);
+    return m ? lj_menu_rt_named(m, dot + 1) : NULL;
+}
+
 static const char *lj_us_menu_caption(char *spec)
 {
     char *dot = strchr(spec, '.');
@@ -771,6 +786,7 @@ static int lj_us_exec_w2(lj_us_stmt *st)
         lj_us_vk(st->arg[1], &v, &s, &c, &a);
         memset(&ev, 0, sizeof ev);
         ev.key = v; ev.shift = s ? 1u : 0u; ev.ctrl = c ? 1u : 0u; ev.alt = a ? 1u : 0u;
+        if (!lj_app_key_passes(lj_us_cur())) return 0;           /* ME-182: the Analyzer / MediaPlayer with its pass flag off keeps the key */
         ev.type = LJ_EV_KEY_DOWN; lj_desktop_key(&ev, 0);    /* as with the Sequence window focused: no dialog gate */
         ev.type = LJ_EV_KEY_UP;   lj_desktop_key(&ev, 0);
         return 0;
@@ -945,8 +961,8 @@ static int lj_us_exec_w5(const lj_us_stmt *st)
             memcpy(cfg.cid, cid, sizeof cid);
             len = lj_sacn_pack_data(pkt, &cfg, (uint16_t)v, (uint8_t)lj_us.line, 0, slots) == 0 ? LJ_SACN_DATA_LEN : -1;
         } else len = lj_artnet_pack_dmx(pkt, (uint8_t)(lj_us.line % 255 + 1), 0, (uint16_t)v, slots);
-        if (len < 0) { lj_us_failf(lj_us.line, "%s: cannot build the packet (pending: artnet track)", st->verb == LJ_US_SACN_IN ? "sacn_in" : "artnet_in"); return -1; }
-        if (lj_dmxin_rx(st->verb == LJ_US_SACN_IN ? LJ_DMXIN_SACN : LJ_DMXIN_ARTNET, pkt, (size_t)len, 0x7F000002u, lj_clock_us()) != 0) { lj_us_failf(lj_us.line, "%s", "packet discarded by the DMX-in receiver (DMX-in off, another universe, or pending: dmxin track)"); return -1; }
+        if (len < 0) { lj_us_failf(lj_us.line, "%s: cannot build the packet", st->verb == LJ_US_SACN_IN ? "sacn_in" : "artnet_in"); return -1; }
+        if (lj_dmxin_rx(st->verb == LJ_US_SACN_IN ? LJ_DMXIN_SACN : LJ_DMXIN_ARTNET, pkt, (size_t)len, 0x7F000002u, lj_clock_us()) != 0) { lj_us_failf(lj_us.line, "%s", "packet discarded by the DMX-in receiver (DMX-in off or another universe)"); return -1; }
         return 0;   /* the next idle pass's lj_dmxin_poll merges it and posts LJ_CMD_DMX_IN */
     case LJ_US_AUDIO_INJECT:
         lj_us_int(st->arg[0], &v);
@@ -957,7 +973,7 @@ static int lj_us_exec_w5(const lj_us_stmt *st)
         return 0;
     case LJ_US_REMOTE:
         for (i = 0; i < st->nargs; i++) { lj_us_int(st->arg[i], &v); bytes[i] = (uint8_t)v; }
-        if (lj_remote_inject(bytes, (size_t)st->nargs, lj_clock_us()) < 0) { lj_us_failf(lj_us.line, "%s", "remote: not executed (pending: remote track)"); return -1; }
+        if (lj_remote_inject(bytes, (size_t)st->nargs, lj_clock_us()) < 0) { lj_us_failf(lj_us.line, "%s", "remote: not executed"); return -1; }
         return 0;
     default:
         return -1;
@@ -1010,9 +1026,15 @@ static int lj_us_exec(lj_us_stmt *st)
         return lj_us_assert_eq(st->arg[0], lj_us_text_of(w, row, col), st->arg[1]);
     case LJ_US_ASSERT_ENABLED:
     case LJ_US_ASSERT_VISIBLE:
+        {   lj_menu_rt *rt = lj_us_menu_rt(st->arg[0]);                          /* a menu item: its runtime state (the item widget is non-visual) */
+            if (rt) return lj_us_assert_eq(st->arg[0], (st->verb == LJ_US_ASSERT_ENABLED ? rt->enabled : rt->visible) ? "1" : "0", st->arg[1]); }
         if (!(w = lj_us_widget(st->arg[0], &win, NULL, NULL))) return -1;
         k = st->verb == LJ_US_ASSERT_ENABLED ? (int)w->enabled : (int)w->visible;
         return lj_us_assert_eq(st->arg[0], k ? "1" : "0", st->arg[1]);
+    case LJ_US_ASSERT_DOWN:
+        if (!(w = lj_us_widget(st->arg[0], &win, NULL, NULL))) return -1;
+        if (w->kind != LJ_K_SPEEDBUTTON) { lj_us_failf(lj_us.line, "%s is not a TSpeedButton", st->arg[0]); return -1; }
+        return lj_us_assert_eq(st->arg[0], lj_w_speedbutton_down(w) ? "1" : "0", st->arg[1]);
     case LJ_US_ASSERT_FRAME: return lj_us_assert_frame(st);
     case LJ_US_ASSERT_VIEW:  return lj_us_assert_view(st);
     case LJ_US_ASSERT_FILE:

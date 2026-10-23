@@ -3,7 +3,7 @@
  * the line states the runner publishes (ctx->cl: last executed gray, next blue [RN v2.6 b7]; load_error red, design 8.5),
  * the transport through LJ_ACT_CUELIST_OP, the ListPop / ActionList commands, the eight recent-command buttons, and the
  * TclEditPanels page of the selected line reparented into pEdit as LJ2 does (the holder form is never shown). The CD / DA
- * rows, menu items and time-code buttons stay verbatim, greyed, hint LJ_CL_NOT_AVAILABLE (design 8.5, ME-11); the MP rows,
+ * rows, menu items and time-code buttons stay verbatim, greyed, hint LJ_NA_HINT (design 8.5, ME-11); the MP rows,
  * sbMPTime and the Mediaplayer Offset / Sort items are live from W5 (io/lj_media.h, docs/media.md). The list
  * is "locked while active" [03 s6.1]: every edit is refused while the runner is not IDLE. The cue list runs in the app
  * (app/lj_cuelist_run.h); this file never steps it. */
@@ -341,7 +341,10 @@ int lj_cuelist_form_set_mp_file(uint32_t line, const char *path)   /* the picked
     lj_cl_line *l = running() ? NULL : line_of(line);
     if (!l || l->cmd != LJ_CL_MP_LOAD_FILE || !path) return -1;
     lj_str_copy(l->param, sizeof l->param, path);
-    l->load_error = (uint8_t)!lj_fs_exists(path);                                  /* red again only when the file is not there */
+    {   char full[LJ_PATH_CAP];                                                    /* ME-169: refused before any file call; relative = the library root */
+        const lj_library *lib = lj_ctx_get()->lib;
+        l->load_error = (uint8_t)(lj_fs_media_path(lib ? lib->root : NULL, path, full, sizeof full) != 0 || !lj_fs_exists(full));   /* red when refused or not there */
+    }
     if (line == s.shown_line) fill_edit();
     modified();
     return 0;
@@ -473,9 +476,8 @@ void lj_cuelist_form_refresh(void)
         snprintf(nm, sizeof nm, "sbCMD%d", i + 1);
         if ((b = lj_window_find(s.win, nm)) == NULL) continue;
         lj_w_set_caption(b, s.recent[i] ? lj_cl_cmd_caption[s.recent[i]] : "");
-        b->enabled = s.recent[i] && !lj_cl_cmd_inert(s.recent[i]) && !run;
-        b->hint = s.recent[i] && lj_cl_cmd_inert(s.recent[i]) ? LJ_CL_NOT_AVAILABLE : NULL;
-        lj_widget_invalidate(b);
+        lj_widget_set_enabled(b, !(s.recent[i] && lj_cl_cmd_inert(s.recent[i])));   /* CD / DA: the hint */
+        if (!s.recent[i] || run) b->enabled = 0;                                     /* empty or running: greyed, no hint */
     }
     for (i = 0; i < LJ_COUNT_OF(cl_edit_items); i++) lj_menu_set_enabled(m, cl_edit_items[i], !run);
     for (i = 0; i < LJ_COUNT_OF(cl_inert_items); i++) lj_menu_set_enabled(m, cl_inert_items[i], 0);
@@ -529,12 +531,14 @@ static void on_tc(lj_widget *w, void *ud)   /* sbTimeCodeMouseUp: the shown time
         s.tc_src = i;
         if (lj_ctx_get()->forms_ini) lj_ini_seti(lj_ctx_get()->forms_ini, CL_SEC, "TCSource", i);   /* ours, PROPOSAL key */
     }
-    lj_w_speedbutton_set_down(lj_window_find(s.win, cl_tc_btn[s.tc_src]), 1);
+    if (!w || !w->name || strcmp(w->name, cl_tc_btn[s.tc_src]) != 0)            /* ME-181: the click's own toggle (after MouseUp, as VCL) latches the clicked */
+        lj_w_speedbutton_set_down(lj_window_find(s.win, cl_tc_btn[s.tc_src]), 1);   /* button; pre-setting it here made that toggle raise it again */
     op(LJ_CL_OP_TC_SRC, (uint32_t)s.tc_src);
     lj_cuelist_form_refresh();
 }
 /* sbMPTimeMouseUp: the media time code shown, and the LJ MediaPlayer opened ("To open the LightJockey Mediaplayer, click
- * [mediaplayericon] in the cue list control", H2.100; the button carries that icon: PROPOSAL rig 05 s8.1) */
+ * [mediaplayericon] in the cue list control", H2.100). ME-183: the DFM carries no glyph for the button; it draws our own
+ * media glyph (art/glyphs/media.txt, tools/glyphmap.tsv row TCUELIST2FORM sbMPTime), PROPOSAL rig 05 s8.1 */
 static void on_tc_mp(lj_widget *w, void *ud) { on_tc(w, ud); lj_win_open(LJ_WIN_MEDIA_PLAYER); }
 static void on_log(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_LOG_TIMECODE); }
 static void on_add(lj_widget *w, void *ud)   /* sbMouseDown of Add / Insert / Delete: right-click on Add / Insert = 10 lines [03 s6.2] */
@@ -807,7 +811,7 @@ lj_window *lj_cuelist_form_open(void)
         for (i = 0; m && i < m->nrt; i++) if (m->rt[i].item->action && !m->rt[i].fn) { m->rt[i].fn = on_action; m->rt[i].ud = NULL; }
     }
     /* design 8.5: the CD / DA time-code sources greyed with the hint (ME-11); sbMPTime live from W5 */
-    for (i = LJ_TC_CD; i < LJ_TC_COUNT; i++) if (!tc_live(i) && (w = lj_window_find(s.win, cl_tc_btn[i])) != NULL) { w->enabled = 0; w->hint = LJ_CL_NOT_AVAILABLE; }
+    for (i = LJ_TC_CD; i < LJ_TC_COUNT; i++) if (!tc_live(i)) lj_widget_set_enabled(lj_window_find(s.win, cl_tc_btn[i]), 0);
     s.tc_src = lj_ini_geti(lj_ctx_get()->forms_ini, CL_SEC, "TCSource", LJ_TC_PC_ELAPSED);
     if (s.tc_src < 0 || s.tc_src >= LJ_TC_COUNT || !tc_live(s.tc_src)) s.tc_src = LJ_TC_PC_ELAPSED;
     lj_w_speedbutton_set_down(lj_window_find(s.win, cl_tc_btn[s.tc_src]), 1);

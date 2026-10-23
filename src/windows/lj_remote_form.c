@@ -6,6 +6,9 @@
  * runs LJ_ACT_IO_APPLY (LJ_IO_REMOTE: Hardware.Ini [REMOTE] saved, the transports reopened).
  * Also installs the io/lj_remote.h state query (the view, the Statics 2 page, the cue-list status).
  * Handlers: FormActivate RGClick bOkClick bCancelClick Help1Click (ME-16). */
+#include "windows/lj_smoke_control.h"
+#include "windows/lj_bgcue_form.h"
+#include "windows/lj_cue_form.h"
 #include "windows/lj_remote_form.h"
 
 #include <stdio.h>
@@ -187,4 +190,14 @@ static int rf_query(enum lj_remote_q q, int n)
     }
 }
 
-void lj_remote_form_bind_fns(void) { lj_remote_set_query(rf_query); }
+static int rf_set(enum lj_remote_q q, int n, int on)   /* ME-168: the set form; the cue record / BG / smoke state changes at once */
+{
+    switch (q) {
+    case LJ_REMQ_SMOKE_TIMER: lj_smoke_control_timer(on); return 0;
+    case LJ_REMQ_SLOT:        return lj_cue_form_set_slot(n, on);
+    case LJ_REMQ_BGSLOT:      return lj_bgcue_form_set_slot(n, on);
+    default:                  return -1;
+    }
+}
+
+void lj_remote_form_bind_fns(void) { lj_remote_set_query(rf_query); lj_remote_set_setter(rf_set); }

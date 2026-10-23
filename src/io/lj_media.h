@@ -11,7 +11,8 @@
  *
  * Cue list (design 8.5, W5-MED-3): the nine MP commands of model/lj_cuelist.h (LJ_CL_MP_LOAD_FILE .. LJ_CL_MP_CLOSE)
  * leave lj_cl_cmd_inert and reach lj_media_cmd through lj_cl_host.media on the UI thread (the runner's 10 ms wake);
- * MP Load File waits at most LJ_MEDIA_LOAD_WAIT_MS and MP Seek at most LJ_MEDIA_SEEK_WAIT_MS (05 s8.2); MP Wait and the
+ * LJ2's MP Load File / MP Seek waited up to 5 s (05 s8.2, LJ_MEDIA_*_WAIT_MS kept as the facts); here both are synchronous
+ * and the list never waits on them (ME-180: the file cap bounds the inline decode); MP Wait and the
  * sbMPTime time-code source read lj_media_time_cs through lj_cl_host.timecode (LJ_TC_MP, ms = cs * 10). One player
  * returns time code (05 s8.1); `.mps` playback files started through Execute File are not reproduced (a fidelity row).
  * The CD and DA rows stay greyed with the hint for good (ME-11). */
@@ -22,7 +23,11 @@
 #include <stdint.h>
 
 enum lj_media_state { LJ_MEDIA_CLOSED = 0, LJ_MEDIA_LOADED, LJ_MEDIA_PLAYING, LJ_MEDIA_PAUSED, LJ_MEDIA_STOPPED, LJ_MEDIA_ENDED };
-#define LJ_MEDIA_FILE_MAX     (256u * 1024u * 1024u)   /* refused before the load, PROPOSAL rig W5-MED-2 */
+/* ME-180: refused before the load. SDL_LoadWAV decodes inline on the UI thread (no loader thread, ponytail), so the cap
+ * is what a stated stall budget allows: 250 ms, under the audio capture ring (16384 samples, ~370 ms at 44.1 kHz).
+ * Measured on the work PC (Release SDL3, file in the OS cache): 64 MB in 19 ms, 128 MB in 31 ms, 256 MB in 59 ms; a cold
+ * read adds the disk, ~160 ms for 64 MB at 400 MB/s. PROPOSAL rig W5-MED-2: about 6 min of 44.1 kHz 16-bit stereo. */
+#define LJ_MEDIA_FILE_MAX     (64u * 1024u * 1024u)
 #define LJ_MEDIA_LOAD_WAIT_MS 5000u                    /* 05 s8.2 "MP load file (waits max 5 s)" */
 #define LJ_MEDIA_SEEK_WAIT_MS 5000u                    /* 05 s8.2 "MP Seek (max 5 s)" */
 #define LJ_MEDIA_ERR_FORMAT "Only WAV files can be played (LJ4EVR plays audio through SDL3, without codecs)"   /* ours, PROPOSAL rig W5-MED-2 */

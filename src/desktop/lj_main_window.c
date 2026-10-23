@@ -19,6 +19,7 @@
 #include "desktop/lj_statusbar.h"
 #include "desktop/lj_unassigned.h"
 #include "fixlib/lj_profile.h"
+#include "io/lj_audio.h"
 #include "io/lj_fn.h"
 #include "model/lj_show.h"
 #include "ui/forms/lj_forms_gen.h"
@@ -26,7 +27,6 @@
 #include "windows/lj_prefs.h"
 #include "windows/lj_profile_editor_form.h"
 
-#define LJ_NA_HINT "Not available in LJ4EVR"   /* ME-29 */
 
 /* ---- the ME-29 table ---- */
 static const lj_main_top_rule lj_top[] = {   /* F5: what 2.209 shows (toolandstatusbars.gif: System Setup View Fingers LJ-Manager Download Help) */
@@ -39,7 +39,7 @@ static const lj_main_top_rule lj_top[] = {   /* F5: what 2.209 shows (toolandsta
     { "M_Generic",   2, "F5: when a generic fixture exists" },
     { "M_LJManager", 1, "F5: shown without hardware" },
     { "M_Download",  1, "F5: shown without hardware" },
-    { "M_Audio",     1, "W5 audio: the built-in Audio Analyzer (fidelity row 10 superseded)" },
+    { "M_Audio",     3, "ME-181: only while the Audio Analyzer is enabled (DFM Visible = False; 01 \"only visible if ... configured\")" },
     { "M_SandNet",   0, "inventory s5: SandNet never" },
     { "M_MHelp",     1, "F5" },
 };
@@ -436,6 +436,7 @@ lj_window *lj_main_window_create(const lj_binding *bindings)
 void lj_main_window_destroy(lj_window *win) { lj_desktop_destroy(win); }
 
 /* ---- applying the table ---- */
+static int audio_enabled(void) { const lj_ctx *c = lj_ctx_get(); return c->audio && c->audio->enabled; }   /* ME-181: the M_Audio rule */
 static int generic_fixture_exists(void)
 {
     const lj_ctx *ctx = lj_ctx_get();
@@ -453,7 +454,7 @@ void lj_main_menu_apply(lj_window *win)
     int i;
     if (!m) return;
     for (i = 0; i < LJ_COUNT_OF(lj_top); i++)
-        lj_menu_set_visible(m, lj_top[i].name, lj_top[i].visible == 2 ? generic_fixture_exists() : lj_top[i].visible);
+        lj_menu_set_visible(m, lj_top[i].name, lj_top[i].visible == 2 ? generic_fixture_exists() : lj_top[i].visible == 3 ? audio_enabled() : lj_top[i].visible);
     for (i = 0; i < LJ_COUNT_OF(lj_inert); i++) lj_menu_set_enabled(m, lj_inert[i].name, 0);
     lj_menu_set_visible(m, lj_removed, 0);
     lj_menu_set_enabled(m, "M_UserLibraries", 1);   /* W2: the DFM ships it disabled; User Libraries is live [01 s8] */
@@ -493,6 +494,7 @@ void lj_main_menu_sync(lj_window *win)
     if (lj_desktop_popup_fixture() >= 0) lj_str_copy(lj_pi_customize_cap, sizeof lj_pi_customize_cap, lj_customize_popup_caption(lj_desktop_popup_fixture()));
     lj_menu_set_checked(m, "PI_MoveIcon", lj_desktop_popup_fixture() >= 0 && lj_desktop_icon_move_on(lj_desktop_popup_fixture()));
     lj_menu_set_visible(m, "M_Generic", generic_fixture_exists());
+    lj_menu_set_visible(m, "M_Audio", audio_enabled());                 /* ME-181: re-synced by the Hardware Setup Audio apply */
     {   /* I13 sweep: the External Application link item follows the icon's profile (tag EXTERNAL, id 90) */
         const lj_ctx *ctx = lj_ctx_get();
         int f = lj_desktop_popup_fixture();

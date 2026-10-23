@@ -21,6 +21,7 @@ TCUELIST2FORM	sbLockLine	TSpeedButton	Glyph.Data	glyph:lockline
 TCUELIST2FORM	sbBrowse	TSpeedButton	Glyph.Data	glyph:folder-browse
 TCUELIST2FORM	sbTop	TSpeedButton	Glyph.Data	glyph:cltop
 TCUELIST2FORM	sbRun	TSpeedButton	Glyph.Data	glyph:clrun
+TCUELIST2FORM	sbMPTime	TSpeedButton	Glyph.Data	glyph:media (row listed, blob absent)
 TCUEMACROCONTROLFORM	sbPosAmpDec	TSpeedButton	Glyph.Data	glyph:minus
 TCUEMACROCONTROLFORM	sbPosAmpInc	TSpeedButton	Glyph.Data	glyph:plus
 TCUEMACROCONTROLFORM	sbNegAmpDec	TSpeedButton	Glyph.Data	glyph:minus

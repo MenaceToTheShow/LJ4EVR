@@ -103,6 +103,7 @@ Stream_Terminated on close; no out-of-sequence, no send errors.
 
 ## Skipped on purpose
 
-Sync packets, 0xDD per-address priority, IPv6 (documented non-compliance), Art-Net
-(design 8.1, W5); discovery paging (4 links never exceed one page). The
+Sync packets, 0xDD per-address priority, IPv6 (documented non-compliance); discovery paging (4 links never exceed
+one page). Art-Net is no longer skipped: it ships beside sACN since 1.1.0 (`docs/artnet.md`). sACN input (DMX-in) has
+its own receiver rules and merge declaration in `docs/dmx-in.md` ("Receiver rules", "Merge"). The
 `Sender.set()`-emits shape of the Python reference is not ported (ME-6).

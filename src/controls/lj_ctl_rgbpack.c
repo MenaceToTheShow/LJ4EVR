@@ -239,8 +239,7 @@ void lj_ctl_rgbpack_build(lj_ctl_win *c)
     }
     for (k = 0; k < 3; k++) if ((b = owned(root, LJ_K_BUTTON, snap[k], x0 + k * LJ_RP_PROG_P, LJ_RP_FADER_H + 4, LJ_FADER_W, LJ_RP_BTN_H)) != NULL) { b->on_event = on_button; b->ud = (void *)(intptr_t)k; }
     if ((b = owned(root, LJ_K_BUTTON, "Color Dialog", x0, LJ_RP_FADER_H + 6 + LJ_RP_BTN_H, 6 * LJ_RP_PROG_P - 2, LJ_RP_BTN_H)) != NULL) {
-        b->enabled = 0;                                         /* no OS colour picker behind the platform layer: greyed, docs/fidelity.md */
-        b->hint = "Not available in LJ4EVR";
+        lj_widget_set_enabled(b, 0);                            /* no OS colour picker behind the platform layer: greyed, docs/fidelity.md */
     }
     for (k = 0; k < 3; k++) if ((b = owned(root, LJ_K_BUTTON, btn[k], x0 + k * 2 * LJ_RP_PROG_P, LJ_RP_FADER_H + 8 + 2 * LJ_RP_BTN_H, 2 * LJ_RP_PROG_P - 2, LJ_RP_BTN_H)) != NULL) { b->on_event = on_button; b->ud = (void *)(intptr_t)(3 + k); }
     cw = x0 + 6 * LJ_RP_PROG_P;

@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "model/lj_cuelist.h"
+#include "core/lj_fsinfo.h"
 
 static int fails;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
@@ -150,6 +151,55 @@ static void lj_t_files(void)
     a.lines[0].load_error = 1;              CHECK(lj_cuelist_validate(&a) == NULL);
     a.lines[0].cmd = LJ_CL_CD_STOP; a.lines[0].load_error = 0; CHECK(lj_cuelist_validate(&a) != NULL);
     a.lines[0].cmd = LJ_CL_NONE; a.lines[0].cue = 1; a.lines[0].trig_mask = 1; CHECK(lj_cuelist_validate(&a) != NULL);
+    /* ME-169: an MP Load File path from a .Cl2 is refused before any file call (UNC = an SMB connect with the user's
+     * NTLM hash, a device name, not .wav); a relative name resolves against the library root, not the working folder */
+    {
+        char full[1100];
+        FILE *f;
+        CHECK(lj_fs_media_path(NULL, "\\\\203.0.113.7\\s\\a.wav", full, sizeof full) == -1 && full[0] == 0);
+        CHECK(lj_fs_media_path(NULL, "//203.0.113.7/s/a.wav", full, sizeof full) == -1);
+        CHECK(lj_fs_media_path(NULL, "\\\\.\\COM1\\a.wav", full, sizeof full) == -1 && lj_fs_media_path(NULL, "\\\\?\\C:\\a.wav", full, sizeof full) == -1);
+        CHECK(lj_fs_media_path(NULL, "CON.wav", full, sizeof full) == -1 && lj_fs_media_path(NULL, "show\\com1.wav", full, sizeof full) == -1);
+        CHECK(lj_fs_media_path(NULL, "lpt3\\a.wav", full, sizeof full) == -1 && lj_fs_media_path(NULL, "nul .wav", full, sizeof full) == -1);
+        CHECK(lj_fs_media_path(NULL, "COM\xb9.wav", full, sizeof full) == -1 && lj_fs_media_path(NULL, "conout$.wav", full, sizeof full) == -1);
+        CHECK(lj_fs_media_path(NULL, "a.txt:x.wav", full, sizeof full) == -1 && lj_fs_media_path(NULL, "clip.mp3", full, sizeof full) == -1);
+        CHECK(lj_fs_media_path("lib/", "C:\\show\\a.wav", full, sizeof full) == 0 && strcmp(full, "C:\\show\\a.wav") == 0);
+        CHECK(lj_fs_media_path("lib/", "/show/a.WAV", full, sizeof full) == 0 && strcmp(full, "/show/a.WAV") == 0);
+        CHECK(lj_fs_media_path("lib/", "console.wav", full, sizeof full) == 0 && strcmp(full, "lib/console.wav") == 0);
+        CHECK(lj_fs_media_path("lib/", "tone.wav", full, 8) == -1);
+        lj_t_write("test_cl_unc.Cl2", "LJ4 cl 1\nnum=1\nline 1 adv=auto cmd=mp_load_file pstr=//203.0.113.7/s/a.wav\n"
+                                      "line 2 adv=auto cmd=mp_load_file pstr=CON.wav\nline 3 adv=auto cmd=mp_load_file pstr=clip.avi\n");
+        lj_fs_exists_calls = 0;
+        CHECK(lj_cuelist_load("test_cl_unc.Cl2", &b, err, sizeof err) == 0 && b.n == 3);
+        CHECK(b.n == 3 && b.lines[0].load_error && b.lines[1].load_error && b.lines[2].load_error && lj_fs_exists_calls == 0);
+        CHECK(b.n == 3 && strcmp(b.lines[0].param, "//203.0.113.7/s/a.wav") == 0 && strcmp(b.lines[1].param, "CON.wav") == 0);   /* kept as read */
+        remove("test_cl_unc.Cl2"); remove("test_cl_unc2.Cl2");
+        remove("tone.wav");
+        CHECK(lj_fs_mkdir("test_cl_lib") == 0 && lj_fs_mkdir("test_cl_lib/CueLists") == 0);
+        lj_t_write("test_cl_lib/tone.wav", "RIFF");
+        lj_t_write("test_cl_lib/CueLists/00000001.Cl2", "LJ4 cl 1\nnum=1\nline 1 adv=auto cmd=mp_load_file pstr=tone.wav\n");
+        lj_fs_exists_calls = 0;
+        CHECK(lj_cuelist_load("test_cl_lib/CueLists/00000001.Cl2", &b, err, sizeof err) == 0 && b.n == 1 && b.lines[0].load_error == 0 && lj_fs_exists_calls == 1);
+        remove("test_cl_lib/CueLists/00000001.Cl2"); remove("test_cl_lib/tone.wav");
+
+        /* ME-171 (d): more than LJ_CL_LINES_MAX lines is refused at load, and the editor's insert stops there */
+        if ((f = fopen("test_cl_big.Cl2", "wb")) != NULL) {
+            fputs("LJ4 cl 1\nnum=1\n", f);
+            for (k = 1; k <= (int)LJ_CL_LINES_MAX + 1; k++) fprintf(f, "line %d adv=auto cmd=none\n", k);
+            fclose(f);
+        }
+        CHECK(lj_cuelist_load("test_cl_big.Cl2", &b, err, sizeof err) == -1 && b.n == 0 && strstr(err, "9999") != NULL);
+        remove("test_cl_big.Cl2");
+        {
+            lj_cuelist big;
+            lj_cl_line l0 = lj_t_line(0, LJ_CL_NONE, 0, "", 0, 0, 0, "");
+            memset(&big, 0, sizeof big);
+            for (k = 0; k < (int)LJ_CL_LINES_MAX; k++) lj_cuelist_insert(&big, big.n, &l0);
+            CHECK(big.n == LJ_CL_LINES_MAX && lj_cuelist_insert(&big, 0, &l0) == -1 && big.n == LJ_CL_LINES_MAX);
+            free(big.lines);
+        }
+    }
+
     free(a.lines); free(b.lines);
     remove("test_cl_20.Cl2"); remove("test_cl_20b.Cl2"); remove("test_cl_mp.Cl2"); remove("test_cl_mp2.Cl2");
     remove("test_cl_all.Cl2"); remove("test_cl_all2.Cl2"); remove("test_cl_bad.Cl2");

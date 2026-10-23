@@ -55,6 +55,13 @@ static void post_on(uint32_t runner, int on)
     lj_ctx_post(&cmd);
 }
 
+int lj_bgcue_form_set_slot(int slot, int on)
+{
+    if (slot < 1 || slot > LJ_BG_SLOTS) return -1;
+    post_on((uint32_t)(LJ_RUN_BG0 + slot - 1), on);
+    return 0;
+}
+
 void lj_bgcue_form_toggle_slot(int slot)
 {
     if (slot < 1 || slot > LJ_BG_SLOTS) return;

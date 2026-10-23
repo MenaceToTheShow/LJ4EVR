@@ -154,7 +154,9 @@ int lj_test_gdc_grammar(int argc, char **argv)
     CHECK(memcmp(&g2, &sh->gdc, sizeof g2) == 0);
     CHECK(lj_gdc_groups_load("test_gdc_groups_missing.dat", &g2, err, sizeof err) == 0 && g2.used[0] == 0);
     {
-        static const char *const bad[] = { "group 33 name=x\n", "ch 1:513 groups=1\n", "ch 1:1 groups=x\n", "hide 5:1\n", "ch 1:1\n" };
+        static const char *const bad[] = { "group 33 name=x\n", "ch 1:513 groups=1\n", "ch 1:1 groups=x\n", "hide 5:1\n", "ch 1:1\n",
+            /* ME-171 (c): 2^32 joined all 32 groups on Windows (32-bit strtoul) while Linux refused it; 2^64; signs */
+            "ch 1:1 groups=4294967296\n", "ch 1:1 groups=18446744073709551616\n", "ch 1:1 groups=+1\n", "ch 1:1 groups=-1\n" };
         for (i = 0; i < LJ_COUNT_OF(bad); i++) {
             FILE *f = fopen("test_gdc_groups.dat", "wb");
             if (f) { fputs("LJ4 gdcgroups 1\n", f); fputs(bad[i], f); fclose(f); }

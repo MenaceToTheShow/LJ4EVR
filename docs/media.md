@@ -9,8 +9,15 @@ plays at a time and it is the one time-code source the cue list reads ("only one
 - **WAV only.** SDL3 decodes WAV (`SDL_LoadWAV`) and nothing else, and W5 adds no dependency (W5-X-DEP). Any other
   extension is refused before a byte is read, with the message `Only WAV files can be played (LJ4EVR plays audio through
   SDL3, without codecs)`. A file with a `.wav` name that SDL cannot decode is refused with `Not a playable WAV file`.
-- **Size cap.** A file over 256 MB (`LJ_MEDIA_FILE_MAX`, PROPOSAL) is refused before it is decoded, with
-  `The file is too large to load`. 256 MB is about 25 minutes of 48 kHz 24-bit stereo.
+- **Size cap.** A file over 64 MB (`LJ_MEDIA_FILE_MAX`, PROPOSAL) is refused before it is decoded, with
+  `The file is too large to load`. The WAV is decoded inline on the UI thread, so the cap keeps that stall under a
+  250 ms budget (measured on the work PC: 64 MB in 19 ms from the OS cache; a cold read adds the disk, about 160 ms
+  at 400 MB/s). 64 MB is about 6 minutes of 44.1 kHz 16-bit stereo and 3.9 minutes of 48 kHz 24-bit stereo; split a
+  longer show track over several MP Load File lines.
+- **Local files only.** An MP Load File path is refused before any file call when it starts with two slashes or
+  backslashes (a network share: opening the cue list would connect to that machine), contains a `:` other than a
+  drive letter's, names a device (`CON`, `COM1`, `LPT1` ...) or does not end in `.wav`; the line loads red. A relative
+  path is read from the library folder, not from wherever LJ4EVR was started (ME-169).
 - **No video, ever.** SDL3 cannot decode video and no codec library is allowed, so the player is audio-only. The black
   video area of the LJ2 window is kept (empty) and every video option is greyed with the hint `Not available in LJ4EVR`:
   Startup > Display Size (Custom, FullScreen, FullScreen Monitor 1-4), Media Clip Size, Full Screen, Custom Display Size.

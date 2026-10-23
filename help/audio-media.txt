@@ -1,0 +1,25 @@
+Audio Analyzer and MediaPlayer
+
+Audio Analyzer
+Turn it on in Setup > Hardware Setup, page Audio, and choose the input
+device. The &Audio menu then appears; Start Audio Analyzer opens the
+analyzer window. It listens to the input, finds beats and sends audio
+trigs to every cue slot set to Audio trig mode. Audio-Trigs / Trig in
+the cue says how many beats move a sequence on by one scene.
+The faders set the decay (the shortest time between trigs), the
+sensitivity and the noise cut-off; Use Equalizer limits the trigs to
+the frequency bands you raise. Emulate Audio Trig (a hotkey or a DMX-in
+function) sends a trig by hand.
+Pass Keypresses to LightJockey: off, a hotkey pressed while the
+analyzer has focus stays with the analyzer; on, it reaches LightJockey.
+On macOS the system asks once for permission to use the microphone.
+
+MediaPlayer
+The cue list's MP rows control a built-in player: MP Load File, MP
+Play, MP Seek, MP Stop, MP Pause, Wait for MP at, MP Close Clip, MP
+Start and MP Close. Click the MediaPlayer time-code button in the cue
+list to open the player and to show its clock.
+Only WAV files play, up to 64 MB (about 6 minutes of CD-quality
+stereo). The player has no video. A file name that points at another
+computer, at a device or at anything but a .wav file is refused, and a
+name without a folder is read from the library folder.

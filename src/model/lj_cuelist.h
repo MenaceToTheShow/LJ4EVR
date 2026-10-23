@@ -66,9 +66,10 @@ extern const char *const lj_cl_adv_caption[2];   /* the Adv column: "Auto", "Man
 
 enum lj_cl_family { LJ_CLF_NONE = 0, LJ_CLF_CD, LJ_CLF_DA, LJ_CLF_MP, LJ_CLF_MTC, LJ_CLF_PC, LJ_CLF_OTHER, LJ_CLF_DRAG };
 int lj_cl_cmd_family(int cmd);    /* enum lj_cl_family; -1 out of range */
-int lj_cl_cmd_inert(int cmd);     /* 1 for the CD / DA families: greyed with hint LJ_CL_NOT_AVAILABLE, loaded red, skipped (design 8.5, ME-11); MP is live from W5 (io/lj_media.h) */
+int lj_cl_cmd_inert(int cmd);     /* 1 for the CD / DA families: greyed with hint LJ_NA_HINT, loaded red, skipped (design 8.5, ME-11); MP is live from W5 (io/lj_media.h) */
 int lj_cl_cmd_is_wait(int cmd);   /* 1 for every Wait (ignored on a manual line) */
-#define LJ_CL_NOT_AVAILABLE "Not available in LJ4EVR"   /* design 8.5 hint; ours, not in the exe pool (LORD_FIDELITY-14 tag) */
+#define LJ_CL_LINES_MAX 9999u                             /* ME-171 (d): refused at load, PROPOSAL (LJ2's list is unbounded; W3 LORD_C-10) */
+#define LJ_CL_PATH_CAP 1024                               /* a library root + an MP Load File name (= LJ_PATH_CAP) */
 #define LJ_CL_FLASH_MAX_MS 99900                         /* "duration up to 99.9 s" [RN v2.6 b4] */
 #define LJ_CL_LOG_MAX 256                                /* Log time code entries kept per run (PROPOSAL; LJ2's list is unbounded) */
 

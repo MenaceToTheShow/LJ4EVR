@@ -768,6 +768,12 @@ static void fn_flash_release(enum lj_fn fn, int edge, uint32_t prog, void *ud)  
     (void)fn; (void)prog; (void)ud;
     if (edge) post3(LJ_CMD_FLASH, 0, 0, 0);
 }
+int lj_cue_form_set_slot(int slot, int on)
+{
+    if (slot < 1 || slot > LJ_CUE_SLOTS || !cue_rec()) return -1;
+    set_enabled(slot - 1, on);
+    return 0;
+}
 static void fn_cue(enum lj_fn fn, int edge, uint32_t prog, void *ud)
 {
     int i;

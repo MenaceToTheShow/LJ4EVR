@@ -1,0 +1,38 @@
+DMX-in and remote control
+
+LJ4EVR can take DMX from the network and can be driven by a remote
+controller over TCP or a serial port. Both are off until you turn them
+on, and each one writes a line to the log when it opens.
+
+DMX-in
+Open Setup > Hardware Setup and tick Enable DMX in. Choose the input
+universe and the protocol, sACN (E1.31) or Art-Net. Set the network
+card too: packets from outside that card's network are then ignored.
+The C-L toolbar's DMX In button opens the DMX In window. There you give
+input channels a function (a cue number in binary, Latch Cue, Grand
+Master, a group level, a static, Cuelist Go and more) and press Save.
+Value-translations lets a channel pass through a table first, for
+example Off/On at half level.
+The Global Patch can take a channel straight from the input, with the
+HTP, LTP or absolute rules. Options > Disable DMX-in functions stops the
+functions and leaves the patched channels working. When the sender
+stops, the last values are held.
+
+Remote control
+Open Setup > RS-232 / TCP Remote. TCP listens on this computer only
+(127.0.0.1) unless you pick a network card; it never listens on every
+card. A serial port is opened only when you enable it. Each command is
+three bytes: the command, then a value in two 7-bit bytes. 128 loads a
+cue list (0 stops it), 129 a cue, 130 a background cue, 131 flashes a
+sequence, 132 runs smoke, the smoke timer, blackout or a fade, 133 a
+static, 134 Go or Back on a manual cue list, 135 a cue slot on or off,
+136 a background slot on or off.
+The remote has no authentication: on a LAN interface anyone on that
+network can drive the show. Keep it on 127.0.0.1 unless the controller
+is on a lighting network you trust.
+
+External Application
+A fixture of the profile Other / External Application can send text
+commands to another program over TCP or a serial port. Use the icon
+menu > Define Application Link to name the definition file, and the
+Extended control to give each scene its command.

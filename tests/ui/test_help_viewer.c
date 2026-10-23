@@ -1,7 +1,7 @@
 /* test_help_viewer.c - the runnable check of the W4 docs-release track (docs/w4-contracts.md, W4-HELP, ME-36/37):
  *  - every Help leaf of the main menu (each drop-down's Help, &Help, the three Select Helpfile languages) and of the
  *    desktop and icon popups is bound, enabled and visible, and opens LJ_WIN_HELP through the real app seam
- *    (app/lj_app_w4.c) at the index; SearchHelp1 stays hidden as its DFM has it
+ *    (app/lj_app_cuelist_host.c) at the index; SearchHelp1 stays hidden as its DFM has it
  *  - lj_help_viewer_topic: a named topic, an unknown one (index, -1), the topic list click, lj_help_viewer_click
  *  - the generated topics: index first, every topic titled, no line over the 72-column memo
  *  - the About text names THIRD_PARTY_NOTICES.txt and carries the provenance trademark line
@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "miniz.h"
-#include "app/lj_app_w4.h"
+#include "app/lj_app_cuelist_host.h"
 #include "core/lj_log.h"
 #include "desktop/lj_desktop.h"
 #include "gfx/lj_bmp.h"
@@ -96,7 +96,7 @@ int lj_test_help_viewer(int argc, char **argv)
     desk = lj_desktop_create();
     CHECK(desk != NULL);
     if (!desk) { lj_show_free(show); return 1; }
-    lj_app_w4_start();
+    lj_app_cuelist_host_windows_start();
     m = lj_window_menus(desk);
 
     /* 1. every Help leaf, by name and by handler: each opens the viewer */

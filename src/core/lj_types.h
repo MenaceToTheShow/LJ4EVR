@@ -25,6 +25,10 @@ enum {
 #define LJ_PRINTF(f, a)
 #endif
 
+/* ME-29 / ME-173: the one hint on greyed chrome (design 1, the sacrifice list); ours, not in the exe pool. Greyed and
+ * un-greyed only through lj_widget_set_enabled (ui/lj_widget.h) or a static desc row (.enabled = LJ_NO, .hint = it). */
+#define LJ_NA_HINT "Not available in LJ4EVR"
+
 #define LJ_COUNT_OF(a) ((int)(sizeof(a) / sizeof((a)[0])))
 
 /* Logs one line through the log sink, then aborts. The only exit path for a

@@ -199,10 +199,15 @@ static void test_hostile(void)
     memcpy(x, b, n); put32(x + 28, 0xFFFFFFF0u); CHECK(parse_fails(x, n, "bad lengths"));
     memcpy(x, b, n); put32(x + 24, 0xFFFFFFF0u); CHECK(parse_fails(x, n, "bad lengths"));
     CHECK(lj_llf_read(TMP "missing" LJ_LLF_EXT, &f, err, sizeof err) == -1);
+    /* ME-172 (W4 LORD_C-8): a 41-byte file (the 40-byte header + one data byte) claiming 4,000,000 x 64 slots (256 MB) is
+     * refused before the malloc */
+    memcpy(x, b, LJ_LLF_HEADER + 1); put32(x + 20, 4000000u); put32(x + 24, 1); put32(x + 28, 0); put32(x + 32, 0);
+    CHECK(parse_fails(x, LJ_LLF_HEADER + 1, "do not fit"));
     free(x); free(b);
 }
 
 /* ---- the recorder window ---- */
+static void lc_tick(uint64_t t) { lj_ctx *c = lj_ctx_get(); lj_lock(); lj_engine_tick(c->engine, t); lj_unlock(); }   /* the engine thread's tick, stepped */
 static lj_widget *in(lj_window *w, const char *n) { return w ? lj_window_find(w, n) : NULL; }
 static const char *cap_of(lj_window *w, const char *n) { lj_widget *x = in(w, n); const char *c = x ? lj_w_caption(x) : NULL; return c ? c : ""; }
 static int radio_has(lj_window *w, const char *group, int i, const char *text)
@@ -240,7 +245,7 @@ static void test_window(lj_library *lib)
     lj_lightcorder_step(t + 1000);                                           /* inside the 25 ms period: nothing */
     CHECK(lj_lightcorder_frames() == 1);
     logged[0] = 0;
-    for (i = 1; i <= 8176 && lj_lightcorder_recording(); i++) lj_lightcorder_step(t + (uint64_t)i * 25000u);
+    for (i = 1; i <= 8176 && lj_lightcorder_recording(); i++) { lc_tick(t + (uint64_t)i * 25000u); lj_lightcorder_step(t + (uint64_t)i * 25000u); }
     CHECK(!lj_lightcorder_recording() && lj_lightcorder_frames() == 8176);
     CHECK(strstr(logged, "Lightcorder card memory full - recording stopped") != NULL);
     CHECK(strstr(logged, "lightcorder: 40 frames/s") != NULL);              /* ME-24: the per-second count */
@@ -271,7 +276,7 @@ static void test_window(lj_library *lib)
 
     /* a second take cancelled from Save: the discard prompt, nothing written */
     lj_w_click(in(w, "bRecord"));
-    lj_lightcorder_step(t); lj_lightcorder_step(t + 25000);
+    lj_lightcorder_step(t); lc_tick(t + 25000); lj_lightcorder_step(t + 25000);
     lj_w_click(in(w, "bRecord"));                                            /* Cancel Recording ends the take and opens Save */
     sv = lj_win_get(LJ_WIN_SAVE_LIGHTCORDER);
     CHECK(sv != NULL && lj_lightcorder_frames() == 2);
@@ -281,6 +286,20 @@ static void test_window(lj_library *lib)
     if (box) lj_w_click(in(box, "BOk"));
     lj_lightcorder_step(t + 50000);
     CHECK(lj_win_get(LJ_WIN_SAVE_LIGHTCORDER) == NULL && lj_lightcorder_frames() == 0 && strstr(lj_lightcorder_last_file(), "LC0001"));
+
+    /* ME-164: the tap is keyed on tick_no, not the wall clock: 100 engine ticks at 20 Hz recording (every second tick of
+     * 40), three UI passes per tick, all at one wall time: exactly 50 samples (the wall-clock tap took 1, or 150) */
+    lj_w_radiogroup_set_index(in(w, "rgFrequency"), 1);
+    lj_w_click(in(w, "bRecord"));
+    CHECK(lj_lightcorder_recording());
+    for (i = 0; i < 100; i++) { lc_tick(t + (uint64_t)(i + 1) * 25000u); lj_lightcorder_step(t); lj_lightcorder_step(t); lj_lightcorder_step(t); }
+    CHECK(lj_lightcorder_frames() == 50);
+    if (lj_lightcorder_frames() != 50) printf("  %u samples from 100 ticks at 20 Hz\n", (unsigned)lj_lightcorder_frames());
+    lj_w_click(in(w, "bRecord"));
+    if ((sv = lj_win_get(LJ_WIN_SAVE_LIGHTCORDER)) != NULL) lj_w_click(in(sv, "bCancel"));
+    if ((box = lj_win_message_window()) != NULL) lj_w_click(in(box, "BOk"));
+    lj_lightcorder_step(t);
+    lj_w_radiogroup_set_index(in(w, "rgFrequency"), 2);
 
     /* closing while recording asks first */
     lj_w_click(in(w, "bRecord"));

@@ -1,6 +1,6 @@
 /* test_cuelist_form.c - the runnable check for src/windows/lj_cuelist_form.c (W3 cuelist-window): the caption rules (F19,
  * 13 s5), the transport enable table per runner state with Lock / Browse latched (03 s6.2), the CD / DA / MP time-code
- * buttons, menu items and recent-command buttons greyed with LJ_CL_NOT_AVAILABLE (design 8.5, ME-11), the ListPop commands
+ * buttons, menu items and recent-command buttons greyed with LJ_NA_HINT (design 8.5, ME-11), the ListPop commands
  * verbatim in note 03 s6.3 order, the grid row text, a loaded-with-error line painted red and the gray / blue line states,
  * the ops posted through LJ_ACT_CUELIST_OP, the edit panel page per command, the Hotkey Command function picker, and the
  * golden tests/ui/golden/WIN_CUELIST_FORM.bmp (LJ_GOLDEN_UPDATE=1 rewrites it; reviewed in REVIEWED.tsv), and the cue-list
@@ -272,9 +272,9 @@ int lj_test_cuelist_form(int argc, char **argv)
     /* ME-11 / design 8.5: time-code sources, recent commands and ListPop families greyed with the hint */
     CHECK(en(win, "sbCDTime") == 0 && en(win, "sbDATime") == 0 && en(win, "sbMPTime") == 1);   /* W5 media: sbMPTime live (W5-MED-4) */
     CHECK(en(win, "sbMIDITime") == 1 && en(win, "sbPCElapsed") == 1 && en(win, "sbPCClock") == 1);
-    CHECK(strcmp(lj_window_find(win, "sbCDTime")->hint, LJ_CL_NOT_AVAILABLE) == 0 && strcmp(lj_window_find(win, "sbMPTime")->hint, "Show Media Timecode") == 0);   /* the DFM hint back */
+    CHECK(strcmp(lj_window_find(win, "sbCDTime")->hint, LJ_NA_HINT) == 0 && strcmp(lj_window_find(win, "sbMPTime")->hint, "Show Media Timecode") == 0);   /* the DFM hint back */
     CHECK(strcmp(lj_window_find(win, "sbDATime")->hint, "Not available in LJ4EVR") == 0);
-    CHECK(strcmp(lj_w_caption(lj_window_find(win, "sbCMD1")), "CD Stop") == 0 && en(win, "sbCMD1") == 0 && strcmp(lj_window_find(win, "sbCMD1")->hint, LJ_CL_NOT_AVAILABLE) == 0);
+    CHECK(strcmp(lj_w_caption(lj_window_find(win, "sbCMD1")), "CD Stop") == 0 && en(win, "sbCMD1") == 0 && strcmp(lj_window_find(win, "sbCMD1")->hint, LJ_NA_HINT) == 0);
     CHECK(strcmp(lj_w_caption(lj_window_find(win, "sbCMD3")), "Wait CD") == 0 && en(win, "sbCMD3") == 0);
     CHECK(menu_en(win, "Pop_CDCommands") == 0 && menu_en(win, "pop_DACommands") == 0 && menu_en(win, "Pop_MPCommands") == 1);   /* W5 media (W5-MED-3) */
     CHECK(menu_en(win, "MediaPlayer1") == 1 && menu_en(win, "CueMediaFile1") == 1 && menu_en(win, "popWaitCD") == 0);

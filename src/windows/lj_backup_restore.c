@@ -150,6 +150,7 @@ static int ljb_set_file(const char *path)
     rb.on = 1;
     if (lj_ljb_preview(path, rb.name, sizeof rb.name, rs.notes, sizeof rs.notes, err, sizeof err) != 0) { rb.name[0] = 0; lj_str_copy(rs.notes, sizeof rs.notes, err); }
     lj_window_set_text(rs.win, "lLibName", rb.name);                    /* Info.$$$'s name; its source path is never shown (W5-X-PRIVATE) */
+    lj_window_set_text(rs.win, "lRestore", rb.name);                    /* ME-181: the NEW library it imports into, never the current one */
     lj_window_set_text(rs.win, "lLibPath", ""); lj_window_set_text(rs.win, "lBackupTime", "");   /* the TDateTime is not decoded (no double in model/) */
     lj_window_set_text(rs.win, "lPath", "");
     show_notes();
@@ -176,7 +177,7 @@ static void on_ljb_yes(int yes, void *ud)
     if (snprintf(rs.notes, sizeof rs.notes, "Imported into \"%s\": %d converted, %d not converted (" LJ_LJB_REPORT ")\n", rb.lib.name, rb.rep.converted, rb.rep.skipped) < 0) rs.notes[0] = 0;   /* PROPOSAL text */
     for (i = 0; i < rb.rep.nlines; i++) { at = strlen(rs.notes); if (snprintf(rs.notes + at, sizeof rs.notes - at, "%s\n", rb.rep.lines[i]) < 0) (rs.notes + at)[0] = 0; }
     show_notes();
-    lj_window_set_text(rs.win, "lPath", rb.lib.name);
+    lj_window_set_text(rs.win, "lPath", rb.lib.root);                   /* ME-181: Target Library Path is a path (the .lj4b row's rule) */
     lj_win_confirm("Please Confirm..", LJ_USERLIB_RESTART1, LJ_USERLIB_RESTART2, on_ljb_restart, NULL);
 }
 
@@ -205,6 +206,7 @@ int lj_restore_set_file(const char *path)
     lj_window_set_text(rs.win, "lLibName", name);                                   /* the archive carries no original name / path / time (model, recorded): the file name stands in */
     lj_window_set_text(rs.win, "lLibPath", ""); lj_window_set_text(rs.win, "lBackupTime", "");
     lj_window_set_text(rs.win, "lPath", lj_ctx_get()->lib ? lj_ctx_get()->lib->root : "");   /* Target Library Path = the library the files go to (userlibrestore.gif), not the archive */
+    lj_window_set_text(rs.win, "lRestore", lj_ctx_get()->lib ? lj_ctx_get()->lib->name : "");   /* an .LJB picked before named its new library here */
     show_notes();
     { lj_widget *b = rs.win ? lj_window_find(rs.win, "bRestore") : NULL; if (b) { b->enabled = 1; lj_widget_invalidate(b); } }   /* Enabled = False in the DFM until a file is picked */
     return 0;

@@ -14,6 +14,7 @@
 #include "core/lj_textrec.h"
 #include "io/lj_artnet.h"
 #include "io/lj_fn.h"
+#include "io/lj_net.h"
 #include "io/lj_sacn.h"
 #include "io/lj_socket.h"
 
@@ -34,6 +35,7 @@ static struct {
     uint64_t hz_t0; uint32_t hz_n;
     lj_di_parked q[LJ_DMXIN_QUEUE]; int qn;          /* lj_dmxin_post -> lj_dmxin_poll, under lj_lock */
     uint32_t qdropped;
+    uint32_t mask;                                   /* ME-177: the Nic's netmask; a datagram from off that subnet is dropped (0 = no Nic set) */
 } lj_di = { .sock = LJ_SOCKET_BAD, .emu = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                                              -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } };
 
@@ -169,12 +171,16 @@ int lj_dmxin_poll(uint64_t now_us)
     lj_dmxin_frame *f = &lj_di.f;
     int i, k, qn, changed;
     lj_lock(); qn = lj_di.qn; memcpy(q, lj_di.q, (size_t)qn * sizeof q[0]); lj_di.qn = 0; lj_unlock();
-    for (i = 0; i < qn; i++) lj_dmxin_rx(q[i].kind, q[i].pkt, q[i].n, q[i].ip, now_us);
+    for (i = 0; i < qn; i++) {
+        if (lj_di.mask && ((q[i].ip ^ lj_di.cfg.nic_ipv4) & lj_di.mask) != 0) { f->discarded++; continue; }   /* ME-177: off the Nic's subnet */
+        lj_dmxin_rx(q[i].kind, q[i].pkt, q[i].n, q[i].ip, now_us);
+    }
     for (k = 0; k < LJ_DMXIN_RX_BUDGET && lj_di.sock != LJ_SOCKET_BAD; k++) {             /* W5-X-THREAD: a flood cannot starve the wake */
         uint32_t ip = 0; uint16_t port = 0;
         int r = lj_socket_recvfrom(lj_di.sock, buf, sizeof buf, &ip, &port);
         if (r <= 0) break;
         if ((size_t)r == sizeof buf) { f->discarded++; continue; }                         /* truncated: longer than any valid packet */
+        if (lj_di.mask && ((ip ^ lj_di.cfg.nic_ipv4) & lj_di.mask) != 0) { f->discarded++; continue; }   /* ME-177: the socket binds every interface (multicast); the source decides */
         lj_dmxin_rx(LJ_DMXIN_SACN, buf, (size_t)r, ip, now_us);
     }
     for (i = f->nsources - 1; i >= 0; i--) if (now_us - f->src[i].last_us > LJ_DMXIN_TIMEOUT_US) lj_di_drop(i);   /* 6.7.1; one merge below, so sources lost together hold their last frame */
@@ -212,6 +218,14 @@ int lj_dmxin_open(const lj_dmxin_cfg *cfg, const uint8_t own_cid[16])
     lj_di.have_cid = own_cid != NULL;
     if (own_cid) memcpy(lj_di.own_cid, own_cid, 16);
     memset(&lj_di.f, 0, sizeof lj_di.f); lj_di.out_valid = 0;
+    lj_dmxin_functions_reset();                                                           /* ME-167: the first real frame primes the edge state again */
+    lj_di.mask = 0;
+    if (cfg->enabled && cfg->nic_ipv4) {                                                  /* ME-177: the Nic's subnet; unknown mask = its /24 (PROPOSAL) */
+        lj_nic nic[16];
+        int k, nn = lj_net_list_ipv4(nic, (int)(sizeof nic / sizeof nic[0]));
+        lj_di.mask = 0xFFFFFF00u;
+        for (k = 0; k < nn; k++) if (nic[k].ipv4 == cfg->nic_ipv4 && nic[k].mask) lj_di.mask = nic[k].mask;
+    }
     if (!cfg->enabled || cfg->source != LJ_DMXIN_SACN) return 0;                          /* W5-X-OFF; Art-Net input rides the engine's 6454 socket */
     lj_di.sock = lj_socket_udp(0, LJ_SACN_PORT, LJ_SOCK_REUSE);
     if (lj_di.sock == LJ_SOCKET_BAD) { lj_log("dmx in: cannot bind 0.0.0.0:%u", (unsigned)LJ_SACN_PORT); return -1; }
@@ -498,6 +512,14 @@ int lj_dmxin_fn_caption(const lj_dmxin_assign *a, char *dst, size_t cap)
 /* ---- DmxIn.dat (design 5.2 grammar, "LJ4 dmxin 1"; PROPOSAL name) ---- */
 void lj_dmxin_map_init(lj_dmxin_map *m) { if (m) memset(m, 0, sizeof *m); }
 
+static int lj_di_num_ok(int fn, unsigned long num)   /* ME-172: a record number for the program rows, else the function's own row range (none = 0) */
+{
+    int i, max = 0;
+    if (fn == LJ_DIF_FLASH_SEQ || fn == LJ_DIF_LATCH_CUE_N || fn == LJ_DIF_LATCH_CUELIST_N || fn == LJ_DIF_LATCH_BGCUE_N) return num >= 1 && num <= 99999999ul;
+    for (i = 0; i < lj_dmxin_fn_nrows; i++) if (lj_dmxin_fn_rows[i].fn == fn && lj_dmxin_fn_rows[i].num > max) max = lj_dmxin_fn_rows[i].num;
+    return max ? num >= 1 && num <= (unsigned long)max : num == 0;
+}
+
 static int lj_di_split(const char *v, unsigned long *ch, const char **rest)   /* "<ch 1..512> <rest>" */
 {
     char *end;
@@ -535,8 +557,8 @@ int lj_dmxin_map_load(const char *path, lj_dmxin_map *out, char *err, size_t cap
             memcpy(word, rest, wl); word[wl] = 0;
             for (i = 1; i < LJ_DIF_COUNT && strcmp(lj_dmxin_fn_words[i], word) != 0; i++) { }
             if (i == LJ_DIF_COUNT) continue;                                               /* an unknown word: a later version's function, skipped */
-            errno = 0; num = rest[wl] ? strtoul(rest + wl + 1, &end, 10) : 0;
-            if (errno == ERANGE || num > 99999999ul) { rc = lj_vtr_err(err, cap, 0, "bad function number"); break; }
+            end = NULL; errno = 0; num = rest[wl] ? strtoul(rest + wl + 1, &end, 10) : 0;
+            if (errno == ERANGE || (end && (end == rest + wl + 1 || *end)) || !lj_di_num_ok(i, num)) { rc = lj_vtr_err(err, cap, 0, "function number out of range"); break; }   /* ME-172: idx << 8 never aliases */
             out->ch[ch - 1].fn = (uint8_t)i; out->ch[ch - 1].num = (uint32_t)num;
         } else {
             lj_dmxin_assign *a = &out->ch[ch - 1];
@@ -588,7 +610,7 @@ int lj_dmxin_map_save(const char *path, const lj_dmxin_map *in)
 }
 
 /* ---- the functions (05 s3.2), UI thread ---- */
-static struct { uint8_t prev[LJ_LINK_CH], primed, latched, overwrite, overwrite_set; uint32_t cue, loaded; int16_t last_time[1 + LJ_DMXIN_SEQ_TIMES]; } lj_df = { .overwrite = 1, .loaded = 0xFFFFFFFFu };
+static struct { uint8_t prev[LJ_LINK_CH], primed, latched, overwrite, overwrite_set, fo_seen; uint32_t cue, loaded; int16_t last_time[1 + LJ_DMXIN_SEQ_TIMES]; } lj_df = { .overwrite = 1, .loaded = 0xFFFFFFFFu };
 
 static int lj_df_time_due(int idx, int v, int mode)   /* Cue Time Control: always, or when the value moved 1 / 2 / 3 steps from the last applied */
 {
@@ -698,6 +720,14 @@ int lj_dmxin_remote_cue(uint32_t *cue)
 }
 
 void lj_dmxin_functions_reset(void) { memset(&lj_df, 0, sizeof lj_df); lj_df.overwrite = 1; lj_df.loaded = 0xFFFFFFFFu; }
+
+int lj_dmxin_functions_step(const lj_dmxin_map *m, int changed, int functions_off)
+{
+    uint8_t fo = (uint8_t)(functions_off ? 2 : 1);
+    int run = lj_di.f.live && (changed || lj_df.fo_seen != fo);                           /* ME-167: only a frame someone sent; once more on a functions_off change */
+    lj_df.fo_seen = fo;
+    return run ? lj_dmxin_functions(m, lj_di.f.out, functions_off) : 0;
+}
 
 void lj_dmxin_reset(void)
 {

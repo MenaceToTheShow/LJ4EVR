@@ -85,7 +85,6 @@ int lj_pos_scale_raw(int raw, int pct)
 /* ---------------------------------------------------------------------------
  * the control
  * ------------------------------------------------------------------------- */
-#define LJ_MV_NOT_AVAIL "Not available in LJ4EVR"
 /* LORD_FIDELITY-9: the Movement window caption, one tagged constant: "Movement 8 Bit" / "Movement 16 Bit" by the master's
  * pan/tilt width (IMG joystickmovement / movement2; the exe also carries "Position 16 Bit", 17 s1.1, unverified) */
 static const char *const lj_mv_caption[2] = { "Movement 8 Bit", "Movement 16 Bit" };
@@ -422,7 +421,7 @@ static void on_menu(lj_widget *w, void *ud)
 /* ---- the menu: top-level captions verbatim [04 s1.6]; accelerators and the children's captions follow the help text (PROPOSAL, the control is code-built) ---- */
 static const lj_menu_item_desc mv_pref_items[] = {
     { "M_Goto", "&Goto Position", .on_click = "MenuClick", .radio_item = LJ_YES, .checked = LJ_YES },
-    { "M_LockCursor", "&Lock Cursor in Grid", .on_click = "MenuClick", .radio_item = LJ_YES, .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },
+    { "M_LockCursor", "&Lock Cursor in Grid", .on_click = "MenuClick", .radio_item = LJ_YES, .enabled = LJ_NO, .hint = LJ_NA_HINT },
 };
 static const lj_menu_item_desc mv_options_items[] = {
     { "M_PosOptions", "&Position Options", .on_click = "MenuClick" },   /* W4: TMOVEMENTOPTIONSFORM */

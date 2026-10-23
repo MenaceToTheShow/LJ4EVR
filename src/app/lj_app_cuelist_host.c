@@ -1,8 +1,9 @@
-/* lj_app_w3.c - see lj_app_w3.h. The cue list runner's host (docs/w3-contracts.md seam 1), the editor's generic
- * macro (seam 2), the user-profile / shape reloads (seams 2-3), follow spot recall and the W3 desktop actions. Every
+/* lj_app_cuelist_host.c - see lj_app_cuelist_host.h. The cue list runner's host (docs/w3-contracts.md seam 1), the editor's generic
+ * macro (seam 2), the user-profile / shape reloads (seams 2-3), follow spot recall, the W3 desktop actions and (folded
+ * from lj_app_cuelist_host.c, ME-173) the actions that open the W4 windows plus the LightCorder idle hook. Every
  * release-then-free post checks the engine took the new pointer first (ME-102, lj_app_post_locked). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen / localtime under /W4 /WX on MSVC (as gfx/lj_bmp.c) */
-#include "app/lj_app_w3.h"
+#include "app/lj_app_cuelist_host.h"
 #include "app/lj_app_io.h"
 
 #include <stdio.h>
@@ -25,6 +26,7 @@
 #include "fixlib/lj_profile.h"
 #include "io/lj_fn.h"
 #include "io/lj_midi.h"
+#include "model/lj_cue.h"
 #include "model/lj_cuelist.h"
 #include "model/lj_followspot.h"
 #include "model/lj_genmacro.h"
@@ -33,6 +35,9 @@
 #include "model/lj_show.h"
 #include "model/lj_statics.h"
 #include "model/lj_table.h"
+#include "windows/lj_config_dialogs.h"
+#include "windows/lj_help_viewer.h"
+#include "windows/lj_lightcorder.h"
 #include "windows/lj_genmacro_editor.h"
 #include "windows/lj_gs2_dialogs.h"
 #include "windows/lj_prefs.h"
@@ -50,7 +55,7 @@ static struct {
     lj_gdc_state gdc;
     lj_gm_shapes *shapes;     /* the user's Macros.Mac override in force; NULL = the regenerated built-ins */
     lj_bez_set *bez;          /* show->bez: the library's MacroShapes\*.bez, sampled; NULL = none */
-} lj_w3;
+} lj_host;
 
 
 /* ---- the runner's host (lj_cuelist_run.h): every effect of a cue-list line ---- */
@@ -111,8 +116,8 @@ static int h_link(void *ud, uint32_t number, const lj_cuelist **out)   /* Link C
     (void)ud;
     if (!show || !number || cl_path(number, path, sizeof path) != 0 || !(cl = cl_read(path, number))) return -1;
     lj_lock(); old = show->current_cl; show->current_cl = cl; lj_unlock();
-    lj_cuelist_free(lj_w3.grave);       /* an earlier link of this step: the runner has left it */
-    lj_w3.grave = old;
+    lj_cuelist_free(lj_host.grave);       /* an earlier link of this step: the runner has left it */
+    lj_host.grave = old;
     lj_ctx_get()->modified[LJ_MOD_CL] = 0;
     *out = cl;
     return 0;
@@ -153,13 +158,26 @@ static int h_clock(void *ud, uint32_t *ms_of_day, uint32_t *day)
 static int h_timecode(void *ud, int src, uint32_t *ms)
 {
     uint32_t day;
-    if (src == LJ_TC_MIDI) return lj_mtc_time(&lj_w3.mtc, lj_clock_us(), ms);
+    if (src == LJ_TC_MIDI) return lj_mtc_time(&lj_host.mtc, lj_clock_us(), ms);
     if (src == LJ_TC_PC_CLOCK) return h_clock(ud, ms, &day);
     if (src == LJ_TC_MP) return lj_app_io_mp_time(ms);               /* W5: the MediaPlayer clip clock (docs/w5-contracts.md seam 7) */
     return -1;   /* PC elapsed is the runner's own; CD / DA have none in LJ4EVR (design 8.5) */
 }
 
-static const lj_cl_host lj_w3_host = { NULL, h_load_cue, h_post, h_load_bg, h_flash, h_link, h_fn, h_exec, h_clear_cue, h_timecode, h_clock, lj_app_io_cl_media };
+static int h_cue_transparent(void *ud, uint32_t n)   /* ME-171 (g): one cue read per candidate, scanning back from the run line */
+{
+    const lj_library *lib = lj_ctx_get()->lib;
+    char path[LJ_PATH_CAP], err[160];
+    lj_cue *cue;
+    int t = -1;
+    (void)ud;
+    if (!lib || lj_library_record_path(lib, LJ_REC_CUE, n, path, sizeof path) != 0 || !(cue = lj_cue_new_rec())) return -1;
+    if (lj_cue_load(path, cue, err, sizeof err) == 0) t = cue->transparent != 0;
+    lj_cue_free(cue);
+    return t;
+}
+
+static const lj_cl_host lj_cl_host_app = { NULL, h_load_cue, h_post, h_load_bg, h_flash, h_link, h_fn, h_exec, h_clear_cue, h_timecode, h_clock, lj_app_io_cl_media, h_cue_transparent };
 
 /* ---- the lj_app.h W3 block ---- */
 
@@ -167,30 +185,30 @@ void lj_app_cuelist_step(uint64_t now_us)
 {
     lj_ini *mi = lj_ctx_get()->main_ini;
     int t;
-    lj_w3.steps++;
-    lj_ctx_get()->cl = &lj_w3.run.st;
+    lj_host.steps++;
+    lj_ctx_get()->cl = &lj_host.run.st;
     if (mi) {                                                        /* the Cuelist window's Preferences (Main.Ini [CUELIST2], PROPOSAL keys) */
-        lj_w3.run.ignore_first_wait = lj_ini_geti(mi, "CUELIST2", "IgnoreFirstWait", 0) != 0;
-        lj_w3.run.auto_cue_on_run = lj_ini_geti(mi, "CUELIST2", "AutoCue", 0) != 0;
-        lj_w3.run.stop_media = lj_ini_geti(mi, "CUELIST2", "StopAudio", 0) != 0;          /* W5 media: M_StopAudio */
-        lj_w3.run.autoseek_media = lj_ini_geti(mi, "CUELIST2", "AutoSeekAudio", 0) != 0;  /* W5 media: M_AutoCueAudio */
+        lj_host.run.ignore_first_wait = lj_ini_geti(mi, "CUELIST2", "IgnoreFirstWait", 0) != 0;
+        lj_host.run.auto_cue_on_run = lj_ini_geti(mi, "CUELIST2", "AutoCue", 0) != 0;
+        lj_host.run.stop_media = lj_ini_geti(mi, "CUELIST2", "StopAudio", 0) != 0;          /* W5 media: M_StopAudio */
+        lj_host.run.autoseek_media = lj_ini_geti(mi, "CUELIST2", "AutoSeekAudio", 0) != 0;  /* W5 media: M_AutoCueAudio */
         t = lj_ini_geti(mi, "CUELIST2", "MTCTimeout", LJ_CL_MTC_STOP);
-        lj_w3.run.mtc_timeout = (uint8_t)(t >= LJ_CL_MTC_STOP && t <= LJ_CL_MTC_IGNORE ? t : LJ_CL_MTC_STOP);
+        lj_host.run.mtc_timeout = (uint8_t)(t >= LJ_CL_MTC_STOP && t <= LJ_CL_MTC_IGNORE ? t : LJ_CL_MTC_STOP);
     }
-    lj_cl_run_step(&lj_w3.run, now_us, &lj_w3_host);
-    if (lj_w3.grave && lj_w3.run.cl != lj_w3.grave) { lj_cuelist_free(lj_w3.grave); lj_w3.grave = NULL; }
+    lj_cl_run_step(&lj_host.run, now_us, &lj_cl_host_app);
+    if (lj_host.grave && lj_host.run.cl != lj_host.grave) { lj_cuelist_free(lj_host.grave); lj_host.grave = NULL; }
 }
 
-uint32_t lj_app_cuelist_steps(void) { return lj_w3.steps; }
+uint32_t lj_app_cuelist_steps(void) { return lj_host.steps; }
 
-void lj_app_mtc_feed(uint8_t qf_data) { lj_mtc_feed(&lj_w3.mtc, qf_data, lj_clock_us()); }
+void lj_app_mtc_feed(uint8_t qf_data) { lj_mtc_feed(&lj_host.mtc, qf_data, lj_clock_us()); }
 
 static void cl_replace(lj_cuelist *cl)   /* the new current list; the runner lets go of the old one before it is freed (rule 6, UI side) */
 {
     lj_show *show = lj_ctx_get()->show;
     lj_cuelist *old;
     lj_lock(); old = show->current_cl; show->current_cl = cl; lj_unlock();
-    lj_cl_run_unpin(&lj_w3.run, old);
+    lj_cl_run_unpin(&lj_host.run, old);
     lj_cuelist_free(old);
     lj_ctx_get()->modified[LJ_MOD_CL] = 0;
 }
@@ -213,7 +231,7 @@ int lj_app_load_cuelist(uint32_t number)
 static int cl_op_now(int op, uint32_t n)
 {
     lj_show *show = lj_ctx_get()->show;
-    return show ? lj_cl_run_op(&lj_w3.run, show->current_cl, op, n, lj_clock_us(), &lj_w3_host) : -1;
+    return show ? lj_cl_run_op(&lj_host.run, show->current_cl, op, n, lj_clock_us(), &lj_cl_host_app) : -1;
 }
 static int cl_held_op;
 static uint32_t cl_held_n;
@@ -225,8 +243,8 @@ static int cl_op(int op, uint32_t n)
     lj_ctx *c = lj_ctx_get();
     const lj_cuelist *cl = c->show ? c->show->current_cl : NULL;
     uint32_t i;
-    int starts = op == LJ_CL_OP_TOP || op == LJ_CL_OP_RUN || op == LJ_CL_OP_MARK_RUN || (op == LJ_CL_OP_GO && lj_w3.run.st.state == LJ_CL_IDLE);
-    if (starts && cl && c->modified[LJ_MOD_CL] && lj_w3.run.st.state == LJ_CL_IDLE)
+    int starts = op == LJ_CL_OP_TOP || op == LJ_CL_OP_RUN || op == LJ_CL_OP_MARK_RUN || (op == LJ_CL_OP_GO && lj_host.run.st.state == LJ_CL_IDLE);
+    if (starts && cl && c->modified[LJ_MOD_CL] && lj_host.run.st.state == LJ_CL_IDLE)
         for (i = 0; i < cl->n; i++) if (cl->lines[i].cmd == LJ_CL_LINK_CUELIST) {
             cl_held_op = op; cl_held_n = n;
             lj_win_confirm(NULL, "Modified cuelist includes link to other cuelist - run without saving first ?", "", cl_link_yes, NULL);
@@ -292,7 +310,7 @@ int lj_app_gm_shapes_reload(void)   /* ME-34: <library>\Override\Macros.Mac (+ U
     memset(&cmd, 0, sizeof cmd);
     cmd.kind = LJ_CMD_GM_SHAPES; cmd.gm_shapes = sh; cmd.at_us = lj_clock_us();
     lj_lock();
-    if ((rc = lj_app_post_locked(&cmd)) == 0) { old = lj_w3.shapes; lj_w3.shapes = sh; c->gm_shapes = sh ? sh : &lj_gm_shapes_builtin; }
+    if ((rc = lj_app_post_locked(&cmd)) == 0) { old = lj_host.shapes; lj_host.shapes = sh; c->gm_shapes = sh ? sh : &lj_gm_shapes_builtin; }
     lj_unlock();
     if (rc != 0) old = sh;                                           /* never handed over: ours to free; the old table stays in force */
     if (old) { lj_gm_shapes_free(old); free(old); }
@@ -308,7 +326,7 @@ int lj_app_bez_reload(void)   /* MacroShapes\*.bez parsed outside the lock, show
     if (!(ns = (lj_bez_set *)calloc(1, sizeof *ns))) return -1;
     if (lj_bez_set_load(dir, ns) != 0) { free(ns); return -1; }
     lj_lock();
-    old = lj_w3.bez; lj_w3.bez = ns; c->show->bez = ns;
+    old = lj_host.bez; lj_host.bez = ns; c->show->bez = ns;
     lj_unlock();
     if (old) { lj_bez_set_free(old); free(old); }
     return 0;
@@ -492,7 +510,7 @@ static void fn_row(enum lj_fn f, int edge, uint32_t prog, void *ud)
     else if (f == LJ_FN_HOME_SELECTED_FIXTURES) lj_ctl_movement_home_selected();   /* unbound before W3 acceptance ("fn: no binding" from Fixture toolbar button 9) */
 }
 
-void lj_app_w3_start(void)
+void lj_app_cuelist_host_start(void)
 {
     static const enum lj_desktop_action acts[] = {
         LJ_ACT_LOAD_CUELIST, LJ_ACT_CUELIST_OP, LJ_ACT_NEW_CUELIST, LJ_ACT_SAVE_CUELIST, LJ_ACT_LOAD_GENMACRO, LJ_ACT_GENMACRO_APPLY, LJ_ACT_GENMACRO_TO_CUE,
@@ -506,10 +524,10 @@ void lj_app_w3_start(void)
     lj_ctx *c = lj_ctx_get();
     char path[LJ_PATH_CAP], err[128];
     int i;
-    lj_cl_run_init(&lj_w3.run);
-    lj_mtc_reset(&lj_w3.mtc);
-    c->cl = &lj_w3.run.st;
-    c->gdc = &lj_w3.gdc;
+    lj_cl_run_init(&lj_host.run);
+    lj_mtc_reset(&lj_host.mtc);
+    c->cl = &lj_host.run.st;
+    c->gdc = &lj_host.gdc;
     c->gm_shapes = &lj_gm_shapes_builtin;
     if (!c->gm_edit) c->gm_edit = lj_genmacro_new_rec();             /* the editor's blank record; posted on its first load / apply */
     if (c->show && lj_ctx_get()->lib) {
@@ -524,14 +542,50 @@ void lj_app_w3_start(void)
     for (i = LJ_FN_FOLLOW_SPOT_1; i <= LJ_FN_FOLLOW_SPOT_10; i++) if (!lj_fn_bound((enum lj_fn)i)) lj_fn_bind((enum lj_fn)i, fn_row, NULL);
 }
 
-void lj_app_w3_stop(void)
+void lj_app_cuelist_host_stop(void)
 {
     lj_ctx *c = lj_ctx_get();
     free(c->gm_edit); c->gm_edit = NULL;                              /* the engine is gone (or unbound) by now */
-    if (lj_w3.shapes) { lj_gm_shapes_free(lj_w3.shapes); free(lj_w3.shapes); lj_w3.shapes = NULL; }
+    if (lj_host.shapes) { lj_gm_shapes_free(lj_host.shapes); free(lj_host.shapes); lj_host.shapes = NULL; }
     c->gm_shapes = &lj_gm_shapes_builtin;
-    if (lj_w3.bez) { if (c->show && c->show->bez == lj_w3.bez) c->show->bez = NULL; lj_bez_set_free(lj_w3.bez); free(lj_w3.bez); lj_w3.bez = NULL; }
-    if (lj_w3.grave) { lj_cuelist_free(lj_w3.grave); lj_w3.grave = NULL; }
-    lj_cl_run_init(&lj_w3.run);
+    if (lj_host.bez) { if (c->show && c->show->bez == lj_host.bez) c->show->bez = NULL; lj_bez_set_free(lj_host.bez); free(lj_host.bez); lj_host.bez = NULL; }
+    if (lj_host.grave) { lj_cuelist_free(lj_host.grave); lj_host.grave = NULL; }
+    lj_cl_run_init(&lj_host.run);
     c->cl = NULL;
 }
+
+/* ---- the W4 window actions (was lj_app_cuelist_host.c, docs/w4-contracts.md section 4) ---- */
+
+static void win_act(enum lj_desktop_action a, int arg, void *ud)
+{
+    (void)ud;
+    switch (a) {
+    case LJ_ACT_FIXTURE_INFO:      lj_config_dlg_target(arg); lj_win_open(LJ_WIN_FIXTURE_INFO); break;
+    case LJ_ACT_FIXTURE_NOTES:     lj_config_dlg_target(arg); lj_win_open(LJ_WIN_FIXTURE_NOTES); break;
+    case LJ_ACT_AUTO_ARRANGE:      lj_win_open(LJ_WIN_AUTO_ARRANGE); break;
+    case LJ_ACT_DESKTOP_GRID:      lj_win_open(LJ_WIN_DESKTOP_GRID); break;
+    case LJ_ACT_DESKTOP_IMAGE:     lj_win_open(LJ_WIN_DESKTOP_IMAGE); break;
+    case LJ_ACT_DESKTOP_TABS:      lj_win_open(LJ_WIN_DESKTOP_TABS); break;
+    case LJ_ACT_ICON_STYLE:        lj_win_open(LJ_WIN_ICON_STYLE); break;
+    case LJ_ACT_NEXTPREV_SETTINGS: lj_win_open(LJ_WIN_NEXTPREV_SELECTION); break;
+    case LJ_ACT_RESTORE_DATA:      lj_win_open(LJ_WIN_RESTORE_DATA); break;
+    case LJ_ACT_HELP:              lj_help_viewer_topic(NULL); break;
+    case LJ_ACT_SELECT_HELPFILE:   if (arg != 1) lj_log("help: only the English topics ship (design 13 item 12)"); lj_help_viewer_topic(NULL); break;
+    case LJ_ACT_WINDOWS_MEMORY:    lj_win_open(LJ_WIN_MEMORY_VIEW); break;
+    case LJ_ACT_DEBUG_WINDOW:      lj_win_open(LJ_WIN_DEBUG); break;
+    case LJ_ACT_FINGERS_SETUP:     lj_win_open(LJ_WIN_FINGERS_SETUP); break;
+    case LJ_ACT_DMX_IN:            lj_win_open(LJ_WIN_DMX_IN); break;
+    default: break;
+    }
+}
+
+void lj_app_cuelist_host_windows_start(void)
+{
+    static const enum lj_desktop_action acts[] = { LJ_ACT_FIXTURE_INFO, LJ_ACT_FIXTURE_NOTES, LJ_ACT_AUTO_ARRANGE, LJ_ACT_DESKTOP_GRID,
+        LJ_ACT_DESKTOP_IMAGE, LJ_ACT_DESKTOP_TABS, LJ_ACT_ICON_STYLE, LJ_ACT_NEXTPREV_SETTINGS, LJ_ACT_RESTORE_DATA, LJ_ACT_HELP,
+        LJ_ACT_SELECT_HELPFILE, LJ_ACT_WINDOWS_MEMORY, LJ_ACT_DEBUG_WINDOW, LJ_ACT_FINGERS_SETUP, LJ_ACT_DMX_IN };
+    size_t i;
+    for (i = 0; i < sizeof acts / sizeof acts[0]; i++) lj_desktop_bind_action(acts[i], win_act, NULL);
+}
+
+void lj_app_cuelist_host_idle(uint64_t now_us) { lj_lightcorder_step(now_us); }

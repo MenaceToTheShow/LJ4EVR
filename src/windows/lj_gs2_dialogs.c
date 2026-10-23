@@ -142,20 +142,19 @@ int lj_gs2_import_folder(int keep_existing)
 
 static void im_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_folder(0); im.close_pending = 1; }
 static void im_sel(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_folder(1); im.close_pending = 1; }   /* the File Exists boxes outlive the import window */
-static void im_ov(lj_widget *w, void *ud) { (void)ud; if (w) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; } }   /* Offline Visualizer files: design 8.5 */
+static void im_ov(lj_widget *w, void *ud) { (void)ud; lj_widget_set_enabled(w, 0); }   /* Offline Visualizer files: design 8.5 */
 static const lj_binding im_b[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bImportAllClick", im_all, NULL },
     { "bImportSelClick", im_sel, NULL }, { "cbImportOVFilesClick", im_ov, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 
 lj_window *lj_gs2_import_open(void)
 {
-    lj_widget *w;
     if (im.win) return im.win;
     if (!(im.win = lj_window_create(&lj_form_TFIXTUREIMPORTFORM, im_b))) { lj_log("import profile: cannot create TFixtureImportForm"); return NULL; }
     im.close_pending = 0;
     if (!lj_ctx_get()->lib || lj_library_path(lj_ctx_get()->lib, GS2_IMPORT_DIR, im.dir, sizeof im.dir) != 0) im.dir[0] = 0;
     else lj_fs_mkdir(im.dir);
-    if ((w = lj_window_find(im.win, "cbImportOVFiles")) != NULL) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; }
+    lj_widget_set_enabled(lj_window_find(im.win, "cbImportOVFiles"), 0);
     on_cancel(im.win, "bCancel", &im.close_pending);
     im_list();
     lj_win_show(im.win, 0);

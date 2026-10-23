@@ -25,6 +25,7 @@ static struct {
     lj_serial *ser;
     lj_remote_parser sp, ip;      /* serial, inject */
     lj_remote_query_fn query;
+    lj_remote_setter_fn setter;
     uint64_t now_us, log_us;
     uint32_t log_skipped;
     uint8_t logged;
@@ -63,6 +64,7 @@ int lj_remote_feed(lj_remote_parser *p, const uint8_t *bytes, size_t n, uint64_t
 
 /* ---- execution (UI thread) ---- */
 void lj_remote_set_query(lj_remote_query_fn fn) { lj_rem.query = fn; }
+void lj_remote_set_setter(lj_remote_setter_fn fn) { lj_rem.setter = fn; }
 
 static int lj_rem_ignore(const lj_remote_msg *m, const char *why)
 {
@@ -76,12 +78,10 @@ static int lj_rem_ignore(const lj_remote_msg *m, const char *why)
 
 static int lj_rem_q(enum lj_remote_q q, int n) { return lj_rem.query ? lj_rem.query(q, n) : -1; }
 
-/* drive a toggle function to `on`: run it only when the queried state differs */
-static int lj_rem_set(const lj_remote_msg *m, enum lj_fn fn, enum lj_remote_q q, int n, int on)
+/* ME-168: the set form, idempotent (no toggle against the lagging view) */
+static int lj_rem_set(const lj_remote_msg *m, enum lj_remote_q q, int n, int on)
 {
-    int st = lj_rem_q(q, n);
-    if (st < 0) return lj_rem_ignore(m, "state unknown");
-    if (st != on) lj_fn_run(fn, 1);
+    if (!lj_rem.setter || lj_rem.setter(q, n, on) != 0) return lj_rem_ignore(m, "state unknown");
     return 0;
 }
 
@@ -102,7 +102,7 @@ int lj_remote_exec(const lj_remote_msg *m)
         if (d2 > 1) return lj_rem_ignore(m, "out of range");
         switch (d1) {
         case 0: lj_fn_run(LJ_FN_SMOKE_BUTTON_FLASH, (int)d2); return 0;                                  /* smoke off / on: the held Smoke button */
-        case 1: return lj_rem_set(m, LJ_FN_TOGGLE_SMOKE_TIMER, LJ_REMQ_SMOKE_TIMER, 0, (int)d2);
+        case 1: return lj_rem_set(m, LJ_REMQ_SMOKE_TIMER, 0, (int)d2);
         case 2: if (d2) lj_fn_run(LJ_FN_BLACKOUT, 1); else lj_fn_run(LJ_FN_BLACKOUT_FLASH, 0); return 0;   /* 1 blackout, 0 restore (LJ_CMD_BLACKOUT b = 0) */
         case 3: lj_fn_run(d2 ? LJ_FN_FADE_OUT : LJ_FN_FADE_IN, 1); return 0;                               /* 0 fade in, 1 fade out: the master-intensity preset time */
         default: return lj_rem_ignore(m, "out of range");
@@ -121,10 +121,10 @@ int lj_remote_exec(const lj_remote_msg *m)
         return 0;
     case LJ_REM_SLOT:
         if (d1 < 1 || d1 > 12 || d2 > 1) return lj_rem_ignore(m, "out of range");
-        return lj_rem_set(m, (enum lj_fn)(LJ_FN_TOGGLE_SLOT_ENABLE_1 + (int)d1 - 1), LJ_REMQ_SLOT, (int)d1, (int)d2);
+        return lj_rem_set(m, LJ_REMQ_SLOT, (int)d1, (int)d2);
     case LJ_REM_BGSLOT:
         if (d1 < 1 || d1 > 5 || d2 > 1) return lj_rem_ignore(m, "out of range");
-        return lj_rem_set(m, (enum lj_fn)(LJ_FN_BGCUE_TOGGLE_SLOT_1 + (int)d1 - 1), LJ_REMQ_BGSLOT, (int)d1, (int)d2);
+        return lj_rem_set(m, LJ_REMQ_BGSLOT, (int)d1, (int)d2);
     default: return lj_rem_ignore(m, "unknown command");
     }
 }

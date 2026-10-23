@@ -31,8 +31,41 @@ The seven features 1.0.0 left out are in, each replacing its greyed `Not availab
 Also: the Hardware Setup status line shows the real sACN packets/s per universe (1.0.0 always showed 0); a master
 driven by DMX-in shows its mode text red and ignores the mouse.
 
+Also from the W5 code council's fix pass (`W5_CODE_MASTER_ELDER_VERDICT.md`, ME-167..ME-186):
+
+- DMX-in functions run only on a frame a sender (or Fingers) delivered: a saved Master Intensity assignment no longer
+  drives the Grand Master to 0 at start with no input. The Overwrite Enable gate follows its channel after DMX-in is
+  turned off and on, and Disable DMX-in functions opens it at once.
+- The remote's slot, background-slot and smoke-timer commands set their state; a repeated "off" no longer turns it on.
+- MP Load File refuses a network path, a device name or a non-WAV file before touching the file system (no SMB
+  connection from opening a cue list), and reads a relative name from the library folder. The WAV size cap is 64 MB.
+- Art-Net subscribes only nodes on the chosen interface's subnet (at most 4 rows per address); DMX-in over sACN and
+  Art-Net ignores packets from outside the configured interface's subnet. `[ARTNET] In` is no longer saved.
+- Select Bitmap shows large icons; the User Libraries list has its Date column; &Audio shows only while the Audio
+  Analyzer is enabled; the cue list's MediaPlayer button has its own glyph and stays latched when clicked; Pass
+  Keypresses works in the Analyzer and the player; LightCorder samples on the engine tick.
+- Hostile-input fixes: a duplicate statics slot, a 2^32 / 2^64 group mask, a cue list over 9999 lines, an `.LLF`
+  header claiming more frames than it holds and an out-of-range `DmxIn.dat` function number are refused.
+- Wait Elapsed lines count from the previous wait's due time, so a long list does not drift; Automatic Cue update on
+  Run starts from the last non-transparent cue.
+- Help gains three topics: DMX-in and remote control, Audio Analyzer and MediaPlayer, Importing a LightJockey 2 backup.
+
 Still left out (README "What v1.1.0 is not"): the reference-rig comparison, audio CD and Winamp, video, and the
 Global Patch per-channel "Use / Ignore DMX In Enable" items.
+
+Known gaps:
+
+- macOS: the build is tested by CI on every change, but neither 1.0.0 nor 1.1.0 has been run by hand on a Mac, and the
+  macOS microphone permission prompt the Audio Analyzer triggers has not been seen on a real Mac. Use the system's
+  window frames there (`--native`, or `[CHROME] Native=1` in `Main.Ini`), the recommended setting on macOS.
+- The installers are not code-signed: Windows SmartScreen warns (More info > Run anyway); on macOS right-click
+  LJ4EVR.app > Open the first time.
+- A few timings and layering rules are best estimates until they are compared with LightJockey on a real rig; each is
+  marked "deferred: needs rig" in `docs/fidelity.md`.
+- The remote has no authentication: keep it on 127.0.0.1 unless the controller is on a lighting network you trust.
+- The Art-Net OemCode is OemUnknown (0x00FF) until a code is registered.
+- The Statics 2 page layout and the background-cue file (`.bgc`) are LJ4EVR's own choices until a LightJockey sample
+  shows the original.
 
 ## [1.0.0] - 2026-10-23 - W4 Fidelity sweep and release
 

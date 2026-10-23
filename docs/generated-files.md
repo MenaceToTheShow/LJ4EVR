@@ -19,6 +19,9 @@ the tool, its version and the SHA-256 of every input; nobody edits them by hand.
 | `src/engine/lj_trig_gen.c` | `tools/gen_vectors.py` | `tools/ref/17-position_ref.py` | same row |
 | `src/engine/lj_shapes_gen.c` | `tools/gen_vectors.py --shapes` (W3 genmacro) | the authored definitions in `gm_shapes()` of `tools/gen_vectors.py`; no reference data | `gen_vectors.py --shapes --check` (CTest `gen_vectors_shapes_check`) and `--shapes --check --mutate` (CTest `gen_vectors_shapes_mutated`, WILL_FAIL: one flipped sample of the committed file must be caught) |
 
+| `src/io/lj_vtr_gen.c` | `tools/gen_vectors.py --vtr` (W5 dmxin) | the SYSTEM value-table rules in the generator; no reference data | `gen_vectors.py --vtr --check` (CTest `gen_vectors_vtr_check`, which every CI build job runs) |
+| `src/io/lj_audio_gen.c` | `tools/gen_vectors.py --audio` (W5 audio) | the Hann window, FFT twiddles, band edges and gain table formulas in the generator | `gen_vectors.py --audio --check` (CTest `gen_vectors_audio_check`, which every CI build job runs) |
+| `tests/io/audio_vectors.h` | `tools/gen_vectors.py --audio` (W5 audio) | synthetic PCM (a click, LCG noise, two tones) from the generator; no recording | same row |
 **Frozen (ME-53).** `tests/fonts/widths.tsv` and `tests/fonts/font_census.tsv` were written once in W0 by
 `tools/widthcorpus.py` from the 208 DFMs, which never change; the tool (a second DFM parser) was deleted in W4
 track 0. The two files are frozen facts: nobody regenerates them, `font_corpus` reads `widths.tsv`, and a new

@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "app/lj_app_w4.h"
+#include "app/lj_app_cuelist_host.h"
 #include "app/lj_uiscript.h"
 #include "core/lj_clock.h"
 #include "core/lj_ini.h"
@@ -149,7 +149,7 @@ int lj_test_desktop_dialogs(int argc, char **argv)
     lj_desktop_set_library("Lib");
     lj_win_set_host(&fake_host);
     lj_desktop_dlg_set_host(&test_dd_host);
-    lj_app_w4_start();
+    lj_app_cuelist_host_windows_start();
     { lj_uiscript_host h; h.ud = NULL; h.resolve = NULL; h.view = view; lj_uiscript_set_host(&h); }
     for (i = 0; i < 4; i++) CHECK(lj_desktop_place_icon(i, 300 - 60 * i, 17 * i) == 0);
 

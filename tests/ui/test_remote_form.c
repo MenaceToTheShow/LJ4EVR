@@ -20,6 +20,7 @@
 #include "io/lj_socket.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "windows/lj_remote_form.h"
+#include "windows/lj_smoke_control.h"
 #include "windows/lj_windows.h"
 
 static int fails;
@@ -87,19 +88,21 @@ int lj_test_remote_form(int argc, char **argv)
     CHECK(r == 0 && lj_win_get(LJ_WIN_REMOTE_SETUP) == NULL);
     lj_remote_close();
 
-    /* the windows-layer query: 132 1 1 turns the smoke timer on only when the view says it is off */
+    /* ME-168: the windows-layer setter: 132 1 x sets the smoke timer (never a toggle against the lagging view), twice in
+     * one pass = the same state; the toggle function is never run */
     lj_remote_form_bind_fns();
     lj_fn_bind(LJ_FN_TOGGLE_SMOKE_TIMER, rec, NULL);
     memset(&ctx->view, 0, sizeof ctx->view);
-    ctx->view.tick_no = 1; ctx->view.smoke_timer = 0;
-    lj_remote_inject(timer_on, sizeof timer_on, 1000);
-    CHECK(hits == 1);
-    ctx->view.smoke_timer = 1;
-    lj_remote_inject(timer_on, sizeof timer_on, 2000);
-    CHECK(hits == 1);
-    r = run_text("remote 132 1 0\n");                               /* the script verb: the same feed and exec */
-    CHECK(r == 0 && hits == 2);
-    lj_remote_set_query(NULL);
+    {   lj_cmd last;
+        static const uint8_t timer_on2[] = { 132, 1, 1, 132, 1, 1 };
+        lj_remote_inject(timer_on, sizeof timer_on, 1000);
+        CHECK(hits == 0 && lj_smoke_control_last_cmd(&last) && last.b == 1);
+        lj_remote_inject(timer_on2, sizeof timer_on2, 2000);
+        CHECK(hits == 0 && lj_smoke_control_last_cmd(&last) && last.b == 1);
+        r = run_text("remote 132 1 0 132 1 0\n");                  /* the script verb: the same feed and exec */
+        CHECK(r == 0 && hits == 0 && lj_smoke_control_last_cmd(&last) && last.b == 0);
+    }
+    lj_remote_set_query(NULL); lj_remote_set_setter(NULL);
     lj_app_io_stop();
     printf("test_remote_form: %s\n", fails ? "FAIL" : "PASS");
     return fails ? 1 : 0;

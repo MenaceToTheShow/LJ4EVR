@@ -2,6 +2,7 @@
 #include "ui/lj_widget.h"
 
 #include <string.h>
+#include "ui/forms/lj_form.h"
 
 const char *const lj_wev_names[LJ_WEV_COUNT] = {
     "OnClick", "OnDblClick", "OnChange", "OnEnter", "OnExit",
@@ -59,6 +60,15 @@ void lj_widget_abs(const lj_widget *w, int *x, int *y)
 void lj_widget_invalidate(lj_widget *w)
 {
     if (w) w->dirty = 1;
+}
+
+void lj_widget_set_enabled(lj_widget *w, int on)
+{
+    if (!w) return;
+    w->enabled = on != 0;
+    if (!on) w->hint = LJ_NA_HINT;
+    else if (on && w->hint && strcmp(w->hint, LJ_NA_HINT) == 0) w->hint = NULL;
+    w->dirty = 1;
 }
 
 /* A dirty widget's rect covers its children (VCL child controls are clipped to

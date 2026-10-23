@@ -1,5 +1,6 @@
 /* lj_gdc.c - Generic DMX Control command line, run and groups file (lj_gdc.h; F35, CHM thegenericdmxcontrol.htm). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen probe for the missing-file case (as model/lj_show.c) */
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -211,10 +212,11 @@ int lj_gdc_groups_load(const char *path, lj_gdc_groups *out, char *err, size_t c
         } else if (strcmp(k, "ch") == 0) {
             int code = lead_code(v, &rest);
             char *e;
-            unsigned long m;
+            unsigned long long m;
             if (code < 0 || lj_kv_get(rest, "groups", q, sizeof q) != 1) { bad = "bad ch line"; break; }
-            m = strtoul(q, &e, 10);
-            if (e == q || *e || m > 0xFFFFFFFFul) { bad = "bad groups= mask"; break; }
+            errno = 0;                                   /* ME-171 (c): 64-bit on every OS, so 2^32 is refused on Windows too */
+            m = strtoull(q, &e, 10);
+            if (errno == ERANGE || e == q || *e || q[0] < '0' || q[0] > '9' || m > 0xFFFFFFFFull) { bad = "bad groups= mask"; break; }
             out->member[code] = (uint32_t)m;
         } else if (strcmp(k, "hide") == 0) {
             int code = lead_code(v, &rest);

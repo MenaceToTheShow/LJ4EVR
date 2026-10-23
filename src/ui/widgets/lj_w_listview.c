@@ -6,15 +6,61 @@
 #include "ui/widgets/lj_widgets_lists.h"
 
 #include <string.h>
+#include "core/lj_str.h"
+#include "gfx/lj_glyphs.h"
 
 #define LV_BORDER 2
 
-static int rows_top(const lj_w_listview *v) { return LV_BORDER + (v->show_headers ? v->header_h : 0); }
+/* ME-160: in the vsIcon view a "row" is a line of tiles (icon_cols per line) of tile_h pixels, so the scrollbar, the
+ * visible count and the reveal work in tile lines; report rows are row_h pixels, one item each */
+static int icon_cols(const lj_w_listview *v) { int c = (v->base.w - 2 * LV_BORDER - LJ_SB_W) / v->tile_w; return c < 1 ? 1 : c; }
+static int rows_top(const lj_w_listview *v) { return LV_BORDER + (v->show_headers && !v->tile_w ? v->header_h : 0); }
 static int rows_h(const lj_w_listview *v) { return v->base.h - rows_top(v) - LV_BORDER; }
-static int visible_rows(const lj_w_listview *v) { int n = rows_h(v) / v->row_h; return n < 1 ? 1 : n; }
-static int needs_sb(const lj_w_listview *v) { return v->n * v->row_h > rows_h(v); }
+static int pitch(const lj_w_listview *v) { return v->tile_w ? v->tile_h : v->row_h; }
+static int lines(const lj_w_listview *v) { return v->tile_w ? (v->n + icon_cols(v) - 1) / icon_cols(v) : v->n; }
+static int line_of(const lj_w_listview *v, int item) { return v->tile_w ? item / icon_cols(v) : item; }
+static int visible_rows(const lj_w_listview *v) { int n = rows_h(v) / pitch(v); return n < 1 ? 1 : n; }
+static int needs_sb(const lj_w_listview *v) { return lines(v) * pitch(v) > rows_h(v); }
 
-#define FIT(v) lj_w_sbar_fit(&(v)->sb, (v)->base.w, LV_BORDER, rows_top(v), rows_h(v), (v)->n, visible_rows(v))
+#define FIT(v) lj_w_sbar_fit(&(v)->sb, (v)->base.w, LV_BORDER, rows_top(v), rows_h(v), lines(v), visible_rows(v))
+
+static int icon_at(const lj_w_listview *v, int x, int y)   /* the tile under a widget-relative point, -1 = none */
+{
+    int c = (x - LV_BORDER) / v->tile_w, item;
+    if (x < LV_BORDER || y < rows_top(v) || y >= v->base.h - LV_BORDER || c >= icon_cols(v)) return -1;
+    item = (v->sb.pos + (y - rows_top(v)) / v->tile_h) * icon_cols(v) + c;
+    return item < v->n ? item : -1;
+}
+
+static void icon_paint(lj_w_listview *v, lj_surface *s, int ax, int ay, int show_sel)   /* glyph centred at the top of its tile, caption under it */
+{
+    const lj_font *f = lj_w_font_of(&v->base);
+    int cols = icon_cols(v), i, vis = visible_rows(v);
+    char buf[64];
+    for (i = v->sb.pos * cols; i < v->n && i < (v->sb.pos + vis) * cols; i++) {
+        int tx = ax + LV_BORDER + (i % cols) * v->tile_w, ty = ay + rows_top(v) + (i / cols - v->sb.pos) * v->tile_h;
+        const lj_surface *g = lj_glyph_get(v->items[i]);
+        size_t k;
+        int tw, sel = show_sel && i == v->index, cy = ty + 2 + (g ? g->h : 32) + 3;   /* the caption right under the icon */
+        if (g) lj_glyph_paint(s, tx + (v->tile_w - g->w) / 2, ty + 2, v->items[i], 1);
+        lj_str_copy(buf, sizeof buf, v->items[i]);
+        k = strlen(buf);
+        while (k > 0 && lj_text_width(f, buf) + 4 > v->tile_w) buf[--k] = 0;   /* one line, clipped at the tile edge */
+        tw = lj_text_width(f, buf);
+        if (sel) lj_fill(s, tx + (v->tile_w - tw) / 2 - 2, cy - 1, tw + 4, f->height + 2, LJ_CLR_HIGHLIGHT);
+        lj_w_text(s, &v->base, tx + (v->tile_w - tw) / 2, cy, buf, sel ? LJ_CLR_BTNHIGHLIGHT : LJ_CLR_3DDKSHADOW);
+        if (sel && v->base.focused) lj_focus_rect(s, tx + (v->tile_w - tw) / 2 - 2, cy - 1, tw + 4, f->height + 2);
+    }
+}
+
+void lj_w_listview_icon_view(lj_widget *w, int tile_w, int tile_h)
+{
+    lj_w_listview *v = (lj_w_listview *)w;
+    if (!w || w->kind != LJ_K_LISTVIEW) return;
+    v->tile_w = tile_w > 0 && tile_h > 0 ? tile_w : 0; v->tile_h = tile_h;
+    v->sb.pos = 0;
+    lj_widget_invalidate(w);
+}
 
 int lj_w_listview_row_at(const lj_widget *w, int y)
 {
@@ -49,6 +95,7 @@ static void lv_paint(lj_widget *w, lj_surface *s)
     vis = visible_rows(v);
     area_w = w->w - 2 * LV_BORDER - (sb ? LJ_SB_W : 0);
     show_sel = v->index >= 0 && (w->focused || !v->hide_sel);
+    if (v->tile_w) { icon_paint(v, s, ax, ay, show_sel); if (sb) lj_w_sbar_paint(s, &v->sb, ax, ay, w->enabled); return; }
     for (c = 0; c < v->ncols; c++) {                                 /* AutoSize = LVSCW_AUTOSIZE_USEHEADER: last column fills, others fit their header */
         if (!lj_desc_bool(v->cols[c].autosize, 0) && v->cols[c].width >= 0) continue;   /* Width -1/-2 (LVSCW_AUTOSIZE / _USEHEADER) sizes the same way */
         if (c == v->ncols - 1) { int used = 0; for (i = 0; i < c; i++) used += v->col_w[i]; v->col_w[c] = area_w - used > 0 ? area_w - used : 0; }
@@ -83,7 +130,7 @@ static void select_row(lj_w_listview *v, int row)
 {
     if (row < 0 || row >= v->n || row == v->index) return;
     v->index = row;
-    FIT(v); lj_w_sbar_reveal(&v->sb, v->index, visible_rows(v));
+    FIT(v); lj_w_sbar_reveal(&v->sb, line_of(v, v->index), visible_rows(v));
     lj_widget_invalidate(&v->base);
     lj_w_emit(&v->base, LJ_WEV_SELECT_ITEM);
     lj_w_emit(&v->base, LJ_WEV_CHANGE);   /* W4 acceptance: TListView.OnChange fires on a selection change (ctState); Fixture Configuration's lvConfigChange never ran */
@@ -124,7 +171,7 @@ static int lv_mouse(lj_widget *w, const lj_mouse_ev *m)
     }
     if (m->type != LJ_EV_MOUSE_DOWN || m->button != 1) return m->type == LJ_EV_MOUSE_DOWN;
     lj_widget_set_focus(w);
-    row = lj_w_listview_row_at(w, m->y);
+    row = v->tile_w ? icon_at(v, m->x, m->y) : lj_w_listview_row_at(w, m->y);
     if (row >= 0 && row == v->index) lj_w_emit(w, LJ_WEV_CLICK);   /* VCL OnClick fires on every press, not only on a new row: a dmAutomatic source drags its selected row */
     else if (row >= 0) select_row(v, row);
     if (row >= 0 && m->clicks == 2) lj_w_emit(w, LJ_WEV_DBLCLICK);
@@ -134,11 +181,13 @@ static int lv_mouse(lj_widget *w, const lj_mouse_ev *m)
 static int lv_key(lj_widget *w, const lj_key_ev *k)
 {
     lj_w_listview *v = (lj_w_listview *)w;
-    int vis = visible_rows(v), next;
+    int step = v->tile_w ? icon_cols(v) : 1, vis = visible_rows(v) * step, next;   /* ME-160: Up / Down move a tile line in the vsIcon view */
     if (k->type != LJ_EV_KEY_DOWN || !w->enabled || v->n == 0) return 0;
     switch (k->key) {
-    case LJ_VK_UP:    next = v->index > 0 ? v->index - 1 : 0; break;
-    case LJ_VK_DOWN:  next = v->index + 1 < v->n ? v->index + 1 : v->n - 1; break;
+    case LJ_VK_UP:    next = v->index - step > 0 ? v->index - step : 0; break;
+    case LJ_VK_DOWN:  next = v->index + step < v->n ? v->index + step : v->n - 1; break;
+    case LJ_VK_LEFT:  if (!v->tile_w) return 0; next = v->index > 0 ? v->index - 1 : 0; break;
+    case LJ_VK_RIGHT: if (!v->tile_w) return 0; next = v->index + 1 < v->n ? v->index + 1 : v->n - 1; break;
     case LJ_VK_PRIOR: next = v->index - vis > 0 ? v->index - vis : 0; break;
     case LJ_VK_NEXT:  next = v->index + vis < v->n ? v->index + vis : v->n - 1; break;
     case LJ_VK_HOME:  next = 0; break;

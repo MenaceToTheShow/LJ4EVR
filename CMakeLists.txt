@@ -67,8 +67,7 @@ if(LJ_SDL)
   endif()
   FetchContent_Declare(SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-    GIT_TAG        release-3.4.18
-    GIT_SHALLOW    TRUE
+    GIT_TAG        829a65d769d935c4852f8159e964312c0957260a   # release-3.4.18 (ME-171 (e): a commit, not a movable tag)
     SYSTEM)
   FetchContent_MakeAvailable(SDL3)
 endif()
@@ -190,7 +189,9 @@ endforeach()
 file(GLOB LJ_REPLAY_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/engine/replay/*.lj4r")
 add_test(NAME replay_all COMMAND lj4evr_tests replay ${LJ_REPLAY_FILES})
 # replay_dump: the frame dump the determinism job compares (replay-frames.bin in the build dir), every scenario with a per-scenario header.
-add_test(NAME replay_dump COMMAND lj4evr_tests --dump-frames "${CMAKE_BINARY_DIR}/replay-frames.bin" ${LJ_REPLAY_FILES})
+# ME-179 (W5-X-REPLAY): the W5 scenarios (DMX-in through S1, audio trig) join the dump, so the three OSes compare them too.
+file(GLOB LJ_REPLAY_W5_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/engine/replay/w5/*.lj4r")
+add_test(NAME replay_dump COMMAND lj4evr_tests --dump-frames "${CMAKE_BINARY_DIR}/replay-frames.bin" ${LJ_REPLAY_FILES} ${LJ_REPLAY_W5_FILES})
 # Developer-only tests (the 48 shipped + 200 sampled .GS2 files, the exe DFMs) read Martin's data from this folder
 # and skip when it is empty; it is never set in CI (design 5.3, reference/ is gitignored).
 set(LJ4EVR_REFERENCE_DIR "" CACHE PATH "Developer-only: path to the Martin reference folder (D:/lj4evr/reference); empty = those tests skip")
@@ -386,7 +387,7 @@ add_test(NAME test_cuelist_form COMMAND lj4evr_tests test_cuelist_form)
 add_test(NAME test_profiles_w3 COMMAND lj4evr_tests test_profiles_w3)
 
 # W3 desktop-app (append-only): the W3 app seam (cue-list host, reloads, follow spot, W3 actions) and its script verbs headless
-target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_app_w3.c")
+target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_app_cuelist_host.c")
 add_test(NAME test_uiscript_w3 COMMAND lj4evr_tests test_uiscript_w3)
 
 # W3 gdc-fades-followspot (append-only): the Generic DMX Control / Set Fade Status / follow spot windows headless + W3GDC_* goldens
@@ -408,9 +409,9 @@ if(Python3_FOUND)
 endif()
 # W4 entry (append-only): ME-129 one current-scene getter (tests/ui/test_ctx_scene.c)
 add_test(NAME test_ctx_scene COMMAND lj4evr_tests test_ctx_scene)
-# W4 docs-release (append-only): W4-HELP every Help leaf opens the bundled viewer through app/lj_app_w4.c (tests/ui/test_help_viewer.c);
+# W4 docs-release (append-only): W4-HELP every Help leaf opens the bundled viewer through app/lj_app_cuelist_host.c (tests/ui/test_help_viewer.c);
 # help_check: topics current in lj_help_topics_gen.c, English only, no 8-word run of Martin's help where reference/ exists
-target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_app_w4.c")
+# (ME-173: lj_app_w4.c folded into src/app/lj_app_cuelist_host.c, already a source of lj4evr_tests above)
 add_test(NAME test_help_viewer COMMAND lj4evr_tests test_help_viewer)
 if(Python3_FOUND)
   add_test(NAME help_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/help_check.py" --check)
@@ -455,7 +456,7 @@ endif()
 
 # ---- W5 contracts (docs/w5-contracts.md seam 11), append-only ----
 # Serial: io/ is globbed, so the backend of the other OS is compiled out (the MIDI pattern); tools/test_layering.py OS_ALLOW
-# names both files. The app's W5 seam is SDL-free and in the tests (lj_app_w3.c's cue-list host points at it).
+# names both files. The app's W5 seam is SDL-free and in the tests (lj_app_cuelist_host.c's cue-list host points at it).
 if(WIN32)
   set_source_files_properties("${CMAKE_SOURCE_DIR}/src/io/lj_serial_posix.c" PROPERTIES HEADER_FILE_ONLY TRUE)
 else()

@@ -1,0 +1,64 @@
+# w5_entry_points.lj4s - ME-175 (W5-X-HINT): every newly live W5 entry point is enabled and the CD / DA chrome stays
+# greyed, so a W5 entry going grey again, or a CD / DA item going live, fails CTest. ME-181: &Audio is hidden while the
+# Audio Analyzer is off, and a click on sbMPTime latches it. Headless: tests/app/test_uiscript_w3.c runs it after
+# lj_app_io_start on a fresh Hardware.Ini (audio, DMX-in and the remote all off). The full-app walk of every W4 window
+# stays tests/ui/scripts/w4_entry_points.lj4s. PI_DefineAppLink (an External Application icon's popup) is covered by
+# test_extapp_form.
+
+# ---- the main menu: &Audio (hidden until enabled, its items live), Setup > RS-232 / TCP Remote ----
+assert_visible main.M_Audio 0
+assert_enabled main.M_RestartSound 1
+assert_enabled main.M_StartDAPlayer 0
+assert_enabled main.M_RemoteSetup 1
+
+# ---- the Cuelist window: the MP time-code button and the nine MP commands live, CD / DA greyed ----
+open cuelist_form
+assert_enabled TCuelist2Form.sbMPTime 1
+assert_enabled TCuelist2Form.sbCDTime 0
+assert_enabled TCuelist2Form.sbDATime 0
+assert_enabled TCuelist2Form.Pop_MPCommands 1
+assert_enabled TCuelist2Form.CueMediaFile1 1
+assert_enabled TCuelist2Form.MediaPlayerPlay1 1
+assert_enabled TCuelist2Form.MPSeek1 1
+assert_enabled TCuelist2Form.MediaPlayerStop1 1
+assert_enabled TCuelist2Form.MediaPlayerPause1 1
+assert_enabled TCuelist2Form.WaitMediaPlayer1 1
+assert_enabled TCuelist2Form.MPCloseClip1 1
+assert_enabled TCuelist2Form.MediaPlayerLaunch1 1
+assert_enabled TCuelist2Form.MPClose1 1
+assert_enabled TCuelist2Form.MediaPlayer1 1
+assert_enabled TCuelist2Form.Pop_CDCommands 0
+assert_enabled TCuelist2Form.popCDPlayTrack 0
+assert_enabled TCuelist2Form.pop_DACommands 0
+assert_enabled TCuelist2Form.P_PlayDAFile 0
+# ME-181: the clicked time-code button stays latched; another click moves the latch
+click TCuelist2Form.sbMPTime
+assert_down TCuelist2Form.sbMPTime 1
+click TCuelist2Form.sbPCClock
+assert_down TCuelist2Form.sbMPTime 0
+assert_down TCuelist2Form.sbPCClock 1
+close media_player
+close cuelist_form
+
+# ---- Hardware Setup: Enable DMX in and the Audio page live; CD-Audio and the Digital Audio Player greyed ----
+open hardware_setup
+assert_enabled THardwareSetupForm2.cbUseDMXin 1
+assert_enabled THardwareSetupForm2.RGAudio 1
+assert_enabled THardwareSetupForm2.cbAudioDevice 1
+assert_enabled THardwareSetupForm2.rgAudioCD 0
+assert_enabled THardwareSetupForm2.rgDigitalAudio 0
+close hardware_setup
+
+# ---- the DMX-in, remote and player windows open with their inputs live ----
+open dmx_in
+assert_enabled TDmxInForm.LVFunctions 1
+assert_enabled TDmxInForm.LVDmxFunctions 1
+close dmx_in
+open remote_setup
+assert_enabled TRS232SettingsForm.rgPort 1
+assert_enabled TRS232SettingsForm.rgBaudRate 1
+close remote_setup
+open media_player
+assert_enabled TLJMediaForm.sbLoadMediaFile 1
+close media_player
+quit

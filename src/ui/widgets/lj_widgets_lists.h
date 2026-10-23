@@ -119,7 +119,9 @@ typedef struct {
     int clicked_col, drag_col, drag_x;    /* OnColumnClick column; header divider drag */
     lj_w_sbar sb;
     unsigned show_headers:1, row_select:1, grid_lines:1, hide_sel:1;
+    int tile_w, tile_h;                   /* ME-160: > 0 = vsIcon view: tiles of this pitch, the item text names an art glyph and is its caption */
 } lj_w_listview;
+void lj_w_listview_icon_view(lj_widget *w, int tile_w, int tile_h);   /* ME-160: vsIcon (the VCL default ViewStyle): glyph over caption per tile, rows scroll; 0 = report */
 lj_widget *lj_w_listview_create(lj_widget *parent, const lj_ctl_desc *d);
 void lj_w_listview_set_items(lj_widget *w, const char *const *items, int n);
 int  lj_w_listview_row_at(const lj_widget *w, int y);

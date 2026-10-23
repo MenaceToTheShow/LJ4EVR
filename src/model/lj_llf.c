@@ -109,6 +109,8 @@ int lj_llf_parse(const uint8_t *buf, size_t len, lj_llf_file *out, char *err, si
     if (un >= LJ_LLF_NOTES_MAX || sn >= LJ_LLF_NOTES_MAX || data_n > get32(buf + 16)) FAIL("bad lengths");
     if ((uint64_t)LJ_LLF_HEADER + un + sn + data_n != len) FAIL("%s: %u bytes, header says %u", (uint64_t)LJ_LLF_HEADER + un + sn + data_n > len ? "truncated" : "trailing bytes",
                                                              (unsigned)len, (unsigned)(LJ_LLF_HEADER + un + sn + data_n));
+    if (frames > data_n)                                                                /* ME-172: every frame costs at least its tag byte; checked before the malloc */
+        FAIL("%u frames do not fit %u data bytes", (unsigned)frames, (unsigned)data_n);
     if ((uint64_t)frames * ch > LJ_LLF_DECODE_MAX) FAIL("%u frames are more than this reader decodes", (unsigned)frames);
     out->link = buf[8]; out->compress = buf[9]; out->channels = (uint16_t)ch; out->hz = (uint16_t)hz;
     out->card_bytes = get32(buf + 16); out->frames = frames;

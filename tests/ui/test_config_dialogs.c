@@ -54,7 +54,7 @@ static void on_action(enum lj_desktop_action a, int arg, void *ud)
 {
     (void)ud;
     act_count[a]++;
-    if (a == LJ_ACT_FIXTURE_INFO) { lj_config_dlg_target(arg); lj_win_open(LJ_WIN_FIXTURE_INFO); }   /* what app/lj_app_w4.c does */
+    if (a == LJ_ACT_FIXTURE_INFO) { lj_config_dlg_target(arg); lj_win_open(LJ_WIN_FIXTURE_INFO); }   /* what app/lj_app_cuelist_host.c does */
     if (a == LJ_ACT_FIXTURE_NOTES) { lj_config_dlg_target(arg); lj_win_open(LJ_WIN_FIXTURE_NOTES); }
 }
 static lj_widget *in(enum lj_win id, const char *n) { lj_window *w = lj_win_get(id); return w ? lj_window_find(w, n) : NULL; }
@@ -360,6 +360,7 @@ static void test_profile_pickers(void)
     click(in(LJ_WIN_PROFILE_EDITOR, "bGetGoboBmp"));
     CHECK(opened(LJ_WIN_BITMAP_PICKER) && strcmp(lj_window_caption(lj_win_get(LJ_WIN_BITMAP_PICKER))->text, "Get Gobo/Effects Bitmap") == 0);
     CHECK(lv_n(in(LJ_WIN_BITMAP_PICKER, "LV1")) > 0);
+    CHECK(((const lj_w_listview *)in(LJ_WIN_BITMAP_PICKER, "LV1"))->tile_w == 75);   /* ME-160: the vsIcon view (tiles, captions under them) */
     golden(LJ_WIN_BITMAP_PICKER, "W4C_BITMAP_PICKER");
     pick(in(LJ_WIN_BITMAP_PICKER, "LV1"), 0);
     lj_w_emit(in(LJ_WIN_BITMAP_PICKER, "LV1"), LJ_WEV_DBLCLICK);

@@ -15,7 +15,7 @@ void       lj_lightcorder_close(enum lj_win id);     /* saves the position, dest
 lj_window *lj_lightcorder_get(enum lj_win id);       /* NULL when closed */
 void       lj_lightcorder_refresh(enum lj_win id);   /* repaint from the model / engine view copy (seam 3); no-op when closed */
 void       lj_lightcorder_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
-void       lj_lightcorder_step(uint64_t now_us);    /* every UI loop pass (lj_app_w4_idle): copies the frame under lj_lock at the chosen rate and writes on this thread; the engine does no I/O (ME-2, ME-24) */
+void       lj_lightcorder_step(uint64_t now_us);    /* every UI loop pass (lj_app_cuelist_host_idle): copies the frame under lj_lock at the chosen rate and writes on this thread; the engine does no I/O (ME-2, ME-24) */
 
 /* ---- lightcorder-debug track additions (below the contract block) ---- */
 #include <stddef.h>

@@ -30,9 +30,10 @@ int lj_test_fuzz_remote(int argc, char **argv)
     lj_remote_parser_init(&p);
     got = lj_remote_feed(&p, seed, sizeof seed, now, m, 8);
     if (got != 2 || m[0].cmd != LJ_REM_CUE || m[0].value != 130 || m[1].cmd != LJ_REM_MISC || m[1].d1 != 2 || m[1].d2 != 1) {
-        printf("PENDING remote: lj_remote_feed does not decode the 05 s10.1 example yet\n");
+        printf("FAIL fuzz_remote: lj_remote_feed does not decode the 05 s10.1 example\n");
         return 1;
     }
+    if (lj_fuzz_seed(argc, argv, "frames", seed, sizeof seed)) return 0;   /* ME-186 */
     for (i = 0; i < LJ_FUZZ_ITERS; i++) {
         memcpy(buf, seed, sizeof seed); n = sizeof seed;
         for (k = (int)(lj_fuzz_next(&s) % 12); k >= 0; k--) lj_fuzz_mutate(buf, &n, sizeof buf, &s);
@@ -57,9 +58,19 @@ static struct { int n; enum lj_fn fn; int edge; uint32_t prog; } rem_last;
 static int rem_state[8][32];                                      /* [enum lj_remote_q][n] */
 static void rem_rec(enum lj_fn fn, int edge, uint32_t prog, void *ud) { (void)ud; rem_last.n++; rem_last.fn = fn; rem_last.edge = edge; rem_last.prog = prog; }
 static int rem_query(enum lj_remote_q q, int n) { return (int)q < 8 && n >= 0 && n < 32 ? rem_state[q][n] : -1; }
+static uint64_t rem_now = 5000000;
+static struct { int n, q, slot, on; } rem_put;                     /* ME-168: the set hook's calls */
+static int rem_setter(enum lj_remote_q q, int n, int on) { rem_put.n++; rem_put.q = (int)q; rem_put.slot = n; rem_put.on = on; return 0; }
+static int rem_set2(int c, int d1, int d2, enum lj_remote_q q)    /* the frame twice in one feed (one tick): set twice, no toggle function */
+{
+    uint8_t b[6];
+    b[0] = b[3] = (uint8_t)c; b[1] = b[4] = (uint8_t)d1; b[2] = b[5] = (uint8_t)d2;
+    memset(&rem_last, 0, sizeof rem_last); memset(&rem_put, 0, sizeof rem_put);
+    lj_remote_inject(b, 6, rem_now += 1000);
+    return rem_last.n == 0 && rem_put.n == 2 && rem_put.q == (int)q && rem_put.slot == (q == LJ_REMQ_SMOKE_TIMER ? 0 : d1) && rem_put.on == d2;
+}
 
 /* sends one frame; 1 when exactly fn / edge / prog ran (LJ_FN_NONE: nothing ran) */
-static uint64_t rem_now = 5000000;
 static int rem_cmd(int c, int d1, int d2, enum lj_fn fn, int edge, uint32_t prog)
 {
     uint8_t b[3];
@@ -166,13 +177,11 @@ int lj_test_remote(int argc, char **argv)
     /* 132 */
     RCHECK(rem_cmd(132, 0, 1, LJ_FN_SMOKE_BUTTON_FLASH, 1, 0));
     RCHECK(rem_cmd(132, 0, 0, LJ_FN_SMOKE_BUTTON_FLASH, 0, 0));
-    RCHECK(rem_cmd(132, 1, 1, LJ_FN_NONE, 0, 0));                     /* no state query (headless): ignored */
+    RCHECK(rem_cmd(132, 1, 1, LJ_FN_NONE, 0, 0));                     /* no setter (headless): ignored */
     lj_remote_set_query(rem_query);
-    rem_state[LJ_REMQ_SMOKE_TIMER][0] = 0;
-    RCHECK(rem_cmd(132, 1, 1, LJ_FN_TOGGLE_SMOKE_TIMER, 1, 0));
-    rem_state[LJ_REMQ_SMOKE_TIMER][0] = 1;
-    RCHECK(rem_cmd(132, 1, 1, LJ_FN_NONE, 0, 0));                     /* already on: nothing */
-    RCHECK(rem_cmd(132, 1, 0, LJ_FN_TOGGLE_SMOKE_TIMER, 1, 0));
+    lj_remote_set_setter(rem_setter);
+    RCHECK(rem_set2(132, 1, 1, LJ_REMQ_SMOKE_TIMER));                 /* ME-168: the set form, twice = still on */
+    RCHECK(rem_set2(132, 1, 0, LJ_REMQ_SMOKE_TIMER));
     RCHECK(rem_cmd(132, 2, 1, LJ_FN_BLACKOUT, 1, 0));
     RCHECK(rem_cmd(132, 2, 0, LJ_FN_BLACKOUT_FLASH, 0, 0));            /* restore = LJ_CMD_BLACKOUT b 0 */
     RCHECK(rem_cmd(132, 3, 0, LJ_FN_FADE_IN, 1, 0));
@@ -198,12 +207,11 @@ int lj_test_remote(int argc, char **argv)
     RCHECK(rem_cmd(134, 1, 3, LJ_FN_NONE, 0, 0));
     RCHECK(rem_cmd(134, 2, 1, LJ_FN_NONE, 0, 0));
     /* 135 cue slots, 136 BG slots */
-    rem_state[LJ_REMQ_SLOT][12] = 1;
-    RCHECK(rem_cmd(135, 12, 0, (enum lj_fn)(LJ_FN_TOGGLE_SLOT_ENABLE_1 + 11), 1, 0));
-    RCHECK(rem_cmd(135, 12, 1, LJ_FN_NONE, 0, 0));
+    RCHECK(rem_set2(135, 1, 0, LJ_REMQ_SLOT));                        /* ME-168 (LORD_ENGINE-2): 135 1 0 135 1 0 leaves slot 1 off */
+    RCHECK(rem_set2(135, 12, 1, LJ_REMQ_SLOT));
     RCHECK(rem_cmd(135, 13, 1, LJ_FN_NONE, 0, 0));
-    rem_state[LJ_REMQ_BGSLOT][5] = 0;
-    RCHECK(rem_cmd(136, 5, 1, (enum lj_fn)(LJ_FN_BGCUE_TOGGLE_SLOT_1 + 4), 1, 0));
+    RCHECK(rem_set2(136, 5, 1, LJ_REMQ_BGSLOT));
+    RCHECK(rem_set2(136, 5, 0, LJ_REMQ_BGSLOT));
     RCHECK(rem_cmd(136, 6, 1, LJ_FN_NONE, 0, 0));
     /* unknown commands ignored and counted (the log line is rate-limited to one per second) */
     lj_remote_get_stats(&st); ign = st.ignored;
@@ -225,7 +233,7 @@ int lj_test_remote(int argc, char **argv)
 
     rem_cfg();
     rem_tcp();
-    lj_remote_set_query(NULL);
+    lj_remote_set_query(NULL); lj_remote_set_setter(NULL);
     lj_fn_unbind_all();
     printf("test_remote: %s\n", rem_fails ? "FAIL" : "PASS");
     return rem_fails ? 1 : 0;

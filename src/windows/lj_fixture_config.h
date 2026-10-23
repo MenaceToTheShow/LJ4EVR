@@ -5,7 +5,7 @@
  * address 1-512 mirrored on the DIP switch, Calculate Address, invert/swap, ignore
  * blackout/GM, link strobe/GM, user name), remove with the verbatim prompt, Save
  * through the model (Config.dat) + lj_engine_rebind + the Unassigned list.
- * Greyed rows (no profile bound) report "Not available in LJ4EVR" (ME-29 wording);
+ * Greyed rows (no profile bound) report LJ_NA_HINT (ME-29 wording);
  * Print Configuration greyed (ME-31: no printing path), Export to text file (ME-92). */
 #ifndef LJ_WINDOWS_FIXTURE_CONFIG_H
 #define LJ_WINDOWS_FIXTURE_CONFIG_H
@@ -25,7 +25,7 @@ int         lj_fixture_config_tree_leaves(void);               /* leaves = exe r
 const char *lj_fixture_config_tree_item(int i);                /* '\t' per level, then the caption */
 int         lj_fixture_config_tree_id(int i);                  /* profile id of a leaf, -1 for a folder / out of range */
 int         lj_fixture_config_tree_find(const char *manufacturer, const char *name, const char *mode);   /* leaf item index or -1 (mode NULL = single-mode leaf) */
-int         lj_fixture_config_tree_available(int i);           /* 1 = a profile is bound (lj_fixlib_by_id), 0 = greyed "Not available in LJ4EVR" */
+int         lj_fixture_config_tree_available(int i);           /* 1 = a profile is bound (lj_fixlib_by_id), 0 = greyed LJ_NA_HINT */
 
 /* the panel */
 int  lj_fixture_config_select(int fixture);                    /* configured-list selection; -1 = none; 0 / -1 */

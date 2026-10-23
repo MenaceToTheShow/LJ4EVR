@@ -92,8 +92,10 @@ static void artnet_status(const lj_sacn_cfg *c, char *st, size_t cap)   /* W5-AR
     int i, any = 0;
     for (i = 0; i < LJ_LINKS; i++) if (c->proto[i] == LJ_OUT_ARTNET) { any = 1; pps += v->artnet_pps[i]; }
     if (!any && !c->artnet_in) return;
-    if (!v->artnet_bound) { if (snprintf(part, sizeof part, " | Art-Net off: UDP 6454 in use") < 0) part[0] = 0; }
-    else { if (snprintf(part, sizeof part, " | Art-Net %u pkt/s, %u nodes", pps, (unsigned)v->artnet_nodes) < 0) part[0] = 0; }
+    if (!v->artnet_bound) {                                            /* ME-185: "in use" only when the bind said so, else not open yet */
+        if (snprintf(part, sizeof part, v->artnet_last_err ? " | Art-Net off: cannot bind UDP 6454 (error %d)" : " | Art-Net not open yet", v->artnet_last_err) < 0) part[0] = 0;
+    }
+    else { if (snprintf(part, sizeof part, " | Art-Net %u pkt/s, %u node%s", pps, (unsigned)v->artnet_nodes, v->artnet_nodes == 1 ? "" : "s") < 0) part[0] = 0; }
     strncat(st, part, cap - strlen(st) - 1);
 }
 
@@ -252,7 +254,7 @@ const char *lj_hardware_setup_apply(void)
 }
 
 /* ---- handlers ---- */
-static void na(lj_widget *w, void *ud) { (void)ud; lj_log("hardware setup: %s: Not available in LJ4EVR", w && w->name ? w->name : "?"); }
+static void na(lj_widget *w, void *ud) { (void)ud; lj_log("hardware setup: %s: " LJ_NA_HINT, w && w->name ? w->name : "?"); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_hardware_setup_apply() == NULL && lj_dmx_in_hs_apply() == NULL /* W5 dmxin */) { lj_audio_form_hs_apply(); /* W5 audio */ lj_hardware_setup_close(); } }
 
 static const lj_binding lj_hs_bindings[] = {
@@ -276,7 +278,7 @@ lj_window *lj_hardware_setup_open(void)
     hs.win = lj_window_create(&lj_form_THARDWARESETUPFORM2, lj_hs_bindings);
     if (!hs.win) { lj_log("hardware setup: cannot create THardwareSetupForm2"); return NULL; }
     for (i = 0; i < LJ_COUNT_OF(hidden); i++) if ((w = find(hidden[i])) != NULL) w->visible = 0;
-    for (i = 0; i < LJ_COUNT_OF(greyed); i++) if ((w = find(greyed[i])) != NULL) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; }
+    for (i = 0; i < LJ_COUNT_OF(greyed); i++) lj_widget_set_enabled(find(greyed[i]), 0);
     for (i = 0; i < LJ_COUNT_OF(blank); i++) lj_w_set_caption(find(blank[i]), "");
     for (i = 0; i < LJ_COUNT_OF(dropped); i++) lj_dmx_in_grey(find(dropped[i]), NULL, 0);
     panel = find("Panel3");

@@ -82,7 +82,7 @@ void lj_help_viewer_close(enum lj_win id)
 
 lj_window *lj_help_viewer_get(enum lj_win id) { return id == LJ_WIN_HELP ? hv.win : NULL; }
 void       lj_help_viewer_refresh(enum lj_win id) { (void)id; }   /* static text: nothing follows the model */
-void       lj_help_viewer_bind_fns(void) { }                      /* LJ_ACT_HELP / SELECT_HELPFILE are bound in app/lj_app_w4.c */
+void       lj_help_viewer_bind_fns(void) { }                      /* LJ_ACT_HELP / SELECT_HELPFILE are bound in app/lj_app_cuelist_host.c */
 
 int lj_help_viewer_topic(const char *topic)
 {

@@ -250,13 +250,13 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     /* W5 contracts (append-only) */
     { "test_engine_w5", lj_test_engine_w5 },   /* contracts: LJ_CMD_DMX_IN / OVERWRITE_ENABLE into S1, LJ_TRIG_AUDIO_EVENT with Audio-Trigs / Trig (tests/engine/test_engine_w5.c) */
     { "test_socket", lj_test_socket },         /* contracts: io/lj_socket.h on loopback, UDP + TCP, non-blocking (tests/io/test_socket.c) */
-    { "fuzz_sacn_rx", lj_test_fuzz_sacn_rx },  /* dmxin (pending): sACN receiver fuzz row (tests/io/test_dmxin.c) */
-    { "fuzz_vtr", lj_test_fuzz_vtr },          /* dmxin (pending): .vtr parser fuzz row (tests/io/test_dmxin.c) */
+    { "fuzz_sacn_rx", lj_test_fuzz_sacn_rx },  /* dmxin: sACN receiver fuzz row (tests/io/test_dmxin.c) */
+    { "fuzz_vtr", lj_test_fuzz_vtr },          /* dmxin: .vtr parser fuzz row (tests/io/test_dmxin.c) */
     { "dmxin_rules", lj_test_dmxin_rules },          /* dmxin: E1.31 receiver rules, merge, loss, tables, emulation, Art-Net input, loopback unicast (tests/io/test_dmxin.c) */
     { "dmxin_vtr", lj_test_dmxin_vtr },              /* dmxin: .vtr parse / limits / names / linear / round trip, SYSTEM tables, DmxIn.dat (tests/io/test_dmxin.c) */
     { "dmxin_functions", lj_test_dmxin_functions },  /* dmxin: the 05 s3.2 threshold and edge rules on synthetic frames (tests/io/test_dmxin.c) */
     { "dmxin_loopback", lj_test_dmxin_loopback },    /* dmxin: W5-DMXIN-1 unicast to 127.0.0.1:5568, our own CID ignored (tests/io/test_dmxin.c) */
-    { "fuzz_artnet", lj_test_fuzz_artnet },    /* artnet (pending): ArtDmx / ArtPoll / ArtPollReply fuzz row (tests/io/test_artnet.c) */
+    { "fuzz_artnet", lj_test_fuzz_artnet },    /* artnet: ArtDmx / ArtPoll / ArtPollReply fuzz row (tests/io/test_artnet.c) */
     { "fuzz_remote", lj_test_fuzz_remote },    /* remote: 3-byte frame parser + exec fuzz row (tests/io/test_remote.c) */
     { "fuzz_ljb", lj_test_fuzz_ljb },          /* ljb: .LJB container fuzz row (tests/model/test_ljb.c) */
     { "test_uiscript_w5", lj_test_uiscript_w5 },   /* contracts: app/lj_app_io.c headless (W5-X-OFF, Emulate Audio Trig), the four W5 script verbs' checks (tests/ui/test_uiscript_w5.c) */

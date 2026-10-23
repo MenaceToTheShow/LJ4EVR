@@ -2,8 +2,7 @@
  *   fuzz_artnet  an ArtDmx from lj_artnet_pack_dmx, an ArtPoll from lj_artnet_pack_poll and a synthetic ArtPollReply
  *                (note 08 s9.4 offsets) must parse, then LJ_FUZZ_ITERS mutations of each through the readers,
  *                lj_artnet_feed and lj_dmxin_rx(LJ_DMXIN_ARTNET)
- * It prints PENDING artnet and fails until the track lands the builders and readers (DISABLED in CMakeLists.txt until
- * then). The track appends its W5-ART-1..6 rows to this file. */
+ * It fails (FAIL, rc 1) when a seed no longer parses. The W5-ART-1..6 rows follow in this file. */
 #include <stdio.h>
 #include <string.h>
 #include "io/lj_artnet.h"
@@ -53,9 +52,10 @@ int lj_test_fuzz_artnet(int argc, char **argv)
     len[2] = reply_seed(seeds[2]);
     if (!len[0] || !len[1] || lj_artnet_parse_dmx(seeds[0], len[0], &pa, &seq, slots, &ns) != 0 || pa != 0x0102 || ns != LJ_LINK_CH
         || lj_artnet_opcode(seeds[1], len[1]) != LJ_ARTNET_OP_POLL || lj_artnet_parse_reply(seeds[2], len[2], &node) != 0 || node.nports != 1 || node.port_addr[0] != 0x0102) {
-        printf("PENDING artnet: the ArtDmx / ArtPoll / ArtPollReply builders and readers are not in yet\n");
+        printf("FAIL fuzz_artnet: the ArtDmx / ArtPoll / ArtPollReply builders or readers refuse the seeds\n");
         return 1;
     }
+    if (lj_fuzz_seed(argc, argv, "artdmx", seeds[0], len[0]) + lj_fuzz_seed(argc, argv, "artpoll", seeds[1], len[1]) + lj_fuzz_seed(argc, argv, "artpollreply", seeds[2], len[2])) return 0;   /* ME-186 */
     for (i = 0; i < LJ_FUZZ_ITERS; i++) {
         j = i % 3;
         memcpy(buf, seeds[j], len[j]); n = len[j];
@@ -138,10 +138,12 @@ static void art_cfg(void)
     ACHECK(c.proto[1] == LJ_OUT_ARTNET && c.artnet_addr[1] == 2 && c.proto[2] == LJ_OUT_SACN && c.artnet_in == 0);   /* hostile values fall back */
     c.artnet_addr[1] = 0x0203; c.artnet_in = 9;
     lj_artnet_cfg_save(ini, &c);
-    ACHECK(lj_ini_geti(ini, "ARTNET", "Proto2", -1) == 1 && lj_ini_geti(ini, "ARTNET", "Addr2", -1) == 0x0203 && lj_ini_geti(ini, "ARTNET", "In", -1) == 9 && lj_ini_geti(ini, "ARTNET", "Proto1", -1) == 0);
+    ACHECK(lj_ini_geti(ini, "ARTNET", "Proto2", -1) == 1 && lj_ini_geti(ini, "ARTNET", "Addr2", -1) == 0x0203 && lj_ini_geti(ini, "ARTNET", "Proto1", -1) == 0);
+    lj_ini_seti(ini, "ARTNET", "In", 10);                              /* ME-178: an older file's In is never read (runtime only, from [DMXIN]) */
     memset(&c, 0, sizeof c);
     lj_artnet_cfg_load(ini, &c);
-    ACHECK(c.proto[1] == LJ_OUT_ARTNET && c.artnet_addr[1] == 0x0203 && c.artnet_in == 9);
+    ACHECK(c.proto[1] == LJ_OUT_ARTNET && c.artnet_addr[1] == 0x0203 && c.artnet_in == 0);
+    c.artnet_in = 9;
     ACHECK(lj_artnet_cfg_validate(&c) == NULL);
     c.proto[0] = LJ_OUT_ARTNET; c.artnet_addr[0] = 0x0203; ACHECK(lj_artnet_cfg_validate(&c) != NULL);   /* duplicate */
     c.artnet_addr[0] = 0; ACHECK(lj_artnet_cfg_validate(&c) != NULL);   /* 0 refused */
@@ -179,7 +181,12 @@ static void art_ui(void)
     printf("  status: %s\n", lj_w_caption(lj_window_find(w, "lSacnStatus")));
     ctx->view.artnet_bound = 0; ctx->view.artnet_last_err = 10048;
     lj_hardware_setup_refresh();
-    ACHECK(strstr(lj_w_caption(lj_window_find(w, "lSacnStatus")), "UDP 6454 in use") != NULL);   /* W5-ART-5: shown */
+    ACHECK(strstr(lj_w_caption(lj_window_find(w, "lSacnStatus")), "cannot bind UDP 6454 (error 10048)") != NULL);   /* W5-ART-5: shown, from the bind error */
+    ctx->view.artnet_last_err = 0; lj_hardware_setup_refresh();
+    ACHECK(strstr(lj_w_caption(lj_window_find(w, "lSacnStatus")), "Art-Net not open yet") != NULL);           /* ME-185: never "in use" without the error */
+    ctx->view.artnet_bound = 1; ctx->view.artnet_nodes = 1; lj_hardware_setup_refresh();
+    ACHECK(strstr(lj_w_caption(lj_window_find(w, "lSacnStatus")), "1 node") != NULL && strstr(lj_w_caption(lj_window_find(w, "lSacnStatus")), "1 nodes") == NULL);
+    ctx->view.artnet_bound = 0; ctx->view.artnet_last_err = 10048; lj_hardware_setup_refresh();
     lj_hardware_setup_close();
     w = lj_hardware_setup_open();                                     /* reopened: the selection reads back */
     ACHECK(w && ((lj_w_combobox *)lj_window_find(w, "cbProto2"))->index == 1 && lj_w_spinedit_value(lj_window_find(w, "seArtAddr2")) == 0x0102 && ((lj_w_combobox *)lj_window_find(w, "cbProto1"))->index == 0);
@@ -218,6 +225,21 @@ static void art_discovery_and_rate(void)
     lj_artnet_feed(r, sizeof r, 0x7F000002u, t);                      /* the same node again: one row */
     ACHECK(lj_artnet_nodes(nd, 4) == 1 && nd[0].ip == 0x7F000002u && nd[0].port_addr[0] == 2);
     r[211] = 2; lj_artnet_feed(r, sizeof r, 0x7F000002u, t); r[211] = 0;   /* a second BindIndex page: a second row, same host */
+    ACHECK(lj_artnet_nodes(nd, 4) == 2);
+    /* ME-176: a reply from off the bound subnet (127/8 here) is never subscribed (no unicast reflector); one host holds at
+     * most LJ_ARTNET_ROWS_PER_IP rows, so a fifth BindIndex is refused (it cannot fill the table) */
+    lj_artnet_feed(r, sizeof r, 0x08080808u, t);
+    ACHECK(lj_artnet_nodes(nd, 4) == 2);
+    for (i = 3; i <= 5; i++) { r[211] = (uint8_t)i; lj_artnet_feed(r, sizeof r, 0x7F000003u, t); }   /* host .3: three rows */
+    r[211] = 6; lj_artnet_feed(r, sizeof r, 0x7F000003u, t);                                        /* its fourth: taken */
+    r[211] = 7; lj_artnet_feed(r, sizeof r, 0x7F000003u, t); r[211] = 0;                           /* its fifth: refused */
+    { lj_artnet_node all[LJ_ARTNET_NODES]; ACHECK(lj_artnet_nodes(all, LJ_ARTNET_NODES) == 2 + LJ_ARTNET_ROWS_PER_IP); }
+    lj_artnet_close();
+    if (lj_artnet_open(&c) != 0) { ACHECK(0); return; }
+    lj_artnet_stats_get(&st);
+    lj_artnet_feed(r, sizeof r, 0x7F000002u, t);
+    lj_artnet_feed(r, sizeof r, 0x7F000002u, t);
+    r[211] = 2; lj_artnet_feed(r, sizeof r, 0x7F000002u, t); r[211] = 0;
     ACHECK(lj_artnet_nodes(nd, 4) == 2);
     /* expiry: polls at t, +2.5 s, +5 s leave the rows; the 4th poll (3 unanswered) drops them */
     for (i = 0; i < 3; i++) { lj_artnet_pump(t + (uint64_t)i * LJ_ARTNET_POLL_US); ACHECK(lj_artnet_nodes(nd, 4) == 2); }

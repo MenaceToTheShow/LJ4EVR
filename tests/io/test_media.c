@@ -62,7 +62,7 @@ static struct { uint32_t cue[16]; int n; } C;
 static int h_cue(void *ud, uint32_t n) { (void)ud; if (C.n < 16) C.cue[C.n++] = n; return 0; }
 static int h_tc(void *ud, int src, uint32_t *ms) { (void)ud; if (src != LJ_TC_MP || M.state == LJ_MEDIA_CLOSED) return -1; *ms = lj_media_time_cs(&M) * 10u; return 0; }
 static int h_media(void *ud, const lj_cl_line *l, uint64_t now) { char e[96]; (void)ud; (void)now; return lj_media_cmd(&M, &FH, l->cmd, l->param, l->param_ms, e, sizeof e); }
-static const lj_cl_host H = { NULL, h_cue, NULL, NULL, NULL, NULL, NULL, NULL, NULL, h_tc, NULL, h_media };
+static const lj_cl_host H = { NULL, h_cue, NULL, NULL, NULL, NULL, NULL, NULL, NULL, h_tc, NULL, h_media, NULL };
 
 static lj_cl_line ln(int cmd, uint32_t ms, const char *pstr, uint32_t cue)
 {
@@ -108,6 +108,7 @@ int lj_test_media(int argc, char **argv)
     CHECK(lj_media_check_file("clip.avi", 10, err, sizeof err) == -1 && strcmp(err, LJ_MEDIA_ERR_FORMAT) == 0);
     CHECK(lj_media_check_file("wav", 10, err, sizeof err) == -1 && lj_media_check_file(".wav.mp3", 10, err, sizeof err) == -1 && lj_media_check_file("dir.wav/x", 1, err, sizeof err) == -1);
     CHECK(lj_media_check_file("big.wav", (uint64_t)LJ_MEDIA_FILE_MAX + 1u, err, sizeof err) == -1 && strcmp(err, LJ_MEDIA_ERR_SIZE) == 0);
+    CHECK(lj_media_check_file("show.wav", 64u * 1024u * 1024u, err, sizeof err) == 0 && lj_media_check_file("show.wav", 64u * 1024u * 1024u + 1u, err, sizeof err) == -1);   /* ME-180: the measured 64 MB cap */
     CHECK(lj_media_check_file("", 0, err, sizeof err) == -1 && lj_media_check_file(NULL, 0, err, sizeof err) == -1);
     { char longp[400]; memset(longp, 'a', sizeof longp); memcpy(longp + 390, ".wav", 5); CHECK(lj_media_check_file(longp, 1, err, sizeof err) == -1); }
 
@@ -286,7 +287,7 @@ int lj_test_media_form(int argc, char **argv)
     CHECK(item_enabled(cw, "OffsetMediaplayerTimecodes1") == 1 && item_enabled(cw, "SortMediaCodes1") == 1);
     CHECK(item_enabled(cw, "Pop_CDCommands") == 0 && item_enabled(cw, "pop_DACommands") == 0 && item_enabled(cw, "OffsetCDTimecodes1") == 0 && item_enabled(cw, "SortDAWaitTimes") == 0);
     CHECK((w = lj_window_find(cw, "sbMPTime")) != NULL && w->enabled && w->hint && strcmp(w->hint, "Show Media Timecode") == 0);
-    CHECK((w = lj_window_find(cw, "sbCDTime")) != NULL && !w->enabled && w->hint && strcmp(w->hint, LJ_CL_NOT_AVAILABLE) == 0);
+    CHECK((w = lj_window_find(cw, "sbCDTime")) != NULL && !w->enabled && w->hint && strcmp(w->hint, LJ_NA_HINT) == 0);
     CHECK((w = lj_window_find(cw, "sbDATime")) != NULL && !w->enabled);
     lj_w_listview_select(lj_window_find(cw, "lv1"), 0); lj_cuelist_form_refresh();
     lj_cuelist_form_apply_cmd(LJ_CL_MP_WAIT);

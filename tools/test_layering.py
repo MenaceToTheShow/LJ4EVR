@@ -18,6 +18,10 @@ Checks, over src/:
      functions, variables) starts with lj_ / LJ_; every OS_ALLOW row names a file that has that include.
  10. ME-141 count, must stay 0: a Help handler (any *elp*Click / Heklp1Click name) or the OnClick of a bkHelp
      TBitBtn of the form a binding table serves, bound to lj_handler_noop (W4-HELP, design 13 item 12).
+ 11. ME-173 counts, each must stay 0: the hint text outside its one define (core/lj_types.h LJ_NA_HINT; the generated
+     help topics exempt), a runtime "->hint = LJ_NA_HINT / NULL" write outside lj_widget_set_enabled (ui/lj_widget.c),
+     a private edit_int copy (lj_w_edit_int is the one), a wave-named app seam file (app/lj_app_w<n>); and a private
+     popup_at may exist at most twice (2 measured at W5, closed in writing: ponytail, no helper for two callers).
 
 usage: test_layering.py --src <repo>/src --cc <compiler> [--gen <dir with version.h>]
 exit 0 = clean, 1 = findings printed one per line.
@@ -93,6 +97,11 @@ NOOP_RE = re.compile(r'void\s+(\w+)\s*\(\s*lj_widget\s*\*\s*w\s*,\s*void\s*\*\s*
 SCENE_GETTER_RE = re.compile(r'\bstatic\s+(?:const\s+)?lj_scene\s*\*\s*(\w+)\s*\(\s*void\s*\)')                       # ME-129
 COPY_RE = re.compile(r'\bstatic\s+(?:(?:int|void)\s+(\w+)\s*\(\s*lj_window\s*\*\s*\w+\s*,\s*const\s+char\s*\*\s*name\s*,\s*const\s+char\s*\*\s*\w+\s*\)'
                      r'|lj_library\s*\*\s*(lib)\s*\(\s*void\s*\)|lj_ctx\s*\*\s*(ctx)\s*\(\s*void\s*\))')                    # ME-129
+NA_TEXT = "Not available in LJ4EVR"                                                                                    # ME-173
+NA_EXEMPT = {"core/lj_types.h", "windows/lj_help_topics_gen.c"}
+HINT_WRITE_RE = re.compile(r'->\s*hint\s*=\s*(?:LJ_NA_HINT|NULL)\b')
+EDIT_INT_RE = re.compile(r'\bstatic\s+int\s+\w*edit_int\s*\(')
+POPUP_AT_RE = re.compile(r'\bstatic\s+void\s+\w*popup_at\s*\(')
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*([<"])([^>"]+)[>"]', re.M)
 
 
@@ -280,6 +289,7 @@ def main():
     headers = []
     nfiles = 0
     noops = ternaries = scene_getters = helper_copies = 0
+    na_copies = popups = 0
     selfcheck_ids()
     group_text = "".join(open(os.path.join(src, g), encoding="latin-1").read() for g in GROUP_HEADERS)
     for g in GROUP_HEADERS:
@@ -370,6 +380,23 @@ def main():
             for m in COPY_RE.finditer(code):
                 helper_copies += 1
                 findings.append("%s: %s copies lj_window_set_text / lj_ctx_get (ME-129)" % (rel, m.group(1) or m.group(2) or m.group(3)))
+            # 11. ME-173 counts
+            if rel not in NA_EXEMPT and NA_TEXT in text:
+                na_copies += 1
+                findings.append("%s: the hint text outside LJ_NA_HINT (core/lj_types.h, ME-173)" % rel)
+            if rel != "ui/lj_widget.c":
+                for _ in HINT_WRITE_RE.finditer(code):
+                    na_copies += 1
+                    findings.append("%s: a hint = LJ_NA_HINT / NULL write; grey and un-grey through lj_widget_set_enabled (ME-173)" % rel)
+            for _ in EDIT_INT_RE.finditer(code):
+                na_copies += 1
+                findings.append("%s: a private edit_int; use lj_w_edit_int (ME-173)" % rel)
+            if re.match(r"app/lj_app_w\d", rel):
+                na_copies += 1
+                findings.append("%s: a wave-named seam file (ME-173)" % rel)
+            popups += len(POPUP_AT_RE.findall(code))
+    if popups > 2:
+        findings.append("%d private popup_at copies: three or more is the ME-173 line, land lj_window_popup_at" % popups)
     # 10. ME-141
     hn = help_noops(src)
     for rel, table, h in hn:
@@ -383,8 +410,8 @@ def main():
     for f in findings:
         print(f)
     print("test_layering: %d file(s) checked, %d header(s) compiled alone, noop handlers %d, ini ternaries %d, "
-          "scene getters %d, set-text/lib/ctx copies %d, noop Help handlers %d, %d finding(s)"
-          % (nfiles, len(headers), noops, ternaries, scene_getters, helper_copies, len(hn), len(findings)))
+          "scene getters %d, set-text/lib/ctx copies %d, noop Help handlers %d, hint/edit_int/seam copies %d, popup_at %d, %d finding(s)"
+          % (nfiles, len(headers), noops, ternaries, scene_getters, helper_copies, len(hn), na_copies, popups, len(findings)))
     return 1 if findings else 0
 
 

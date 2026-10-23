@@ -86,7 +86,7 @@ typedef struct {
 } lj_profile;
 
 /* ---- the exe row table (design 6.1): 201 rows, ids 0-200, LJ2's own Config.dat type code ---- */
-enum lj_profile_binding { LJ_BIND_NONE = 0 /* greyed, "Not available in LJ4EVR" */, LJ_BIND_HAND /* tier 1 */, LJ_BIND_QXF /* tier 2 */ };
+enum lj_profile_binding { LJ_BIND_NONE = 0 /* greyed, LJ_NA_HINT */, LJ_BIND_HAND /* tier 1 */, LJ_BIND_QXF /* tier 2 */ };
 typedef struct { uint16_t id; const char *tag, *manufacturer, *name, *mode, *notes_file; uint8_t binding; } lj_exe_row;
 
 /* ---- fixlib API (design 2.4) ---- */

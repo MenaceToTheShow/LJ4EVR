@@ -45,10 +45,14 @@ static void lj_cl_latch(const lj_cl_line *l, const lj_cl_host *h)
 
 /* Run to line / tracking / Automatic Cue update: only the cue commands of lines 1..n, in order [RN v2.5 b3]; each
  * cue load layers like the list would have (a transparent cue keeps what the cue before it left). */
-static void lj_cl_track(const lj_cuelist *cl, uint32_t n, const lj_cl_host *h)
+static void lj_cl_track(const lj_cuelist *cl, uint32_t n, const lj_cl_host *h, int scan_back)
 {
-    uint32_t i;
-    for (i = 0; i < n && i < cl->n; i++)
+    uint32_t i, from = 0;
+    if (n > cl->n) n = cl->n;
+    if (scan_back && h->cue_transparent)                                       /* ME-171 (g): from the last non-transparent cue before the line */
+        for (i = n; i-- > 0; )
+            if (cl->lines[i].cue && !cl->lines[i].load_error && h->cue_transparent(h->ud, cl->lines[i].cue) == 0) { from = i; break; }
+    for (i = from; i < n; i++)
         if (cl->lines[i].cue && !cl->lines[i].load_error) lj_cl_latch(&cl->lines[i], h);
 }
 
@@ -75,7 +79,7 @@ static int lj_cl_wait_holds(lj_cl_run *r, const lj_cl_line *l, uint64_t now, int
  * ended, or a host callback re-entered the runner: Hotkey Command = Cuelist Stop / Top / Prog, ME-108). st.last,
  * line_t0_us and next are committed BEFORE any callback that can re-enter, and in_exec keeps a nested op from running
  * a pass of its own (Cuelist Go from inside a line returns -1 instead of recursing). */
-static int lj_cl_exec(lj_cl_run *r, uint64_t now, uint32_t day, int mtc_ok, uint32_t mtc_ms, const lj_cl_host *h)
+static int lj_cl_exec(lj_cl_run *r, uint64_t now, uint64_t t0, uint32_t day, int mtc_ok, uint32_t mtc_ms, const lj_cl_host *h)
 {
     const lj_cl_line l = r->cl->lines[r->st.next - 1];   /* a copy: Link Cuelist may hand the old list back to its owner */
     const lj_cuelist *cl0;
@@ -86,7 +90,7 @@ static int lj_cl_exec(lj_cl_run *r, uint64_t now, uint32_t day, int mtc_ok, uint
         for (i = 0; i < r->cl->n; i++)
             if (r->cl->lines[i].cmd == LJ_CL_WAIT_MTC && !r->cl->lines[i].load_error && r->cl->lines[i].param_ms >= mtc_ms) { next = i + 1; break; }
     r->st.last = l.line;
-    r->line_t0_us = now;
+    r->line_t0_us = t0;
     if (l.cmd == LJ_CL_LINK_CUELIST) {                                         /* the host loads the list; it never re-enters the runner */
         const lj_cuelist *nl = NULL;
         if (h->link && h->link(h->ud, l.ref, &nl) == 0 && nl && nl->n) { r->cl = nl; r->st.number = nl->number; r->st.last = 0; next = 1; }
@@ -173,10 +177,15 @@ static int lj_cl_pass(lj_cl_run *r, uint64_t now, const lj_cl_host *h, int force
                 break;
             }
         }
-        force = 0;
-        r->st.state = LJ_CL_RUNNING;
-        done++;
-        if (lj_cl_exec(r, now, day, mtc_ok, mtc_ms, h)) break;
+        {   /* ME-171 (f): a Wait Elapsed that held counts the next wait from its due time, not this wake (no drift over a
+             * list; PROPOSAL rig 03 s6.3); Go, a manual or forced line and every other line count from now */
+            uint64_t t0 = now;
+            if (!force && l->cmd == LJ_CL_WAIT_ELAPSED && !(r->ignore_first_wait && r->first_pending)) t0 = r->line_t0_us + (uint64_t)l->param_ms * 1000u;
+            force = 0;
+            r->st.state = LJ_CL_RUNNING;
+            done++;
+            if (lj_cl_exec(r, now, t0, day, mtc_ok, mtc_ms, h)) break;
+        }
     }
     return done;
 }
@@ -203,7 +212,7 @@ static int lj_cl_start(lj_cl_run *r, const lj_cuelist *cl, uint32_t n, uint64_t 
     uint32_t ms, day, i;
     if (!cl || !cl->n || n < 1 || n > cl->n) return -1;
     lj_cl_flash_off(r, h);
-    if (track && n > 1) lj_cl_track(cl, n - 1, h);
+    if (track && n > 1) lj_cl_track(cl, n - 1, h, r->auto_cue_on_run);   /* ME-171 (g): Automatic Cue update scans back; tracking alone latches every line */
     if (r->autoseek_media && n > 1)                                            /* M_AutoCueAudio, PROPOSAL rig 05 s8.3: the clip where line n stands */
         for (i = n; i-- > 0; ) if (cl->lines[i].cmd == LJ_CL_MP_WAIT && !cl->lines[i].load_error) { lj_cl_media(h, LJ_CL_MP_SEEK, cl->lines[i].param_ms, now); break; }
     lj_cl_clock(h, &ms, &day);
@@ -222,7 +231,7 @@ static int lj_cl_jump(lj_cl_run *r, uint32_t n, uint64_t now, const lj_cl_host *
 {
     uint32_t ms, day;
     if (r->st.state == LJ_CL_IDLE || !r->cl || n < 1 || n > r->cl->n) return -1;
-    if (r->cl->tracking && n > 1) lj_cl_track(r->cl, n - 1, h);
+    if (r->cl->tracking && n > 1) lj_cl_track(r->cl, n - 1, h, 0);
     lj_cl_clock(h, &ms, &day);
     r->line_t0_us = now;
     lj_cl_arrive(r, n, day);
@@ -258,7 +267,7 @@ int lj_cl_run_op(lj_cl_run *r, const lj_cuelist *cl, int op, uint32_t n, uint64_
         return lj_cl_jump(r, n, now_us, h);
     case LJ_CL_OP_RUN_TO:
         if (!run || n < 1 || n > run->n) return -1;
-        lj_cl_track(run, n, h);
+        lj_cl_track(run, n, h, 0);
         r->st.last = n;
         if (r->st.state != LJ_CL_IDLE) { if (n == run->n) lj_cl_end(r); else { r->line_t0_us = now_us; r->st.next = n + 1; } }
         lj_cl_changed(r);

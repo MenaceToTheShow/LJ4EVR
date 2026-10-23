@@ -37,11 +37,15 @@ ignored.
 ## The socket
 
 One UDP socket bound to the chosen interface address, port 6454, with SO_BROADCAST, owned by the engine thread. It is
-open only while a link is set to Art-Net or Art-Net input is on (`[ARTNET] In`, written by DMX-in); with every link on
-sACN nothing listens on 6454. With the interface left at 0.0.0.0 the socket binds every interface and polls the first
+open only while a link is set to Art-Net or DMX-in uses Art-Net (derived from `[DMXIN]` at run time, never saved,
+ME-178); with every link on sACN and DMX-in off nothing listens on 6454. With the interface left at 0.0.0.0 the socket binds every interface and polls the first
 interface that is up. Every datagram read is hostile input: the readers check the ID, the OpCode, ProtVer >= 14 for
-ArtDmx and ArtPoll, the length before each field, ArtDmx Length even and 2..512 and within the datagram, and copy names
-bounded. An ArtDmx for the input Port-Address from another host goes whole to DMX-in (`lj_dmxin_post`).
+ArtDmx (an ArtPoll from another controller is not read: only ArtPollReply and ArtDmx are), the length before each
+field, ArtDmx Length even and 2..512 and within the datagram, and copy names bounded. An ArtPollReply is accepted only
+from the bound interface's subnet (a loopback address counts as 127/8), and one source address holds at most 4
+subscriber rows (`LJ_ARTNET_ROWS_PER_IP`, PROPOSAL rig W5-ART-2), so a forged reply from elsewhere cannot turn
+LJ4EVR into a unicast reflector or fill the table (ME-176). An ArtDmx for the input Port-Address from another host on
+that subnet goes whole to DMX-in (`lj_dmxin_post`); from off the subnet it is dropped (ME-177).
 
 ## OemCode
 
