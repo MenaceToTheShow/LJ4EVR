@@ -944,3 +944,11 @@ macOS (from the `release.yml` macos job log; no hand run, ME-158):
 
 ME-36 ticked by this record. Not done in this step: the public flip, the runner deregistration (ME-159's second half)
 and ME-149 (3) (Part B step 4).
+
+## Public flip (2026-10-23)
+
+- The repository was recreated before the flip so that no pre-rewrite object stays fetchable by SHA (GitHub keeps force-pushed commits reachable until garbage collection). The rewritten main, the tags v0.0.1..v1.0.0 and the five releases were restored; v1.0.0 carries the installers tested in the Release section, sha256 unchanged. Pre-rewrite SHAs return 404.
+- The CI image is now `ghcr.io/unbannablegt/lj4evr-build` (built by docker.yml at bc2fbf8); ci.yml run 39969826715 on 9af6d09: six of six jobs green on GitHub-hosted runners. No self-hosted runner is registered (ME-159).
+- `gh repo view --json visibility`: PUBLIC at 2026-10-23T14:37:05Z.
+- Fork-PR workflow approval: `all_external_contributors` (read back). Private vulnerability reporting: enabled (read back). Topics: lighting, dmx, sacn, lightjockey, show-control, c11, sdl3.
+- Anonymous checks: repository page 200; LJ4EVR-1.0.0-win64-setup.exe 200 (1,864,168 B); LJ4EVR-1.0.0-macos.dmg 200 (4,940,435 B).
