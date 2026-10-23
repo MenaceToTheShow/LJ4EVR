@@ -84,10 +84,11 @@ jobs:
         run: |
           # ponytail: the image has clang 19 without compiler-rt; installed per run until docker.yml bakes it in
           apt-get update -qq && apt-get install -y -qq --no-install-recommends libclang-rt-19-dev > /dev/null
-          cmake -S . -B build-fuzz -G Ninja -DLJ_SDL=OFF -DLJ_FUZZ=ON -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=all"
+          cmake -S . -B build-fuzz -G Ninja -DLJ_SDL=OFF -DLJ_FUZZ=ON -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined"
           cmake --build build-fuzz --target fuzz_gs2 fuzz_udf
-          ninja -C build-fuzz -t commands fuzz_gs2 | grep -m1 "lj_gs2.c"; echo "sancov guards in lj_fixlib: $(nm -A build-fuzz/liblj_fixlib.a 2>/dev/null | grep -c sancov)"
-          cmake -S . -B build-fuzz-ab -G Ninja -DLJ_SDL=OFF -DLJ_FUZZ=ON -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined" > /dev/null && cmake --build build-fuzz-ab --target fuzz_gs2 > /dev/null && build-fuzz-ab/fuzz_gs2 -runs=2 2>&1 | grep INITED | sed "s/^/AB-without-no-recover: /"   # temporary diagnostic (fix pass A r1)
+          # ME-140: a UBSan report is fatal here through UBSAN_OPTIONS, not -fno-sanitize-recover=all: that flag in
+          # CMAKE_C_FLAGS dropped fuzz_gs2 INITED coverage from 680 to 126 (measured A/B, fix pass A r1)
+          export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
           build-fuzz/fuzz_gs2 -max_total_time=60 -max_len=20851
           mkdir -p udf-corpus && cp build-linux-clang/lj_w3_synthetic.Udf udf-corpus/   # ME-114: an lj_udf_export seed (test_uiscript_w3)
           build-fuzz/fuzz_udf udf-corpus -max_total_time=60 -max_len=32768

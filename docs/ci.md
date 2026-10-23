@@ -136,3 +136,12 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
 - `gs2_check` (the 48 shipped `.GS2` and the sampled `.Udf` against the Python oracle) is a
   CTest row that prints SKIP without `LJ4EVR_REFERENCE_DIR`; it only compares on the
   developer PC, where `reference/` exists.
+
+## W4 fix pass A r1
+
+- ME-140: the CMake sanitizer flags add `-fno-sanitize-recover=all` (gcc / clang), so a UBSan report fails the
+  CTest row in `linux-gcc-asan`. The fuzz step does not take the flag: in its `CMAKE_C_FLAGS` it dropped
+  `fuzz_gs2` INITED coverage from 680 to 126 (A/B in one run, 39908906076); it runs with
+  `UBSAN_OPTIONS=halt_on_error=1` instead, which makes a UBSan report fatal at run time.
+- ME-157: `windows-msvc` installs the NSIS installer as a fresh local account outside Administrators
+  (`tools/standard_user_install.ps1`, `Start-Process -Credential -LoadUserProfile -UseNewEnvironment`).
