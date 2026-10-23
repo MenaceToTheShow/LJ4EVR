@@ -877,3 +877,70 @@ Local checks (work PC, MSVC 19.44, Ninja + cl, incremental):
     ctest after                                  ui_golden, test_desktop, fidelity_check(+selftest), help_check, forms_tables green on all three
     w4_entry_points.lj4s (build-w4, scratch LJ4EVR_USERDATA, prep + a W4Captions row)   rc 0, 155 PASS, 0 SCRIPT FAIL
     caption_diff (w4_captions.lj4s, scratch userdata)   145 implemented form(s) of 207, 0 difference(s), 139 excluded, 84 absent
+
+CI (`ci.yml`, run 39924948793, head `7dce143` = "Release 1.0.0"), attempt 1: **success, six of six, every job on a
+GitHub-hosted runner** (ME-159; the GHCR image pulled on `ubuntu-latest` with the job token, no package change needed):
+
+    generate-check   success   ubuntu-latest (container, digest unchanged)
+    linux-gcc-asan   success   ubuntu-latest   100% tests passed, 0 tests failed out of 118
+    linux-clang      success   ubuntu-latest   118 of 118; fuzz_gs2 INITED cov 680, DONE cov 708; fuzz_udf INITED cov 1217, DONE cov 1464
+    windows-msvc     success   windows-latest  119 of 119 (Release and Debug); ME-157 step: no Administrators SID, DisplayVersion=1.0.0, VERSION=1.0.0
+    macos-clang      success   macos-14
+    determinism      success   ubuntu-latest
+        frames-{linux,windows,macos}.bin   1,641,600 bytes each, sha256 5b13f41930362b75a7aa6f9c53f77db2d315a4039ea5a18da664ea1263114b50
+        replay-frames.bin linux = windows = macos   c46fee4ceff60245c9b504a6d7b2028fca0d0ba6008e1f541af7c8279545039d
+
+`docker.yml` (run 39924948791, triggered by its own edit) built, smoke-tested and pushed the image on `ubuntu-latest`:
+success. `ci.yml` stays pinned to the earlier digest. The `ci.yml` run on the `v1.0.0` tag (39925711243) is also six
+of six green.
+
+## Release
+
+### v1.0.0 (Part B step 3, ME-36)
+
+`git tag -a v1.0.0 -m "LJ4EVR 1.0.0"` on `7dce143`, pushed 2026-10-23. `release.yml` run 39925711181: check, windows,
+macos, release all success.
+
+    gh release view v1.0.0      "LJ4EVR 1.0.0", isPrerelease false, isDraft false, published 2026-10-23T08:39:41Z;
+                                repos/.../releases/latest = v1.0.0
+    assets                      LJ4EVR-1.0.0-win64-setup.exe   1,864,168 bytes
+                                LJ4EVR-1.0.0-macos.dmg         4,940,435 bytes
+                                SHA256SUMS                       184 bytes
+    SHA256SUMS                  52d0697ba7d216c623696db881d2d9171f09a369d94e77c3b881ff3df4123f0d  LJ4EVR-1.0.0-win64-setup.exe
+                                34db2a0d2ee1473a92d6a88d0ce7c57ac6a93d6c05e4d7456affe783fdb52d68  LJ4EVR-1.0.0-macos.dmg
+                                (downloaded, sha256sum -c: both OK)
+    notes                       the install / notices / trademark header, then CHANGELOG [1.0.0] up to "Developer detail:"
+                                (what 1.0.0 is, what it is not, the known gaps incl. the macOS line of ME-158)
+
+Windows installed tree (the downloaded release asset, work PC, silent per-user install into a scratch folder:
+`LJ4EVR-1.0.0-win64-setup.exe /S /D=<scratch>\inst`, exit 0):
+
+    lj4evr.exe                11,665,920
+    THIRD_PARTY_NOTICES.txt       15,486   ("released under the MIT licence (LICENSE)", 0 PROPOSAL)
+    Uninstall.exe                111,910
+    help\  controls cuelists cues desktop files fixtures getting-started hotkeys-midi index macros
+           not-available notices output sequences statics-bgcues  (.txt, 15 topics)
+    HKCU ...\Uninstall\LJ4EVR   DisplayVersion=1.0.0, UninstallString = <scratch>\inst\Uninstall.exe; no HKLM key
+    help_check.py --install-tree         install_check: ...\THIRD_PARTY_NOTICES.txt ok (rc 0)
+    lj4evr.exe --version                 LJ4EVR 1.0.0 (rc 0)
+    grep -c -a in the installed exe      the credit word 0; the credit surname 0; the forum URL 0;
+                                         "LJ4EVR (User lib: %s)" 1; "Martin LightJockey (User lib" 0
+    w4_entry_points.lj4s against the installed exe (scratch LJ4EVR_USERDATA prepared by w4_entry_prep.sh plus a
+      W4Captions row; shots to a scratch folder)   rc 0, 155 PASS lines, 0 SCRIPT FAIL
+    Uninstall.exe /S                     exit 0; the folder, lj4evr.exe and the HKCU key gone
+
+macOS (from the `release.yml` macos job log; no hand run, ME-158):
+
+    lipo        Architectures in the fat file: ... lj4evr are: x86_64 arm64
+    codesign    Format=app bundle with Mach-O universal (x86_64 arm64), Signature=adhoc; --verify --deep --strict:
+                valid on disk, satisfies its Designated Requirement
+    Info.plist  CFBundleName LJ4EVR, CFBundleShortVersionString 1.0.0, CFBundleVersion 1.0.0,
+                LSMinimumSystemVersion 12.0, NSHumanReadableCopyright "MIT, 2026 LJ4EVR contributors"; minos 12.0 (both slices)
+    .dmg        hdiutil verify: every partition verified; mounted:
+                  Applications -> /Applications
+                  LJ4EVR.app
+                install_check: .../LJ4EVR.app/Contents/Resources/THIRD_PARTY_NOTICES.txt ok
+                (the bundle's Resources: THIRD_PARTY_NOTICES.txt, lj4evr.icns, help/ with the same 15 topics)
+
+ME-36 ticked by this record. Not done in this step: the public flip, the runner deregistration (ME-159's second half)
+and ME-149 (3) (Part B step 4).
