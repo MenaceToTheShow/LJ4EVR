@@ -272,7 +272,7 @@ static void trace_paint(lj_widget *w, lj_surface *s)
             dot(s, ax + px_of(p, w->w), ay + px_of(t, w->h), 2, k == 0 ? 0xFFFFFFu : 0xFF0000u);   /* master white, the others red (Show All Selected Fixtures) */
     }
 }
-static const lj_widget_vt trace_vt = { trace_paint, NULL, NULL, NULL };
+static const lj_widget_vt trace_vt = { trace_paint, NULL, NULL, NULL, NULL };
 
 /* ---- the Bezier canvas [04 s4.5]: square nodes, round handles, drag to reshape; right-click adds a node after the
  * nearest one, right-click on a node removes it (3 minimum), Shift+right-click toggles its segment line / curve
@@ -353,7 +353,7 @@ static int canvas_mouse(lj_widget *w, const lj_mouse_ev *m)
         return 0;
     }
 }
-static const lj_widget_vt canvas_vt = { canvas_paint, canvas_mouse, NULL, NULL };
+static const lj_widget_vt canvas_vt = { canvas_paint, canvas_mouse, NULL, NULL, NULL };
 
 int lj_movemacro_editor_bez(lj_bez *out) { if (!mm.bez_open || !out) return -1; *out = mm.edit; return 0; }
 

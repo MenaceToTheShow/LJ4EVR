@@ -231,7 +231,7 @@ static void np_change(lj_widget *w, void *ud)   /* changeOptions: every box appl
 static void np_set_custom(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_CUSTOM_ORDER); }
 
 /* ---- Custom Fixture Selection Order (TCustomOrderForm 358x317, nextprevfixturecustom.gif) ---- */
-static struct { int e[LJ_FIXTURES * 2], n, last_master; char text[LJ_FIXTURES * 2][128]; const char *rows[LJ_FIXTURES * 2]; } co;
+static struct { int e[LJ_FIXTURES * 2], n, last_master; char text[LJ_FIXTURES * 2][176]; const char *rows[LJ_FIXTURES * 2]; } co;
 static int co_find(int f) { int i; for (i = 0; i < co.n; i++) if (co.e[i] == f) return i; return -1; }
 static void co_list(void)
 {
@@ -335,7 +335,7 @@ static int ss_pref(const char *key) { return lj_ini_geti(lj_ctx_get()->forms_ini
 static void ss_save(int as_new)
 {
     const char *no = lj_w_edit_text(F(LJ_WIN_SAVE_SELECTION, "ENo")), *name = lj_w_edit_text(F(LJ_WIN_SAVE_SELECTION, "eName"));
-    char t[8];
+    char t[12];
     int r = lj_custom_sel_save(as_new || !no ? 0 : atoi(no), name ? name : "", ss.fix, ss.n);
     if (r < 0) { lj_log("save custom selection: refused (empty name or %d selections)", LJ_CUSTOM_SEL_MAX); return; }
     ss.saved = r;
@@ -362,7 +362,7 @@ static int ss_name_key(lj_widget *w, const lj_key_ev *k)   /* KeyPreview + FormK
 lj_window *lj_desktop_dlg_save_selection(const int *fix, int n, int existing_no)
 {
     lj_widget *e;
-    char t[8] = "";
+    char t[12] = "";
     int i;
     if (!lj_win_open(LJ_WIN_SAVE_SELECTION)) return NULL;
     for (ss.n = 0, i = 0; fix && i < n && ss.n < LJ_FIXTURES; i++) if (fix[i] >= 0 && fix[i] < LJ_FIXTURES) ss.fix[ss.n++] = fix[i];

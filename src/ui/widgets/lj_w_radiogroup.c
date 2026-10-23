@@ -35,7 +35,7 @@ static void layout(lj_widget *w)
 
 static int mouse(lj_widget *w, const lj_mouse_ev *m) { return lj_w_plain_mouse(w, m); }
 
-static const lj_widget_vt vt = { lj_w_groupbox_paint, mouse, NULL, layout };
+static const lj_widget_vt vt = { lj_w_groupbox_paint, mouse, NULL, layout, NULL };
 
 void lj_w_radiogroup_child_checked(lj_widget *group, lj_widget *child)
 {

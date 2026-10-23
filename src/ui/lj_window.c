@@ -67,7 +67,7 @@ static void root_paint(lj_widget *w, lj_surface *s)
     lj_widget_abs(w, &ax, &ay);
     lj_fill(s, ax, ay, w->w, w->h, w->color);
 }
-static const lj_widget_vt lj_root_vt = { root_paint, NULL, NULL, NULL };
+static const lj_widget_vt lj_root_vt = { root_paint, NULL, NULL, NULL, NULL };
 
 static void stub_paint(lj_widget *w, lj_surface *s)
 {
@@ -79,7 +79,7 @@ static void stub_paint(lj_widget *w, lj_surface *s)
     tw = lj_text_width(f, name);
     if (w->w > 4 && w->h > 4) lj_text(s, f, ax + (w->w - tw) / 2, ay + (w->h - f->height) / 2, name, LJ_CLR_3DDKSHADOW, 0);
 }
-static const lj_widget_vt lj_stub_vt = { stub_paint, NULL, NULL, NULL };
+static const lj_widget_vt lj_stub_vt = { stub_paint, NULL, NULL, NULL, NULL };
 
 static lj_widget *stub_ctor(lj_widget *parent, const lj_ctl_desc *d)
 {

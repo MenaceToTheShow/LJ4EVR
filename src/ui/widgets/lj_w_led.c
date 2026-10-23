@@ -68,7 +68,7 @@ static int key(lj_widget *w, const lj_key_ev *k)
     return 1;
 }
 
-static const lj_widget_vt vt = { paint, mouse, key, NULL };
+static const lj_widget_vt vt = { paint, mouse, key, NULL, NULL };
 
 lj_widget *lj_w_led_create(lj_widget *parent, const lj_ctl_desc *d)
 {

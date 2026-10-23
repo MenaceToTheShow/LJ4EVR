@@ -107,7 +107,9 @@ static const lj_desktop_dlg_host test_dd_host = { t_load, t_pick, t_take, NULL }
 static long read_file(const char *path, char *buf, long cap) { FILE *f = fopen(path, "rb"); long n; if (!f) return -1; n = (long)fread(buf, 1, (size_t)cap - 1, f); fclose(f); buf[n > 0 ? n : 0] = 0; return n; }
 static int file_has(const char *path, const char *needle) { static char buf[16384]; return read_file(path, buf, sizeof buf) > 0 && strstr(buf, needle) != NULL; }
 static int run_text(const char *text) { FILE *f = fopen(TMP "dd.lj4s", "wb"); int r; uint64_t t0 = lj_clock_us(); if (!f) return -1; fputs(text, f); fclose(f);
-                                        if ((r = lj_uiscript_load(TMP "dd.lj4s")) != 0) return r; while ((r = lj_uiscript_step()) == 1 && lj_clock_us() - t0 < 5000000u) { } return r; }
+                                        if ((r = lj_uiscript_load(TMP "dd.lj4s")) != 0) return r;
+                                        while ((r = lj_uiscript_step()) == 1 && lj_clock_us() - t0 < 5000000u) { }
+                                        return r; }
 
 static lj_engine *eng; static uint64_t now_us;
 static void tick(int n) { while (n-- > 0) { now_us += 25000u; lj_lock(); lj_engine_tick(eng, now_us); lj_unlock(); } }

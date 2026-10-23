@@ -51,7 +51,7 @@ int lj_w_button_key(lj_widget *w, const lj_key_ev *k)
     return 0;
 }
 
-static const lj_widget_vt vt = { lj_w_button_paint, lj_w_button_mouse_ev, lj_w_button_key, NULL };
+static const lj_widget_vt vt = { lj_w_button_paint, lj_w_button_mouse_ev, lj_w_button_key, NULL, NULL };
 
 lj_widget *lj_w_button_create(lj_widget *parent, const lj_ctl_desc *d)
 {

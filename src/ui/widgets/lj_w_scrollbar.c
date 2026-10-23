@@ -45,7 +45,7 @@ static int sbw_key(lj_widget *w, const lj_key_ev *k)
     return along || k->key == LJ_VK_PRIOR || k->key == LJ_VK_NEXT || k->key == LJ_VK_HOME || k->key == LJ_VK_END;
 }
 
-static const lj_widget_vt sbw_vt = { sbw_paint, sbw_mouse, sbw_key, NULL };
+static const lj_widget_vt sbw_vt = { sbw_paint, sbw_mouse, sbw_key, NULL, NULL };
 
 lj_widget *lj_w_scrollbar_create(lj_widget *parent, const lj_ctl_desc *d)
 {

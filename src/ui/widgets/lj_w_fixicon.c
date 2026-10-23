@@ -22,7 +22,7 @@ static void paint(lj_widget *w, lj_surface *s)
     if (f->programmed) lj_fill(s, ax + 3, ay + LJ_FIXICON_CAP_H + 3, 5, 5, f->programmed == LJ_FIX_PROG_SCENE ? LJ_CLR_GREEN : 0x00FFFFu);
 }
 
-static const lj_widget_vt vt = { paint, NULL, NULL, NULL };
+static const lj_widget_vt vt = { paint, NULL, NULL, NULL, NULL };
 
 lj_widget *lj_w_fixicon_create(lj_widget *parent, const lj_ctl_desc *d)
 {

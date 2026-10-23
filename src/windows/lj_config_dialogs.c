@@ -292,7 +292,7 @@ static void af_init(lj_window *win)
 {
     const lj_profile *p = lj_fixlib_by_id((uint16_t)cd.profile);
     lj_show *sh = show();
-    char t[112];
+    char t[160];
     int f = 0;
     lj_window_set_caption(win, "Add Fixture (s)");             /* addfixturesdialog.gif (the DFM caption is the placeholder "AddFixForm2") */
     snprintf(t, sizeof t, "%s %s%s%s", p ? p->manufacturer : "", p ? p->name : "?", p && p->mode[0] ? ", " : "", p ? p->mode : "");

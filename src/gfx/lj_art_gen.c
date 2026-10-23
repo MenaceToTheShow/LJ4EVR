@@ -486,6 +486,7 @@
  * Original pixel art (art/glyphs/FORMAT.md), 0x00RRGGBB rows (C<n> names a colour); the bottom-left pixel is the
  * transparency key. px is const data: lj_art_entry.img.px is uint32_t* for lj_surface's sake
  * and is never written (gfx/lj_glyphs.h). */
+#include <stddef.h>   /* NULL in the gel table */
 #include "gfx/lj_glyphs.h"
 
 #define C0 0x000000u

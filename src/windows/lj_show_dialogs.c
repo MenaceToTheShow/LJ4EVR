@@ -279,7 +279,7 @@ void lj_show_dlg_seq_used(int cues_done, int cues_total, int bg_done, int bg_tot
  * SlotName0..11 (the shipped keys, 06 s3); the label shows in an empty cue slot as "(name)" (seqslotlabel.gif). The grid's goEditing editor is
  * a code-built TEdit over the selected cell (the string grid paints only). */
 #define NS LJ_WIN_NAME_SLOTS
-static struct { char names[LJ_CUE_SLOTS][64], fixed[LJ_CUE_SLOTS][12]; lj_widget *ed; int row, colw[2]; } ns;
+static struct { char names[LJ_CUE_SLOTS][64], fixed[LJ_CUE_SLOTS][20]; lj_widget *ed; int row, colw[2]; } ns;
 static const lj_ctl_desc ns_ed_desc = { LJ_K_EDIT, "ns_editor", 0, 0, 0, 0, .max_length = 63 };   /* ours: 63 chars, as the Statics name fields; PROPOSAL rig 03 s5 */
 static void ns_commit(void)
 {

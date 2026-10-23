@@ -346,7 +346,8 @@ static void vf_paint(lj_widget *w, lj_surface *s)
         case K_BUMP:   face(s, x, y, c->w, c->h, 0); snprintf(t, sizeof t, "%d", c->idx + 1); ctext(s, sm, x, y + c->h + 14, c->w, sm->height, t, 0x000000u); break;
         case K_GM:     draw_fader(s, sm, &cc, fg.fader[0]); ctext(s, ab, x, y - ab->height - 2, c->w, ab->height, "GM", 0x000000u); break;
         case K_PAGE:   face(s, x, y, c->w, c->h, fg.page == c->idx); t[0] = (char)('A' + c->idx); t[1] = 0; ctext(s, ab, x, y, c->w, c->h, t, 0x000000u);
-                       if (fg.page == c->idx) lj_fill(s, x + c->w / 2 - 3, y + 4, 6, 4, 0x00C000u); break;   /* the green page LED (fingers.gif) */
+                       if (fg.page == c->idx) lj_fill(s, x + c->w / 2 - 3, y + 4, 6, 4, 0x00C000u);   /* the green page LED (fingers.gif) */
+                       break;
         case K_JOG:    draw_jog(s, &cc, vf.drag == i + 1); snprintf(t, sizeof t, "JOG %d", c->idx + 1); lj_text(s, sm, x - 2, y + c->h + 2, t, 0x000000u, 0); break;
         default: break;
         }
@@ -677,7 +678,7 @@ static const lj_binding lj_fg_slot_b[] = { { "cbChange", lj_handler_noop, NULL }
 
 static lj_widget *cover(lj_window *win, const char *name, void (*ev)(lj_widget *, int, void *), void (*paint)(lj_widget *, lj_surface *), lj_widget_vt *vt)
 {
-    static const lj_ctl_desc vf_desc = { LJ_K_PAINTBOX, "pbFingers", 0, 0, 0, 0 }, st_desc = { LJ_K_PAINTBOX, "pbStatus", 0, 0, 0, 0 };
+    static const lj_ctl_desc vf_desc = { LJ_K_PAINTBOX, "pbFingers", 0, 0, 0, 0, .tag = 0 }, st_desc = { LJ_K_PAINTBOX, "pbStatus", 0, 0, 0, 0, .tag = 0 };
     lj_widget *root = lj_window_root(win), *pb = lj_w_paintbox_create(root, !strcmp(name, "pbFingers") ? &vf_desc : &st_desc);
     if (!pb) return NULL;
     pb->x = 0; pb->y = 0; pb->w = root->w; pb->h = root->h;

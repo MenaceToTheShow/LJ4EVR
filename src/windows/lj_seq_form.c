@@ -448,7 +448,7 @@ static void lj_sf_bar_paint(lj_widget *w, lj_surface *s)
     lj_fill(s, x + 2, y + 13, lj_sf_bar_len(span, lj_sf_bar.fe, lj_sf_bar.ft), 5, LJ_CLR_RED);
 }
 
-static const lj_widget_vt lj_sf_bar_vt = { lj_sf_bar_paint, NULL, NULL, NULL };
+static const lj_widget_vt lj_sf_bar_vt = { lj_sf_bar_paint, NULL, NULL, NULL, NULL };
 
 static void lj_sf_bar_build(void)
 {

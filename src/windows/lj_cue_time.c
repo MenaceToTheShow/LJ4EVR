@@ -201,7 +201,7 @@ static int strip_mouse(lj_widget *w, const lj_mouse_ev *m)
     return 1;
 }
 static int strip_key(lj_widget *w, const lj_key_ev *k) { (void)w; return k->type == LJ_EV_KEY_DOWN && lj_cue_time_key(k->key); }
-static const lj_widget_vt lj_ct_strip_vt = { strip_paint, strip_mouse, strip_key, NULL };
+static const lj_widget_vt lj_ct_strip_vt = { strip_paint, strip_mouse, strip_key, NULL, NULL };
 
 /* ---- menus ---- */
 static void sync_checks(void)

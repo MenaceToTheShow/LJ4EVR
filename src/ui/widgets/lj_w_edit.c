@@ -198,7 +198,7 @@ static int key(lj_widget *w, const lj_key_ev *k)
     return 1;
 }
 
-const lj_widget_vt lj_w_edit_vt = { paint, mouse, key, NULL };
+const lj_widget_vt lj_w_edit_vt = { paint, mouse, key, NULL, NULL };
 
 const char *lj_w_edit_text(const lj_widget *w)
 {

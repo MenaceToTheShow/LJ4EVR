@@ -36,7 +36,7 @@ static struct {
     lj_window *win;
     lj_widget *num[LJ_S2_N], *btn[LJ_S2_N], *mode[LJ_S2_N], *lvl[LJ_S2_N];
     int idx[LJ_S2_N], n;
-    char cellname[LJ_S2_N][8];                                  /* "slot1".. : the UI script names the code-built slot buttons (rclick TStatics2Form.slot1) */
+    char cellname[LJ_S2_N][16];                                  /* "slot1".. : the UI script names the code-built slot buttons (rclick TStatics2Form.slot1) */
     char numtxt[LJ_S2_N][12], lvltxt[LJ_S2_N][16], tabtxt[LJ_STATIC_PAGES_MAX][20];
     const char *tabs[LJ_STATIC_PAGES_MAX];
     int pop_slot, drag;

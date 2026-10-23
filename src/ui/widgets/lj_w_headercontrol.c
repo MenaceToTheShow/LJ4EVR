@@ -85,7 +85,7 @@ static int hc_mouse(lj_widget *w, const lj_mouse_ev *m)
     }
 }
 
-static const lj_widget_vt hc_vt = { hc_paint, hc_mouse, NULL, NULL };
+static const lj_widget_vt hc_vt = { hc_paint, hc_mouse, NULL, NULL, NULL };
 
 lj_widget *lj_w_headercontrol_create(lj_widget *parent, const lj_ctl_desc *d)
 {

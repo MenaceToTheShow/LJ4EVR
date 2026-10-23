@@ -17,7 +17,7 @@ static void paint(lj_widget *w, lj_surface *s)
         lj_w_text_fit(s, w, ax + x + 2, ty, r->cells[i], rgb, (r->col_w[i] < w->w - x ? r->col_w[i] : w->w - x) - 4);
 }
 
-static const lj_widget_vt vt = { paint, NULL, NULL, NULL };
+static const lj_widget_vt vt = { paint, NULL, NULL, NULL, NULL };
 
 lj_widget *lj_w_cuerow_create(lj_widget *parent, const lj_ctl_desc *d)
 {

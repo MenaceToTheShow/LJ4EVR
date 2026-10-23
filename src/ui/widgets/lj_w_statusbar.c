@@ -37,7 +37,7 @@ static void sb_paint(lj_widget *w, lj_surface *s)
     if (b->grip) grip(s, ax + w->w - 2, ay + w->h - 2);
 }
 
-static const lj_widget_vt sb_vt = { sb_paint, NULL, NULL, NULL };
+static const lj_widget_vt sb_vt = { sb_paint, NULL, NULL, NULL, NULL };
 
 lj_widget *lj_w_statusbar_create(lj_widget *parent, const lj_ctl_desc *d)
 {

@@ -39,7 +39,7 @@ static struct {
     uint8_t layer[LJ_CHANS];
     char misc[LJ_DBG_MISC_LINES][24]; const char *misc_line[LJ_DBG_MISC_LINES];
     char act[LJ_STATIC_RUNNERS][40]; const char *act_row[LJ_STATIC_RUNNERS];
-    char mem[LJ_DBG_MEM_ROWS][80]; const char *mem_row[LJ_DBG_MEM_ROWS];
+    char mem[LJ_DBG_MEM_ROWS][96]; const char *mem_row[LJ_DBG_MEM_ROWS];
     uint64_t mem_avail, mem_total; int mem_known;
 } dbg;
 

@@ -102,7 +102,7 @@ static void area_event(lj_widget *w, int ev, void *ud)   /* drop target of the U
     if (lj_desktop_place_icon(number, x - LJ_FIXICON_W / 2, y - LJ_FIXICON_H / 2) == 0) lj_unassigned_refresh();
 }
 
-static const lj_widget_vt lj_area_vt = { area_paint, area_mouse, NULL, NULL };
+static const lj_widget_vt lj_area_vt = { area_paint, area_mouse, NULL, NULL, NULL };
 
 /* ---- tabs ---- */
 static void tabs_layout(lj_widget *w)

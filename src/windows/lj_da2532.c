@@ -422,7 +422,7 @@ static void on_grid_draw(lj_widget *w, void *ud)
     const lj_font *f = lj_w_font_of(w);
     lj_surface *s = g->draw_surf;
     int c = g->draw_col, r = g->draw_row, x = g->draw_rect.x, y = g->draw_rect.y, cw = g->draw_rect.w, ch = g->draw_rect.h;
-    char t[8];
+    char t[12];
     (void)ud;
     if (!s) return;
     if (r == 0 && c > 0) { snprintf(t, sizeof t, "%d", c); lj_text(s, f, x + (cw - lj_text_width(f, t)) / 2, y + (ch - f->height) / 2, t, 0, 0); return; }

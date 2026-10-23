@@ -160,3 +160,29 @@ Debug `--selftest` and the captions run print no `has no behaviour file yet`.
 - The RGB pack control's colour squares, Calculate addresses / Clear for one fixture at a time, and the statics' scenes
   under Copy / Clear Misc Data: ponytail deferrals that the dlg-config track recorded.
 - `TExportTableForm` still paints two ME-17 stubs. It has no entry point (W5).
+
+### 9. CI portability pass (gcc 14 / clang 19 on Linux, clang on macOS)
+
+The first CI run on `893123d` was green on windows-msvc. The four other jobs stopped on compile errors that MSVC does
+not report. Track 0's ME-43 `client` member on `lj_widget_vt` was never pushed before this wave, so CI first saw it
+here. Locally, `llvm-mingw` clang 23 and `w64devkit` gcc 16 (scratch tools, not in the repo) ran with the CI flags
+(`-std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wvla -ffp-contract=off -Werror`) over every `src`, `tests` and
+`tools/fuzz` file, and `test_layering.py --cc gcc` ran on the headers.
+
+| Error | Fix |
+|---|---|
+| `missing field 'client' initializer` (58 positional `lj_widget_vt` initializers, 33 files) | `, NULL` appended to each |
+| `lj_art_gen.c`: `NULL` undeclared (macOS), cascading into `missing initializer for field 'rgb' of 'lj_gel'` (gcc) | `tools/artpack.py` emits `#include <stddef.h>`; regenerated |
+| `lj_help_topics_gen.h:1`: `"/*" within comment` (gcc header check) | `tools/help_check.py` comment text reworded; regenerated. The same text in `lj_help_viewer.c:3` reworded |
+| `lj_backup_restore.c:219` unsequenced `end[n++] = n == 0 ? ...` (clang) | split into the assignment and `n++` |
+| `lj_fingers.c:680` positional `lj_ctl_desc` missing `tag` (clang) | `.tag = 0` |
+| `lj_fingers.c:349`, `test_desktop_dialogs.c:110` misleading indentation (gcc) | the trailing statement moved to its own line |
+| format truncation (gcc 16; gcc 14 may report it too) in `lj_config_dialogs.c:298`, `lj_da2532.c:428`, `lj_debug_form.c:210`, `lj_desktop_dialogs.c:243/342/369`, `lj_show_dialogs.c:335`, `lj_statics2_form.c:414` | the buffers widened to fit the largest value |
+
+The local sweeps now show nothing, except two items that are not CI errors and were left alone:
+- `test_window.c:22` `-Wunused-but-set-global`. This is new in clang 23 and the file is unchanged since W0.
+- `lj_sacn.c:221/251` `format-truncation`. gcc 16 reports it, but the file is unchanged since W3, when gcc 14 passed it.
+
+After the fixes, `test_layering --cc gcc`: 0 finding(s). The generator checks are current: qxf2c, fontpack, artpack,
+gen_vectors, exe_profiles_check, help_check, dfm2c. The four Windows trees are still 0 warnings, and ctest is still
+117 / 116 / 117 of the same.

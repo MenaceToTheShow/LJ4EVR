@@ -29,7 +29,7 @@ static void pb_paint(lj_widget *w, lj_surface *s)
     }
 }
 
-static const lj_widget_vt pb_vt = { pb_paint, NULL, NULL, NULL };
+static const lj_widget_vt pb_vt = { pb_paint, NULL, NULL, NULL, NULL };
 
 lj_widget *lj_w_progressbar_create(lj_widget *parent, const lj_ctl_desc *d)
 {

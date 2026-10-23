@@ -260,7 +260,7 @@ static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
     return 1;
 }
 
-static const lj_widget_vt lj_cue_grid_vt = { grid_paint, grid_mouse, NULL, NULL };
+static const lj_widget_vt lj_cue_grid_vt = { grid_paint, grid_mouse, NULL, NULL, NULL };
 
 /* W4 (12 Q9): a sequence asked into a given slot; the two prompts of the save-sequence unit (exe 0x2261BC, 0x226210) */
 static uint32_t lj_cue_pending_seq;
@@ -352,7 +352,7 @@ static int popup_key(lj_widget *w, const lj_key_ev *k)
     if (k->type == LJ_EV_KEY_DOWN && k->key == LJ_VK_ESCAPE) { w->visible = 0; lj_window_invalidate_all(lj_window_of(w)); return 1; }
     return 0;
 }
-static const lj_widget_vt lj_cue_popup_vt = { popup_paint, popup_mouse, popup_key, NULL };
+static const lj_widget_vt lj_cue_popup_vt = { popup_paint, popup_mouse, popup_key, NULL, NULL };
 
 void lj_cue_popup_open(lj_window *win, const char *const *items, int n, int x, int y, void (*pick)(int i, void *ud), void *ud)
 {

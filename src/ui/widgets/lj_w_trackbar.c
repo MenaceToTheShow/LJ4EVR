@@ -149,7 +149,7 @@ static int tb_key(lj_widget *w, const lj_key_ev *k)
     }
 }
 
-static const lj_widget_vt tb_vt = { tb_paint, tb_mouse, tb_key, NULL };
+static const lj_widget_vt tb_vt = { tb_paint, tb_mouse, tb_key, NULL, NULL };
 
 lj_widget *lj_w_trackbar_create(lj_widget *parent, const lj_ctl_desc *d)
 {

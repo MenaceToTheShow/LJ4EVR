@@ -74,7 +74,7 @@ int lj_w_radiobutton_checked(const lj_widget *w)
     return w && w->kind == LJ_K_RADIOBUTTON ? (int)((const lj_w_cap *)w)->checked : 0;
 }
 
-static const lj_widget_vt vt = { paint, mouse, key, NULL };
+static const lj_widget_vt vt = { paint, mouse, key, NULL, NULL };
 
 lj_widget *lj_w_radiobutton_create(lj_widget *parent, const lj_ctl_desc *d)
 {

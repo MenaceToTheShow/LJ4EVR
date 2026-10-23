@@ -58,7 +58,7 @@ static int mouse(lj_widget *w, const lj_mouse_ev *m)
     return 1;
 }
 
-static const lj_widget_vt vt = { paint, mouse, NULL, NULL };
+static const lj_widget_vt vt = { paint, mouse, NULL, NULL, NULL };
 
 lj_widget *lj_w_dipswitch_create(lj_widget *parent, const lj_ctl_desc *d)
 {

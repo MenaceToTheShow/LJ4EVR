@@ -56,7 +56,7 @@ static int drop_key(lj_widget *list, const lj_key_ev *k)
     if (k->type == LJ_EV_KEY_DOWN && (k->key == LJ_VK_ESCAPE || k->key == LJ_VK_F4)) { lj_w_combobox_close(l->owner, 0); return 1; }
     return lj_w_list_key(list, k);
 }
-static const lj_widget_vt drop_vt = { lj_w_list_paint, drop_mouse, drop_key, NULL };
+static const lj_widget_vt drop_vt = { lj_w_list_paint, drop_mouse, drop_key, NULL, NULL };
 
 int lj_w_combobox_drop(lj_widget *w)
 {
@@ -134,7 +134,7 @@ static int cb_key(lj_widget *w, const lj_key_ev *k)
     }
 }
 
-static const lj_widget_vt cb_vt = { cb_paint, cb_mouse, cb_key, NULL };
+static const lj_widget_vt cb_vt = { cb_paint, cb_mouse, cb_key, NULL, NULL };
 
 lj_widget *lj_w_combobox_create(lj_widget *parent, const lj_ctl_desc *d)
 {

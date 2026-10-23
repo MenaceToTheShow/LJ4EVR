@@ -148,7 +148,7 @@ static int lv_key(lj_widget *w, const lj_key_ev *k)
     return 1;
 }
 
-static const lj_widget_vt lv_vt = { lv_paint, lv_mouse, lv_key, NULL };
+static const lj_widget_vt lv_vt = { lv_paint, lv_mouse, lv_key, NULL, NULL };
 
 lj_widget *lj_w_listview_create(lj_widget *parent, const lj_ctl_desc *d)
 {

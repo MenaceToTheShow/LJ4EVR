@@ -304,7 +304,7 @@ static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
         return 0;
     }
 }
-static const lj_widget_vt grid_vt = { grid_paint, grid_mouse, NULL, NULL };
+static const lj_widget_vt grid_vt = { grid_paint, grid_mouse, NULL, NULL, NULL };
 
 /* ---- the readout under the grid: sunken, "-16256 : 17120" or the preset ---- */
 int lj_ctl_movement_readout(lj_window *win, char *dst, size_t cap)
@@ -325,7 +325,7 @@ static void readout_paint(lj_widget *w, lj_surface *s)
     lj_ctl_movement_readout(mv->win, text, sizeof text);
     lj_w_text_c(s, w, ax, ay, w->w, w->h, text, LJ_CLR_3DDKSHADOW, 0);
 }
-static const lj_widget_vt readout_vt = { readout_paint, NULL, NULL, NULL };
+static const lj_widget_vt readout_vt = { readout_paint, NULL, NULL, NULL, NULL };
 
 /* ---- coloured push buttons (Clr Macro yellow) and the blue arrow pad ---- */
 static void cbtn_paint(lj_widget *w, lj_surface *s)
@@ -337,7 +337,7 @@ static void cbtn_paint(lj_widget *w, lj_surface *s)
     lj_w_text_c(s, w, ax + p, ay + p, w->w, w->h, b->caption, LJ_CLR_3DDKSHADOW, 0);
 }
 static int cbtn_mouse(lj_widget *w, const lj_mouse_ev *m) { return w->enabled ? lj_w_button_mouse((lj_w_cap *)w, m, 0) : 0; }
-static const lj_widget_vt cbtn_vt = { cbtn_paint, cbtn_mouse, NULL, NULL };
+static const lj_widget_vt cbtn_vt = { cbtn_paint, cbtn_mouse, NULL, NULL, NULL };
 
 static void arrow_paint(lj_widget *w, lj_surface *s)
 {
@@ -355,7 +355,7 @@ static void arrow_paint(lj_widget *w, lj_surface *s)
         lj_fill(s, cx - 1, cy - 6, 3, 13, 0x0000FFu); lj_fill(s, cx - 6, cy - 1, 13, 3, 0x0000FFu);
     }
 }
-static const lj_widget_vt arrow_vt = { arrow_paint, cbtn_mouse, NULL, NULL };
+static const lj_widget_vt arrow_vt = { arrow_paint, cbtn_mouse, NULL, NULL, NULL };
 
 /* ---- the Resolution bar: lj_w_dragbar's mouse/key, our text "Resolution 32" (integer, not a percentage: IMG ptresolution) ---- */
 static void res_paint(lj_widget *w, lj_surface *s)

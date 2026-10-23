@@ -59,7 +59,7 @@ int lj_w_checkbox_checked(const lj_widget *w)
     return w && w->kind == LJ_K_CHECKBOX ? (int)((const lj_w_cap *)w)->checked : 0;
 }
 
-static const lj_widget_vt vt = { paint, mouse, key, NULL };
+static const lj_widget_vt vt = { paint, mouse, key, NULL, NULL };
 
 lj_widget *lj_w_checkbox_create(lj_widget *parent, const lj_ctl_desc *d)
 {

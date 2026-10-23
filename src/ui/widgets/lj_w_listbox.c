@@ -145,7 +145,7 @@ void lj_w_list_set_checked(lj_widget *w, int i, int on)
     lj_widget_invalidate(w);
 }
 
-static const lj_widget_vt lb_vt = { lj_w_list_paint, lj_w_list_mouse, lj_w_list_key, NULL };
+static const lj_widget_vt lb_vt = { lj_w_list_paint, lj_w_list_mouse, lj_w_list_key, NULL, NULL };
 
 lj_widget *lj_w_listbox_create(lj_widget *parent, const lj_ctl_desc *d)
 {

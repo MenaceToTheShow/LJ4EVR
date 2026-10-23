@@ -116,7 +116,7 @@ def generate():
     out += [" * Original pixel art (art/glyphs/FORMAT.md), 0x00RRGGBB rows (C<n> names a colour); the bottom-left pixel is the",
             " * transparency key. px is const data: lj_art_entry.img.px is uint32_t* for lj_surface's sake",
             " * and is never written (gfx/lj_glyphs.h). */",
-            "#include \"gfx/lj_glyphs.h\"", ""]
+            "#include <stddef.h>   /* NULL in the gel table */", "#include \"gfx/lj_glyphs.h\"", ""]
     freq = {}
     for a in arts:
         for v in a[3]: freq[v] = freq.get(v, 0) + 1

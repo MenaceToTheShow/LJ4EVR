@@ -55,7 +55,7 @@ static int btn_mouse(lj_widget *w, const lj_mouse_ev *m)
     }
 }
 
-static const lj_widget_vt lj_ctl_c_btn_vt = { btn_paint, btn_mouse, NULL, NULL };
+static const lj_widget_vt lj_ctl_c_btn_vt = { btn_paint, btn_mouse, NULL, NULL, NULL };
 
 static void on_ev(lj_widget *w, int ev, void *ud);
 

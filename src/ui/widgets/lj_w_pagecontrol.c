@@ -217,7 +217,7 @@ int lj_w_tabs_key(lj_widget *w, const lj_key_ev *k)
     }
 }
 
-static const lj_widget_vt pc_vt = { lj_w_tabs_paint, lj_w_tabs_mouse, lj_w_tabs_key, lj_w_tabs_layout };
+static const lj_widget_vt pc_vt = { lj_w_tabs_paint, lj_w_tabs_mouse, lj_w_tabs_key, lj_w_tabs_layout, NULL };
 
 lj_widget *lj_w_pagecontrol_create(lj_widget *parent, const lj_ctl_desc *d)
 {

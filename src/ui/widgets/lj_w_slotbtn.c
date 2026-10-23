@@ -13,7 +13,7 @@ static void paint(lj_widget *w, lj_surface *s)
     lj_w_text_fit(s, w, ax + 4 + p, ay + (w->h - lj_w_font_of(w)->height) / 2 + p, b->caption, LJ_CLR_3DDKSHADOW, w->w - 8);
 }
 
-static const lj_widget_vt vt = { paint, NULL, NULL, NULL };
+static const lj_widget_vt vt = { paint, NULL, NULL, NULL, NULL };
 
 lj_widget *lj_w_slotbtn_create(lj_widget *parent, const lj_ctl_desc *d)
 {

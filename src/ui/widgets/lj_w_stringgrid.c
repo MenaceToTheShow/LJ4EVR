@@ -150,7 +150,7 @@ static int grid_key(lj_widget *w, const lj_key_ev *k)
     }
 }
 
-static const lj_widget_vt grid_vt = { grid_paint, grid_mouse, grid_key, NULL };
+static const lj_widget_vt grid_vt = { grid_paint, grid_mouse, grid_key, NULL, NULL };
 
 lj_widget *lj_w_grid_create(lj_widget *parent, const lj_ctl_desc *d, int with_cells)
 {

@@ -4,7 +4,7 @@
  * returns to the display rect (lj_w_tabs_layout). TabIndex selects, OnChange fires. */
 #include "ui/widgets/lj_widgets_lists.h"
 
-static const lj_widget_vt tc_vt = { lj_w_tabs_paint, lj_w_tabs_mouse, lj_w_tabs_key, lj_w_tabs_layout };   /* layout: an alClient child under the strip */
+static const lj_widget_vt tc_vt = { lj_w_tabs_paint, lj_w_tabs_mouse, lj_w_tabs_key, lj_w_tabs_layout, NULL };   /* layout: an alClient child under the strip */
 
 lj_widget *lj_w_tabcontrol_create(lj_widget *parent, const lj_ctl_desc *d)
 {

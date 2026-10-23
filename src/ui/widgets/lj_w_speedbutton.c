@@ -60,7 +60,7 @@ int lj_w_speedbutton_down(const lj_widget *w)
     return w && w->kind == LJ_K_SPEEDBUTTON ? (int)((const lj_w_sb *)w)->c.down : 0;
 }
 
-static const lj_widget_vt vt = { paint, mouse, NULL, NULL };
+static const lj_widget_vt vt = { paint, mouse, NULL, NULL, NULL };
 
 lj_widget *lj_w_speedbutton_create(lj_widget *parent, const lj_ctl_desc *d)
 {

@@ -10,7 +10,7 @@ static void ts_paint(lj_widget *w, lj_surface *s)
     lj_fill(s, ax, ay, w->w, w->h, w->color);
 }
 
-static const lj_widget_vt ts_vt = { ts_paint, NULL, NULL, NULL };
+static const lj_widget_vt ts_vt = { ts_paint, NULL, NULL, NULL, NULL };
 
 lj_widget *lj_w_tabsheet_create(lj_widget *parent, const lj_ctl_desc *d)
 {

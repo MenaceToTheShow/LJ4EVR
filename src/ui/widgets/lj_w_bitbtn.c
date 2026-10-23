@@ -8,7 +8,7 @@
 #include <string.h>
 #include "core/lj_str.h"
 
-static const lj_widget_vt vt = { lj_w_button_paint, lj_w_button_mouse_ev, lj_w_button_key, NULL };
+static const lj_widget_vt vt = { lj_w_button_paint, lj_w_button_mouse_ev, lj_w_button_key, NULL, NULL };
 
 static const struct { const char *kind, *caption; } lj_bk[] = {
     { "bkOK", "OK" }, { "bkCancel", "Cancel" }, { "bkHelp", "Help" }, { "bkClose", "Close" }, { "bkYes", "Yes" },

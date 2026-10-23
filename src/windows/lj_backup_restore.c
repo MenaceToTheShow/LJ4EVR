@@ -216,7 +216,7 @@ static int rs_split(size_t end[LJ_RS_ROWS])
     for (i = 0; i <= len && n < LJ_RS_ROWS; i++) {
         int sep = i == len || rs.dir[i] == '/' || rs.dir[i] == '\\';
         if (!sep) { in = 1; continue; }
-        if (in) end[n++] = n == 0 ? i + (i < len) : i;          /* "D:" keeps its "\" */
+        if (in) { end[n] = n == 0 ? i + (i < len) : i; n++; }          /* "D:" keeps its "\" */
         else if (n == 0 && i == 0 && i < len) end[n++] = 1;     /* POSIX root "/" */
         in = 0;
     }

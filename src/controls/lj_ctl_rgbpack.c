@@ -174,7 +174,7 @@ static int status_mouse(lj_widget *w, const lj_mouse_ev *m)
     }
     return 1;
 }
-static const lj_widget_vt lj_rp_status_vt = { status_paint, status_mouse, NULL, NULL };
+static const lj_widget_vt lj_rp_status_vt = { status_paint, status_mouse, NULL, NULL, NULL };
 
 static void letter_paint(lj_widget *w, lj_surface *s)            /* the panel's O/S/F: same widget, the state's letter on the 14-px face */
 {

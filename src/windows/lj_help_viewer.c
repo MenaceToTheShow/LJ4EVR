@@ -1,6 +1,6 @@
 /* lj_help_viewer.c - LJ_WIN_HELP, the bundled help viewer (lj_help_viewer.h; design 13 item 12, W4-HELP). Code-built:
  * LJ2's Help items opened WinHelp / the CHM, which LJ4EVR does not ship (D2), so there is no DFM. A topic list on the
- * left, the topic text on the right; the topics are help/*.txt compiled in (lj_help_topics_gen.c, tools/help_check.py). */
+ * left, the topic text on the right; the topics are the help/ text files compiled in (lj_help_topics_gen.c, tools/help_check.py). */
 #include "windows/lj_help_viewer.h"
 
 #include <string.h>
