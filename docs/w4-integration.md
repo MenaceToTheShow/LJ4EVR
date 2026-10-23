@@ -795,3 +795,57 @@ determinism skipped. `gh run rerun 39912230811 --failed`. Attempt 2: **success, 
 The Linux jobs ran on the interim self-hosted runners, as the verdict allows while atlas-ci2 is down; ME-159 (Part B)
 moves them to hosted runners. With this run every Part A condition holds: items 1-23 on their *Verify* lines and a
 six-green `ci.yml` run on main.
+
+## Part B (release, Joey's rulings of 2026-10-22)
+
+Rulings: Q1 ME-154 = (a) rewrite history with `git filter-repo`; Q2 ME-155 = MIT; Q3 ME-156 = (b) the
+`LJ4EVR (User lib: %s)` caption fallback, descriptive mentions kept with the non-affiliation line, the DFM-only About
+golden's forum line blanked; Q4 ME-159 = the default (Linux jobs on GitHub-hosted `ubuntu-latest`, same image digest,
+self-hosted runners leave the repository); Q5 ME-158 = no hand run of the `.dmg`, v1.0.0 ships with the `Native=1`
+recommendation and the known-gap line, the hand run stays a W5 entry gate.
+
+### REL-HISTORY: the rewrite (ME-154, Part B step 1, step 7 record)
+
+1. Backup: `git clone --mirror` of the remote before the rewrite into a local-only mirror (never pushed, not
+   published), 4,027 objects. Refs at the backup: `main` = `472e86a`; tags (tag object -> commit) `v0.0.1`
+   `05079a18` -> `de7da168`, `v0.1.0` `fd09eb72` -> `74b5eb50`, `v0.2.0` `1053b855` -> `110e5689`, `v0.3.0`
+   `512fa433` -> `3f5faef6`. No other refs (no pull-request refs, no stash).
+2. Rewrite: `git-filter-repo` 2.47.0 (in the tooling venv) driven as a library over a fresh mirror, with
+   `--replace-text` and `--replace-message` (the REL-PRIVATE strings of the ME-148 table, each replaced by its
+   placeholder) and a blob callback. Its output: `{'lj_forms_gen.c blobs stripped': 6, 'image blobs replaced': 13}`:
+   Martin's About credits array removed from every `src/ui/forms/lj_forms_gen.c` version, and the `TABOUTFORM2`
+   golden and the captures that showed the credits or the Windows user name replaced in every commit by their
+   fix-pass-A re-renders and re-shoots.
+3. Result: 74 commits mapped; 72 get new ids, the 2 pre-W0 commits are unchanged (`cd01346`, `a7b573d`); the 4
+   annotated tags rewritten. New `main` = `864a2ce`; tags `v0.0.1` `49a22863` -> `243737e0`, `v0.1.0` `2c27eeb0` ->
+   `e2e26ef3`, `v0.2.0` `d012eb99` -> `b015fe22`, `v0.3.0` `aa74fd25` -> `8df5bdd3`. The commit map (every old and new
+   id, the branch and the four tag objects) is in the design vault, `delegations/W4_HISTORY_COMMIT_MAP.tsv` (80 rows:
+   74 commits, 1 branch, 4 tag objects); commit ids cited in this log before this section are the old ids.
+4. Checks before the push: the rewritten tip builds (MSVC, Ninja) and `ctest` passes 119 of 119; its tree differs from
+   the old tip's in 3 blobs only (`docs/fidelity.md`, `docs/w4-integration.md` and the
+   `hardware-setup-THardwareSetupForm2.png` capture: the strings and pixels the rewrite replaced).
+5. Push (2026-10-23, run by the orchestrator): one atomic `git push --force-with-lease` of `main` and the four tags,
+   each lease on the backup's value, with the CI and Release workflows disabled for the window and re-enabled after.
+   The four prereleases keep their releases on the rewritten tags; all 12 of their assets are deleted, and each one's
+   notes end with `Installers withdrawn 2026-10-22 (history cleanup); use v1.0.0 or later.` The working clone was
+   reset to `origin/main`.
+6. Verified by the release engineer, 2026-10-23:
+
+       git ls-remote origin
+         864a2cea56fd096128b38979ceccc27c9d5bebfb  HEAD = refs/heads/main
+         49a22863f203cdbaae809687397f219c81e31d2d  refs/tags/v0.0.1  ^{} 243737e01612ab6104be2b7f220a4f2e688a453e
+         2c27eeb0b09704535db9fbe9e92ada9622d93de7  refs/tags/v0.1.0  ^{} e2e26ef3116873799ec09e34d7ba6da62ea0a20f
+         d012eb99d44c74290e6a0c568537c5bf5499c521  refs/tags/v0.2.0  ^{} b015fe22105fab64922b74954c1665589a6c7103
+         aa74fd2525dfba9d08fa19be5a17a5feeb157f14  refs/tags/v0.3.0  ^{} 8df5bdd3ecf77a962b47adaac974576065ab970d
+       gh release view v0.0.1 .. v0.3.0     Pre-release, 0 assets each, notes end with the withdrawn line
+       git rev-list --objects --all         4,006 objects: 74 commits, 681 trees, 3,247 blobs, 4 tags
+       git log --all -G <pattern>, over every blob of every commit, commits matching:
+         the three credit names / words                                   0
+         the five REL-PRIVATE patterns of the ME-148 verify line          0
+         the Windows user name (two patterns)                             0
+         "Dropbox"                                                        1: the ME-148 table's words "the Dropbox path", no path
+       git log --all --grep, the same patterns in commit messages         0
+       author, committer and tagger e-mail                                the GitHub noreply address only
+
+   **REL-HISTORY met**: no Martin authored text, no private detail and no secret in any commit or tag; the eight
+   prerelease installers that carried the credits are withdrawn.
