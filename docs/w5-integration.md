@@ -109,3 +109,12 @@ Red:
   does. The extapp code is unchanged.
 
 MSVC trees after these fixes: ctest 153 / 151 / 153 passed (including `test_layering`).
+
+### CI round 3 (`7b0172b`) and the fix
+
+windows-msvc, macos-clang, linux-clang and generate-check green. linux-gcc-asan red on `-Wformat-truncation` at
+`windows/lj_hardware_setup.c:55-56` (`"cbProto%d"` into `char[16]`: gcc counts an unknown `int` as up to 11 bytes even
+at level 1). Every remaining `snprintf` added in W5 whose return value was unused (67 lines, listed by a diff scan from
+`52b999a`) now checks it with the same idiom, braced where more code follows on the line. The five left unchecked write
+into 96- or 292-byte rows with a bounded format and advance an index in the destination expression
+(`ea.rows[n++]`, `rep->lines[rep->nlines++]`). MSVC trees: ctest 153 / 151 / 153 passed.

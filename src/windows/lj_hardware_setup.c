@@ -52,8 +52,8 @@ static int ip_parse(const char *s, uint32_t *out)
  * "sACN" / "Art-Net" / "Port-Address" and the geometry: PROPOSAL rig M-hw (LJ2 had no network output, note 05 item 23). */
 static const char *const lj_hs_protos[] = { "sACN", "Art-Net" };
 static lj_widget *label(lj_widget *parent, lj_ctl_desc *d, const char *name, int x, int y, int w, const char *caption);
-static lj_widget *proto_w(int i) { char nm[16]; snprintf(nm, sizeof nm, "cbProto%d", i + 1); return lj_window_find(hs.win, nm); }
-static lj_widget *aaddr_w(int i) { char nm[16]; snprintf(nm, sizeof nm, "seArtAddr%d", i + 1); return lj_window_find(hs.win, nm); }
+static lj_widget *proto_w(int i) { char nm[16]; { if (snprintf(nm, sizeof nm, "cbProto%d", i + 1) < 0) nm[0] = 0; } return lj_window_find(hs.win, nm); }
+static lj_widget *aaddr_w(int i) { char nm[16]; { if (snprintf(nm, sizeof nm, "seArtAddr%d", i + 1) < 0) nm[0] = 0; } return lj_window_find(hs.win, nm); }
 static void artnet_rows(lj_widget *panel)
 {
     static lj_ctl_desc d[LJ_LINKS * 3];
@@ -93,8 +93,8 @@ static void artnet_status(const lj_sacn_cfg *c, char *st, size_t cap)   /* W5-AR
     int i, any = 0;
     for (i = 0; i < LJ_LINKS; i++) if (c->proto[i] == LJ_OUT_ARTNET) { any = 1; pps += v->artnet_pps[i]; }
     if (!any && !c->artnet_in) return;
-    if (!v->artnet_bound) snprintf(part, sizeof part, " | Art-Net off: UDP 6454 in use");
-    else snprintf(part, sizeof part, " | Art-Net %u pkt/s, %u nodes", pps, (unsigned)v->artnet_nodes);
+    if (!v->artnet_bound) { if (snprintf(part, sizeof part, " | Art-Net off: UDP 6454 in use") < 0) part[0] = 0; }
+    else { if (snprintf(part, sizeof part, " | Art-Net %u pkt/s, %u nodes", pps, (unsigned)v->artnet_nodes) < 0) part[0] = 0; }
     strncat(st, part, cap - strlen(st) - 1);
 }
 

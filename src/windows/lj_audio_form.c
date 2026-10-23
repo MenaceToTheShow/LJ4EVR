@@ -205,7 +205,7 @@ static void gain_hint(void)
 {
     int pos = lj_audio_gain_pos(cfg()), t = pos * 200 / 127, a = t < 0 ? -t : t;   /* tenths of a dB */
     char v[32];
-    snprintf(v, sizeof v, "%s%d%c%ddB", t < 0 ? "-" : "", a / 10, lj_locale_decimal(), a % 10);
+    if (snprintf(v, sizeof v, "%s%d%c%ddB", t < 0 ? "-" : "", a / 10, lj_locale_decimal(), a % 10) < 0) v[0] = 0;
     if (snprintf(au.gain_hint, sizeof au.gain_hint, "Gain: %s|Global volume setting for the sound input: %s", v, v) < 0) au.gain_hint[0] = 0;   /* the DFM hint's format, "Gain: 0,0dB|..." */
     if (au.gain) au.gain->hint = au.gain_hint;
 }
@@ -477,7 +477,7 @@ void lj_audio_form_refresh(enum lj_win id)
     if (id != LJ_WIN_AUDIO_ANALYZER || !au.win) return;
     lj_audio_form_trig_lit(lj_clock_us());
     bpm = au.period_us ? (uint32_t)(6000000000ull / au.period_us) : 0;   /* hundredths of a beat per minute */
-    snprintf(au.bpm_text, sizeof au.bpm_text, "%u%c%02u BPM", (unsigned)(bpm / 100), lj_locale_decimal(), (unsigned)(bpm % 100));
+    if (snprintf(au.bpm_text, sizeof au.bpm_text, "%u%c%02u BPM", (unsigned)(bpm / 100), lj_locale_decimal(), (unsigned)(bpm % 100)) < 0) au.bpm_text[0] = 0;
     lj_w_set_caption(au.bpm, au.bpm_text);
     if (au.bpm && au.bpm_desc) au.bpm->desc = bpm ? &au.bpm_lime : au.bpm_desc;   /* PROPOSAL rig W5-AUD-4: red until two trigs give a tempo */
     why = lj_audio_device_status(&ok);

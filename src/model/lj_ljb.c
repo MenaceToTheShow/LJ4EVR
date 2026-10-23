@@ -33,7 +33,7 @@ static uint32_t rd32(const uint8_t *p) { return (uint32_t)p[0] | (uint32_t)p[1] 
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
 static int16_t  rds16(const uint8_t *p) { uint16_t v = rd16(p); return v < 0x8000u ? (int16_t)v : (int16_t)(-(int)(0x10000u - v)); }
 static int      errs(char *err, size_t cap, const char *msg) { if (err && cap) lj_str_copy(err, cap, msg); return -1; }
-static int      erri(char *err, size_t cap, const char *fmt, uint32_t i) { if (err && cap) snprintf(err, cap, fmt, (int)i); return -1; }
+static int      erri(char *err, size_t cap, const char *fmt, uint32_t i) { if (err && cap) { if (snprintf(err, cap, fmt, (int)i) < 0) err[0] = 0; } return -1; }
 
 /* ShortString[width-1] at p (the caller checked p + width is inside the record): a length byte above the width is
  * clamped (02 s9.1); control bytes become '?' so no imported name can break a line of an LJ4 text record. */
@@ -497,7 +497,7 @@ int lj_ljb_import(const char *ljb_path, const char *userdir, const char *name, l
             memset(&p, 0, sizeof p);
             if (num >= LJ_FIXTURES || lj_gs2_read(x, xn, &p, NULL, 0) != 0) { why = "not a GS2 record, not converted"; break; }
             lj_gs2_free(&p);
-            snprintf(gs2[num], sizeof gs2[num], "LJBSlot%03u.GS2", (unsigned)num + 1);   /* our name, never the file's */
+            if (snprintf(gs2[num], sizeof gs2[num], "LJBSlot%03u.GS2", (unsigned)num + 1) < 0) gs2[num][0] = 0;   /* our name, never the file's */
             if (snprintf(rel, sizeof rel, "UserFixtureDef\\%s", gs2[num]) < 0) rel[0] = 0;
             if (lib_file(out, rel, path) != 0 || (f = fopen(path, "wb")) == NULL) { gs2[num][0] = 0; why = "cannot write"; break; }
             if (fwrite(x, 1, xn, f) != xn) why = "cannot write";

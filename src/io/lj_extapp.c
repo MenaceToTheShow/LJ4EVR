@@ -107,18 +107,18 @@ void lj_extapp_cfg_load(lj_ini *ini, lj_extapp_cfg *c)
         lj_extapp_link *l = &c->link[i];
         int f, t;
         long port;
-        snprintf(k, sizeof k, "Fixture%d", i + 1);   f = lj_ini_geti(ini, "EXTAPP", k, 0);
-        snprintf(k, sizeof k, "Transport%d", i + 1); t = lj_ini_geti(ini, "EXTAPP", k, 0);
+        { if (snprintf(k, sizeof k, "Fixture%d", i + 1) < 0) k[0] = 0; }   f = lj_ini_geti(ini, "EXTAPP", k, 0);
+        { if (snprintf(k, sizeof k, "Transport%d", i + 1) < 0) k[0] = 0; } t = lj_ini_geti(ini, "EXTAPP", k, 0);
         if (f < 1 || f > LJ_FIXTURES) continue;
         for (j = 0; j < i; j++) if (c->link[j].fixture == f) break;
         if (j < i) continue;                                       /* a fixture twice: the first slot wins */
         l->fixture = (uint8_t)f;
         l->transport = (uint8_t)(t >= 0 && t <= LJ_EXTAPP_TCP ? t : LJ_EXTAPP_OFF);
-        snprintf(k, sizeof k, "SerialPort%d", i + 1); lj_str_copy(l->serial_port, sizeof l->serial_port, lj_ini_gets(ini, "EXTAPP", k, ""));
-        snprintf(k, sizeof k, "Baud%d", i + 1);       l->baud = (uint32_t)lj_ini_geti(ini, "EXTAPP", k, LJ_EXTAPP_BAUD_DEFAULT);
-        snprintf(k, sizeof k, "Host%d", i + 1);       if (lj_extapp_ip_parse(lj_ini_gets(ini, "EXTAPP", k, ""), &l->ip) != 0) l->ip = 0;
-        snprintf(k, sizeof k, "Port%d", i + 1);       port = lj_ini_geti(ini, "EXTAPP", k, 0); l->port = (uint16_t)(port >= 1 && port <= 65535 ? port : 0);
-        snprintf(k, sizeof k, "Definition%d", i + 1); if (lj_str_copy(l->def_file, sizeof l->def_file, lj_ini_gets(ini, "EXTAPP", k, "")) != 0) l->def_file[0] = 0;
+        { if (snprintf(k, sizeof k, "SerialPort%d", i + 1) < 0) k[0] = 0; } lj_str_copy(l->serial_port, sizeof l->serial_port, lj_ini_gets(ini, "EXTAPP", k, ""));
+        { if (snprintf(k, sizeof k, "Baud%d", i + 1) < 0) k[0] = 0; }       l->baud = (uint32_t)lj_ini_geti(ini, "EXTAPP", k, LJ_EXTAPP_BAUD_DEFAULT);
+        { if (snprintf(k, sizeof k, "Host%d", i + 1) < 0) k[0] = 0; }       if (lj_extapp_ip_parse(lj_ini_gets(ini, "EXTAPP", k, ""), &l->ip) != 0) l->ip = 0;
+        { if (snprintf(k, sizeof k, "Port%d", i + 1) < 0) k[0] = 0; }       port = lj_ini_geti(ini, "EXTAPP", k, 0); l->port = (uint16_t)(port >= 1 && port <= 65535 ? port : 0);
+        { if (snprintf(k, sizeof k, "Definition%d", i + 1) < 0) k[0] = 0; } if (lj_str_copy(l->def_file, sizeof l->def_file, lj_ini_gets(ini, "EXTAPP", k, "")) != 0) l->def_file[0] = 0;
         link_check(l);
     }
 }
@@ -130,14 +130,14 @@ void lj_extapp_cfg_save(lj_ini *ini, const lj_extapp_cfg *c)
     if (!ini || !c) return;
     for (i = 0; i < LJ_SCENE_EXT; i++) {
         const lj_extapp_link *l = &c->link[i];
-        snprintf(ip, sizeof ip, "%u.%u.%u.%u", (unsigned)(l->ip >> 24), (unsigned)(l->ip >> 16 & 255u), (unsigned)(l->ip >> 8 & 255u), (unsigned)(l->ip & 255u));
-        snprintf(k, sizeof k, "Fixture%d", i + 1);    lj_ini_seti(ini, "EXTAPP", k, l->fixture);
-        snprintf(k, sizeof k, "Transport%d", i + 1);  lj_ini_seti(ini, "EXTAPP", k, l->transport);
-        snprintf(k, sizeof k, "SerialPort%d", i + 1); lj_ini_sets(ini, "EXTAPP", k, l->serial_port);
-        snprintf(k, sizeof k, "Baud%d", i + 1);       lj_ini_seti(ini, "EXTAPP", k, (int)l->baud);
-        snprintf(k, sizeof k, "Host%d", i + 1);       lj_ini_sets(ini, "EXTAPP", k, l->ip ? ip : "");
-        snprintf(k, sizeof k, "Port%d", i + 1);       lj_ini_seti(ini, "EXTAPP", k, l->port);
-        snprintf(k, sizeof k, "Definition%d", i + 1); lj_ini_sets(ini, "EXTAPP", k, l->def_file);
+        if (snprintf(ip, sizeof ip, "%u.%u.%u.%u", (unsigned)(l->ip >> 24), (unsigned)(l->ip >> 16 & 255u), (unsigned)(l->ip >> 8 & 255u), (unsigned)(l->ip & 255u)) < 0) ip[0] = 0;
+        { if (snprintf(k, sizeof k, "Fixture%d", i + 1) < 0) k[0] = 0; }    lj_ini_seti(ini, "EXTAPP", k, l->fixture);
+        { if (snprintf(k, sizeof k, "Transport%d", i + 1) < 0) k[0] = 0; }  lj_ini_seti(ini, "EXTAPP", k, l->transport);
+        { if (snprintf(k, sizeof k, "SerialPort%d", i + 1) < 0) k[0] = 0; } lj_ini_sets(ini, "EXTAPP", k, l->serial_port);
+        { if (snprintf(k, sizeof k, "Baud%d", i + 1) < 0) k[0] = 0; }       lj_ini_seti(ini, "EXTAPP", k, (int)l->baud);
+        { if (snprintf(k, sizeof k, "Host%d", i + 1) < 0) k[0] = 0; }       lj_ini_sets(ini, "EXTAPP", k, l->ip ? ip : "");
+        { if (snprintf(k, sizeof k, "Port%d", i + 1) < 0) k[0] = 0; }       lj_ini_seti(ini, "EXTAPP", k, l->port);
+        { if (snprintf(k, sizeof k, "Definition%d", i + 1) < 0) k[0] = 0; } lj_ini_sets(ini, "EXTAPP", k, l->def_file);
     }
 }
 

@@ -260,7 +260,7 @@ int lj_test_extapp_seq(int argc, char **argv)
         char text[512];
         size_t i;
         for (i = 0; i < sizeof bad / sizeof bad[0]; i++) {
-            snprintf(text, sizeof text, "LJ4 seq 1\nnum=3\nscenes=1\nscene st=1000 ft=50\n%s\n", bad[i]);
+            if (snprintf(text, sizeof text, "LJ4 seq 1\nnum=3\nscenes=1\nscene st=1000 ft=50\n%s\n", bad[i]) < 0) text[0] = 0;
             write_file(TMP "bad.seq", text);
             CHECK(lj_sequence_load(TMP "bad.seq", &t, err, sizeof err) == -1);
         }
@@ -290,7 +290,7 @@ static void golden(lj_window *w, const char *name)
     char path[1024];
     const char *upd = getenv("LJ_GOLDEN_UPDATE");
     if (!w) { fails++; printf("FAIL golden %s: no window\n", name); return; }
-    snprintf(path, sizeof path, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name);
+    if (snprintf(path, sizeof path, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name) < 0) path[0] = 0;
     lj_window_paint(w);
     if (upd && upd[0] == '1') { CHECK(lj_bmp_write(lj_window_surface(w), path) == 0); printf("  golden %s written\n", name); return; }
     CHECK(lj_bmp_write(lj_window_surface(w), TMP "golden.bmp") == 0);

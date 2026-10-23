@@ -27,7 +27,7 @@ int lj_serial_list(lj_serial_port *out, int max)
     int n = 0, i;
     if (!out || max <= 0) return 0;
     for (i = 1; i <= 255 && n < max && n < LJ_SERIAL_PORTS_MAX; i++) {   /* QueryDosDevice: present ports without opening them (no DTR blip) */
-        snprintf(name, sizeof name, "COM%d", i);
+        if (snprintf(name, sizeof name, "COM%d", i) < 0) name[0] = 0;
         if (QueryDosDeviceA(name, target, sizeof target) != 0) { memcpy(out[n].name, name, strlen(name) + 1); n++; }
     }
     return n;
@@ -45,7 +45,7 @@ lj_serial *lj_serial_open(const char *name, uint32_t baud)
     for (i = 0; i < sizeof lj_ser_bauds / sizeof lj_ser_bauds[0]; i++) if (lj_ser_bauds[i] == baud) ok = 1;
     if (num < 0) { lj_log("serial: %.63s is not a COM port name", name ? name : "(null)"); return NULL; }
     if (!ok) { lj_log("serial: %u baud not supported", (unsigned)baud); return NULL; }
-    snprintf(path, sizeof path, "\\\\.\\COM%d", num);
+    if (snprintf(path, sizeof path, "\\\\.\\COM%d", num) < 0) path[0] = 0;
     h = CreateFileA(path, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
     if (h == INVALID_HANDLE_VALUE) { lj_log("serial: cannot open COM%d: %lu", num, (unsigned long)GetLastError()); return NULL; }
     memset(&dcb, 0, sizeof dcb);

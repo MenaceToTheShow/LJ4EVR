@@ -174,7 +174,7 @@ static void on_ljb_yes(int yes, void *ud)
     if (!yes) return;
     if (lj_ljb_import(rs.path, lj_ctx_get()->userdir, NULL, &rb.lib, &rb.rep, err, sizeof err) != 0) { lj_win_message("Warning", err); return; }
     if (snprintf(rs.notes, sizeof rs.notes, "Imported into \"%s\": %d converted, %d not converted (" LJ_LJB_REPORT ")\n", rb.lib.name, rb.rep.converted, rb.rep.skipped) < 0) rs.notes[0] = 0;   /* PROPOSAL text */
-    for (i = 0; i < rb.rep.nlines; i++) { at = strlen(rs.notes); snprintf(rs.notes + at, sizeof rs.notes - at, "%s\n", rb.rep.lines[i]); }
+    for (i = 0; i < rb.rep.nlines; i++) { at = strlen(rs.notes); if (snprintf(rs.notes + at, sizeof rs.notes - at, "%s\n", rb.rep.lines[i]) < 0) (rs.notes + at)[0] = 0; }
     show_notes();
     lj_window_set_text(rs.win, "lPath", rb.lib.name);
     lj_win_confirm("Please Confirm..", LJ_USERLIB_RESTART1, LJ_USERLIB_RESTART2, on_ljb_restart, NULL);

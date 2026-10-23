@@ -35,7 +35,7 @@ void lj_audio_cfg_load(lj_ini *ini, lj_audio_cfg *c)
     c->decay_ms = (uint16_t)clampi(lj_ini_geti(ini, LJ_AU_SEC, "TrigDecay", c->decay_ms), LJ_AUDIO_DECAY_MIN, LJ_AUDIO_DECAY_MAX);
     c->sensitivity_x10 = (uint8_t)clampi(lj_ini_geti(ini, LJ_AU_SEC, "TrigAggr", c->sensitivity_x10), LJ_AUDIO_SENS_MIN, LJ_AUDIO_SENS_MAX);
     c->gain_pct = (uint16_t)clampi(lj_ini_geti(ini, LJ_AU_SEC, "Gain", c->gain_pct), LJ_AUDIO_GAIN_MIN, LJ_AUDIO_GAIN_MAX);
-    for (i = 0; i < LJ_AUDIO_BANDS; i++) { snprintf(key, sizeof key, "EqualizerBand%d", i + 1); c->eq[i] = (uint8_t)clampi(lj_ini_geti(ini, LJ_AU_SEC, key, 128), 0, 255); }
+    for (i = 0; i < LJ_AUDIO_BANDS; i++) { { if (snprintf(key, sizeof key, "EqualizerBand%d", i + 1) < 0) key[0] = 0; } c->eq[i] = (uint8_t)clampi(lj_ini_geti(ini, LJ_AU_SEC, key, 128), 0, 255); }
     c->view = (uint8_t)clampi(lj_ini_geti(ini, LJ_AU_SEC, "ShowInput", c->view), 0, 2);
     c->trigger_faders = (uint8_t)(lj_ini_geti(ini, LJ_AU_SEC, "TriggerFaders", c->trigger_faders) != 0);
     c->sound_card = (uint8_t)(lj_ini_geti(ini, LJ_AU_SEC, "SoundCard", c->sound_card) != 0);
@@ -58,7 +58,7 @@ void lj_audio_cfg_save(lj_ini *ini, const lj_audio_cfg *c)
     lj_ini_seti(ini, LJ_AU_SEC, "TrigDecay", c->decay_ms);
     lj_ini_seti(ini, LJ_AU_SEC, "TrigAggr", c->sensitivity_x10);
     lj_ini_seti(ini, LJ_AU_SEC, "Gain", c->gain_pct);
-    for (i = 0; i < LJ_AUDIO_BANDS; i++) { snprintf(key, sizeof key, "EqualizerBand%d", i + 1); lj_ini_seti(ini, LJ_AU_SEC, key, c->eq[i]); }
+    for (i = 0; i < LJ_AUDIO_BANDS; i++) { { if (snprintf(key, sizeof key, "EqualizerBand%d", i + 1) < 0) key[0] = 0; } lj_ini_seti(ini, LJ_AU_SEC, key, c->eq[i]); }
     lj_ini_seti(ini, LJ_AU_SEC, "ShowInput", c->view);
     lj_ini_seti(ini, LJ_AU_SEC, "TriggerFaders", c->trigger_faders);
     lj_ini_seti(ini, LJ_AU_SEC, "SoundCard", c->sound_card);

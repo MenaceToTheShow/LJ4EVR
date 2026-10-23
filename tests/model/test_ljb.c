@@ -435,7 +435,7 @@ static void test_restore_window(void)
     lj_library_delete(TMP, "MyShow");
     lj_library_delete(TMP, "Lib");
     if (lj_library_create(TMP, "Lib", &lib) != 0) { fails++; printf("FAIL cannot create Lib\n"); return; }
-    snprintf(c->userdir, sizeof c->userdir, TMP);
+    if (snprintf(c->userdir, sizeof c->userdir, TMP) < 0) c->userdir[0] = 0;
     c->lib = &lib; c->show = lj_show_new(); c->main_ini = lj_ini_new(); c->forms_ini = lj_ini_new();
     lj_desktop_bind_action(LJ_ACT_SELECT_LIBRARY, on_action, NULL);
     CHECK(write_file(TMP "Show.LJB", g_ljb ? g_ljb : (const uint8_t *)"", g_ljb_len) == 0);

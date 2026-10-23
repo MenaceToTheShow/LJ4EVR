@@ -87,7 +87,7 @@ static void fill(void)
     } else rf.nports = 0;
     for (i = 0; i < 4; i++) {
         char com[8];
-        snprintf(com, sizeof com, "COM%d", i + 1);
+        if (snprintf(com, sizeof com, "COM%d", i + 1) < 0) com[0] = 0;
         if (rf.nports ? (i < rf.nports && !strcmp(c->serial_port, rf.ports[i].name)) : !strcmp(c->serial_port, com)) lj_w_radiogroup_set_index(rg, i);
     }
     for (i = 0; i < LJ_REMOTE_BAUDS; i++) if (lj_remote_bauds[i] == c->baud) lj_w_radiogroup_set_index(find("rgBaudRate"), i);
@@ -98,13 +98,13 @@ static void fill(void)
         uint32_t ip = nic[i].ipv4;
         if (nic[i].loopback || !nic[i].up || !ip) continue;
         rf.ips[rf.nips] = ip;
-        snprintf(rf.iptxt[rf.nips], sizeof rf.iptxt[0], "%u.%u.%u.%u", ip >> 24, (ip >> 16) & 255u, (ip >> 8) & 255u, ip & 255u);
+        if (snprintf(rf.iptxt[rf.nips], sizeof rf.iptxt[0], "%u.%u.%u.%u", ip >> 24, (ip >> 16) & 255u, (ip >> 8) & 255u, ip & 255u) < 0) rf.iptxt[rf.nips][0] = 0;
         if (ip == c->tcp_ip) sel = rf.nips;
         rf.nips++;
     }
     for (i = 0; i < rf.nips; i++) rf.ipitems[i] = rf.iptxt[i];
     if ((w = find("cbInterface")) != NULL) { lj_w_combobox_set_items(w, rf.ipitems, rf.nips); ((lj_w_combobox *)w)->index = sel; lj_widget_invalidate(w); }
-    snprintf(rf.porttxt, sizeof rf.porttxt, "%u", (unsigned)c->tcp_port);
+    if (snprintf(rf.porttxt, sizeof rf.porttxt, "%u", (unsigned)c->tcp_port) < 0) rf.porttxt[0] = 0;
     lj_w_edit_set_text(find("eTcpPort"), rf.porttxt);
     lj_w_checkbox_set_checked(find("cbSerial"), c->serial_on);
     lj_w_checkbox_set_checked(find("cbTcp"), c->tcp_on);
@@ -129,7 +129,7 @@ static void on_ok(lj_widget *w, void *ud)
     if (!pt || !*pt || !end || *end || port < 1 || port > 65535) { lj_win_message("RS232 Settings", "The TCP port must be a number from 1 to 65535."); return; }
     if (p >= 0 && p < 4) {
         if (rf.nports) { if (p < rf.nports) lj_str_copy(c->serial_port, sizeof c->serial_port, rf.ports[p].name); }
-        else snprintf(c->serial_port, sizeof c->serial_port, "COM%d", p + 1);
+        else { if (snprintf(c->serial_port, sizeof c->serial_port, "COM%d", p + 1) < 0) c->serial_port[0] = 0; }
     }
     if (b >= 0 && b < LJ_REMOTE_BAUDS) c->baud = lj_remote_bauds[b];
     c->tcp_ip = ix >= 0 && ix < rf.nips ? rf.ips[ix] : LJ_IP_LOOPBACK;

@@ -215,8 +215,8 @@ static void golden(lj_window *win, const char *name)
     char g[1024], tmp[1024];
     const char *upd = getenv("LJ_GOLDEN_UPDATE");
     int rc;
-    snprintf(g, sizeof g, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name);
-    snprintf(tmp, sizeof tmp, "lj_test_media_%s.bmp", name);
+    if (snprintf(g, sizeof g, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name) < 0) g[0] = 0;
+    if (snprintf(tmp, sizeof tmp, "lj_test_media_%s.bmp", name) < 0) tmp[0] = 0;
     lj_window_paint(win);
     if (upd && upd[0] == '1') { CHECK(lj_bmp_write(lj_window_surface(win), g) == 0); printf("  %s: written\n", g); return; }
     CHECK(lj_bmp_write(lj_window_surface(win), tmp) == 0);

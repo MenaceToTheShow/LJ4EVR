@@ -125,7 +125,7 @@ int lj_dmxin_rx(int kind, const uint8_t *pkt, size_t n, uint32_t src_ip, uint64_
         if (lj_artnet_parse_dmx(pkt, n, &pa, &seq, slots, &nslots) != 0 || pa != lj_di.cfg.universe || nslots < 0 || nslots > LJ_LINK_CH) return lj_di_discard();
         prio = LJ_SACN_PRIORITY_DEFAULT;                                                    /* PROPOSAL rig W5-DMXIN-2: Art-Net merges at 100 */
         data = slots;
-        snprintf(name, sizeof name, "Art-Net %u.%u.%u.%u", (unsigned)(src_ip >> 24), (unsigned)(src_ip >> 16 & 255), (unsigned)(src_ip >> 8 & 255), (unsigned)(src_ip & 255));
+        if (snprintf(name, sizeof name, "Art-Net %u.%u.%u.%u", (unsigned)(src_ip >> 24), (unsigned)(src_ip >> 16 & 255), (unsigned)(src_ip >> 8 & 255), (unsigned)(src_ip & 255)) < 0) name[0] = 0;
     } else return lj_di_discard();
     for (s = 0; s < f->nsources; s++)
         if (f->src[s].kind == kind && (kind == LJ_DMXIN_SACN ? memcmp(f->src[s].cid, cid, 16) == 0 : f->src[s].ip == src_ip)) break;
@@ -215,7 +215,7 @@ int lj_dmxin_open(const lj_dmxin_cfg *cfg, const uint8_t own_cid[16])
     if (!cfg->enabled || cfg->source != LJ_DMXIN_SACN) return 0;                          /* W5-X-OFF; Art-Net input rides the engine's 6454 socket */
     lj_di.sock = lj_socket_udp(0, LJ_SACN_PORT, LJ_SOCK_REUSE);
     if (lj_di.sock == LJ_SOCKET_BAD) { lj_log("dmx in: cannot bind 0.0.0.0:%u", (unsigned)LJ_SACN_PORT); return -1; }
-    snprintf(a, sizeof a, "%u.%u.%u.%u", (unsigned)(cfg->nic_ipv4 >> 24), (unsigned)(cfg->nic_ipv4 >> 16 & 255), (unsigned)(cfg->nic_ipv4 >> 8 & 255), (unsigned)(cfg->nic_ipv4 & 255));
+    if (snprintf(a, sizeof a, "%u.%u.%u.%u", (unsigned)(cfg->nic_ipv4 >> 24), (unsigned)(cfg->nic_ipv4 >> 16 & 255), (unsigned)(cfg->nic_ipv4 >> 8 & 255), (unsigned)(cfg->nic_ipv4 & 255)) < 0) a[0] = 0;
     if (lj_socket_join(lj_di.sock, 0xEFFF0000u | cfg->universe, cfg->nic_ipv4) != 0) lj_log("dmx in: multicast join of universe %u failed; unicast only", (unsigned)cfg->universe);
     lj_log("dmx in: sACN universe %u on 0.0.0.0:%u, joined on %s", (unsigned)cfg->universe, (unsigned)LJ_SACN_PORT, cfg->nic_ipv4 ? a : "the default interface");
     return 0;
@@ -259,7 +259,7 @@ void lj_dmxin_cfg_save(lj_ini *ini, const lj_dmxin_cfg *cfg)
     lj_ini_seti(ini, "DMXIN", "Enabled", cfg->enabled);
     lj_ini_seti(ini, "DMXIN", "Source", cfg->source);
     lj_ini_seti(ini, "DMXIN", "Universe", cfg->universe);
-    snprintf(a, sizeof a, "%u.%u.%u.%u", (unsigned)(cfg->nic_ipv4 >> 24), (unsigned)(cfg->nic_ipv4 >> 16 & 255), (unsigned)(cfg->nic_ipv4 >> 8 & 255), (unsigned)(cfg->nic_ipv4 & 255));
+    if (snprintf(a, sizeof a, "%u.%u.%u.%u", (unsigned)(cfg->nic_ipv4 >> 24), (unsigned)(cfg->nic_ipv4 >> 16 & 255), (unsigned)(cfg->nic_ipv4 >> 8 & 255), (unsigned)(cfg->nic_ipv4 & 255)) < 0) a[0] = 0;
     lj_ini_sets(ini, "DMXIN", "Nic", cfg->nic_ipv4 ? a : "");
     lj_ini_seti(ini, "DMXIN", "Loss", cfg->loss);
     lj_ini_seti(ini, "DMXIN", "FunctionsOff", cfg->functions_off);
@@ -296,7 +296,7 @@ void lj_vtr_linear(lj_vtr *t, int in_lo, int in_hi, int out_lo, int out_hi)
 
 static int lj_vtr_err(char *err, size_t cap, int line, const char *why)
 {
-    if (err && cap) { if (line > 0) snprintf(err, cap, "line %d: %s", line, why); else lj_str_copy(err, cap, why); }
+    if (err && cap) { if (line > 0) { if (snprintf(err, cap, "line %d: %s", line, why) < 0) err[0] = 0; } else lj_str_copy(err, cap, why); }
     return -1;
 }
 
@@ -404,14 +404,14 @@ int lj_vtr_file_name(char *dst, size_t cap, const lj_vtr *t)
     char name[sizeof t->type + sizeof t->name + sizeof t->id + 8];
     size_t i;
     if (!dst || !cap || !t || !t->type[0] || !t->name[0] || !lj_vtr_guid_ok(t->id)) return -1;
-    snprintf(name, sizeof name, "%s_%s_%s", t->type, t->name, t->id);
+    if (snprintf(name, sizeof name, "%s_%s_%s", t->type, t->name, t->id) < 0) name[0] = 0;
     for (i = 0; name[i]; i++) {
         unsigned char c = (unsigned char)name[i];
         if (c == ' ' || c == ',' || c == '/' || c == '\\') name[i] = '_';                  /* "Off/on, disable treshold" -> "Off_on__disable_treshold" (LJ2's names) */
         else if (c < 32 || c == 127 || strchr(":*?\"<>|", c)) return -1;
     }
     if (strlen(name) + 4 >= cap || strlen(name) + 4 > 200) return -1;
-    snprintf(dst, cap, "%s.vtr", name);
+    if (snprintf(dst, cap, "%s.vtr", name) < 0) dst[0] = 0;
     return 0;
 }
 
@@ -485,10 +485,10 @@ int lj_dmxin_fn_caption(const lj_dmxin_assign *a, char *dst, size_t cap)
     dst[0] = 0;
     if (!a || a->fn == LJ_DIF_NONE || a->fn >= LJ_DIF_COUNT) return 0;
     switch (a->fn) {                                                                       /* the dragged programs (dmxinflashseq.gif: "Flash Seq 0014 <name>"; the window appends the name) */
-    case LJ_DIF_FLASH_SEQ:       snprintf(dst, cap, "Flash Seq %04u", (unsigned)a->num); return 0;
-    case LJ_DIF_LATCH_CUE_N:     snprintf(dst, cap, "Cue %04u", (unsigned)a->num); return 0;       /* PROPOSAL rig W5-DMXIN-5: the Flash Seq pattern */
-    case LJ_DIF_LATCH_CUELIST_N: snprintf(dst, cap, "CueList %04u", (unsigned)a->num); return 0;
-    case LJ_DIF_LATCH_BGCUE_N:   snprintf(dst, cap, "BG Cue %04u", (unsigned)a->num); return 0;
+    case LJ_DIF_FLASH_SEQ:       { if (snprintf(dst, cap, "Flash Seq %04u", (unsigned)a->num) < 0) dst[0] = 0; } return 0;
+    case LJ_DIF_LATCH_CUE_N:     { if (snprintf(dst, cap, "Cue %04u", (unsigned)a->num) < 0) dst[0] = 0; } return 0;       /* PROPOSAL rig W5-DMXIN-5: the Flash Seq pattern */
+    case LJ_DIF_LATCH_CUELIST_N: { if (snprintf(dst, cap, "CueList %04u", (unsigned)a->num) < 0) dst[0] = 0; } return 0;
+    case LJ_DIF_LATCH_BGCUE_N:   { if (snprintf(dst, cap, "BG Cue %04u", (unsigned)a->num) < 0) dst[0] = 0; } return 0;
     default: break;
     }
     for (i = 0; i < lj_dmxin_fn_nrows; i++) if (lj_dmxin_fn_rows[i].fn == a->fn && lj_dmxin_fn_rows[i].num == a->num) return lj_str_copy(dst, cap, lj_dmxin_fn_rows[i].caption);
@@ -580,7 +580,7 @@ int lj_dmxin_map_save(const char *path, const lj_dmxin_map *in)
         bad |= lj_rec_write(r, "ttype", "%d %s", i + 1, a->table.type) != 0;
         bad |= lj_rec_write(r, "tname", "%d %s", i + 1, a->table.name) != 0;
         bad |= lj_rec_write(r, "tpurpose", "%d %s", i + 1, a->table.purpose) != 0;
-        for (k = 0, line[0] = 0; k < 256; k++) snprintf(line + strlen(line), sizeof line - strlen(line), k ? " %d" : "%d", a->table.map[k]);
+        for (k = 0, line[0] = 0; k < 256; k++) { if (snprintf(line + strlen(line), sizeof line - strlen(line), k ? " %d" : "%d", a->table.map[k]) < 0) (line + strlen(line))[0] = 0; }
         bad |= lj_rec_write(r, "tmap", "%d %s", i + 1, line) != 0;
     }
     if (lj_rec_close(r) != 0 || bad) { lj_log("dmx in: cannot write %s", path); return -1; }

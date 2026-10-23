@@ -91,7 +91,7 @@ static void golden(lj_window *w, const char *name)
     int rc;
     if (!w) { fails++; printf("FAIL golden %s: no window\n", name); return; }
     if (snprintf(path, sizeof path, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name) < 0) path[0] = 0;
-    snprintf(tmp, sizeof tmp, TMP "%s.bmp", name);
+    if (snprintf(tmp, sizeof tmp, TMP "%s.bmp", name) < 0) tmp[0] = 0;
     lj_window_invalidate_all(w);
     lj_window_paint(w);
     if (lj_bmp_write(lj_window_surface(w), upd && upd[0] == '1' ? path : tmp) != 0) { fails++; printf("FAIL golden %s: write\n", name); return; }
@@ -265,7 +265,7 @@ int lj_test_audio_form(int argc, char **argv)
     lj_log_set_sink(sink, NULL);
     lj_fs_mkdir(TMP);
     remove(TMP "Hardware.Ini");
-    snprintf(c->userdir, sizeof c->userdir, TMP);
+    if (snprintf(c->userdir, sizeof c->userdir, TMP) < 0) c->userdir[0] = 0;
     c->hardware_ini = lj_ini_new(); c->main_ini = lj_ini_new(); c->forms_ini = lj_ini_new();
     memset(&sacn, 0, sizeof sacn); c->sacn = &sacn; c->engine = e;
     memset(&plat, 0, sizeof plat); plat.audio_list = fake_list; plat.audio_open = fake_open; plat.audio_close = fake_close;

@@ -160,7 +160,7 @@ int lj_remote_ip_parse(const char *s, uint32_t *out)
     *out = (a << 24) | (b << 16) | (c << 8) | d;
     return 0;
 }
-static void lj_rem_ip_fmt(char *dst, size_t cap, uint32_t ip) { snprintf(dst, cap, "%u.%u.%u.%u", ip >> 24, (ip >> 16) & 255u, (ip >> 8) & 255u, ip & 255u); }
+static void lj_rem_ip_fmt(char *dst, size_t cap, uint32_t ip) { if (snprintf(dst, cap, "%u.%u.%u.%u", ip >> 24, (ip >> 16) & 255u, (ip >> 8) & 255u, ip & 255u) < 0) dst[0] = 0; }
 
 static int lj_rem_baud_ok(uint32_t b) { int i; for (i = 0; i < LJ_REMOTE_BAUDS; i++) if (lj_remote_bauds[i] == b) return 1; return 0; }
 

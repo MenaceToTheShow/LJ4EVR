@@ -112,9 +112,9 @@ void lj_artnet_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
     int i, v;
     if (!cfg) return;
     for (i = 0; i < LJ_LINKS; i++) {
-        snprintf(key, sizeof key, "Proto%d", i + 1);
+        if (snprintf(key, sizeof key, "Proto%d", i + 1) < 0) key[0] = 0;
         cfg->proto[i] = (uint8_t)(lj_ini_geti(ini, "ARTNET", key, LJ_OUT_SACN) == LJ_OUT_ARTNET ? LJ_OUT_ARTNET : LJ_OUT_SACN);
-        snprintf(key, sizeof key, "Addr%d", i + 1);
+        if (snprintf(key, sizeof key, "Addr%d", i + 1) < 0) key[0] = 0;
         v = lj_ini_geti(ini, "ARTNET", key, i + 1);
         if (v < 1 || v > LJ_ARTNET_ADDR_MAX) { lj_log("artnet: Hardware.Ini [ARTNET] %s=%d not 1..32767, using %d", key, v, i + 1); v = i + 1; }
         cfg->artnet_addr[i] = (uint16_t)v;   /* default link N -> Port-Address N: PROPOSAL rig W5-ART-4 */
@@ -129,8 +129,8 @@ void lj_artnet_cfg_save(lj_ini *ini, const lj_sacn_cfg *cfg)
     int i;
     if (!ini || !cfg) return;
     for (i = 0; i < LJ_LINKS; i++) {
-        snprintf(key, sizeof key, "Proto%d", i + 1); lj_ini_seti(ini, "ARTNET", key, cfg->proto[i]);
-        snprintf(key, sizeof key, "Addr%d", i + 1);  lj_ini_seti(ini, "ARTNET", key, cfg->artnet_addr[i]);
+        { if (snprintf(key, sizeof key, "Proto%d", i + 1) < 0) key[0] = 0; } lj_ini_seti(ini, "ARTNET", key, cfg->proto[i]);
+        { if (snprintf(key, sizeof key, "Addr%d", i + 1) < 0) key[0] = 0; }  lj_ini_seti(ini, "ARTNET", key, cfg->artnet_addr[i]);
     }
     lj_ini_seti(ini, "ARTNET", "In", cfg->artnet_in);
 }

@@ -265,7 +265,7 @@ lj_window *lj_media_form_open(enum lj_win id)
     if (m && fini()) for (i = 0; i < LJ_MEDIA_RECENT; i++) {   /* the five recent files persist in forms.ini ("File0".."File4", LJMediaPlayer.Ini [RecentMedia] names) */
         char k[8];
         const char *v;
-        snprintf(k, sizeof k, "File%d", i);
+        if (snprintf(k, sizeof k, "File%d", i) < 0) k[0] = 0;
         if (!m->recent[i][0] && (v = lj_ini_gets(fini(), MF_SEC, k, NULL)) != NULL) lj_str_copy(m->recent[i], sizeof m->recent[i], v);
     }
     for (i = 0; i < LJ_MEDIA_RECENT; i++) mf_recent[i].caption = mf.recent_cap[i];
@@ -325,9 +325,9 @@ void lj_media_form_refresh(enum lj_win id)
     for (i = 0; i < LJ_MEDIA_RECENT; i++) {
         char k[8];
         const char *path = m ? m->recent[i] : "";
-        snprintf(mf.recent_cap[i], sizeof mf.recent_cap[i], "%d %s", i + 1, path);   /* PROPOSAL rig W5-MED-5: LJ2's recent-item text is not captured */
+        if (snprintf(mf.recent_cap[i], sizeof mf.recent_cap[i], "%d %s", i + 1, path) < 0) mf.recent_cap[i][0] = 0;   /* PROPOSAL rig W5-MED-5: LJ2's recent-item text is not captured */
         lj_menu_set_visible(mm, mf_recent[i].name, path[0] != 0);
-        snprintf(k, sizeof k, "File%d", i);
+        if (snprintf(k, sizeof k, "File%d", i) < 0) k[0] = 0;
         if (fini() && path[0]) lj_ini_sets(fini(), MF_SEC, k, path);
     }
 }

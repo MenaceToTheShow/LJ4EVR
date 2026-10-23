@@ -100,7 +100,7 @@ static void di_load_tables(void)
     for (i = 0; i < n; i++) {
         if (snprintf(path, sizeof path, "%s/%s", dir, names[i]) >= (int)sizeof path) continue;
         if (lj_vtr_load(path, &di_tables[di_ntables], err, sizeof err) == 0) { di_ntables++; continue; }
-        if (di_nerr < 16) { snprintf(di_err_text[di_nerr], sizeof di_err_text[di_nerr], "%.80s: %.70s", names[i], err); di_err_lines[di_nerr] = di_err_text[di_nerr]; di_nerr++; }
+        if (di_nerr < 16) { { if (snprintf(di_err_text[di_nerr], sizeof di_err_text[di_nerr], "%.80s: %.70s", names[i], err) < 0) di_err_text[di_nerr][0] = 0; } di_err_lines[di_nerr] = di_err_text[di_nerr]; di_nerr++; }
     }
     if (di_nerr) {                                                         /* TValueTableImportErrorForm from its trigger (W5-DMXIN-6) */
         lj_window *e = lj_dmx_in_open(LJ_WIN_VALUE_TABLE_ERROR);
@@ -136,16 +136,16 @@ static void di_monitor(void)
     uint32_t n;
     lj_widget *w;
     if (!di_win[0]) return;
-    snprintf(ch, sizeof ch, "DMX Channels In %u", (unsigned)f->channels);   /* dmxindialog.gif: "DMX Channels In 512" */
-    snprintf(hz, sizeof hz, "Update Freq %u Hz", (unsigned)f->hz);          /* "Update Freq 31 Hz" */
+    if (snprintf(ch, sizeof ch, "DMX Channels In %u", (unsigned)f->channels) < 0) ch[0] = 0;   /* dmxindialog.gif: "DMX Channels In 512" */
+    if (snprintf(hz, sizeof hz, "Update Freq %u Hz", (unsigned)f->hz) < 0) hz[0] = 0;          /* "Update Freq 31 Hz" */
     lj_window_set_text(di_win[0], "lChIn", ch);
     lj_window_set_text(di_win[0], "lFreq", hz);
-    if (lj_dmxin_remote_cue(&n)) snprintf(cue, sizeof cue, "%u", (unsigned)n); else lj_str_copy(cue, sizeof cue, "N/A");
+    if (lj_dmxin_remote_cue(&n)) { if (snprintf(cue, sizeof cue, "%u", (unsigned)n) < 0) cue[0] = 0; } else lj_str_copy(cue, sizeof cue, "N/A");
     if ((w = lj_window_find(di_win[0], "eCue")) != NULL && strcmp(lj_w_edit_text(w), cue) != 0) lj_w_edit_set_text(w, cue);
 }
 
 static int di_count_used(void) { int k, n = 0; for (k = 0; k < LJ_DI_CH; k++) n += di_work.ch[k].fn != LJ_DIF_NONE; return n; }
-static void di_used(void) { static char t[16]; snprintf(t, sizeof t, "%d", di_count_used()); if (di_win[0]) lj_window_set_text(di_win[0], "lUsed", t); }
+static void di_used(void) { static char t[16]; { if (snprintf(t, sizeof t, "%d", di_count_used()) < 0) t[0] = 0; } if (di_win[0]) lj_window_set_text(di_win[0], "lUsed", t); }
 static void di_refresh_all(void) { di_fill_rows(); di_used(); di_monitor(); }
 static int di_sel_ch(void) { lj_widget *w = di_win[0] ? lj_window_find(di_win[0], "LVDmxFunctions") : NULL; return w ? lj_w_listview_index(w) : -1; }
 
@@ -236,7 +236,7 @@ static void di_tr_fill(void)
         n += di_work.ch[k].has_table;
     }
     if ((w = lj_window_find(win, "lvChannels")) != NULL) { int keep = lj_w_listview_index(w); lj_w_listview_set_items(w, di_tr_items, LJ_DI_CH); ((lj_w_listview *)w)->index = keep; }
-    snprintf(active, sizeof active, "%d active tranlation(s)", n);   /* exe 0x21D0A8, sic (D13) */
+    if (snprintf(active, sizeof active, "%d active tranlation(s)", n) < 0) active[0] = 0;   /* exe 0x21D0A8, sic (D13) */
     lj_window_set_text(win, "lActive", active);
     for (k = 0; k < di_ntables && rows < LJ_DI_TABLES + 15; k++) {   /* a node per TYPE, its tables below */
         if (!type || strcmp(type, di_tables[k].type) != 0) { type = di_tables[k].type; lj_str_copy(di_tree_rows[rows], sizeof di_tree_rows[rows], type); di_tree_table[rows] = -1; di_tree_items[rows] = di_tree_rows[rows]; rows++; }
@@ -285,7 +285,7 @@ static void di_open_editor(int t)
         lj_vtr_identity(&di_edit);
         for (i = 0; i < 16; i++) { c = c * 6364136223846793005ull + 1442695040888963407ull; u[i] = (uint8_t)(c >> 56); }
         u[6] = (uint8_t)(0x40 | (u[6] & 0x0F)); u[8] = (uint8_t)(0x80 | (u[8] & 0x3F));
-        snprintf(di_edit.id, sizeof di_edit.id, "{%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X}", u[0], u[1], u[2], u[3], u[4], u[5], u[6], u[7], u[8], u[9], u[10], u[11], u[12], u[13], u[14], u[15]);
+        if (snprintf(di_edit.id, sizeof di_edit.id, "{%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X}", u[0], u[1], u[2], u[3], u[4], u[5], u[6], u[7], u[8], u[9], u[10], u[11], u[12], u[13], u[14], u[15]) < 0) di_edit.id[0] = 0;
         lj_str_copy(di_edit.type, sizeof di_edit.type, "USER"); lj_str_copy(di_edit.name, sizeof di_edit.name, "New table");
     }
     lj_dmx_in_close(LJ_WIN_TRANSLATION_EDIT);
@@ -374,7 +374,7 @@ static void di_ed_fill(void)
     if ((w = lj_window_find(win, "sg1")) != NULL) {                    /* missing entries = 1:1 [05 s3.3] */
         lj_w_grid_set_cell(w, 0, 0, "DMX value"); lj_w_grid_set_cell(w, 1, 0, "Translation");   /* exe 0x21AD20, 0x21AD34 */
         for (k = 0; k < LJ_DI_VALUES; k++) {
-            snprintf(di_cells[k][0], sizeof di_cells[k][0], "%d", k); snprintf(di_cells[k][1], sizeof di_cells[k][1], "%d", di_edit.map[k]);
+            { if (snprintf(di_cells[k][0], sizeof di_cells[k][0], "%d", k) < 0) di_cells[k][0][0] = 0; } { if (snprintf(di_cells[k][1], sizeof di_cells[k][1], "%d", di_edit.map[k]) < 0) di_cells[k][1][0] = 0; }
             lj_w_grid_set_cell(w, 0, k + 1, di_cells[k][0]); lj_w_grid_set_cell(w, 1, k + 1, di_cells[k][1]);
         }
         lj_widget_invalidate(w);
@@ -430,7 +430,7 @@ static void di_ex_fill(void)
     di_ex.items[0] = di_ex.row[0];
     n = lj_library_dir_list(di_ex.dir, NULL, di_ex.sub, LJ_DI_DIRS - 1);
     di_ex.nsub = n < 0 ? 0 : n;
-    for (i = 0; i < di_ex.nsub; i++) { snprintf(di_ex.row[i + 1], sizeof di_ex.row[i + 1], "  %s", di_ex.sub[i]); di_ex.items[i + 1] = di_ex.row[i + 1]; }
+    for (i = 0; i < di_ex.nsub; i++) { { if (snprintf(di_ex.row[i + 1], sizeof di_ex.row[i + 1], "  %s", di_ex.sub[i]) < 0) (di_ex.row[i + 1])[0] = 0; } di_ex.items[i + 1] = di_ex.row[i + 1]; }
     if (di_ex.list) lj_w_list_set_items(di_ex.list, di_ex.items, di_ex.nsub + 1);
     if (di_win[4]) lj_window_set_text(di_win[4], "pTarget", di_ex.dir);
 }
