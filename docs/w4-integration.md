@@ -578,7 +578,7 @@ New CTest rows: `fidelity_check`, `fidelity_check_selftest`; new rows inside exi
 | 12 | ME-143 | `held_bump[LJ_FG_FADERS]`: a bump's release runs the function that fired. | `test_da2532_fingers`: press Bump 1 on page A, `lj_fingers_set_page(2)`, release: `BUMP_SUB_FLASH_1` edge 0. |
 | 13 | ME-144 | `lj_engine_note_overrun` (caller holds the lock), called by the engine thread beside `lj_log_overrun`. | `test_debug_form`: one late tick reads `Overruns: 1`. |
 | 14 | ME-145 | `tools/glyphmap.tsv` rows: Cue Builder `sbAuto` / `sbManual` / `sbMusic` = `autotrig` / `manualtrig` / `music`, Select Bitmap `bGobos` / `bColors` = `gobos` / `colors`; `dfm2c` regenerated. Fan Out `sbNew` / `sbDelete` / `sbSave` and User Libraries `bSelect`: fidelity rows. | Re-shot `E/cue-builder-TCueStackForm.png` (the three trig faces) and `E/bitmap-picker-TBitMapPickerForm2.png` (the gobo and colour faces) from their entry points: non-blank (viewed); goldens `TCUESTACKFORM` / `W4SD_CUE_STACK` 257 px, `TBITMAPPICKERFORM2` / `W4C_BITMAP_PICKER` 264 px. |
-| 15 | ME-146 | `RestoreData.lj4d` (constant, `file-formats.md`, the two tests, the dialog comment). | `git grep -c "RestoreData.lj4r"` = 0; `test_restore_data` green. |
+| 15 | ME-146 | `RestoreData.lj4d` (constant, `file-formats.md`, the two tests, the dialog comment). | `git grep -c` of the old file name (`RestoreData` + `.lj4r`) = 0; `test_restore_data` green. |
 | 16 | ME-147 | The Execute File comment states what is filtered and what still reaches the shell. | "AllowExecute=1 lets a cue list start any program through the shell; enable it only for cue lists you wrote." is in `docs/running.md` and `SECURITY.md` (1 each). |
 | 17 | ME-148 | HEAD redaction (table below); the nine path-bearing User Libraries captures and the four others (W2 restore and export, W4 export and import) re-shot under `LJ4EVR_USERDATA`. | The verdict's four-pattern `git grep -c -E` (the LAN prefix, the runner login, the work-PC name prefix, the NIC name) = 0 at HEAD. Pixel scan (scratch `pixscan.py`: the rendered user name in the two faces, cut from two `9c21031` captures, matched in any colour pair over every tracked PNG / BMP / GIF): 862 images, 0 hits (it finds the user name in the HEAD versions of the re-shot captures, measured). |
 | 18 | ME-149 (1), (2) | `docs/ci.md` rule 1 rewritten (the `if:` keeps this repository's own PRs off the self-hosted runners; the approval setting is the fork control; the approver reads the workflow diff first), the `ci.yml` header comment the same. `runs-on` unchanged (Part B). | CI below. |
@@ -719,3 +719,60 @@ account's own environment), `bff756d` / `5021964` (a temporary fuzz A/B diagnost
   `$LOCALAPPDATA` and installed to `\Programs\LJ4EVR`; `-UseNewEnvironment` gives the account its own block, as a
   real logon does. ME-45 is ticked by this record (the verdict's re-ruling).
 - Item 18 (ME-149): (1) the run above; (2) `docs/ci.md` rule 1 rewritten; (3) is Part B, right after the flip.
+
+## Fix pass A r2
+
+Session of 2026-10-23 on the work PC (MSVC 19.44, Ninja + cl). Input: `delegations/W4_PARTA_VERIFY_r1.md`, the independent
+verify of round 1 against `origin/main` = `9b9cff7`: all 23 Part A items hold on their own *Verify* lines; the gate failed
+only because the latest `ci.yml` run (39910554688, the CI-record commit) was red on two Linux jobs, both after ctest had
+passed 118 of 118: linux-gcc-asan in `actions/upload-artifact` (`getaddrinfo EAI_AGAIN`), linux-clang in the fuzz step's
+`apt-get` (`deb.debian.org` unresolved), determinism skipped. That is the self-hosted runners' container network, not the
+code. No item was failing, so no code, golden or design.md change in this round: no golden re-rendered, no REVIEWED row
+added, design.md untouched (the r1 revision line at `design.md:1024` stands). No tag, no `VERSION` bump, no visibility
+change; `runs-on` unchanged (Part B, ME-159).
+
+Wording fixes the verifier offered (non-blocking), applied to this log only:
+
+- Item 15 (ME-146): the r1 cell quoted the old file name in full, so the verify grep counted that quote. Reworded; the
+  count is now 0 with no exception.
+- Item 6 (ME-137): the r1 cell's whole-tree claim (0 files for the three credit names) was wrong: `docs/fidelity.md` quotes
+  one in the ME-137 fidelity row, and this log quotes the grep. The verdict's own verify, `-- src tests`, holds (below).
+- Items 6 and 20: 144 or 145 caption forms is the TLaserWarningForm race already recorded under acceptance item 1; the
+  Status count is 92 in the gate table and 96 over both Status tables of `w4-gates.md`, 0 blank either way.
+
+### Builds and tests (incremental rebuild of the r1 trees at `9b9cff7`)
+
+    build-w4 (Release, SDL)                        0 warnings, 0 errors   ctest 100% passed, 0 failed out of 119
+    build-w4-nosdl (Release, LJ_SDL=OFF)           0 warnings, 0 errors   ctest 100% passed, 0 failed out of 118
+    build-debug-win (Debug, SDL)                   0 warnings, 0 errors   ctest 100% passed, 0 failed out of 119
+    caption_diff (w4_captions.lj4s, U:W4Captions, LJ4EVR_USERDATA = a scratch folder)
+                                                   rc 0, 0 ME-16 lines; 145 implemented form(s) of 207, 0 difference(s),
+                                                   139 excluded by a fidelity row, 84 absent at runtime
+
+### Part A, item by item (r1 verifier's result; the cheap greps re-run here)
+
+| # | ME | r2 | Verify |
+|---|---|---|---|
+| 1 | ME-132 | holds | verifier: `test_engine_w2` address guards green on Release and MSVC ASan; red (`heap-buffer-overflow`, `lj_post.c:182`) with the three pre-fix engine files. ctest green here. |
+| 2 | ME-133 | holds | verifier: `test_uiscript_w3` ASan-clean; red at `9c21031` (`lj_post_s3_masters`). ctest green here. |
+| 3 | ME-134 | holds | verifier: 40668 / 50856 / 58368 / 50884 recomputed independently; `replay-frames.bin` c46fee4c on every tree and OS. |
+| 4 | ME-135 | holds | verifier: laser warning 3,283 sign pixels, About logo 6,722; 159 changed goldens = 159 REVIEWED rows. |
+| 5 | ME-136 | holds | verifier: Start Up `Ok` / `Cancel` faces viewed; `TSTARTUPFORM` one REVIEWED row. |
+| 6 | ME-137 | holds | here: `git grep -c <credit-name> -- src tests` rc 1 (0); `grep -c -a <credit-word>` build-w4 and build-debug-win `lj4evr.exe` 0 / 0; caption_diff 0 differences (above). |
+| 7 | ME-138 | holds | verifier: `fidelity_check` 73 of 73, 0 findings; selftest passed. CTest rows green here. |
+| 8 | ME-139 | holds | verifier: `test_restore_data` forced-rename line. ctest green here. |
+| 9 | ME-140 | holds | verifier: `-fno-sanitize-recover=all` at `CMakeLists.txt:37`; linux-gcc-asan green on 39909521611. CI below. |
+| 10 | ME-141 | holds | verifier: two planted noop Help bindings give 2 findings, the tree 0; Fades > Help PASS. |
+| 11 | ME-142 | holds | verifier: `assert_prompt "Clear All Inverted Channels ?"` green on three trees. |
+| 12 | ME-143 | holds | verifier: bump released after a page change runs `BUMP_SUB_FLASH_1` edge 0. |
+| 13 | ME-144 | holds | verifier: `Overruns: 1`. |
+| 14 | ME-145 | holds | verifier: Cue Builder and Select Bitmap faces viewed non-blank; four goldens with REVIEWED rows. |
+| 15 | ME-146 | holds | here: `git grep -c` of the old file name = 0 (rc 1) after the rewording above. |
+| 16 | ME-147 | holds | here: the AllowExecute sentence: `SECURITY.md:1`, `docs/running.md:1` (and this log's r1 quote). |
+| 17 | ME-148 | holds | here: the four-pattern `git grep -c -E` rc 1 (0); `git grep -i -c -E "Users[/\]J0"` rc 1 (0). verifier: pixel scan 0 of 862 at HEAD, 9 at `9c21031`. |
+| 18 | ME-149 (1),(2) | holds | (2) `docs/ci.md` rule 1 as r1 left it (verifier read lines 44-49). (1) CI below. |
+| 19 | ME-150 | holds | verifier: the three records present. |
+| 20 | ME-151 | holds | here: `grep -c ME-21 release.yml` 0; `README.md:22,28` `CMake >= 3.25`. verifier: 0 blank Status rows. |
+| 21 | ME-152 | holds | verifier: the ten per-second lines and the 441-frame save line quoted above; ME-24 ticked. Not re-run (LAN multicast). |
+| 22 | ME-153 | holds | here, vault `design.md`: `scaled in microseconds` 2, `UI-side pin` 2, `arialblack18` 6, `movementmacro.gif` 2, `532 bytes` 2; revision line `design.md:1024` unchanged, byte-equal to the r1 quote. |
+| 23 | ME-157 | holds | verifier: the four records in the windows-msvc log of 39909521611 (no Administrators SID, `%LOCALAPPDATA%\Programs\LJ4EVR`, HKU key and no HKLM key, `DisplayVersion=0.3.0`). |
