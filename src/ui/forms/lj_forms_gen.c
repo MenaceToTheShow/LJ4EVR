@@ -222,8 +222,8 @@ static const lj_ctl_desc taboutform2_panel2[] = {
     { LJ_K_LABEL, "Label2", 124, 16, 120, 13, .caption = "----------------------------------------", .font = LJ_FONT_SANS13, .font_inherited = 1 },
 };
 static const lj_ctl_desc taboutform2_panel3[] = {
-    { LJ_K_LABEL, "Label3", 15, 6, 141, 13, .caption = "Visit the LightJockey Forum at", .font_color = LJ_CLR(0xFFFFFF), .parent_font = LJ_NO, .font = LJ_FONT_SANS13, .font_name = "MS Sans Serif", .font_height = -11, .font_style = 0 },
-    { LJ_K_LABEL, "Label4", 170, 6, 174, 13, .caption = "http://www.martin.com/forum/", .font_color = LJ_CLR(0xFFFFFF), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD | LJ_FS_UNDERLINE, .events = { { "OnClick", "Label4Click" } } },
+    { LJ_K_LABEL, "Label3", 15, 6, 141, 13, .caption = "", .font_color = LJ_CLR(0xFFFFFF), .parent_font = LJ_NO, .font = LJ_FONT_SANS13, .font_name = "MS Sans Serif", .font_height = -11, .font_style = 0 },
+    { LJ_K_LABEL, "Label4", 170, 6, 174, 13, .caption = "", .font_color = LJ_CLR(0xFFFFFF), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD | LJ_FS_UNDERLINE, .events = { { "OnClick", "Label4Click" } } },
 };
 static const lj_ctl_desc taboutform2_ctls[] = {
     { LJ_K_PANEL, "Panel1", 0, 0, 360, 118, .align = LJ_AL_TOP, .color = LJ_CLR(0x000000), .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = taboutform2_panel1, .nchildren = LJ_COUNT_OF(taboutform2_panel1) },

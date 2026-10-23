@@ -7,9 +7,9 @@ every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 
 LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN.
 
-Status: **W4 Fidelity sweep and release** (version 0.3.0 tagged, v1.0.0 at the end
-of W4). W3 show control underneath: cue lists, generic and movement macros,
-Generic DMX Control, follow spots, `.GS2` / `.Udf` profiles (`CHANGELOG.md`).
+Status: **1.0.0**, the first full release: every LightJockey 2 window of the
+feature inventory, cue lists, macros, follow spots, `.GS2` / `.Udf` profiles and
+sACN output; what it leaves out is below (`CHANGELOG.md`).
 
 ![The LJ4EVR main desktop with the Sequence and Cue windows open](docs/screenshots/w4/entry/main-TLJMainForm.png)
 
@@ -58,7 +58,7 @@ may pull any of them forward before W3; the default is the list above.
 
 ## Docs
 
-Citations such as `design 7.4`, `note 13`, `[06 s4.2]` or `inventory ง5` refer to the maintainer's design and
+Citations such as `design 7.4`, `note 13`, `[06 s4.2]` or `inventory ยง5` refer to the maintainer's design and
 research notes, which are not published; the facts they support are in the code and in `docs/`.
 
 For users:
@@ -92,7 +92,6 @@ For contributors:
 
 ## Licence
 
-MIT (`LICENSE`; a PROPOSAL until the maintainer's ruling before the public
-release, design 13 item 1). Third-party notices: `NOTICE`, shipped in both
+MIT (`LICENSE`). Third-party notices: `NOTICE`, shipped in both
 installers as `THIRD_PARTY_NOTICES.txt` with the full SDL3 (zlib), miniz (MIT) and
 QLC+ (Apache-2.0) texts. Fonts and art are CC0 (`docs/provenance.md`).

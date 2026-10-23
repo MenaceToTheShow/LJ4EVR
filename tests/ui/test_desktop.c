@@ -142,7 +142,7 @@ int lj_test_desktop(int argc, char **argv)
     w = lj_window_find(win, "sb_seqcounter");  CHECK(w && strcmp(lj_w_caption(w), "1:1") == 0);   /* [F7] empty sequence */
     CHECK(strcmp(lj_window_caption(win)->text, "Please Wait..") == 0);     /* LORD_FIDELITY-20: the DFM caption until the library is open */
     lj_desktop_set_library("Default");
-    CHECK(strcmp(lj_window_caption(win)->text, "Martin LightJockey (User lib: Default)") == 0);   /* ME-37, F1 */
+    CHECK(strcmp(lj_window_caption(win)->text, "LJ4EVR (User lib: Default)") == 0);   /* ME-37, F1 */
 
     m = lj_window_menus(win);
     top = lj_main_menu_top_table(&ntop); inert = lj_main_menu_inert_table(&ninert);

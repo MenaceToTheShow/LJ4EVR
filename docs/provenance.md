@@ -14,7 +14,7 @@ LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with
 
 | Source class | Where in the repo | Origin | Terms | Check |
 |---|---|---|---|---|
-| Source code, build files, tools, workflows | `src/`, `tests/*.c`, `tools/`, `cmake/`, `CMakeLists.txt`, `.github/`, `docker/`, `packaging/` | written for LJ4EVR | MIT (`LICENSE`; PROPOSAL until the licence ruling, design 13 item 1) | review |
+| Source code, build files, tools, workflows | `src/`, `tests/*.c`, `tools/`, `cmake/`, `CMakeLists.txt`, `.github/`, `docker/`, `packaging/` | written for LJ4EVR | MIT (`LICENSE`; the maintainer's ruling of 2026-10-22, design 13 item 1) | review |
 | Bitmap fonts | `art/fonts/*.txt` -> `src/gfx/lj_fonts_gen.c` | pixel art drawn for LJ4EVR to advance widths and heights harvested on the developer PC (`tests/fonts/advances_*.tsv`, metrics only, no glyph shape); no font bitmap or screen capture was traced | CC0 1.0 | `fontpack.py --check`, `font_corpus` |
 | Glyphs, icons, swatches, gobo tiles, fixture silhouettes | `art/glyphs/`, `art/icons/`, `art/gels.txt` -> `src/gfx/lj_art_gen.c` | pixel art drawn for LJ4EVR to the sizes of the 1:1 reference captures (note 07 s14) and the DFM numbers; nothing traced (ME-18) | CC0 1.0 | `artpack.py --check`, `art_table` |
 | Application icon | `packaging/icons/lj4evr.ico`, `.icns`, `lj4evr-32.png`, `lj4evr-256.png` | drawn for LJ4EVR (`packaging/icons/make_icons.py`) | CC0 1.0 | review |

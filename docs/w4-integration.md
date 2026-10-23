@@ -849,3 +849,31 @@ recommendation and the known-gap line, the hand run stays a W5 entry gate.
 
    **REL-HISTORY met**: no Martin authored text, no private detail and no secret in any commit or tag; the eight
    prerelease installers that carried the credits are withdrawn.
+
+### Part B steps 2-3: ME-155, ME-156, ME-159, version 1.0.0
+
+- ME-155 (MIT): the "PROPOSAL until the maintainer's ruling" licence wording is gone from `NOTICE` (so from
+  `THIRD_PARTY_NOTICES.txt`), `README.md`, `CONTRIBUTING.md`, `docs/provenance.md`, `docs/releasing.md` and the
+  `LJ_ABOUT_LICENCE` comment; `gh repo view --json licenseInfo` = `mit`. The CPack licence page is `LICENSE` (MIT)
+  and `MACOSX_BUNDLE_COPYRIGHT` already said MIT; neither carried PROPOSAL.
+- ME-156: `LJ_MAIN_CAPTION_FMT` = `"LJ4EVR (User lib: %s)"` (`src/desktop/lj_desktop.h`, still the only caption
+  literal); the four script / test assertions and `docs/running.md` follow. `tools/dfm2c.py` `CAPTIONS_BLANKED` emits
+  TAboutForm2 `Label3` / `Label4` (the forum line) with an empty caption; `dfm2c.py --check` OK. Goldens re-rendered
+  with REVIEWED rows: `TABOUTFORM2` (957 px, the forum line only) and `MAINWINDOW` (855 px, the caption text only).
+  The three main-window captures of the entry walkthrough (`main`, `close-prompt`, `tb-cuelist-7`) re-shot; F1's
+  fidelity row names the ruling. The non-affiliation line is in About (`LJ_ABOUT_TRADEMARK` and the memo) and README.
+  `README.md` had one CP1252 section sign (invalid UTF-8 on GitHub); now UTF-8.
+- ME-159: every `runs-on: [self-hosted, lj4evr]` in `ci.yml` (four jobs) and `docker.yml` is `ubuntu-latest`; the
+  image digest and the `pull_request` guards are unchanged; `.github/actionlint.yaml` (only the label) removed;
+  `docs/ci.md` describes hosted runners. The self-hosted runners are not deregistered here (the flip step).
+- `VERSION` 1.0.0; `CHANGELOG.md [1.0.0]` in user terms (what 1.0.0 is, design 1's "what it is not", the known gaps
+  with the ME-158 macOS line); README status 1.0.0. `release.yml` now appends the version's CHANGELOG section (up to
+  its `Developer detail:` line) to the notes, fails without one, and passes `--latest` for a non-0.x version.
+
+Local checks (work PC, MSVC 19.44, Ninja + cl, incremental):
+
+    build-w4, build-w4-nosdl, build-debug-win    0 warnings, 0 errors
+    ctest before the golden update               ui_golden (TABOUTFORM2) and test_desktop (MAINWINDOW) red, the rest green
+    ctest after                                  ui_golden, test_desktop, fidelity_check(+selftest), help_check, forms_tables green on all three
+    w4_entry_points.lj4s (build-w4, scratch LJ4EVR_USERDATA, prep + a W4Captions row)   rc 0, 155 PASS, 0 SCRIPT FAIL
+    caption_diff (w4_captions.lj4s, scratch userdata)   145 implemented form(s) of 207, 0 difference(s), 139 excluded, 84 absent

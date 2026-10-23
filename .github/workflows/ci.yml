@@ -1,10 +1,9 @@
 name: CI
 
-# Design 9.3. Linux jobs run in the CI container on the self-hosted runners and
-# only for push/tag events: the if: keeps this repository's own PRs off them. It is
-# not the fork control (a fork PR brings its own workflow files); the approval
-# setting is (docs/ci.md rule 2, ME-149). Windows and macOS build on GitHub-hosted
-# runners for every event. determinism compares the three frame dumps byte for byte.
+# Design 9.3. Every job runs on GitHub-hosted runners (ME-159). The Linux jobs run
+# in the CI container and only for push/tag events (the if: lines); the fork
+# control is the approval setting (docs/ci.md rule 2, ME-149). Windows and macOS
+# build for every event. determinism compares the three frame dumps byte for byte.
 
 on:
   push:
@@ -26,7 +25,7 @@ concurrency:
 jobs:
   generate-check:
     if: github.event_name != 'pull_request'
-    runs-on: [self-hosted, lj4evr]
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
       credentials:
@@ -45,7 +44,7 @@ jobs:
 
   linux-gcc-asan:
     if: github.event_name != 'pull_request'
-    runs-on: [self-hosted, lj4evr]
+    runs-on: ubuntu-latest
     outputs:
       replay_sha: ${{ steps.replay.outputs.sha }}
     container:
@@ -69,7 +68,7 @@ jobs:
 
   linux-clang:
     if: github.event_name != 'pull_request'
-    runs-on: [self-hosted, lj4evr]
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
       credentials:
@@ -194,7 +193,7 @@ jobs:
   determinism:
     if: github.event_name != 'pull_request'
     needs: [linux-gcc-asan, windows-msvc, macos-clang]
-    runs-on: [self-hosted, lj4evr]
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/unbannablegt/lj4evr-ci@sha256:6c05ca17c8ed0cb03da1f6db73931b0319f622513c60af2a975a795c79084406
       credentials:

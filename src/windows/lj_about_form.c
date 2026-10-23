@@ -11,7 +11,7 @@
 
 static struct { lj_window *win; int close_pending; } ab;
 
-/* PROPOSAL (design 13 item 1, LORD_FIDELITY-10): the repository licence is Joey's ruling before the public flip; this one
+/* MIT (design 13 item 1, ME-155: Joey's ruling of 2026-10-22). This one
  * constant is the About copyright line and changes with LICENSE, NOTICE and the CPack licence page. */
 #define LJ_ABOUT_LICENCE "(C) 2026 LJ4EVR contributors, MIT licence"
 #define LJ_ABOUT_TRADEMARK "LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN."   /* docs/provenance.md (ME-37) */

@@ -365,6 +365,8 @@ ITEMS = {"Items.Strings", "Lines.Strings", "Tabs.Strings"}
 # ME-137: list text that is not a caption. D2 covers captions, geometry and behaviour; these are emitted empty and
 # listed in tools/dfm2c_blobs.txt with the reason.
 ITEMS_EXCLUDED = {("TABOUTFORM2", "RichEdit1"): "D2: authored credits, not a caption"}
+# ME-156 (Joey's Q3 = b): the About form's forum line (Martin's URL) is emitted blank; the runtime About sets its own text.
+CAPTIONS_BLANKED = {("TABOUTFORM2", "Label3"), ("TABOUTFORM2", "Label4")}
 COLLS = {"Columns", "Sections", "Panels"}
 # Action -> control/menu-item slots the action's facts fill when the control did not say
 ACTION_SLOTS = (("Caption", "caption"), ("Hint", "hint"), ("ShortCut", "shortcut"), ("Enabled", "enabled"),
@@ -634,7 +636,7 @@ class Gen:
                 if c:
                     s[COLOR[key]] = c
             elif key in STR and tag in ("str", "ident", "set", "int", "float"):
-                s[STR[key]] = ctext(v)
+                s[STR[key]] = '""' if key == "Caption" and (form, obj.name) in CAPTIONS_BLANKED else ctext(v)
             elif key == "Font.Name" and tag == "str":
                 font["name"] = p.decode("cp1252")
                 own_font = True

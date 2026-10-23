@@ -75,8 +75,7 @@ issue.
 
 ## Licence
 
-MIT (`LICENSE`; a PROPOSAL until the maintainer's ruling before the public
-release). Third-party notices in `NOTICE`, shipped as `THIRD_PARTY_NOTICES.txt`.
+MIT (`LICENSE`). Third-party notices in `NOTICE`, shipped as `THIRD_PARTY_NOTICES.txt`.
 By contributing you agree your changes are MIT and your art is CC0. LightJockey
 is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed
 by Martin Professional or HARMAN.

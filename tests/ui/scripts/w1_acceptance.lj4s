@@ -11,7 +11,7 @@
 # Second run (item 10, every window back at its last position): w1_positions.lj4s.
 
 log "W1 acceptance 1: main window, three toolbars, status bar"
-assert_caption main "Martin LightJockey (User lib: Default)"
+assert_caption main "LJ4EVR (User lib: Default)"
 assert_visible main.tb_row_seqcue 1
 assert_visible main.tb_row_cuelist 1
 assert_visible main.tb_row_fixture 1

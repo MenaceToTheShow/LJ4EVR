@@ -5,6 +5,49 @@ single source of the number.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-23 - W4 Fidelity sweep and release
+
+The first full release. LJ4EVR 1.0.0 plays LightJockey 2 shows over sACN (E1.31) on Windows and macOS: fixture
+configuration and patch, sequences, cues, cue lists, background cues, statics, generic and movement macros, follow
+spots, fixture controls, hotkeys and MIDI, user libraries with backup and restore, and every LightJockey window in its
+classic look, opened from the same menu, button or key as in LightJockey.
+
+New since 0.3.0:
+
+- Every remaining window opens from its documented place: the user library dialogs (new, rename, backup, restore),
+  the warnings and file-update prompts, the laser warning, the DMX-in windows, 2532 Direct Access and Virtual Fingers
+  on the keyboard and on MIDI, and the Debug window with the engine's counters.
+- LightCorder (Cuelist > Tools) records what LJ4EVR sends to `.LLF` files in the library's `LightCorderFiles` folder.
+- Help opens a built-in viewer with 15 topics written for LJ4EVR; every Help item in the menus reaches it.
+- All art is LJ4EVR's own: toolbar glyphs, icons, colour swatches, gobo tiles and fixture pictures. A `Source-Images`
+  folder in the user data can replace any of them with your own pictures.
+- The main window caption reads `LJ4EVR (User lib: <name>)`.
+- Windows: a per-user installer (no administrator rights needed) with an uninstaller in Settings > Apps. macOS: a
+  `.dmg` with `LJ4EVR.app` for Intel and Apple Silicon (macOS 12 or later). Both carry `THIRD_PARTY_NOTICES.txt`.
+- LJ4EVR is released under the MIT licence. LightJockey is a trademark of Martin Professional; LJ4EVR is not
+  affiliated with or endorsed by Martin Professional or HARMAN.
+
+What 1.0.0 is not (design section 1): it ships without the Audio Analyzer and audio trig, DMX-in over sACN input and
+the `.vtr` tables, the RS-232/TCP remote protocol, External Application string output, the `.LJB` importer, the LJ
+MediaPlayer and Art-Net. All seven are planned for a later version. Every menu item, cue-list command and toolbar
+button that belongs to one of them is present, greyed, with the hint `Not available in LJ4EVR`. The DMX-in windows
+open, with their input controls greyed.
+
+Known gaps:
+
+- macOS: the build is tested by CI on every change, but 1.0.0 has not yet been run by hand on a Mac. Use the
+  system's window frames there (`--native`, or `[CHROME] Native=1` in `Main.Ini`), the recommended setting on macOS
+  for this version.
+- The installers are not code-signed: Windows SmartScreen warns (More info > Run anyway); on macOS right-click
+  LJ4EVR.app > Open the first time.
+- A few timings and layering rules are best estimates until they are compared with LightJockey on a real rig; each is
+  marked "deferred: needs rig" in `docs/fidelity.md`.
+- Select Bitmap shows a list instead of large icons, and the User Libraries list has no Date column.
+- The Statics 2 page layout and the background-cue file (`.bgc`) are LJ4EVR's own choices until a LightJockey sample
+  shows the original.
+
+Developer detail:
+
 - W4 track 0 (ME-125): full VCL align with AdjustClientRect insets and the DFM tab page rect (`test_align` 0
   misplaced), group-header pairing / identifier / OS_ALLOW checks, dfm2c event names and whole blobs from the binary
   DFMs, shared scrollbar fitting, five sans13 glyphs; `widthcorpus.py` retired.
@@ -17,9 +60,14 @@ single source of the number.
   MIT and SDL3 zlib texts plus the topics (ME-36): beside `lj4evr.exe`, and inside `LJ4EVR.app/Contents/Resources` on
   macOS, where the `.dmg` now holds `LJ4EVR.app`, the Applications link and our icon. `release.yml` checks the
   silently installed NSIS tree and the mounted `.dmg`, logs `lipo -info`, `codesign -dv` and `plutil -p`, refuses a
-  `vcruntime` dependency, and its notes carry the sacrifice list. About: the licence line is one PROPOSAL-tagged
-  constant and the provenance trademark line is shown (ME-37). New docs: `docs/user-guide.md`, `docs/provenance.md`,
+  `vcruntime` dependency, and its notes carry the sacrifice list. About: the licence line is one constant (MIT, ME-155)
+  and the provenance trademark line is shown (ME-37). New docs: `docs/user-guide.md`, `docs/provenance.md`,
   `SECURITY.md`; `.bez` and the Import / Export / Override folders in `docs/file-formats.md`.
+- Release (W4 Part B, Joey's rulings of 2026-10-22): history rewritten without Martin's About credits and private
+  details (ME-154, `docs/w4-integration.md`); licence MIT (ME-155); main caption `LJ_MAIN_CAPTION_FMT` = the
+  `LJ4EVR (User lib: %s)` fallback and the DFM-only About golden's forum line blanked (`dfm2c.py` CAPTIONS_BLANKED,
+  ME-156); every CI job on GitHub-hosted runners, the Linux jobs on `ubuntu-latest` in the same pinned container
+  (ME-159); `release.yml` notes take this section.
 
 ## [0.3.0] - 2026-10-22 - W3 Show control
 

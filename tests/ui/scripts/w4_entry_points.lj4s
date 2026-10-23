@@ -7,7 +7,7 @@
 # Evidence: docs/w4-integration.md "Acceptance", item 2. Shots: docs/screenshots/w4/entry/.
 
 # ---- setup: MAC 500 Mode 2/4 at 1:001, Generic DMX Dimmer at 1:017 (the W1 walkthrough's patch) ----
-assert_caption main "Martin LightJockey (User lib: W4Entry)"
+assert_caption main "LJ4EVR (User lib: W4Entry)"
 log "PASS Main desktop (TLJMainForm) <- startup"
 assert_caption please_wait "Startup Status"
 log "PASS Startup Status (TStartupStatusWindow) <- startup (selfdestruct in 10 s)"

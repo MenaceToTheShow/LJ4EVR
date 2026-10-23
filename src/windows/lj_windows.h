@@ -220,7 +220,7 @@ void lj_win_set_host(const lj_win_host *host);             /* once at startup; N
 int lj_win_caption_seq(char *dst, size_t cap, uint32_t number, const char *name);            /* "SEQUENCE [0000 No Name]" */
 int lj_win_caption_cue(char *dst, size_t cap, uint32_t number, const char *name, int edit);  /* "CUE [0009 name]", "EDIT CUE [0009 name]" (prefix condition UNVERIFIED) */
 int lj_win_caption_cuelist(char *dst, size_t cap, uint32_t number, const char *name, int tracking);   /* "Cuelist [0001 name]" + " Tracking on" */
-int lj_win_caption_main(char *dst, size_t cap, const char *library);                         /* "Martin LightJockey (User lib: Default)" */
+int lj_win_caption_main(char *dst, size_t cap, const char *library);                         /* "LJ4EVR (User lib: Default)" */
 
 /* warnings [03 s9, 13 s2.2]: the red boxes, stay-on-top, one per state */
 enum lj_warning { LJ_WARN_BLACKOUT = 0 /* "BLACKOUT ACTIVE" */, LJ_WARN_FROZEN /* "Frozen !" */, LJ_WARN_FADE_OUT /* "FADE-OUT ACTIVE" */, LJ_WARN_FADE_IN /* "FADE-IN ACTIVE" */, LJ_WARN_OFFLINE, LJ_WARN_COUNT };

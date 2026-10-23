@@ -14,7 +14,7 @@ recreated when missing) -> `Main.Ini` + `forms.ini` from the library,
 window with the caption `Please Wait..` and the startup status window while
 `Config.dat`, `DefaultOut.dat`, groups, statics and presets load -> engine bound,
 `LJ_CMD_CURRENT_SEQ` + `LJ_CMD_SACN_CFG` posted -> caption
-`Martin LightJockey (User lib: Default)` -> Sequence and Cue windows at their
+`LJ4EVR (User lib: Default)` -> Sequence and Cue windows at their
 `forms.ini` positions -> `Main.Ini [STARTUP]` actions -> engine thread at
 `[ENGINE] TickHz` (clamped 10..200) -> the UI loop (`SDL_WaitEventTimeout(10)`;
 every pass services the engine's pending loads and the script driver, every

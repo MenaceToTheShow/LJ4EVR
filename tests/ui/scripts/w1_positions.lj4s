@@ -10,7 +10,7 @@
 
 log "W1 acceptance 10: windows reopen at their last positions, Config.dat reloaded"
 wait 300                                          # the first 100 ms refresh builds the icon tiles from Config.dat
-assert_caption main "Martin LightJockey (User lib: Default)"
+assert_caption main "LJ4EVR (User lib: Default)"
 assert_text main.icon1 "(1) MAC500"                # Config.dat (text) reloaded on restart
 assert_text main.icon2 "(2) DMX1"
 assert_pos TSequenceForm 300 300

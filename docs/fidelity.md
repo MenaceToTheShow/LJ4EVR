@@ -150,7 +150,7 @@ above stay; where a row here and a row above disagree, this one is newer.
 
 | F | Pair (LJ4EVR / LJ2) or deferral | Status |
 |---|---|---|
-| F1 | `E/main-TLJMainForm.png` (`Martin LightJockey (User lib: W4Entry)`) / `maincaption.gif` | done |
+| F1 | `E/main-TLJMainForm.png` (`LJ4EVR (User lib: W4Entry)`) / `maincaption.gif` | done; the product name in the caption is LJ4EVR by Joey's ruling (ME-156, Q3 = b): the exe's `Martin LightJockey (User lib: %s)` is replaced by `LJ_MAIN_CAPTION_FMT` = `LJ4EVR (User lib: %s)`, same layout |
 | F2 | `docs/screenshots/w1/acceptance1-main-TLJMainForm.png` (799x606 design, Arial 8, clBtnFace) / `toolandstatusbars.gif`, `desktop.gif` | done; maximise-on-start follows the System Preferences switch |
 | F3 | `E/fingers-TLJFingersMainForm.png` (Arial Black), `E/system-prefs-TSystemPrefsForm.png` (MS Sans Serif) / `fingers.gif`, `systempreferencesdialog.gif`; `test_corpus` 826 rows 0 mismatches | done |
 | F4 | `w4_positions_1/2.lj4s`: 21 W4 windows reopen at their saved place (Acceptance item 5); `w1_positions`, `w2_positions_*`, `w3_positions_*` / `seq and cue window.gif` (independent stay-on-top controls) | done |

@@ -72,9 +72,9 @@ void    lj_ctx_set_scene(uint16_t index);                   /* under lj_lock: ct
 void    lj_ctx_post(const lj_cmd *cmd);                     /* lj_lock + lj_engine_cmd + lj_unlock, at_us stamped with lj_clock_us when 0 */
 
 /* ---- main window ---- */
-#define LJ_MAIN_CAPTION_FMT "Martin LightJockey (User lib: %s)"   /* ME-37: THE caption literal, verbatim from the exe [01 s2.1, F1]; the only one (lj_win_caption_main formats it). Fallback if Joey rules the trademark out (one-constant change): "LJ4EVR (User lib: %s)". "Please Wait.." (the DFM caption) shows until the library is open (LORD_FIDELITY-20) */
+#define LJ_MAIN_CAPTION_FMT "LJ4EVR (User lib: %s)"   /* ME-37 / ME-156: THE caption literal, the only one (lj_win_caption_main formats it). Joey ruled 2026-10-22 (Q3 = b) for the LJ4EVR fallback; the exe reads "Martin LightJockey (User lib: %s)" [01 s2.1, F1]. "Please Wait.." (the DFM caption) shows until the library is open (LORD_FIDELITY-20) */
 #define LJ_DND_FIXTURE 100                                        /* lj_dnd kind: Unassigned list -> desktop, number = fixture index */
-lj_window *lj_desktop_create(void);                         /* menu (TLJMainForm tables, ME-29 visibility table), three toolbars, status bar, tabs, icon area; caption "Martin LightJockey (User lib: <name>)"; NULL + log */
+lj_window *lj_desktop_create(void);                         /* menu (TLJMainForm tables, ME-29 visibility table), three toolbars, status bar, tabs, icon area; caption "LJ4EVR (User lib: <name>)"; NULL + log */
 void       lj_desktop_destroy(lj_window *win);
 lj_window *lj_desktop_window(void);                         /* NULL before create */
 void       lj_desktop_refresh(void);                        /* the 100 ms hook: clock, Master %, modified flags, toolbar enables (F9), icon colours, Trig LED */

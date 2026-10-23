@@ -1,9 +1,8 @@
 name: Docker image
 
-# Builds docker/Dockerfile on a self-hosted runner and pushes it to GHCR as
-# ghcr.io/unbannablegt/lj4evr-ci:<short-sha> and :latest. ci.yml pulls :latest
-# (pin by digest after the first push: docs/ci.md). Never runs on pull_request:
-# self-hosted runners only see push-to-main and manual runs (project.md).
+# Builds docker/Dockerfile on a GitHub-hosted runner and pushes it to GHCR as
+# ghcr.io/unbannablegt/lj4evr-ci:<short-sha> and :latest. ci.yml pins it by
+# digest (docs/ci.md). Never runs on pull_request: push-to-main and manual runs only.
 
 on:
   push:
@@ -25,7 +24,7 @@ env:
 jobs:
   build-push:
     if: github.event_name != 'pull_request'
-    runs-on: [self-hosted, lj4evr]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Log in to GHCR

@@ -4,15 +4,15 @@ Three workflows under `.github/workflows/`, design 9.3 and 9.5.
 
 | Workflow | Trigger | Runs on |
 |---|---|---|
-| `ci.yml` | push to `main`, tags `v*`, `pull_request` | self-hosted (Linux, in the container) + `windows-latest` + `macos-14` |
+| `ci.yml` | push to `main`, tags `v*`, `pull_request` | `ubuntu-latest` (Linux, in the container) + `windows-latest` + `macos-14` |
 | `release.yml` | tags `v*` | hosted only (`docs/releasing.md`) |
-| `docker.yml` | push to `main` touching `docker/**` or itself, manual | self-hosted; pushes the CI image to GHCR |
+| `docker.yml` | push to `main` touching `docker/**` or itself, manual | `ubuntu-latest`; pushes the CI image to GHCR |
 
 ## `ci.yml` jobs
 
 | Job | Runner | Does | Artifact |
 |---|---|---|---|
-| `generate-check` | `[self-hosted, lj4evr]`, container | `tools/test_layering.py`; every `tools/{qxf2c,fontpack,artpack,gen_vectors}.py --check` that exists (they land with their waves, design 9.2) | - |
+| `generate-check` | `ubuntu-latest`, container | `tools/test_layering.py`; every `tools/{qxf2c,fontpack,artpack,gen_vectors}.py --check` that exists (they land with their waves, design 9.2) | - |
 | `linux-gcc-asan` | same | preset `ci-linux-asan` (gcc, ASan+UBSan, `LJ_SDL=OFF`), `ctest`, `lj4evr_tests dump-frames` | `frames-linux` |
 | `linux-clang` | same | preset `ci-linux-clang`, `ctest` | - |
 | `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, the static-CRT check; then preset `debug-win`: the whole Debug tree, `ctest` (ME-70: `/RTC1` and the ME-16 asserts only live here) and the Debug `--selftest` (no `no binding for handler`, no `unknown event` line, ME-74); `cpack -G NSIS` | `frames-windows`, `installer-windows` |
@@ -29,24 +29,23 @@ Changing the SDL tag in `CMakeLists.txt` changes the key automatically.
 cancels the previous run. `release.yml` does not cancel (a half-made release is
 worse than a slow one).
 
-## Runner security model (project.md, LORD_C-13)
+## Runner security model (project.md, LORD_C-13, ME-159)
 
-Self-hosted runners labelled `[self-hosted, lj4evr]` on a LAN host, **no cmake
-on the host**: every Linux job runs inside `ghcr.io/unbannablegt/lj4evr-ci`. They
-were `lj4evr-ci2-1..4` on atlas-ci2 (Ubuntu 24.04, Docker 29) until 2026-10-22,
-when that host went down; since then they run on another LAN host under rootless
-podman. At the public flip the Linux jobs move to GitHub-hosted `ubuntu-latest`
-with the same image digest and the self-hosted runners leave the repository
-(ME-159).
+Every job runs on GitHub-hosted runners. The Linux jobs run on `ubuntu-latest`
+inside `ghcr.io/unbannablegt/lj4evr-ci`, pinned by the same digest as before. Up
+to v1.0.0 they ran on self-hosted LAN runners labelled `[self-hosted, lj4evr]`
+(`lj4evr-ci2-1..4` on atlas-ci2, Ubuntu 24.04, Docker 29, until 2026-10-22, then
+another LAN host under rootless podman); for the public release they moved to
+hosted runners and the self-hosted runners leave the repository (Joey's ruling
+Q4, 2026-10-22), so no public pull request can reach the LAN.
 
 Rules the workflows enforce, in this order of defence:
 
-1. Every self-hosted job carries `if: github.event_name != 'pull_request'`. That
-   keeps the repository's own pull requests (branches pushed here) off the
-   self-hosted runners; only `push` to `main` and `v*` tags schedule them.
-   It is **not** a fork control: on `pull_request` the PR supplies its own
-   workflow files, so a fork can drop the `if:` and ask for the `lj4evr`
-   label. The fork control is rule 2 (ME-149).
+1. Every Linux job carries `if: github.event_name != 'pull_request'`: only
+   `push` to `main` and `v*` tags schedule them; a pull request gets the
+   Windows and macOS jobs. With no self-hosted runner left this is a cost
+   rule, not a fork control: on `pull_request` the PR supplies its own
+   workflow files. The fork control is rule 2 (ME-149).
 2. Repo Actions setting: fork pull request workflows need approval
    (`all_external_contributors`), set right after the public flip and read
    back. Whoever approves a fork PR's run reads its workflow diff
@@ -66,7 +65,7 @@ Rules the workflows enforce, in this order of defence:
 `docker/Dockerfile`: `debian:trixie` (ME-20; trixie's gcc, clang, cmake,
 ninja-build and python3 >= 3.12, the exact versions are printed by the
 workflow's smoke-test step), `git`, `ca-certificates`, root. `docker.yml` builds
-it on a self-hosted runner, smoke-tests the tool versions, and pushes
+it on `ubuntu-latest`, smoke-tests the tool versions, and pushes
 `ghcr.io/unbannablegt/lj4evr-ci:<short-sha>` and `:latest`, logging in with
 `GITHUB_TOKEN` (`github.actor`). The package is private because the repo is;
 `ci.yml` pulls it with the same token through `container.credentials`.
@@ -87,7 +86,7 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
 
     pip install pyyaml                       # into .venv
     python -c "import yaml,glob; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]"
-    actionlint -no-color                    # rhysd/actionlint; .github/actionlint.yaml declares the lj4evr label
+    actionlint -no-color                    # rhysd/actionlint
 
 ## W1
 

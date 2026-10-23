@@ -1,11 +1,10 @@
 LJ4EVR third-party notices
 ==========================
 
-LJ4EVR itself is released under the MIT licence (LICENSE; the licence is a
-PROPOSAL until the maintainer's ruling before the public release, design 13
-item 1). The installers ship this file as THIRD_PARTY_NOTICES.txt, followed by
-the full licence texts it names: beside lj4evr.exe on Windows, and in
-LJ4EVR.app/Contents/Resources on macOS.
+LJ4EVR itself is released under the MIT licence (LICENSE). The installers ship
+this file as THIRD_PARTY_NOTICES.txt, followed by the full licence texts it
+names: beside lj4evr.exe on Windows, and in LJ4EVR.app/Contents/Resources on
+macOS.
 
 SDL3 (release-3.4.18), zlib licence
   https://github.com/libsdl-org/SDL  (linked statically)
