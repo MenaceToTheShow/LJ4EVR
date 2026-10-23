@@ -7,7 +7,8 @@ LJ4 replay 1
 #      at the 10 ms step that executed the line (loads pinned the way the UI thread pins them).
 # NOTE 03 s6.3 "Command is ignored in Manual Mode" (LJ_CL_MANUAL_IGNORES_WAITS): line 3 waits 5 s but moves only on
 #      `cl_go` (tick 80 = 2000 ms, before its wait would have elapsed); line 12 has no wait and waits for Go too.
-# NOTE design 8.5 / ME-11: line 5 is `mp_play` (load_error, red): kept, skipped, its cue 4 never latches (tick 100).
+# NOTE design 8.5 / ME-11: line 5 is `mp_play`; W5 made MP live, but the replay host has no media player (media = NULL),
+#      so the line is still skipped and its cue 4 never latches (tick 100).
 # NOTE 03 s6.4: no MTC source in the harness, so line 13's Wait MTC holds until Go (tick 320), as LJ2 with no MTC.
 # NOTE RN v2.6 b7 (LJ_CL_GOTO_BEYOND_IGNORED): line 17 Goto 19 skips line 18 (cue 4 at tick 440 would read 40), line 19
 #      Goto 2 loops: cue 2 again 1 s later (tick 480), then manual line 3 waits; STOP at tick 500.

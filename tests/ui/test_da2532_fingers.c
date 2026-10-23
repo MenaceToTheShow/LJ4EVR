@@ -19,6 +19,7 @@
 #include "core/lj_ini.h"
 #include "core/lj_log.h"
 #include "gfx/lj_bmp.h"
+#include "io/lj_dmxin.h"
 #include "io/lj_fn.h"
 #include "io/lj_hotkeys.h"
 #include "io/lj_midi.h"
@@ -254,6 +255,12 @@ static void test_fingers(lj_library *lib)
     CHECK(lj_fingers_fader_value(1) == 100 && lj_master_intensity_last_cmd(&cmd) && cmd.kind == LJ_CMD_SET_MASTER && cmd.a == 1 && cmd.b == 255);
     inject(0xB0, 20, 64);
     CHECK(lj_fingers_fader_value(1) == 50 && lj_master_intensity_last_cmd(&cmd) && cmd.a == 1 && cmd.b == 128);
+    CHECK(lj_fingers_set_page_function(1, 11) == 0);                                /* W5: page A = DMX in (13-24): fader 2 = DMX-in channel 14 */
+    lj_dmxin_reset();
+    lj_fingers_fader(2, 100); CHECK(lj_dmxin_frame_get()->raw[13] == 255 && lj_dmxin_frame_get()->live);
+    lj_fingers_fader(2, 0);   CHECK(lj_dmxin_frame_get()->raw[13] == 0);
+    lj_dmxin_reset();
+    CHECK(lj_fingers_set_page_function(1, 6) == 0);                                 /* back to Intensity Group */
     memset(&e, 0, sizeof e); e.kind = LJ_MIDI_FN; e.ch = LJ_MIDI_CH_ALL; e.note = 40; e.fn = LJ_FN_FINGERS_BUMP_1;
     CHECK(lj_midi_assign(m, &e) == 0);
     memset(&hit, 0, sizeof hit);

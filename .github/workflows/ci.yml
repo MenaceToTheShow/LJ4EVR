@@ -79,7 +79,7 @@ jobs:
       - run: cmake --preset ci-linux-clang
       - run: cmake --build --preset ci-linux-clang
       - run: ctest --preset ci-linux-clang
-      - name: Fuzz the .GS2 / .Udf readers, 60 s each (LORD_C-17; fixlib and core instrumented, docs/ci.md)
+      - name: Fuzz the .GS2 / .Udf readers and the five W5 parsers, 60 s each (LORD_C-17, W5-X-HOSTILE; docs/ci.md)
         run: |
           # ponytail: the image has clang 19 without compiler-rt; installed per run until docker.yml bakes it in
           apt-get update -qq && apt-get install -y -qq --no-install-recommends libclang-rt-19-dev > /dev/null
@@ -91,6 +91,11 @@ jobs:
           build-fuzz/fuzz_gs2 -max_total_time=60 -max_len=20851
           mkdir -p udf-corpus && cp build-linux-clang/lj_w3_synthetic.Udf udf-corpus/   # ME-114: an lj_udf_export seed (test_uiscript_w3)
           build-fuzz/fuzz_udf udf-corpus -max_total_time=60 -max_len=32768
+          # W5-X-HOSTILE: the five W5 parsers, 60 s each (target:max_len)
+          cmake --build build-fuzz --target fuzz_sacn_rx fuzz_vtr fuzz_artnet fuzz_remote fuzz_ljb
+          for f in fuzz_sacn_rx:1024 fuzz_artnet:1024 fuzz_remote:4096 fuzz_vtr:16384 fuzz_ljb:65536; do
+            build-fuzz/${f%%:*} -max_total_time=60 -max_len=${f##*:}
+          done
 
   windows-msvc:
     runs-on: windows-latest

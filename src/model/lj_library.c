@@ -233,7 +233,8 @@ int lj_library_list(const char *userdir, char names[][LJ_LIBNAME_CAP], int max)
     lj_fix_seps(user);
     if (lj_dir_open(&d, user) != 0) { lj_log("library: cannot list %s", user); return -1; }
     while (lj_dir_next(&d, name, sizeof name, &is_dir) == 1)
-        if (is_dir && lj_name_ok(name) && n < max) lj_str_copy(names[n++], LJ_LIBNAME_CAP, name);
+        if (is_dir && lj_name_ok(name) && !lj_ieq(name, "ValueTables") && n < max)   /* W5: <userdata>/User/ValueTables holds .vtr tables, not a library */
+            lj_str_copy(names[n++], LJ_LIBNAME_CAP, name);
     lj_dir_close(&d);
     return n;
 }

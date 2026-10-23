@@ -10,7 +10,10 @@
 #include <stdint.h>
 #include <string.h>
 
-enum { LJ_FUZZ_ITERS = 20000 };
+#ifndef LJ_FUZZ_N   /* a local long run: build with -DLJ_FUZZ_N=100000 (docs/w5-integration.md) */
+#define LJ_FUZZ_N 20000
+#endif
+enum { LJ_FUZZ_ITERS = LJ_FUZZ_N };
 
 static inline uint32_t lj_fuzz_next(uint32_t *s) { uint32_t x = *s ? *s : 0x9E3779B9u; x ^= x << 13; x ^= x >> 17; x ^= x << 5; return *s = x; }
 

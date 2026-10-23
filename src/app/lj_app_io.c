@@ -85,6 +85,7 @@ static void lj_io_action(enum lj_desktop_action a, int arg, void *ud)
     case LJ_ACT_AUDIO_OPTIONS:  lj_win_open(LJ_WIN_HARDWARE_SETUP); break;   /* the audio track selects the tsAudio page */
     case LJ_ACT_EXTAPP_SETUP:   lj_extapp_form_target(arg); lj_win_open(LJ_WIN_EXTAPP_SETUP); break;
     case LJ_ACT_MEDIA_PLAYER:   lj_win_open(LJ_WIN_MEDIA_PLAYER); break;
+    case LJ_ACT_REMOTE_SETUP:   lj_win_open(LJ_WIN_REMOTE_SETUP); break;
     case LJ_ACT_AUDIO_TRIG:     lj_io_post(LJ_CMD_TRIG, LJ_RUN_ALL, LJ_TRIG_AUDIO_EVENT); break;
     default: break;
     }
@@ -105,7 +106,7 @@ static void lj_io_fn(enum lj_fn fn, int edge, uint32_t prog_num, void *ud)
 
 void lj_app_io_start(void)
 {
-    static const enum lj_desktop_action acts[] = { LJ_ACT_IO_APPLY, LJ_ACT_AUDIO_ANALYZER, LJ_ACT_AUDIO_OPTIONS, LJ_ACT_EXTAPP_SETUP, LJ_ACT_MEDIA_PLAYER, LJ_ACT_AUDIO_TRIG };
+    static const enum lj_desktop_action acts[] = { LJ_ACT_IO_APPLY, LJ_ACT_AUDIO_ANALYZER, LJ_ACT_AUDIO_OPTIONS, LJ_ACT_EXTAPP_SETUP, LJ_ACT_MEDIA_PLAYER, LJ_ACT_AUDIO_TRIG, LJ_ACT_REMOTE_SETUP };
     static const enum lj_fn fns[] = { LJ_FN_EMULATE_AUDIO_TRIG, LJ_FN_DMXIN_FUNCTIONS_DISABLE, LJ_FN_DMXIN_FUNCTIONS_ENABLE, LJ_FN_DMXIN_FUNCTIONS_TOGGLE };
     lj_ctx *c = lj_ctx_get();
     char path[LJ_PATH_CAP], err[160];
@@ -123,6 +124,7 @@ void lj_app_io_start(void)
     for (i = 0; i < sizeof fns / sizeof fns[0]; i++) lj_fn_bind(fns[i], lj_io_fn, NULL);
     if (lj_io.dmxin.enabled) lj_io_dmxin_apply();                    /* W5-X-OFF: every part below opens only when its Hardware.Ini key enables it */
     lj_io_audio_apply();
+    if (lj_io.audio.enabled && !lj_io.audio.run_minimized) lj_win_open(LJ_WIN_AUDIO_ANALYZER);   /* LJ2 started LJSound with the show (ponytail: Run minimized = not opened; no minimized state) */
     lj_remote_open(&lj_io.remote);
     lj_extapp_open(&lj_io.extapp);
 }

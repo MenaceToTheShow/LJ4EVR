@@ -683,7 +683,7 @@ static void di_fn(enum lj_fn fn, int edge, uint32_t prog, void *ud)
         break;
     case LJ_FN_DMXIN_TIME:         if (idx <= LJ_CUE_SLOTS) di_post(LJ_CMD_TIME, idx, (v * 200u + 127u) / 255u, 0); break;   /* 0..200 %, PROPOSAL rig W5-DMXIN-5 */
     case LJ_FN_DMXIN_AUDIO:                                    /* W5-AUD-6: the analyzer's Gain fader position / Noise Threshold */
-        if (c->audio) { if (idx == 0) c->audio->gain_pct = lj_audio_gain_pct[v > 254u ? 254u : v]; else c->audio->noise = (uint8_t)v; }
+        if (c->audio) { if (idx == 0) lj_audio_dmx_gain(c->audio, (uint8_t)v); else lj_audio_dmx_noise(c->audio, (uint8_t)v); }   /* one mapping with the Fingers jogs: 128 = 0 dB */
         break;
     default: break;
     }

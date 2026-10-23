@@ -348,7 +348,7 @@ assert_view cue_number 2                         # line 20 at Go + 5 s, the list
 cl_assert_line 20 done
 shot docs/screenshots/w3/cuelist-run.png
 
-# ---- acceptance 2: a .Cl2 with an MP Play line loads with that line red and runs the rest ----
+# ---- acceptance 2: a .Cl2 with an inert line loads with that line red and runs the rest (W5: MP is live, so the line is DA Play) ----
 log "W3 acceptance: MP Play line"
 cl_load tests/ui/scripts/w3_mp_play.Cl2
 wait 300                                        # the window's 100 ms timer shows the new list

@@ -6,6 +6,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
 #include <string.h>
+#include "core/lj_fsinfo.h"
 #include "core/lj_ini.h"
 #include "model/lj_library.h"
 #include "model/lj_sequence.h"
@@ -77,6 +78,11 @@ int lj_test_model_library(int argc, char **argv)
     CHECK(i < n);
     for (i = 0; i < n && strcmp(names[i], "Lib") != 0; i++) { }
     CHECK(i < n);
+    strcpy(path, rest.root); strcpy(path + strlen(path) - 8, "ValueTables");   /* W5: <userdata>/User/ValueTables is not a library */
+    CHECK(lj_fs_mkdir(path) == 0);
+    n = lj_library_list("test_model_tmp", names, 8);
+    for (i = 0; i < n && strcmp(names[i], "ValueTables") != 0; i++) { }
+    CHECK(i == n);
 
     /* [NEXT]: 1 2 3, delete 3, next is 4; missing key recovers as max existing + 1 */
     CHECK(lj_library_next_number(&lib, LJ_REC_SEQ) == 1 && lj_library_next_number(&lib, LJ_REC_SEQ) == 2 && lj_library_next_number(&lib, LJ_REC_SEQ) == 3);

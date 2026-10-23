@@ -460,4 +460,17 @@ close update_program
 open value_table_error
 dump_captions caption_dump.tsv
 close value_table_error
+# W5 (append-only): the four W5 window families
+open extapp_setup
+dump_captions caption_dump.tsv
+close extapp_setup
+open audio_analyzer
+dump_captions caption_dump.tsv
+close audio_analyzer
+open remote_setup
+dump_captions caption_dump.tsv
+close remote_setup
+open media_player
+dump_captions caption_dump.tsv
+close media_player
 quit

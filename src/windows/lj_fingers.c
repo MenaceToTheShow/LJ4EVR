@@ -10,11 +10,13 @@
 #include <string.h>
 #include "windows/lj_fingers.h"
 
+#include "core/lj_clock.h"
 #include "core/lj_ini.h"
 #include "core/lj_log.h"
 #include "desktop/lj_desktop.h"
 #include "gfx/lj_draw.h"
 #include "gfx/lj_font.h"
+#include "io/lj_dmxin.h"
 #include "io/lj_fn.h"
 #include "io/lj_midi.h"
 #include "ui/lj_dnd.h"
@@ -41,7 +43,7 @@ static const enum lj_fn lj_fg_slot_fn[] = { LJ_FN_TOGGLE_SLOT_ENABLE_1, LJ_FN_NO
 const char *const lj_fingers_page_functions[] = { "Sequence Intensity", "Seq. Intensity/On-Off", "Sequence Time", "Sequence Time (Inv)", "Statics 1-12 Level",
     "Statics 13-20 Level", "Intensity Group", "HTP Group 1-12", "HTP Group 13-24", "Sequence DMX Values", "DMX in (1-12)", "DMX in (13-24)", "DMX in (25-36)",
     "DMX in (37-48)", NULL };
-enum { PF_STATICS1 = 4, PF_STATICS13 = 5, PF_INTENSITY = 6, PF_HTP1 = 7, PF_HTP13 = 8 };
+enum { PF_STATICS1 = 4, PF_STATICS13 = 5, PF_INTENSITY = 6, PF_HTP1 = 7, PF_HTP13 = 8, PF_DMXIN1 = 10, PF_DMXIN37 = 13 };
 const char *const lj_fingers_jog_functions[] = { "Cue Time", "P/T Macro Ampl.", "P/T Macro Ampl. (Inv)", "P/T Macro Speed", "P/T Macro Speed (Inv)", "Audio Gain",
     "Min Trglvl", "Smoke Ctrl Level", "Smoke Ctrl Duration", "Smoke Ctrl Cycle", "Hazer Ctrl Level", "Hazer Ctrl Fan", "Pan MSB", "Pan LSB", "Tilt MSB",
     "Tilt LSB", "GM Relative", "Fader Relative", NULL };
@@ -183,6 +185,7 @@ int lj_fingers_fader(int fader, int pct)
     if (f == PF_INTENSITY && fader <= 8) { lj_master_intensity_set(fader, (pct * 255 + 50) / 100); return 0; }   /* faders 1-8 = sub-masters (05 s5.3) */
     if (f == PF_STATICS1) return lj_statics2_set_level(fader, pct);
     if (f == PF_STATICS13 && fader <= 8) return lj_statics2_set_level(12 + fader, pct);
+    if (f >= PF_DMXIN1 && f <= PF_DMXIN37) { lj_dmxin_emulate((f - PF_DMXIN1) * 12 + fader, (pct * 255 + 50) / 100, lj_clock_us()); return 0; }   /* W5: DMX-in channels 1-48, one more source (05 s3.3) */
     lj_log("fingers: %s - " LJ_FG_NA_HINT, lj_fingers_page_functions[f]);
     return -1;
 }

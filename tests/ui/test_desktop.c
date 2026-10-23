@@ -157,6 +157,7 @@ int lj_test_desktop(int argc, char **argv)
     CHECK(lj_menu_rt_named(m, "M_System")->visible && lj_menu_rt_named(m, "M_MHelp")->visible && lj_menu_rt_named(m, "M_LJManager")->visible);
     for (i = 0; i < ninert; i++) { lj_menu_rt *rt = lj_menu_rt_named(m, inert[i].name); CHECK(rt && !rt->enabled); CHECK(strcmp(inert[i].hint, "Not available in LJ4EVR") == 0); }
     CHECK(lj_menu_rt_named(m, lj_main_menu_removed_item()) && !lj_menu_rt_named(m, lj_main_menu_removed_item())->visible);
+    CHECK(lj_menu_rt_named(m, "M_RemoteSetup") && lj_menu_rt_named(m, "M_RemoteSetup")->enabled);   /* W5: Setup > RS-232 / TCP Remote (W5-REM-4 entry); bound per menu_leaf_bound */
     n = menu_leaf_bound(m, bar->items, bar->n, &leaves);
     CHECK(n == 0); CHECK(leaves > 60);
     n = menu_leaf_bound(m, lj_main_popup_desktop.items, lj_main_popup_desktop.n, &leaves); CHECK(n == 0);

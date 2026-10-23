@@ -152,6 +152,7 @@ static void h_delete_files(lj_widget *w, void *ud)
 }
 static void h_global_patch(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_GLOBAL_PATCH, 0); }
 static void h_hardware(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_HARDWARE_SETUP, 0); }
+static void h_remote_setup(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_REMOTE_SETUP, 0); }
 static void h_help(lj_widget *w, void *ud) { (void)ud; lj_desktop_run_action(item_is(w, "M_About") ? LJ_ACT_ABOUT : LJ_ACT_HELP, 0); }
 static void h_edit_hotkeys(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_EDIT_HOTKEYS, 0); }
 static void h_fingers(lj_widget *w, void *ud)
@@ -304,6 +305,7 @@ static const lj_binding lj_bindings[] = {
     { "Fingers1Click", h_sync, NULL },
     { "GlobalPatch1Click", h_global_patch, NULL },
     { "Hardware2Click", h_hardware, NULL },
+    { "M_RemoteSetupClick", h_remote_setup, NULL },   /* W5: the code-built Setup item below (not a DFM handler) */
     { "HelpClick", h_help, NULL },
     { "M_AudioClick", lj_handler_noop, NULL },        /* W5 audio: the &Audio header (LJ2 refreshed its items here) */
     { "M_AudioOptionsClick", h_audio, NULL },         /* W5 audio: one handler for the three items (DFM) */
@@ -352,16 +354,17 @@ static lj_menu_item_desc lj_mm_bar[LJ_MM_MAX], lj_mm_setup[LJ_MM_SETUP_MAX], lj_
 static char lj_mm_hk_caption[LJ_HOTKEY_SETUPS_MAX][64];
 static const char *const lj_mm_hk_names[LJ_HOTKEY_SETUPS_MAX] = { "M_HotkeySetup1", "M_HotkeySetup2", "M_HotkeySetup3", "M_HotkeySetup4", "M_HotkeySetup5", "M_HotkeySetup6", "M_HotkeySetup7", "M_HotkeySetup8" };
 
+static const lj_menu_item_desc lj_mm_remote = { .name = "M_RemoteSetup", .caption = "&RS-232 / TCP Remote ...", .on_click = "M_RemoteSetupClick", .image_index = -1 };   /* ours, PROPOSAL rig W5-REM-4 */
 static int find_item(const lj_menu_item_desc *items, int n, const char *name) { int i; for (i = 0; i < n; i++) if (items[i].name && strcmp(items[i].name, name) == 0) return i; return -1; }
 
 static lj_menu_desc patched_main_menu(const lj_menu_desc *gen)
 {
     lj_menu_desc d = *gen;
     const lj_menu_item_desc *setup, *hk;
-    int s, h, k;
+    int s, h, k, g, n;
     if (gen->n > LJ_MM_MAX || (s = find_item(gen->items, gen->n, "M_Setup")) < 0) return d;
     setup = &gen->items[s];
-    if (setup->nchildren > LJ_MM_SETUP_MAX || (h = find_item(setup->children, setup->nchildren, "M_Hotkeys")) < 0) return d;
+    if (setup->nchildren + 1 > LJ_MM_SETUP_MAX || (h = find_item(setup->children, setup->nchildren, "M_Hotkeys")) < 0) return d;
     hk = &setup->children[h];
     if (hk->nchildren + LJ_HOTKEY_SETUPS_MAX > LJ_MM_HK_MAX) return d;
     memcpy(lj_mm_bar, gen->items, sizeof *lj_mm_bar * (size_t)gen->n);
@@ -375,7 +378,12 @@ static lj_menu_desc patched_main_menu(const lj_menu_desc *gen)
         it->tag = k + 1; it->group_index = 1; it->radio_item = LJ_YES; it->image_index = -1;
     }
     lj_mm_setup[h].children = lj_mm_hk; lj_mm_setup[h].nchildren = hk->nchildren + LJ_HOTKEY_SETUPS_MAX;
-    lj_mm_bar[s].children = lj_mm_setup;
+    n = setup->nchildren;
+    if ((g = find_item(lj_mm_setup, n, "GlobalPatch1")) >= 0) {   /* W5: the remote's settings after Global Patch (LJ2 ran LJ_RS232.exe on its own) */
+        memmove(lj_mm_setup + g + 2, lj_mm_setup + g + 1, sizeof *lj_mm_setup * (size_t)(n - g - 1));
+        lj_mm_setup[g + 1] = lj_mm_remote; n++;
+    }
+    lj_mm_bar[s].children = lj_mm_setup; lj_mm_bar[s].nchildren = n;
     d.items = lj_mm_bar;
     return d;
 }

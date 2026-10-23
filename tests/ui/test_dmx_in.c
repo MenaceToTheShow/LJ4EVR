@@ -20,6 +20,7 @@
 #include "desktop/lj_desktop.h"
 #include "gfx/lj_bmp.h"
 #include "io/lj_dmxin.h"
+#include "io/lj_fn.h"
 #include "io/lj_sacn.h"
 #include "model/lj_library.h"
 #include "model/lj_show.h"
@@ -305,6 +306,14 @@ int lj_test_dmx_in(int argc, char **argv)
         lj_win_close(LJ_WIN_HARDWARE_SETUP);
     }
 
+    {   /* W5-AUD-6: the DMX-in Audio Analyzer Gain / Noise Threshold rows use the Fingers jogs' mapping (128 = 0 dB) */
+        static lj_audio_cfg ac;
+        lj_audio_cfg *was = ctx->audio;
+        lj_audio_cfg_default(&ac); ac.gain_pct = 1; ctx->audio = &ac;
+        lj_fn_run_prog(LJ_FN_DMXIN_AUDIO, 128u, 1);          CHECK(ac.gain_pct == 100);
+        lj_fn_run_prog(LJ_FN_DMXIN_AUDIO, 1u << 8 | 200u, 1); CHECK(ac.noise == 200);
+        ctx->audio = was;
+    }
     CHECK(me16 == 0);
     lj_win_close_all();
     lj_desktop_destroy(main_win);

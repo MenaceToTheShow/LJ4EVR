@@ -148,6 +148,7 @@ enum lj_desktop_action {
     LJ_ACT_AUDIO_ANALYZER /* &Audio > Audio Analyzer (M_AudioClick) */, LJ_ACT_AUDIO_OPTIONS /* &Audio > options (M_AudioOptionsClick): Hardware Setup on the tsAudio page */,
     LJ_ACT_EXTAPP_SETUP /* arg = fixture: icon popup Define Application Link (PI_DefineAppLink) */, LJ_ACT_MEDIA_PLAYER /* cue list ListPop LJ Mediaplayer */,
     LJ_ACT_AUDIO_TRIG /* one audio trig: LJ_CMD_TRIG LJ_RUN_ALL / LJ_TRIG_AUDIO_EVENT (Emulate Audio Trig, the DMX-in function, the analyzer) */,
+    LJ_ACT_REMOTE_SETUP /* Setup > RS-232 / TCP Remote (ours, PROPOSAL rig W5-REM-4): TRS232SettingsForm */,
     LJ_ACT_COUNT
 };
 typedef void (*lj_desktop_action_fn)(enum lj_desktop_action a, int arg, void *ud);
