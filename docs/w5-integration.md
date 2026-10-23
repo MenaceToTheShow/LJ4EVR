@@ -431,3 +431,12 @@ fresh userdata. `PI_DefineAppLink` (an External Application icon's popup) stays 
 Pre-commit: 135 staged paths, none under `reference/`; sha1 of each against the 13,637 `reference/` hashes: 0 equal; the
 ME-148 four-pattern grep of the W4 verdict (LAN prefix, runner login, work-PC name prefix, NIC name) and the user-path grep over the index: 0 and 0.
 Not run on this PC: gcc and clang (the CI jobs); macOS.
+
+### Fix pass r1: CI (`79b8d18`)
+
+https://github.com/UnbannableGT/LJ4EVR/actions/runs/40014969020: six of six jobs green on the first run (generate-check,
+linux-gcc-asan, linux-clang, windows-msvc, macos-clang, determinism). determinism: `frames-{linux,windows,macos}.bin`
+all `5b13f419...63114b50` (unchanged); `replay-frames.bin` all `9da72c3f...560adb` (the ME-179 re-record, equal to the
+local trees). ME-186, the fuzz step's INITED lines now start from the seeds: `fuzz_sacn_rx corp: 1/638b`,
+`fuzz_artnet corp: 3/791b`, `fuzz_remote corp: 1/6b`, `fuzz_vtr corp: 1/148b`, `fuzz_ljb corp: 1/265b` (each was
+`corp: 1/1b`); `fuzz_udf` keeps its `udf-corpus` (`1/222b`). The SDL steps fetched commit `829a65d7...` (ME-171 (e)).
