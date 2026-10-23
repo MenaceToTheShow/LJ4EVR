@@ -83,7 +83,7 @@ void lj_statusbar_refresh(void)
     const lj_ctx *ctx = lj_ctx_get();
     time_t now = time(NULL);
     struct tm *lt = localtime(&now);
-    char buf[32];
+    char buf[40];
     int gm;
     if (!lj_the_sb) return;
     if (lt) { snprintf(buf, sizeof buf, "%02d:%02d:%02d", lt->tm_hour, lt->tm_min, lt->tm_sec); lj_desktop_status_set(LJ_SB_CLOCK, buf); }

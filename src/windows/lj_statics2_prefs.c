@@ -235,7 +235,7 @@ static void page_button(lj_widget *w, void *ud)
     else if (!strcmp(n, "sbDown")) { if (at >= 0) pages_edit(OP_DOWN, at, NULL); }
     else if (!strcmp(n, "sbAddGroup")) {                                   /* the first group still on its default name, ready to be named */
         lj_static_groups *gr = groups();
-        char d[16];
+        char d[24];
         for (i = 0; i < LJ_STATIC_GROUPS; i++) { snprintf(d, sizeof d, "Group %d", i + 1); if (!strcmp(gr->name[i], d)) break; }
         if (i < LJ_STATIC_GROUPS) { lj_w_listview_select(lg, i); lj_widget_set_focus(find("eGroupName")); }
     } else if (!strcmp(n, "sbDeleteGroup") && g >= 0 && g < LJ_STATIC_GROUPS) {

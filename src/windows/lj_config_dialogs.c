@@ -586,7 +586,7 @@ static void s1_init(lj_window *win)
     static const char *const m[] = { "ImportProfile1", "ExportProfile1", "NewProfile1" };
     static const char *const bo[8] = { "0\t-1", "1\t-1", "2\t-1", "3\t-1", "4\t-1", "5\t-1", "6\t-1", "7\t-1" };   /* scanner1intensitydialog.gif: an unset value reads -1 */
     static const char *const lv[8] = { "1\tYes\tCH1\tYes", "2\tYes\tCH2\tYes", "3\tYes\tCH3\tYes", "4\tYes\tCH4\tYes", "5\tYes\tCH5\tYes", "6\tYes\tCH6\tYes", "7\tYes\tCH7\tYes", "8\tYes\tCH8\tYes" };   /* the placeholder's 8 levels (PROPOSAL rig captions) */
-    static char pal[20][8]; static const char *palp[20];
+    static char pal[20][16]; static const char *palp[20];
     int k;
     for (k = 0; k < 20; k++) { snprintf(pal[k], sizeof pal[k], "%d\t-1", k); palp[k] = pal[k]; }
     lj_w_listview_set_items(cw(S1, "lvBO"), bo, 8); lj_w_listview_set_items(cw(S1, "lvLevels"), lv, 8);
@@ -604,7 +604,7 @@ static const lj_binding cs_b[] = { { "FormCreate", lj_handler_noop, NULL }, { "F
 static void cs_init(lj_window *win)
 {
     static const char *const m[] = { "ImportSetup1", "ExportSetupFile1", "ClearProfile1" };
-    static char pal[20][8]; static const char *palp[20];
+    static char pal[20][16]; static const char *palp[20];
     int k;
     for (k = 0; k < 20; k++) { snprintf(pal[k], sizeof pal[k], "%d\t\t", k); palp[k] = pal[k]; }   /* 20 palette entries 0-19 [16 s7] */
     lj_w_listview_set_items(cw(CS, "lvPalette"), palp, 20);
@@ -932,7 +932,7 @@ static void rg_build(void)
 }
 static void rg_load(void)
 {
-    char path[LJ_PATH_CAP], key[16];
+    char path[LJ_PATH_CAP], key[24];
     lj_ini *ini = rg_path(path, sizeof path) == 0 ? lj_ini_load(path) : NULL;
     int i, k;
     rg.n = 0;
@@ -949,7 +949,7 @@ static void rg_load(void)
 }
 static void rg_save(void)
 {
-    char path[LJ_PATH_CAP], key[16], v[128];
+    char path[LJ_PATH_CAP], key[24], v[128];
     lj_ini *ini = lj_ini_new();
     int i;
     for (i = 0; i < rg.n; i++) { snprintf(key, sizeof key, "Entry%d", i); snprintf(v, sizeof v, "%s|%s|%06X", rg.type[i], rg.name[i], (unsigned)rg.rgb[i]); lj_ini_sets(ini, "RGBPALETTE", key, v); }

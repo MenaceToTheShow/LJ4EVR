@@ -73,7 +73,7 @@ static int seti(const char *sec, const char *key, int dflt) { return lj_ini_geti
 
 int lj_fingers_save(void)
 {
-    char path[LJ_PATH_CAP], key[16], val[80];
+    char path[LJ_PATH_CAP], key[32], val[80];
     int s, k, rc;
     if (lib_file(path, sizeof path) != 0) return -1;
     if (!fg_ini && (fg_ini = lj_ini_new()) == NULL) return -1;
@@ -99,7 +99,7 @@ int lj_fingers_save(void)
 int lj_fingers_load(void)
 {
     static const char *const w[LJ_DA_TYPES] = { "", "fn", "seq", "cue", "cl", "bg" };
-    char path[LJ_PATH_CAP], key[16], word[8], arg[64], *end;
+    char path[LJ_PATH_CAP], key[32], word[8], arg[64], *end;
     lj_da_val fk[LJ_FG_SHIFTS][LJ_FG_FKEYS];
     int row[LJ_FG_ROWS], page[LJ_FG_PAGES], jog[LJ_FG_JOGS], ud, s, k, t, bad = 0;
     lj_ini *ini;
@@ -301,7 +301,7 @@ static void ctext(lj_surface *s, const lj_font *f, int x, int y, int w, int h, c
 static int knob_y(int v) { return FG_TRACK_Y + (100 - v) * (FG_TRACK_H - FG_KNOB_H) / 100; }
 static void draw_fader(lj_surface *s, const lj_font *sm, const fg_ctl *c, int v)
 {
-    char t[8];
+    char t[16];
     int ky = knob_y(v), y;
     lj_fill(s, c->x + c->w / 2 - 2, c->y, 4, c->h, 0x000000u);                       /* the slot */
     lj_edge_sunken(s, c->x + c->w / 2 - 3, c->y - 1, 6, c->h + 2, 0x000000u);
@@ -550,7 +550,7 @@ static void setup_load(lj_window *win)
 {
     int i;
     lj_widget *rg = lj_window_find(win, "rgPort"), *r;
-    char t[8];
+    char t[16];
     ensure_loaded();
     for (i = 0; lj_fg_prefs[i]; i++) lj_w_checkbox_set_checked(lj_window_find(win, lj_fg_prefs[i]), seti("PREFS", lj_fg_prefs[i], 0));
     for (i = 0; lj_fg_virt[i]; i++) lj_w_checkbox_set_checked(lj_window_find(win, lj_fg_virt[i]), seti("VIRTUAL", lj_fg_virt_key[i], 0));

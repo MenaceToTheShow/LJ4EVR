@@ -37,7 +37,7 @@ static struct {
     int pending;                                   /* bit per id (LJ_WIN_DEBUG .. LJ_WIN_MEMORY_VIEW) to close at the next refresh */
     lj_dbg_sample samp[LJ_DBG_SAMPLES]; int nsamp, head;
     uint8_t layer[LJ_CHANS];
-    char misc[LJ_DBG_MISC_LINES][24]; const char *misc_line[LJ_DBG_MISC_LINES];
+    char misc[LJ_DBG_MISC_LINES][32]; const char *misc_line[LJ_DBG_MISC_LINES];
     char act[LJ_STATIC_RUNNERS][40]; const char *act_row[LJ_STATIC_RUNNERS];
     char mem[LJ_DBG_MEM_ROWS][96]; const char *mem_row[LJ_DBG_MEM_ROWS];
     uint64_t mem_avail, mem_total; int mem_known;
@@ -83,7 +83,7 @@ static void debug_fill(void)
     snprintf(t, sizeof t, "Tick period: %u us", (unsigned)period); set_label(dbg.win, "Label65", t);
     set_label(dbg.win, "Label66", "Debug on");                                                                  /* exe 0x222AD8 */
     set_label(dbg.win, "Label67", "");
-    for (i = 0; i < LJ_LINKS; i++) { char nm[16]; snprintf(nm, sizeof nm, "Label%d", 68 + i); snprintf(t, sizeof t, "Link %d: %u packets/s", i + 1, (unsigned)v->sacn_pps[i]); set_label(dbg.win, nm, t); }
+    for (i = 0; i < LJ_LINKS; i++) { char nm[24]; snprintf(nm, sizeof nm, "Label%d", 68 + i); snprintf(t, sizeof t, "Link %d: %u packets/s", i + 1, (unsigned)v->sacn_pps[i]); set_label(dbg.win, nm, t); }
 
     dbg.samp[dbg.head].at = now; dbg.samp[dbg.head].us = v->tick_us_last;
     dbg.head = (dbg.head + 1) % LJ_DBG_SAMPLES; if (dbg.nsamp < LJ_DBG_SAMPLES) dbg.nsamp++;

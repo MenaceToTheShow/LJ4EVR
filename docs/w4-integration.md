@@ -196,3 +196,11 @@ Second CI run (`5c4efd7`): windows-msvc and generate-check were green. Three fai
 
 `test_lock_hold` (`lock hold 2359 us >= 2000 us` on linux-clang) is the W1 timing row on a loaded shared runner.
 Nothing in W4 touches `core/lj_lock`, so it is left as is.
+
+Third CI run (`d734b71`): green on windows-msvc, macos-clang, linux-clang and generate-check. linux-gcc-asan failed
+with gcc 14 `format-truncation` at `lj_config_dialogs.c` `rg_save` (`"Entry%d"` into `key[16]`). The mingw builds of
+gcc 14.2 and gcc 16.2 do not reproduce it, because mingw's `snprintf` is an inline wrapper, not the builtin. So every
+`snprintf` with integer conversions in a file changed since v0.3.0 was scanned. The scan computes the worst-case
+length (11 per `%d`, 10 per `%u`, 8 per `%X`, width as given) against the declared buffer, and 41 buffers that could
+not hold it were widened (to the next multiple of 8 above the worst case). No text changes, so no golden moves.
+Four trees 0 warnings, ctest unchanged, and the clang sweep is clean.

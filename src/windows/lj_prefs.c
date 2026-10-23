@@ -216,7 +216,7 @@ void lj_sysprefs_load(lj_ini *ini, lj_sysprefs *p)
 void lj_sysprefs_save(lj_ini *ini, const lj_sysprefs *p)
 {
     int i;
-    char file[16];
+    char file[24];
     if (!ini) return;
     for (i = 0; i < LJ_COUNT_OF(lj_sp_keys); i++) lj_ini_seti(ini, lj_sp_keys[i].sec, lj_sp_keys[i].key, ((const uint8_t *)p)[lj_sp_keys[i].off]);
     snprintf(file, sizeof file, "Setup%d.Hot", p->hotkey_setup >= 1 && p->hotkey_setup <= 8 ? p->hotkey_setup : 1);

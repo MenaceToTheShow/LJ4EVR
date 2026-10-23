@@ -101,7 +101,7 @@ int lj_cue_form_selected(int slot) { return slot >= 0 && slot < LJ_CUE_SLOTS && 
 
 const int *lj_cue_form_col_widths(void)
 {
-    char key[4];
+    char key[16];
     int i;
     for (i = 0; i < LJ_CUE_COLS; i++) {
         snprintf(key, sizeof key, "C%d", i);
@@ -137,7 +137,7 @@ static void build_row(int i, lj_cue_row *r)
     const lj_sequence *seq = NULL;
     int status = v->slot_status[i], scenes = v->slot_scenes[i], scene = v->slot_scene[i];
     uint32_t pct;
-    char key[12];
+    char key[24];
     memset(r, 0, sizeof *r);
     r->enabled = (uint8_t)(sl ? sl->enabled : 1);
     if (!sl || sl->seq == 0) {
@@ -199,7 +199,7 @@ static void grid_paint(lj_widget *w, lj_surface *sf)
     lj_cue_grid *g = (lj_cue_grid *)w;
     const lj_font *f = lj_w_font_of(w);
     int ax, ay, i, k, x, y, vis[LJ_CUE_COLS];
-    char num[4];
+    char num[16];
     lj_widget_abs(w, &ax, &ay);
     lj_fill(sf, ax, ay, w->w, w->h, LJ_CLR_BTNFACE);
     for (i = 0; i < LJ_CUE_COLS; i++) vis[i] = grid_visible_w(g, i);
@@ -681,7 +681,7 @@ static void show_click(lj_widget *w, void *ud)
 static void default_view(lj_widget *w, void *ud)
 {
     int i;
-    char key[4];
+    char key[16];
     (void)w; (void)ud;
     for (i = 0; i < LJ_CUE_COLS; i++) { snprintf(key, sizeof key, "C%d", i); form_seti(key, lj_cue_col_dflt[i]); }
     lj_cue_form_col_widths();
@@ -827,7 +827,7 @@ static void sv_fill(void)
 {
     const lj_cue *cue = cue_rec();
     lj_widget *w;
-    char num[8];
+    char num[16];
     if (!sv.win) return;
     snprintf(num, sizeof num, "%04u", cue ? (unsigned)cue->number : 0u);
     if ((w = lj_window_find(sv.win, "CueNo")) != NULL) lj_w_edit_set_text(w, cue && cue->number ? num : "");   /* blank until the first save */

@@ -159,7 +159,7 @@ static void fill_rows(void)
     for (k = 0; k < e.foot; k++) {
         int c = e.nfx ? fx_code(e.fx[0], k) : -1, cls = e.prof->channel_class[k] < LJ_CH_COUNT ? e.prof->channel_class[k] : 0;
         const char *fn = gm_class[cls];
-        char t[16], base[8];
+        char t[16], base[16];
         const lj_gm_param *p = g && c >= 0 ? &g->ch[c] : NULL;
         int out = c >= 0 ? e.merged[c] : 0;
         if (is_lsb(k)) snprintf(e.row[k], sizeof e.row[k], "%d\t%s (16 bit LSB)\t%d\tN/A", k, fn, out);

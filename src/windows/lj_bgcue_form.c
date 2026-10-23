@@ -77,7 +77,7 @@ int lj_bgcue_form_row(int slot, char *dst, size_t cap)
     const lj_engine_status *v = &c->view;
     const lj_bgcue *bg = loaded();
     const lj_sequence *seq;
-    char no[12], scene[16];
+    char no[12], scene[24];
     uint32_t n;
     int i = slot - 1, mode, k;
     if (slot < 1 || slot > LJ_BG_SLOTS || !dst || cap == 0) return -1;
@@ -276,7 +276,7 @@ lj_window *lj_bgcue_form_open(void)
     s.win = lj_window_create(&lj_form_TBGCUEFORM, lj_bg_bindings);
     if (!s.win) { lj_log("bgcue form: cannot create TBGCueForm"); return NULL; }
     for (i = 0; i < LJ_BG_SLOTS; i++) {
-        char nm[4];
+        char nm[16];
         lj_widget *sb;
         snprintf(nm, sizeof nm, "sb%d", i + 1);
         if ((sb = lj_window_find(s.win, nm)) == NULL) { lj_bgcue_form_close(); return NULL; }

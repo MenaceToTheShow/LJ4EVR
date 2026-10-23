@@ -67,8 +67,8 @@ static lj_da_val lj_da_tmp_l[LJ_DA_PAGES][LJ_DA_BANKS][LJ_DA_KEYS], lj_da_tmp_f[
 static int in(int v, int lo, int hi) { return v >= lo && v <= hi; }
 static int pref(int p) { return lj_ini_geti(lj_ctx_get()->main_ini, LJ_DA_SEC, lj_da_pref[p].item, lj_da_pref[p].dflt) != 0; }
 static uint32_t ini_rgb(const char *key, uint32_t dflt) { return (uint32_t)lj_ini_geti(lj_ctx_get()->main_ini, LJ_DA_SEC, key, (int)dflt) & 0xFFFFFFu; }
-static uint32_t text_rgb(int t) { char k[16]; snprintf(k, sizeof k, "ColorText%d", t); return ini_rgb(k, lj_da_text_dflt[t]); }
-static uint32_t back_rgb(int t) { char k[16]; snprintf(k, sizeof k, "ColorBack%d", t); return ini_rgb(k, lj_da_back_dflt[t]); }
+static uint32_t text_rgb(int t) { char k[24]; snprintf(k, sizeof k, "ColorText%d", t); return ini_rgb(k, lj_da_text_dflt[t]); }
+static uint32_t back_rgb(int t) { char k[24]; snprintf(k, sizeof k, "ColorBack%d", t); return ini_rgb(k, lj_da_back_dflt[t]); }
 
 const char *lj_da2532_label(const lj_da_val *v, char *dst, size_t cap)
 {
