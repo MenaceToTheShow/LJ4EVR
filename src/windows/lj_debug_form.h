@@ -17,4 +17,12 @@ lj_window *lj_debug_form_get(enum lj_win id);       /* NULL when closed */
 void       lj_debug_form_refresh(enum lj_win id);   /* repaint from the model / engine view copy (seam 3); no-op when closed */
 void       lj_debug_form_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
 
+/* ---- lightcorder-debug track additions (below the contract block) ---- */
+#include <stdint.h>
+const char *lj_debug_form_label(const char *name);           /* TDebugForm label caption by DFM name ("Label53"), "" when closed */
+int         lj_debug_form_misc_lines(void);                  /* the Misc tab's layer_of[] readout (ME-28): lines "1:001 1111000000000000", 16 channels each */
+const char *lj_debug_form_misc_line(int i);
+uint32_t    lj_debug_form_load_tenths(uint32_t avg_tick_us, uint32_t period_us);   /* engine load in tenths of a percent (integer, no float) */
+void        lj_debug_form_set_memory(uint64_t avail_bytes, uint64_t total_bytes);  /* System Memory: the app's lj_sysmem_query figures (integrator: call beside lj_desktop_memory_set); until then the rows read n/a */
+
 #endif /* LJ_WINDOWS_DEBUG_FORM_H */

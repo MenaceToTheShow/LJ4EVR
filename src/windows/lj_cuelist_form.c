@@ -30,6 +30,8 @@
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_cue_form.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_show_dialogs.h"   /* W4 dlg-show: Offset / Sort (ME-120), the cue picker */
+#include "core/lj_lock.h"
 
 #define CL_SEC         "CUELIST2"   /* forms.ini / Main.Ini section [01 s4 table: forms.ini [CUELIST2] 545x350, ViewEditPanel ViewEditCommand] */
 #define CL_RECENT      8            /* sbCMD1..8 */
@@ -68,9 +70,9 @@ static const char *const cl_inert_items[] = {
     "MediaPlayer1", "MediaPlayerLaunch1", "MPClose1",
     "OffsetDATimecodes", "OffsetMediaplayerTimecodes1", "OffsetCDTimecodes1", "SortDAWaitTimes", "SortMediaCodes1", "SortCDWaitTimes1",
     "DigitalAudioTimecodeScaler1",
-    /* ME-120 (inert rule, docs/fidelity.md): Offset / Sort over the MIDI and PC waits (TTIMECODEOFFSETFORM / TSORTTIMECODEFORM,
-     * W4) and Import Old Format Cuelist (the LJ1 .cl format, dropped) have no behaviour, so they are greyed, never live and dead */
-    "OffsetMIDITimecodes1", "OffsetPCTime1", "OffsetMIDITimecodes2", "M_ImportOldCuelist" };
+    /* Import Old Format Cuelist (the LJ1 .cl format, dropped) has no behaviour, so it is greyed (ME-120 inert rule); W4: Offset MIDI
+     * Timecodes / Offset PC Time / Sort MIDI wait times are alive (TTIMECODEOFFSETFORM / TSORTTIMECODEFORM, lj_show_dialogs.c) */
+    "M_ImportOldCuelist" };
 /* ListPop items that edit the list (greyed while it runs, "the list is locked while active") */
 static const char *const cl_edit_items[] = {
     "Pop_MTCCommands", "Pop_PCTimeCommands", "popGotoLine", "Pop_Execute", "Pop_SetCurrentCue", "pop_SetCueTrig", "MPLoadFile1",
@@ -354,6 +356,16 @@ static void recent_load(void)
 }
 int lj_cuelist_form_recent(int i) { return i >= 0 && i < CL_RECENT ? s.recent[i] : 0; }
 
+static void cue_picked(uint32_t number, void *ud)   /* TModalSelectCueForm OK: the cue onto the selected line */
+{
+    lj_cl_line *l = sel();
+    (void)ud;
+    if (!l || !number) return;
+    l->cue = number; l->trig_mask = 0;
+    fill_edit();
+    modified();
+}
+
 void lj_cuelist_form_apply_cmd(int cmd)
 {
     lj_cl_line *l = sel();
@@ -365,6 +377,7 @@ void lj_cuelist_form_apply_cmd(int cmd)
     if (cmd == LJ_CL_SET_CURRENT_CUE) {   /* "Put the current cue number on the line" [03 s6.3] */
         l->cue = sh && sh->current_cue ? sh->current_cue->number : lj_ctx_get()->view.cue_number;
         l->trig_mask = 0;
+        if (!l->cue) { lj_show_dlg_select_cue(cue_picked, NULL); return; }   /* W4: no saved current cue -> pick one (TModalSelectCueForm), PROPOSAL rig 03 s6.2 */
     } else {
         l->cmd = (uint8_t)cmd; l->param_ms = 0; l->param[0] = 0; l->ref = 0;
         if (cmd == LJ_CL_WAIT_MTC) lj_str_copy(l->param, sizeof l->param, "25");   /* PROPOSAL rig 03 s6.4: 25 fps until the fps button says otherwise */
@@ -605,6 +618,8 @@ static void on_action(lj_widget *w, void *ud)   /* ActionExecute: every TAction 
     for (i = 0; i < LJ_COUNT_OF(cl_actions); i++) if (!strcmp(a, cl_actions[i].action)) { lj_cuelist_form_apply_cmd(cl_actions[i].cmd); return; }
     if (!strcmp(a, "aCuelistTrackingOn") || !strcmp(a, "aCuelistTrackingOff")) { if (!running()) { cl->tracking = !strcmp(a, "aCuelistTrackingOn"); modified(); } return; }
     if (!strcmp(a, "aCopy")) { if (line_of(sel_line())) { s.clip = *line_of(sel_line()); s.has_clip = 1; } return; }
+    if (!strcmp(a, "aTimeCodeOffsetMIDI") || !strcmp(a, "aTimeCodeOffsetPC")) { if (!running()) lj_show_dlg_timecode_offset(!strcmp(a, "aTimeCodeOffsetPC") ? LJ_CLF_PC : LJ_CLF_MTC); return; }   /* W4 (ME-120) */
+    if (!strcmp(a, "aSortWaitMIDI")) { if (!running() && lj_show_dlg_sort_waits(cl, LJ_CL_WAIT_MTC) == 0) modified(); return; }                                   /* W4 (ME-120) */
     if (!l) return;
     if (!strcmp(a, "aCut")) { s.clip = *l; s.has_clip = 1; lj_cuelist_delete(cl, sel_line() - 1); }
     else if (!strcmp(a, "aPaste")) { if (!s.has_clip) return; lj_cuelist_insert(cl, sel_line() - 1, &s.clip); }   /* "dropped lines insert above the target" [03 s6.2] */
@@ -789,6 +804,9 @@ int lj_cuelist_form_save(int mode, uint32_t number)
     if (!cl->number || (bad = lj_cuelist_validate(cl)) != NULL) { lj_log("save cuelist: %s", cl->number ? bad : "no number"); cl->number = keep; return -1; }
     if (lj_library_record_path(c->lib, LJ_REC_CL, cl->number, path, sizeof path) != 0 || lj_cuelist_save(path, cl) != 0) {
         lj_log("save cuelist: %04u not written", (unsigned)cl->number); cl->number = keep; return -1;
+    }
+    if (c->show && lj_table_get(&c->show->cuelists, cl->number) && lj_table_get(&c->show->cuelists, cl->number) != (void *)cl) {   /* W3 s7: a table copy of this number is stale; dropped, the next lookup reads the file */
+        lj_lock(); lj_show_free_record(c->show, LJ_REC_CL, cl->number); lj_unlock();
     }
     lj_ctx_set_modified(LJ_MOD_CL, 0);
     lj_cuelist_form_refresh();

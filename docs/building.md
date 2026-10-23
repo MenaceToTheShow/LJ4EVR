@@ -50,6 +50,34 @@ build, then `cd build-release-mac && cpack -G DragNDrop`. The release workflow
 ad-hoc signs the bundle first (`codesign --force --deep -s -`); a local build is
 unsigned and Gatekeeper will ask for right-click > Open.
 
+## What the installers carry (ME-36, W4-HELP, W4-MAC)
+
+The install / CPack section of `CMakeLists.txt` puts three things in both
+installers and nothing else:
+
+| Item | Windows (NSIS, per-user) | macOS (`.dmg`) |
+|---|---|---|
+| the program | `lj4evr.exe` (static CRT: no `vcruntime` DLL, ME-19) | `LJ4EVR.app` (built as `lj4evr.app`, renamed on install), our `lj4evr.icns`, universal arm64 + x86_64, macOS 12 minimum |
+| `THIRD_PARTY_NOTICES.txt` | beside `lj4evr.exe` | `LJ4EVR.app/Contents/Resources/` (inside the bundle, so the signature covers it) |
+| the help topics | `help\*.txt` beside `lj4evr.exe` | `LJ4EVR.app/Contents/Resources/help/` |
+
+plus, on the `.dmg`, the `Applications` link CPack DragNDrop adds.
+`THIRD_PARTY_NOTICES.txt` is written at configure time: `NOTICE` followed by
+`third_party/miniz/LICENSE`, `third_party/qlcplus-fixtures/NOTICE` and
+`third_party/qlcplus-fixtures/LICENSE` (the full Apache-2.0 text); SDL3's zlib
+text is inside `NOTICE`. The program reads its help compiled in
+(`src/windows/lj_help_topics_gen.c`); the `.txt` copies are for reading outside it.
+
+Check an installed tree (an NSIS install directory, a mounted `.dmg`, or
+`cmake --install <build> --prefix <dir>`):
+
+    python -I tools/help_check.py --install-tree <dir>
+
+It fails unless the notices file carries the Apache-2.0 terms, the QLC+ NOTICE,
+the miniz MIT text and the SDL3 zlib text, and every topic matches `help/`.
+`release.yml` runs it on the silently installed NSIS tree and on the mounted
+`.dmg`.
+
 ## Linux (tests and the headless renderer only; no app)
 
     sudo apt install gcc clang cmake ninja-build python3     # or use docker/Dockerfile

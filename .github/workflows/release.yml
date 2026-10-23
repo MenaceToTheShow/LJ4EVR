@@ -60,6 +60,22 @@ jobs:
           ctest --preset release-win || exit /b 1
           cd build-release-win && cpack -G NSIS || exit /b 1
       - run: test -f "build-release-win/LJ4EVR-${{ needs.check.outputs.version }}-win64-setup.exe"
+      - name: No VC runtime dependency (ME-19, static CRT)
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+          dumpbin /dependents build-release-win\lj4evr.exe
+          dumpbin /dependents build-release-win\lj4evr.exe | findstr /i "vcruntime msvcp ucrtbase" && exit /b 1
+          exit /b 0
+      - name: Installer content (ME-36, W4-HELP) - silent per-user install, then the notices and topics are checked
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "lj4evr-inst"
+          $p = Start-Process -Wait -PassThru "build-release-win/LJ4EVR-${{ needs.check.outputs.version }}-win64-setup.exe" -ArgumentList "/S", "/D=$dir"
+          if ($p.ExitCode -ne 0) { throw "installer exit $($p.ExitCode)" }
+          Get-ChildItem -Recurse $dir | Select-Object -ExpandProperty FullName
+          python -I tools/help_check.py --install-tree $dir
+          if ($LASTEXITCODE -ne 0) { throw "install tree check failed" }
       - name: VERSIONINFO resource on the installer (ME-45)
         shell: pwsh
         run: |
@@ -100,8 +116,31 @@ jobs:
           strip -x build-release-mac/lj4evr.app/Contents/MacOS/lj4evr
           codesign --force --deep -s - build-release-mac/lj4evr.app
           codesign --verify --deep --strict --verbose=2 build-release-mac/lj4evr.app
+      - name: Bundle facts (W4-MAC) - universal, ad-hoc signed, version = VERSION, notices inside
+        run: |
+          app=build-release-mac/lj4evr.app
+          lipo -info $app/Contents/MacOS/lj4evr
+          archs=$(lipo -archs $app/Contents/MacOS/lj4evr)
+          case " $archs " in *" arm64 "*) ;; *) echo "no arm64: $archs"; exit 1;; esac
+          case " $archs " in *" x86_64 "*) ;; *) echo "no x86_64: $archs"; exit 1;; esac
+          codesign -dv $app 2>&1 | tee codesign.txt
+          grep -q 'Signature=adhoc' codesign.txt || { echo "not ad-hoc signed"; exit 1; }
+          plutil -p $app/Contents/Info.plist
+          test "$(plutil -extract CFBundleShortVersionString raw $app/Contents/Info.plist)" = "${{ needs.check.outputs.version }}"
+          test "$(plutil -extract LSMinimumSystemVersion raw $app/Contents/Info.plist)" = "12.0"
+          test -f $app/Contents/Resources/lj4evr.icns
+          otool -l $app/Contents/MacOS/lj4evr | grep -A4 LC_BUILD_VERSION | grep minos
       - run: cd build-release-mac && cpack -G DragNDrop -D CPACK_STRIP_FILES=OFF
       - run: test -f "build-release-mac/LJ4EVR-${{ needs.check.outputs.version }}-macos.dmg"
+      - name: .dmg content (W4-MAC, ME-36) - LJ4EVR.app, the Applications link, notices and topics in the bundle
+        run: |
+          mnt=$(mktemp -d)
+          hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "build-release-mac/LJ4EVR-${{ needs.check.outputs.version }}-macos.dmg"
+          ls -la "$mnt"
+          test -L "$mnt/Applications"
+          python3 -I tools/help_check.py --install-tree "$mnt"
+          codesign --verify --deep --strict "$mnt/LJ4EVR.app"
+          hdiutil detach "$mnt"
       - uses: actions/upload-artifact@v4
         with:
           name: installer-macos
@@ -132,7 +171,11 @@ jobs:
           LJ4EVR $VERSION. Unsigned installers, built by GitHub-hosted runners; sums in \`SHA256SUMS\`.
 
           - **Windows:** \`LJ4EVR-$VERSION-win64-setup.exe\`, per-user install (no admin), uninstaller in Settings > Apps. SmartScreen will warn on an unsigned installer: *More info > Run anyway*.
-          - **macOS 12+ (Intel + Apple Silicon):** \`LJ4EVR-$VERSION-macos.dmg\`, ad-hoc signed only. First launch: right-click LJ4EVR.app > **Open**, or clear the quarantine flag in Terminal: \`xattr -d com.apple.quarantine /Applications/lj4evr.app\`.
+          - **macOS 12+ (Intel + Apple Silicon):** \`LJ4EVR-$VERSION-macos.dmg\`, ad-hoc signed only. Drag LJ4EVR.app onto Applications. First launch: right-click LJ4EVR.app > **Open**, or clear the quarantine flag in Terminal: \`xattr -d com.apple.quarantine /Applications/LJ4EVR.app\`.
+
+          Third-party licences: \`THIRD_PARTY_NOTICES.txt\` beside lj4evr.exe and in LJ4EVR.app/Contents/Resources. LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN.
+
+          **Not in this version** (planned for W5; their menu items, cue-list commands and toolbar buttons are present, greyed, with the hint "Not available in LJ4EVR"): the Audio Analyzer and audio trig, DMX-in over sACN input and the \`.vtr\` tables, the RS-232/TCP remote protocol, External Application string output, the \`.LJB\` importer, the LJ MediaPlayer, and Art-Net.
 
           Mac acceptance (ME-21): Joey runs the .dmg on his Mac and screenshots the Sequence window and one menu.
           EOF

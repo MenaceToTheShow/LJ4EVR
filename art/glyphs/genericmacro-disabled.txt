@@ -1,0 +1,17 @@
+palette .=C0C0C0 g=808080
+gggggggggggggggg
+g..............g
+g..............g
+g..gg..........g
+g.gggg.........g
+ggg..gg........g
+gg....g........g
+g......g.......g
+g......g......gg
+g.............gg
+g.......g....g.g
+g.......gg..gg.g
+g........gggg..g
+g.........gg...g
+g..............g
+.ggggggggggggggg

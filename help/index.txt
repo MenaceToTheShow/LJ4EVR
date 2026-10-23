@@ -1,0 +1,27 @@
+LJ4EVR Help
+
+This is the help for LJ4EVR, a lighting control program that works the
+way LightJockey 2 did and sends its output as sACN (E1.31) over the
+network. Pick a topic from the list on the left.
+
+- Getting started: install, first run, the user library.
+- The main window: menus, toolbars, the status bar and the fixture
+  desktop.
+- Fixtures: adding fixtures, addresses, profiles and the Unassigned
+  list.
+- Fixture controls: intensity, movement, colours, gobos, beam and the
+  rest.
+- Sequences: scenes, fades and saving.
+- Cues: twelve sequence slots played together.
+- Cue lists: running a show line by line.
+- Background cues and statics: layers under and over the cue.
+- Macros: movement macros and generic macros.
+- Output: sACN, masters, blackout, freeze and offline.
+- Hotkeys and MIDI: keyboard and MIDI control, 2532 and Fingers.
+- Files and libraries: where your show lives, backups and restore data.
+- Not available in LJ4EVR: what this version leaves out.
+- Notices and licence: third-party software and the trademark note.
+
+Every window keeps the menus and captions you know from LightJockey 2.
+Items that belong to a feature this version does not have are still
+shown, greyed, with the hint "Not available in LJ4EVR".

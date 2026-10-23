@@ -5,13 +5,15 @@ behavioural reference) for Windows and macOS, with sACN E1.31 output. One static
 executable per OS; SDL3 supplies the window, input, timers and a surface blit,
 every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 
-Status: **W3 Show control** (version 0.3.0). Cue lists with their runner (PC
-time, MTC, manual lines, links, hotkey commands), the Generic Macro Editor with
-the 66 shapes, movement macros with Bezier shapes, Fan Out and Auto Delay, Cue
-Macro Control, Generic DMX Control, follow spots, sequence fades, `.GS2` / `.Udf`
-import and export, the Generic Fixture Profile editor, and the 15/06-15/09 hand
-profiles; W2 playback underneath (`CHANGELOG.md`, `docs/w3-integration.md`).
-Pre-release until v1.0.0.
+LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN.
+
+Status: **W4 Fidelity sweep and release** (version 0.3.0 tagged, v1.0.0 at the end
+of W4). W3 show control underneath: cue lists, generic and movement macros,
+Generic DMX Control, follow spots, `.GS2` / `.Udf` profiles (`CHANGELOG.md`).
+
+**Using it:** download the installer from the Releases page and read
+[`docs/user-guide.md`](docs/user-guide.md); the same help is inside the program
+under Help.
 
 ## Build
 
@@ -33,6 +35,8 @@ under the repo and are ignored by git.
 
 ## What v1.0.0 is not
 
+Design section 1, verbatim:
+
 v1.0.0 tags at the end of W4 and ships without the Audio Analyzer and audio trig
 (inventory §5 "Keep, built in"), DMX-in over sACN input and the `.vtr` tables
 (inventory §5 "Keep over sACN/Art-Net input"), the RS-232/TCP remote protocol,
@@ -46,34 +50,38 @@ may pull any of them forward before W3; the default is the list above.
 
 ## Docs
 
-- `docs/building.md` - configure, build and test on Windows, macOS and Linux
-- `docs/ci.md` - the three workflows, the runner security model, the CI image
-- `docs/conventions.md` - the coding conventions every file under `src/` follows
-- `docs/fidelity.md` - every known deviation from LightJockey 2.209 and the decision behind it
-- `docs/file-formats.md` - the user library on disk (text records, INI files, `.lj4b`)
-- `docs/fixtures.md` - the fixture library: exe rows, hand profiles, QLC+ tier 2, `qxf_map.tsv`
-- `docs/fonts.md` - the clean-room bitmap faces and the width corpus
-- `docs/generated-files.md` - every committed generated file, its tool and its check
-- `docs/hotkeys.md` - the hotkey function table and the `.Hot` setups
-- `docs/midi.md` - MIDI-IN: the backends, the map, Learn and the UI-thread dispatch
-- `docs/msvc-sdl-build.md` - why the CMake file carries two MSVC workarounds
-- `docs/releasing.md` - tagging, `release.yml`, the installers
-- `docs/replay-grammar.md` - the `.lj4r` engine replay scenarios
-- `docs/running.md` - running the app, `Main.Ini`, `--selftest` and the other flags
-- `docs/sacn.md` - the sACN sender, `Hardware.Ini [SACN]`, the LAN capture
-- `docs/screenshots/` - the W0, W1, W2 and W3 acceptance captures
-- `docs/ui-script.md` - the `--script` driver behind the acceptance walkthrough
-- `docs/w0-contracts.md` - map of the W0 headers and the three rules for tracks
-- `docs/w0-integration.md` - the W0 integration log
-- `docs/w1-contracts.md` - the W1 seams between tracks
-- `docs/w1-gates.md` - the W1 gate table with the council's status column
-- `docs/w1-integration.md` - the W1 integration log, CI rounds, acceptance walkthrough and fix pass
-- `docs/w2-contracts.md` - the W2 seams between the eleven tracks
-- `docs/w2-gates.md` - the W2 gate table with the council's status column
-- `docs/w2-integration.md` - the W2 integration log, CI rounds, acceptance walkthrough and fix pass
-- `docs/w3-contracts.md` - the W3 seams between the ten tracks
-- `docs/w3-gates.md` - the W3 gate table with the council's status column
-- `docs/w3-integration.md` - the W3 integration log, CI rounds, acceptance walkthrough and fix pass
+For users:
 
-Licence: MIT (`LICENSE`). Third-party notices: `NOTICE`. LightJockey is a
-trademark of Martin Professional; LJ4EVR is not affiliated.
+- [`docs/user-guide.md`](docs/user-guide.md) - install, the data folder, the first show, what this version leaves out
+- [`docs/fidelity.md`](docs/fidelity.md) - every known deviation from LightJockey 2.209 and the decision behind it
+- `help/*.txt` - the help topics the program shows (Help menu), our own text
+
+For contributors:
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) - fidelity rules, no Martin assets, code rules, goldens
+- [`SECURITY.md`](SECURITY.md) - reporting a vulnerability, what is in scope
+- [`docs/provenance.md`](docs/provenance.md) - where every non-code byte in the repository came from
+- [`docs/building.md`](docs/building.md) - configure, build and test on Windows, macOS and Linux
+- [`docs/releasing.md`](docs/releasing.md) - tagging, `release.yml`, the installers and their checks
+- [`docs/ci.md`](docs/ci.md) - the three workflows, the runner security model, the CI image
+- [`docs/conventions.md`](docs/conventions.md) - the coding conventions every file under `src/` follows
+- [`docs/file-formats.md`](docs/file-formats.md) - the user library on disk (text records, INI files, `.lj4b`, `.bez`, the folders)
+- [`docs/fixtures.md`](docs/fixtures.md) - the fixture library: exe rows, hand profiles, QLC+ tier 2, `qxf_map.tsv`
+- [`docs/fonts.md`](docs/fonts.md) - the clean-room bitmap faces and the width corpus
+- [`docs/generated-files.md`](docs/generated-files.md) - every committed generated file, its tool and its check
+- [`docs/hotkeys.md`](docs/hotkeys.md) - the hotkey function table and the `.Hot` setups
+- [`docs/midi.md`](docs/midi.md) - MIDI-IN: the backends, the map, Learn and the UI-thread dispatch
+- [`docs/msvc-sdl-build.md`](docs/msvc-sdl-build.md) - why the CMake file carries two MSVC workarounds
+- [`docs/replay-grammar.md`](docs/replay-grammar.md) - the `.lj4r` engine replay scenarios
+- [`docs/running.md`](docs/running.md) - running the app, `Main.Ini`, `--selftest` and the other flags
+- [`docs/sacn.md`](docs/sacn.md) - the sACN sender, `Hardware.Ini [SACN]`, the LAN capture
+- [`docs/ui-script.md`](docs/ui-script.md) - the `--script` driver behind the acceptance walkthroughs
+- `docs/screenshots/` - the wave acceptance captures (our own windows)
+- `docs/w0-*.md` .. `docs/w4-*.md` - per-wave contracts, gate tables and integration logs (the build record)
+
+## Licence
+
+MIT (`LICENSE`; a PROPOSAL until the maintainer's ruling before the public
+release, design 13 item 1). Third-party notices: `NOTICE`, shipped in both
+installers as `THIRD_PARTY_NOTICES.txt` with the full SDL3 (zlib), miniz (MIT) and
+QLC+ (Apache-2.0) texts. Fonts and art are CC0 (`docs/provenance.md`).

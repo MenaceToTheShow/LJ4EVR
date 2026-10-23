@@ -1,0 +1,23 @@
+Fixture controls
+
+Select a fixture on the desktop and the fixture toolbar enables the
+control windows that its profile has. Typical windows are Intensity,
+Movement, Colors, Gobos, Beam, Effects, Lamp and Levels. Some fixtures
+add an Extended window with settings and a reset button.
+
+Every channel row has three buttons: O for off (the channel is not
+stored in the scene), S for snap and F for fade. A snapped channel jumps
+to its new value at the start of the scene; a faded channel moves to it
+over the fade time.
+
+The Movement window has a grid for pan and tilt. Drag inside the grid,
+or use the arrow buttons for fine steps. Pan and tilt keep their full
+16-bit resolution where the fixture has it. Locks, absolute or relative
+mode, and the resolution setting change how the grid moves the
+selection.
+
+Colors and Gobos show a palette of tiles for each wheel. Click a tile to
+send that slot. Wheel spin, rotation and shake have their own faders.
+
+Changes go to all selected fixtures. The master fixture is the one whose
+values the windows show.

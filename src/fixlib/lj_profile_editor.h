@@ -28,9 +28,9 @@ typedef struct { uint8_t tab, kind; uint16_t off /* .GS2 offset [16 s4] */; uint
 extern const lj_pe_field lj_pe_fields[];
 extern const int lj_pe_nfields;
 
-typedef struct { lj_profile p; uint8_t raw[LJ_GS2_REC_SIZE]; uint8_t dirty; uint8_t tab /* enum lj_pe_tab */; } lj_profile_edit;   /* ~38 KB: heap or static, never a stack local */
-int         lj_pe_begin(lj_profile_edit *ed, const lj_profile *src);   /* src NULL = New Profile (zeroed record, format_version 2609, byte 0x04 = 0x2E); 0 / -1 */
-int         lj_pe_refresh(lj_profile_edit *ed);                        /* raw -> p after an edit; also sets byte 0x05 = last enabled level offset [16 s4.1]; 0 / -1 */
+typedef struct { lj_profile p; uint8_t raw[LJ_GS2_REC_SIZE]; uint8_t dirty; uint8_t tab /* enum lj_pe_tab: LJ_PE_LEVELS after a Levels edit until the next lj_pe_refresh */; } lj_profile_edit;   /* ~38 KB: heap or static, never a stack local */
+int         lj_pe_begin(lj_profile_edit *ed, const lj_profile *src);   /* src NULL = New Profile (zeroed record, format_version 2609, byte 0x04 = 0x2E); a format-0/1 src opens as 2609 with the ME-33 identity in its slots (ME-126); 0 / -1 */
+int         lj_pe_refresh(lj_profile_edit *ed);                        /* raw -> p after an edit; after a Levels edit (tab = LJ_PE_LEVELS, set by lj_pe_set_u8) also byte 0x05 = last enabled level offset [16 s4.1], else byte 5 stays as read (LORD_FIXTURES-4); 0 / -1 */
 int         lj_pe_set_u8(lj_profile_edit *ed, int field, int index, int v);         /* one byte of field (index into U8S / DYN +off / STATIC defined-or-value); dirty = 1; 0 / -1 */
 int         lj_pe_set_str(lj_profile_edit *ed, int field, int index, const char *s);   /* ShortString / name of a DYN or STATIC entry or palette bitmap; clamps to the width, keeps the stale tail bytes; 0 / -1 */
 const char *lj_pe_validate(const lj_profile_edit *ed);                  /* the dialog's own refusals: offsets < 32, footprint <= 32, ... NULL = OK */

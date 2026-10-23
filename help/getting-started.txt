@@ -1,0 +1,32 @@
+Getting started
+
+Windows: run the setup program. It installs for the current user only,
+needs no administrator rights and puts LJ4EVR under your local programs
+folder with a Start menu entry and an uninstaller.
+
+macOS 12 or later: open the disk image and drag LJ4EVR.app onto the
+Applications link. The app is not notarised, so the first time you open
+it, right-click the app and choose Open, or clear the quarantine flag in
+Terminal:
+
+    xattr -d com.apple.quarantine /Applications/LJ4EVR.app
+
+On the first start LJ4EVR creates its data folder and a user library
+called Default. The main window shows "Please Wait.." and a startup
+status window while the library loads, then the caption names the
+library that is open.
+
+A first show, in five steps:
+
+- Open Setup > Fixture Configuration, add your fixtures and give each
+  one a DMX address.
+- Drag each fixture from the Unassigned list onto the desktop.
+- Click a fixture icon to select it, then use the fixture toolbar to
+  open its control windows and set values.
+- In the Sequence window store what you set as a scene, add more scenes,
+  and save the sequence.
+- Put the sequence in a slot of the Cue window, save the cue and press
+  Go.
+
+Before the rig sees anything, set up the network output under Setup >
+Hardware Setup (see Output).

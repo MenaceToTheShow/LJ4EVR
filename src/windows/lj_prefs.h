@@ -20,6 +20,12 @@ lj_window *lj_startup_options_open(void);
 void       lj_startup_options_close(void);
 lj_window *lj_startup_options_window(void);
 int        lj_startup_options_apply(void);                           /* the Ok button: page -> ctx->main_ini; 0 / -1 */
+/* W4 dlg-desktop (appended): the Select Startup Cuelist pick-back, the Auto Launch list (Startup.ini [AUTOLAUNCH], ours) */
+enum { LJ_LAUNCH_MAX = 16 };
+void       lj_startup_options_set_cl(int32_t number);                /* TSelectCuelist2ModalForm's choice -> EClNum (no-op when closed) */
+int        lj_startup_options_add_launch(const char *path);          /* Browse result -> lbauto; 0 / -1 */
+int        lj_auto_launch_load(char (*out)[LJ_PATH_CAP], int cap);   /* the saved list; returns the count */
+void       lj_auto_launch_save(const char *const *paths, int n);
 
 
 

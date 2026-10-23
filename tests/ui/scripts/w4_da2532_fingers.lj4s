@@ -1,0 +1,43 @@
+# w4_da2532_fingers.lj4s - W4-2532 / W4-FINGERS on screen (da2532-fingers track): every 2532 and Fingers window from its
+# entry point, the MIDI rows, one shot per window. Run in a library whose Fingers.Ini has [SETUP] Mode=1 (else Virtual Fingers
+# asks "Fingers is disabled - do you wish to activate now ?") and whose MIDIIn\MIDIMap.dat maps note 60 / 61 to
+# LJ_FN_DA2532_LATCH_1 / LJ_FN_DA2532_FLASH_1 (the headless twin is tests/ui/test_da2532_fingers.c test_midi_map rows):
+#   lj4evr --script tests/ui/scripts/w4_da2532_fingers.lj4s U:<library>
+click main.tb_cuelist_12
+assert_caption da2532 "2532 Direct Access"
+midi 90 3C 7F
+wait 50
+midi 90 3D 7F
+wait 50
+midi 80 3D 00
+wait 50
+shot w4da-2532.png
+open da2532_functions
+open da2532_colors
+open da2532_tab_colors
+open da2532_tab_height
+open da2532_page_names
+shot w4da-2532-dialogs.png
+close da2532_functions
+close da2532_colors
+close da2532_tab_colors
+close da2532_tab_height
+close da2532_page_names
+close da2532
+open fingers
+open fingers_status
+shot w4da-fingers.png
+close fingers
+close fingers_status
+open fingers_setup
+shot w4da-fingers-setup.png
+close fingers_setup
+open fingers_error
+open fingers_skin
+open fingers_functions
+open fingers_jog_functions
+open fingers_page_functions
+open fingers_slot_functions
+open fingers_ud_functions
+shot w4da-fingers-dialogs.png
+quit

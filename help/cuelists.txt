@@ -1,0 +1,19 @@
+Cue lists
+
+A cue list runs a show as a list of lines. Each line holds one command:
+load a cue, wait for a time, jump to another line, link to another cue
+list, flash a sequence, send a hotkey command, and more.
+
+A line is either automatic or manual. Automatic lines run when their
+wait has passed. Waits can be counted from the PC clock, from the time
+elapsed since the list started, from a date change, or from MIDI time
+code. Manual lines wait for the Go key and ignore their time.
+
+Open the Cuelist window from View > Controls or the C-L toolbar. Lock
+stops edits while the show runs; Browse lets you look ahead without
+changing what is playing. Marks and Run to line help during rehearsal.
+Save and Select load and store cue lists in the user library.
+
+Lines that need a feature this version does not have, such as the media
+player, CD or digital audio commands, are kept in the file and shown in
+red. The runner skips them and runs the rest of the list.

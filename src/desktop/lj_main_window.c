@@ -50,6 +50,7 @@ static const lj_main_inert_leaf lj_inert[] = {   /* dropped back-ends: greyed, h
     { "M_RestartSound", LJ_NA_HINT }, { "M_StartDAPlayer", LJ_NA_HINT }, { "M_WinampModule", LJ_NA_HINT },
     { "M_OfflineLaunch", LJ_NA_HINT }, { "M_OfflineEnable", LJ_NA_HINT }, { "M_OfflineDisable", LJ_NA_HINT }, { "OfflinePrefs", LJ_NA_HINT },
     { "M_OfflineAutoLaunch", LJ_NA_HINT }, { "M_Autoloadlastusedscene", LJ_NA_HINT }, { "M_OfflineFixtureSelect", LJ_NA_HINT }, { "M_AutoMinimizeondialogs", LJ_NA_HINT },
+    { "PI_DefineAppLink", LJ_NA_HINT },   /* W4 I13 sweep: TExternalAppSetupForm's entry (External Application output is W5, I11) */
 };
 static const char lj_removed[] = "Offlinebar1";   /* View > Toolbars > Offline Toolbar: removed under D12, docs/fidelity.md */
 
@@ -113,6 +114,7 @@ static const lj_menu_item_desc lj_pop_icon_items[] = {
     LJ_MI("PI_FixtureConfig", "Fixture Configuration", "IconPopClick"),
     LJ_MI("PI_GlobalPatch", "Global Patch", "IconPopClick"),
     LJ_MI("PI_Customize", lj_pi_customize_cap, "IconPopClick"),
+    LJ_MI("PI_DefineAppLink", "Define Application Link", "IconPopClick"),   /* [02 s5.7] CHM caption; shown on an External Application/Device icon only, greyed (I11, W5) */
     LJ_MSEP("PI_N4"),
     LJ_MSUB("PI_FixtureIcon", "Fixture Icon", lj_pop_fixicon),
     LJ_MSEP("PI_N5"),
@@ -477,6 +479,12 @@ void lj_main_menu_sync(lj_window *win)
     if (lj_desktop_popup_fixture() >= 0) lj_str_copy(lj_pi_customize_cap, sizeof lj_pi_customize_cap, lj_customize_popup_caption(lj_desktop_popup_fixture()));
     lj_menu_set_checked(m, "PI_MoveIcon", lj_desktop_popup_fixture() >= 0 && lj_desktop_icon_move_on(lj_desktop_popup_fixture()));
     lj_menu_set_visible(m, "M_Generic", generic_fixture_exists());
+    {   /* I13 sweep: the External Application link item follows the icon's profile (tag EXTERNAL, id 90) */
+        const lj_ctx *ctx = lj_ctx_get();
+        int f = lj_desktop_popup_fixture();
+        const lj_profile *p = f >= 0 && ctx->show ? lj_fixlib_by_id(ctx->show->fixture[f].profile_id) : NULL;
+        lj_menu_set_visible(m, "PI_DefineAppLink", p && strcmp(p->tag, "EXTERNAL") == 0);
+    }
     hotkey_items_sync(m);
 }
 

@@ -35,6 +35,10 @@ extern const char *const lj_fn_group_names[LJ_FNG_COUNT];   /* "System", "Intens
 #define LJ_FN_R12(X,P,G,C,F) LJ_FN_R10(X,P,G,C,F) X(P##_11,G,C,11,F) X(P##_12,G,C,12,F)
 #define LJ_FN_R20(X,P,G,C,F) LJ_FN_R12(X,P,G,C,F) X(P##_13,G,C,13,F) X(P##_14,G,C,14,F) X(P##_15,G,C,15,F) X(P##_16,G,C,16,F) \
                              X(P##_17,G,C,17,F) X(P##_18,G,C,18,F) X(P##_19,G,C,19,F) X(P##_20,G,C,20,F)
+/* W4 da2532-fingers (appended): the 2532 bank count and its page / user-key count */
+#define LJ_FN_R7(X,P,G,C,F)  LJ_FN_R5(X,P,G,C,F) X(P##_6,G,C,6,F) X(P##_7,G,C,7,F)
+#define LJ_FN_R18(X,P,G,C,F) LJ_FN_R12(X,P,G,C,F) X(P##_13,G,C,13,F) X(P##_14,G,C,14,F) X(P##_15,G,C,15,F) X(P##_16,G,C,16,F) \
+                             X(P##_17,G,C,17,F) X(P##_18,G,C,18,F)
 
 #define LJ_FN_LIST(X) \
     /* System [01 s7] */ \
@@ -287,7 +291,28 @@ extern const char *const lj_fn_group_names[LJ_FNG_COUNT];   /* "System", "Intens
     X(LJ_FN_STATIC_19,               LJ_FNG_STATICS, "Static %02d",                19, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
     X(LJ_FN_STATIC_20,               LJ_FNG_STATICS, "Static %02d",                20, LJ_FNF_TOGGLE | LJ_FNF_FLASH) \
     /* W2 midi track (append-only): the MIDI CC extension target (05 s7 clone verdict, marked non-original, off by default). LJ_FNF_EXT = not one of LJ2's hotkey functions: Edit Hotkeys and the MIDI-IN Functions list skip it; prog_num = the level in percent 0..100 (CC value 0..127 scaled by lj_midi_dispatch). */ \
-    X(LJ_FN_MASTER_LEVEL,            LJ_FNG_INTENSITY, "Master Intensity level",    0, LJ_FNF_EXT)
+    X(LJ_FN_MASTER_LEVEL,            LJ_FNG_INTENSITY, "Master Intensity level",    0, LJ_FNF_EXT) \
+    /* W4 da2532-fingers track (append-only, D16, docs/w4-contracts.md seam 5): the 2532 and Fingers surfaces on keyboard / MIDI. \
+     * LJ_FNF_EXT = not one of LJ2's hotkey functions (Edit Hotkeys and the MIDI-IN Functions list skip them); a .Hot line or a \
+     * MIDIMap.dat `fn` / `cc` line binds them, and Learn (windows/lj_da2532.c, lj_fingers.c: Alt + click on the control) writes those lines. \
+     * 2532: latch / flash key n of the active bank on the active page, user key n, page n (1..18), bank n (1 = A .. 7 = G). \
+     * Latch rows carry FLASH so the release reaches a latched flash function ("not unloaded on release unless the function is a \
+     * flash function", 05 s4.2). Fingers: F1-F10, the 3 x 12 cue slot buttons, 12 faders and GM (level rows: prog_num = 0..100 %, \
+     * the LJ_FN_MASTER_LEVEL convention, a CC), 12 bumps, B/O, 5 jog wheels (level rows: the move from the last value is the step). */ \
+    LJ_FN_R8(X, LJ_FN_DA2532_LATCH, LJ_FNG_SYSTEM, "2532 Latch %d",                 LJ_FNF_EXT | LJ_FNF_FLASH) \
+    LJ_FN_R8(X, LJ_FN_DA2532_FLASH, LJ_FNG_SYSTEM, "2532 Flash %d",                 LJ_FNF_EXT | LJ_FNF_FLASH) \
+    LJ_FN_R18(X, LJ_FN_DA2532_USER, LJ_FNG_SYSTEM, "2532 User Key %d",              LJ_FNF_EXT | LJ_FNF_FLASH) \
+    LJ_FN_R18(X, LJ_FN_DA2532_PAGE, LJ_FNG_SYSTEM, "2532 Page %d",                  LJ_FNF_EXT | LJ_FNF_ENABLE) \
+    LJ_FN_R7(X, LJ_FN_DA2532_BANK,  LJ_FNG_SYSTEM, "2532 Bank %d",                  LJ_FNF_EXT | LJ_FNF_ENABLE) \
+    LJ_FN_R10(X, LJ_FN_FINGERS_F,   LJ_FNG_SYSTEM, "Fingers F%d",                   LJ_FNF_EXT | LJ_FNF_FLASH) \
+    LJ_FN_R12(X, LJ_FN_FINGERS_SLOT_TOP, LJ_FNG_SYSTEM, "Fingers top slot %d",      LJ_FNF_EXT | LJ_FNF_FLASH) \
+    LJ_FN_R12(X, LJ_FN_FINGERS_SLOT_MID, LJ_FNG_SYSTEM, "Fingers middle slot %d",   LJ_FNF_EXT | LJ_FNF_FLASH) \
+    LJ_FN_R12(X, LJ_FN_FINGERS_SLOT_BOT, LJ_FNG_SYSTEM, "Fingers bottom slot %d",   LJ_FNF_EXT | LJ_FNF_FLASH) \
+    LJ_FN_R12(X, LJ_FN_FINGERS_FADER, LJ_FNG_SYSTEM, "Fingers fader %d",            LJ_FNF_EXT) \
+    LJ_FN_R12(X, LJ_FN_FINGERS_BUMP,  LJ_FNG_SYSTEM, "Fingers bump %d",             LJ_FNF_EXT | LJ_FNF_FLASH) \
+    X(LJ_FN_FINGERS_GM,              LJ_FNG_SYSTEM, "Fingers GM",                   0, LJ_FNF_EXT) \
+    X(LJ_FN_FINGERS_BO,              LJ_FNG_SYSTEM, "Fingers B/O",                  0, LJ_FNF_EXT | LJ_FNF_ENABLE) \
+    LJ_FN_R5(X, LJ_FN_FINGERS_JOG,   LJ_FNG_SYSTEM, "Fingers jog wheel %d",         LJ_FNF_EXT)
 
 #define LJ_FN_ENUM(id, g, c, n, f) id,
 enum lj_fn { LJ_FN_NONE = 0, LJ_FN_LIST(LJ_FN_ENUM) LJ_FN_COUNT };

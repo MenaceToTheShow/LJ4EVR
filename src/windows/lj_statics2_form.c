@@ -15,6 +15,8 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_show_dialogs.h"
+#include "windows/lj_warnings.h"
 
 #define LJ_S2_STAY_ON_TOP 2u            /* = LJ_WF_STAY_ON_TOP (platform/lj_platform.h, not includable here) */
 #define LJ_S2_ON_RGB      0x00FF00u     /* an active slot: green, the old control's LED colour (07 s4.4 LJ_LED_ON_RGB); PROPOSAL rig 14 sB.8 item 12 */
@@ -34,6 +36,7 @@ static struct {
     lj_window *win;
     lj_widget *num[LJ_S2_N], *btn[LJ_S2_N], *mode[LJ_S2_N], *lvl[LJ_S2_N];
     int idx[LJ_S2_N], n;
+    char cellname[LJ_S2_N][8];                                  /* "slot1".. : the UI script names the code-built slot buttons (rclick TStatics2Form.slot1) */
     char numtxt[LJ_S2_N][12], lvltxt[LJ_S2_N][16], tabtxt[LJ_STATIC_PAGES_MAX][20];
     const char *tabs[LJ_STATIC_PAGES_MAX];
     int pop_slot, drag;
@@ -258,7 +261,7 @@ static void menu_action(lj_widget *w, void *ud)
     else if (!seq || !seq->scenes || c->current_scene >= seq->n) { lj_log("statics: no current scene"); return; }
     else if (!strcmp(a, "acRecordCurrentScene")) { lj_lock(); rc = lj_static_slot_record(st, &seq->scenes[c->current_scene]); lj_unlock(); }
     else if (!strcmp(a, "acLinkToCurrentScene")) {
-        if (!seq->number) { lj_log("statics: save the sequence before linking"); return; }
+        if (!seq->number) { lj_log("statics: save the sequence before linking"); lj_win_message("Statics", "Error!"); return; }   /* exe 0x218BC4 [12 Q9]: a link needs a saved sequence; PROPOSAL rig 14 sB.8 item 4 */
         lj_lock(); rc = lj_static_slot_link(st, seq->number, c->current_scene); lj_unlock();
     } else if (!strcmp(a, "acConvertToScene")) {
         if (st->kind != LJ_STATIC_RECORDED || !st->scene) return;
@@ -269,9 +272,10 @@ static void menu_action(lj_widget *w, void *ud)
         lj_ctx_set_modified(LJ_MOD_SEQ, 1);
         return;
     }
-    if (rc != 0) lj_log("statics: %s failed", it->caption);
+    if (rc != 0) { lj_log("statics: %s failed", it->caption); lj_win_message("Statics", "Error!"); return; }   /* exe 0x218BC4 [12 Q9]; trigger PROPOSAL rig 14 sB.8 item 5 */
     lj_statics2_save();
     fill_rows();
+    lj_show_dlg_static_slot_name(lj_s2_cur_page, s.pop_slot);      /* W4: a recorded / linked slot is named (TStaticSlotNameForm), as the old control's Save Static [03 s8]; PROPOSAL rig 14 sB.8 item 5 */
 }
 
 /* ---- widget events ---- */
@@ -407,6 +411,7 @@ lj_window *lj_statics2_form_open(void)
         s.num[i]->x = 0; s.num[i]->y = y + 1; s.num[i]->w = pnum->w - 3; s.num[i]->h = LJ_S2_ROW_H - 2;
         lj_w_set_caption(s.num[i], s.numtxt[i]);
         s.btn[i] = mk_cell(pst, y, LJ_CLR_BTNFACE, slot_event, &s.idx[i]);
+        snprintf(s.cellname[i], sizeof s.cellname[i], "slot%d", i + 1); s.btn[i]->name = s.cellname[i];
         s.mode[i] = mk_cell(pmode, y, LJ_CLR_BTNFACE, mode_event, &s.idx[i]);
         s.lvl[i] = mk_cell(plvl, y, LJ_S2_LEVEL_RGB, level_event, &s.idx[i]);
     }

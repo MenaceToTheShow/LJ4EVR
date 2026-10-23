@@ -1,0 +1,31 @@
+Files and libraries
+
+Everything you program lives in a user library: a folder with the
+fixture configuration, sequences, cues, cue lists, background cues,
+macros, statics, palettes and the window positions. The records inside
+are plain text.
+
+The library folders sit inside the LJ4EVR data folder. On Windows that
+is under your roaming application data; on macOS it is under Application
+Support in your home folder. System > User Libraries creates, copies,
+renames and switches libraries, and makes and restores backups. A backup
+is one archive file holding the whole library.
+
+System > Delete Files removes sequences, cues, cue lists, background
+cues or generic macros you no longer need.
+
+System > Restore Program Data keeps an automatic copy of your data and
+restores it after a problem. Its password stops accidents, not
+attackers: it is not a security measure.
+
+Three folders in the library are for your own files. Import holds .GS2
+and .Udf fixture profiles waiting to be imported, and Export receives
+the profiles you export. Override can hold your own Macros.Mac shape
+file, which then replaces the built-in generic macro shapes.
+
+A Source-Images folder in the LJ4EVR data folder can hold your own
+bitmaps (Glyphs, Fixtures, Colors and Gobos sub-folders); a file there
+replaces the program's own picture of the same name.
+
+LightCorder (the Tools menu of the Cuelist window) records the program's
+output to a file, so you can see later what was sent.

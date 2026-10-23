@@ -47,6 +47,7 @@ int        lj_cue_macro_control_set(int amp_pct, int speed_pct);   /* the two fa
 int        lj_movemacro_editor_save_shape(const char *name);       /* Save Shape with that name into <library>\MacroShapes, then LJ_ACT_BEZ_RELOAD */
 lj_window *lj_movemacro_editor_name_window(void);          /* the open TBezNameForm, NULL when none */
 int        lj_movemacro_editor_bez(lj_bez *out);           /* the shape on the Bezier editor; -1 when it is closed */
+int  lj_position_options_apply(int op /* 0 Mirror Pan, 1 Mirror Tilt, 2 Swap Pan/Tilt */);   /* W4: the selected fixtures in the current scene (17 s4.1); 0 / -1 */
 void lj_movemacro_editor_bind_fns(void);   /* the lj_fn rows this file owns (hotkeys of 01 s7), called from lj_win_set_host */
 
 #endif /* LJ_WINDOWS_MOVEMACRO_EDITOR_H */

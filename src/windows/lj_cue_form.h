@@ -73,4 +73,9 @@ int  lj_cue_popup_is_open(lj_window *win);
 void     lj_cue_form_apply_prefs(void);                      /* forms.ini [CUE] Transparent / StickyFlash -> ctx->transparent_mode / flash_latch, posts LJ_CMD_TRANSPARENT */
 uint32_t lj_list_cue_selected(void);                         /* the cue highlighted in the global list, 0 = none */
 
+/* ---- W4 dlg-show (appended) ---- */
+int      lj_cue_form_add_sequence_at(uint32_t seq_no, int slot);   /* slot 1..12 asked for (0 = first free): a taken slot asks "No priority slots available - add sequence as
+                                                                    * non-priority sequence ?" (Yes = first free); a full cue says "No free sequence slots in cue - sequence
+                                                                    * not added to cue" [12 Q9]; the cue grid's drop of a sequence; slot / 0 asked / -1 */
+
 #endif /* LJ_WINDOWS_CUE_FORM_H */

@@ -15,6 +15,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_lists.h"
+#include "windows/lj_seq_form.h"
 #include "windows/lj_windows.h"
 
 #define LJ_BG_STAY_ON_TOP 2u            /* = LJ_WF_STAY_ON_TOP (platform/lj_platform.h, not includable here) */
@@ -246,6 +247,14 @@ static void clear_slot(lj_widget *w, void *ud)
     memset(&lj_bg_work.slot[i], 0, sizeof lj_bg_work.slot[i]);
     apply();
 }
+static void edit_seq(lj_widget *w, void *ud)   /* W4: P_EditSequence = the slot's sequence into the current sequence, as the List of Sequences' Edit Sequence [03 s4.4] */
+{
+    lj_widget *lv = lj_window_find(s.win, "LV1");
+    int i = lv ? lj_w_listview_index(lv) : -1;
+    (void)w; (void)ud;
+    if (i < 0 || i >= LJ_BG_SLOTS || !lj_bg_work.slot[i].seq) return;
+    if (lj_seq_form_load(lj_bg_work.slot[i].seq, 0) == 0) lj_win_open(LJ_WIN_SEQ_FORM);
+}
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_bgcue_form_close(); }
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_bgcue_form_refresh(); }
 
@@ -253,7 +262,7 @@ static const lj_binding lj_bg_bindings[] = {
     { "sbNewClick", sb_new, NULL }, { "sbDeleteClick", sb_delete, NULL }, { "sbMouseUp", lj_handler_noop, NULL }, { "cb1Change", cb_change, NULL },
     { "LV1DblClick", lj_handler_noop, NULL }, { "LV1DragDrop", lv_drop, NULL }, { "LV1DragOver", lj_handler_noop, NULL },
     { "BGCueTimerTimer", on_timer, NULL }, { "PopupMenu1Popup", lj_handler_noop, NULL },
-    { "P_SequenceModeClick", seq_mode, NULL }, { "P_EditSequenceClick", lj_handler_noop, NULL } /* greyed: docs/fidelity.md (W4) */, { "P_ClearSlotClick", clear_slot, NULL },
+    { "P_SequenceModeClick", seq_mode, NULL }, { "P_EditSequenceClick", edit_seq, NULL }, { "P_ClearSlotClick", clear_slot, NULL },
     { "PrefClicks", pref_click, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
@@ -279,7 +288,6 @@ lj_window *lj_bgcue_form_open(void)
     }
     if ((w = lj_window_find(s.win, "sbSave")) != NULL) { w->on_event = sb_save; w->ud = NULL; }
     if ((w = lj_window_find(s.win, "sbLoad")) != NULL) { w->on_event = sb_load; w->ud = NULL; }
-    lj_menu_set_enabled(lj_window_menus(s.win), "P_EditSequence", 0);   /* ME-112: Edit Sequence has no behaviour yet (fidelity row, W4) */
     fill_combo();
     sync_checks();
     lj_bgcue_form_refresh();

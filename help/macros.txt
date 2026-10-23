@@ -1,0 +1,17 @@
+Macros
+
+Movement macros move pan and tilt along a shape: circle, square,
+triangle, eight, line, and your own Bezier shapes drawn in the Movement
+Macro editor. Size, speed and offset are set per macro. Fan Out spreads
+a group of fixtures across a shape, and Auto Delay offsets each fixture
+in time so the movement travels along the row.
+
+Generic macros apply a shape over time to any channel, such as
+intensity, colour or zoom. The Generic Macro Editor lists the shapes,
+sets amplitude, speed and phase, and stores macros in the user library.
+A cue can start a generic macro, and the Cue Macro Control window
+adjusts the macros that a cue is running.
+
+Generic DMX Control writes values to any channel by typing commands.
+Follow spot settings store a position for a fixture so it can be called
+up from the toolbar.

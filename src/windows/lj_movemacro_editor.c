@@ -4,12 +4,14 @@
  * Fan Out and Auto Delay then post CURRENT_SEQ through lj_ctx_set_scene, the Movement Macro edits are read in place
  * by the engine (like the Movement control); the Cue Macro Control posts MACRO_CTL / MACRO_FADE. The pure maths is
  * model/lj_movemacro.h (Fan Out, Auto Delay, Bezier) and engine/lj_movemacro.h (the trace). Sizes of the code-built
- * window are PROPOSAL rig (movementmacro.gif / beziershapeeditor.gif are reduced captures, not in 07 s14). */
+ * window are PROPOSAL rig except the trace preview (beziershapeeditor.gif is a reduced capture; movementmacro.gif is 1:1, 447x243,
+ * ME-127: the preview is 128x128 at client (3,3) inside a 2-px lowered bevel, its red cross at offset 63). */
 #include "windows/lj_movemacro_editor.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "controls/lj_ctl.h"
 #include "controls/lj_ctl_movement.h"
 #include "core/lj_fsinfo.h"
 #include "core/lj_lock.h"
@@ -249,8 +251,8 @@ static void trace_paint(lj_widget *w, lj_surface *s)
     lj_scene *sc = lj_ctx_scene();
     int ax, ay, i, k;
     lj_widget_abs(w, &ax, &ay);
-    lj_fill(s, ax, ay, w->w, w->h, 0x0000FFu);
-    lj_hline(s, ax, ay + w->h / 2, w->w, 0xFF0000u); lj_vline(s, ax + w->w / 2, ay, w->h, 0xFF0000u);   /* red centre cross: movementmacro.gif (1:1) col 69 / row 107 */
+    lj_edge_sunken(s, ax - 2, ay - 2, w->w + 4, w->h + 4, 0x0000FFu);   /* ME-127: the 2-px lowered bevel round the 128x128 well */
+    lj_hline(s, ax, ay + (w->h - 1) / 2, w->w, 0xFF0000u); lj_vline(s, ax + (w->w - 1) / 2, ay, w->h, 0xFF0000u);   /* red centre cross at 63: movementmacro.gif (1:1) col 69 / row 107 = client (3,3) + 63 */
     for (k = 0; sc && k < mm.nfx && (k == 0 || mm.show_all); k++) {
         int f = mm.fx[k];
         lj_movemacro m = sc->macro[f];
@@ -505,7 +507,7 @@ static const lj_menu_desc mm_menus[] = { { "MainMenu1", 1, mm_menu_items, LJ_COU
 static const int mm_row_y[7] = { 2, 29, 55, 83, 109, 141, 167 };
 static const lj_ctl_desc d_mm_type_l = { LJ_K_LABEL, "MmTypeLabel", 190, 6, 60, 13, .caption = "Macro Type" };          /* exe 0x26AEB4 */
 static const lj_ctl_desc d_mm_type   = { LJ_K_COMBOBOX, "MmType", 252, 2, 188, 21, .style = "csDropDownList", .drop_down_count = 16 };
-static const lj_ctl_desc d_mm_trace  = { LJ_K_UNKNOWN, "MmTrace", 3, 2, MM_TRACE, 131, .tag = 0 };   /* .tag: gcc/clang -Wmissing-field-initializers */
+static const lj_ctl_desc d_mm_trace  = { LJ_K_UNKNOWN, "MmTrace", 3, 3, MM_TRACE, MM_TRACE, .tag = 0 };   /* ME-127: movementmacro.gif 1:1, blue x 6..133 / y 44..171 = client (3,3) 128x128 */   /* .tag: gcc/clang -Wmissing-field-initializers */
 static const lj_ctl_desc d_mm_tabm   = { LJ_K_SPEEDBUTTON, "MmTabMacro", 3, 135, 64, 24, .caption = "Macro", .group_index = 3, .down = LJ_YES, .hint = "Track Macro Only", .show_hint = LJ_YES };            /* exe 0x26AE40 / 0x26AE54 */
 static const lj_ctl_desc d_mm_tabf   = { LJ_K_SPEEDBUTTON, "MmTabFixture", 67, 135, 64, 24, .caption = "Fixture", .group_index = 3, .hint = "Track Fixture Pan/Tilt", .show_hint = LJ_YES };      /* exe 0x26AE70 / 0x26AE80 */
 static const lj_ctl_desc d_mm_clear  = { LJ_K_BUTTON, "MmClear", 3, 161, MM_TRACE, 36, .caption = "Clear Image" };       /* exe 0x26AEA0 */
@@ -636,7 +638,7 @@ void lj_delete_movemacro_refresh(void) { }
  * ------------------------------------------------------------------------------------------------------------- */
 static struct {
     lj_window *win; lj_widget *dpan, *dtilt;
-    int cust[LJ_FIXTURES], ncust, drag_row; uint32_t serial;
+    int cust[LJ_FIXTURES], ncust, drag_row, mv_seen; uint32_t serial;   /* mv_seen: the Movement control was open while Fan Out was (auto-close) */
     char rows[LJ_FIXTURES][48]; const char *items[LJ_FIXTURES];
     lj_widget_vt vt; void (*paint0)(lj_widget *w, lj_surface *s);
 } fo;
@@ -786,6 +788,7 @@ lj_window *lj_fan_out_open(void)
     if (fo.win) return fo.win;
     if ((fo.win = lj_window_create(&lj_form_TFANOUTFORM, lj_fo_bindings)) == NULL) { lj_log("movement: TFanOutForm failed to build"); return NULL; }
     fo.drag_row = -1;
+    fo.mv_seen = lj_ctl_window_get(LJ_CTL_MOVEMENT) != NULL;
     if ((p1 = lj_window_find(fo.win, "Panel1")) != NULL) {
         fo.dpan = lj_w_dragbar_create(p1, &d_fo_dpan); fo.dtilt = lj_w_dragbar_create(p1, &d_fo_dtilt);
         ((lj_w_dragbar *)fo.dpan)->max = ((lj_w_dragbar *)fo.dtilt)->max = 127;   /* 127 x 256 = 32512, the end fixtures near the edges (PROPOSAL rig 17 s5) */
@@ -796,9 +799,40 @@ lj_window *lj_fan_out_open(void)
     lj_win_show(fo.win, LJ_WIN_STAY_ON_TOP);
     return fo.win;
 }
-void lj_fan_out_close(void) { if (fo.win) { lj_win_hide(fo.win); lj_window_destroy(fo.win); fo.win = NULL; fo.dpan = fo.dtilt = NULL; } }
+void lj_fan_out_close(void) { if (fo.win) { lj_win_hide(fo.win); lj_window_destroy(fo.win); fo.win = NULL; fo.dpan = fo.dtilt = NULL; fo.mv_seen = 0; } }
 lj_window *lj_fan_out_get(void) { return fo.win; }
-void lj_fan_out_refresh(void) { if (fo.win && lj_sel_serial() != fo.serial) { fo_list(); lj_window_invalidate_all(fo.win); } }
+void lj_fan_out_refresh(void)
+{
+    lj_window *mv = lj_ctl_window_get(LJ_CTL_MOVEMENT);
+    if (fo.win && fo.mv_seen && !mv) { lj_fan_out_close(); return; }   /* "close automatically with the position control since 2.5" [04 s4, RN 2.5] (LORD_FIDELITY-11) */
+    if (fo.win && mv) fo.mv_seen = 1;
+    if (fo.win && lj_sel_serial() != fo.serial) { fo_list(); lj_window_invalidate_all(fo.win); }
+}
+
+/* W4 Position Options (TMovementOptionsForm, 17 s4.1): Mirror Pan / Mirror Tilt / Swap Pan/Tilt on the selected fixtures' programmed
+ * readout values; clamp at the asymmetric edge (-32768 has no mirror image: 17 s4.1 ASSUMED). Pan 360 needs the profile's pan range in
+ * degrees, which no profile carries: 0 = nothing done (the button is greyed, docs/fidelity.md). 0 / -1 when nothing to do */
+int lj_position_options_apply(int op)
+{
+    int fx[LJ_FIXTURES], n = sel_fixtures(fx), i, done = 0;
+    int32_t p, t, q;
+    lj_scene *sc;
+    if (op < 0 || op > 2 || !n) return -1;
+    lj_lock();
+    sc = lj_ctx_scene();
+    for (i = 0; sc && i < n; i++) {
+        if (pt_read(sc, fx[i], &p, &t) != 0) continue;
+        if (op == 0) p = p == -32768 ? 32767 : -p;
+        else if (op == 1) t = t == -32768 ? 32767 : -t;
+        else { q = p; p = t; t = q; }
+        pt_write(sc, fx[i], p, t);
+        done++;
+    }
+    if (done) scene_modified();
+    lj_unlock();
+    if (done) lj_ctx_set_scene(lj_ctx_get()->current_scene);   /* CURRENT_SEQ (seam 5) */
+    return done ? 0 : -1;
+}
 
 /* ---------------------------------------------------------------------------------------------------------------
  * Pan/Tilt Macro Auto Delay (TAutoDelayForm) [04 s4.6, 17 s6]

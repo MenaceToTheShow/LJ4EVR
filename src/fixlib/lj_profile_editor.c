@@ -157,6 +157,32 @@ static void lj_pe_defaults(uint8_t *raw)
     memset(raw, 0, LJ_GS2_REC_SIZE);
     raw[0] = LJ_GS2_VERSION & 0xFF; raw[1] = LJ_GS2_VERSION >> 8; raw[4] = 0x2E;   /* 16 s4.1 */
     raw[0x11AA + 16] = 1;   /* the Blackout record's enable byte "is 1 in every file" [16 s3.1] */
+    raw[5] = LJ_PROFILE_CH - 1;   /* 32 enabled levels */
+}
+
+/* byte 0x05 = the last enabled level offset [16 s4.1]; recomputed only after a Levels edit (LORD_FIXTURES-4) */
+static void lj_pe_last_level(uint8_t *raw)
+{
+    int k, last = 0;
+    for (k = 0; k < LJ_PROFILE_CH; k++) if (!raw[LJ_PE_LEVELS_OFF + LJ_PE_LVL * k + 7]) last = k;
+    raw[5] = (uint8_t)last;
+}
+
+/* ME-126 / LORD_FIXTURES-1: a format-0/1 record opens as a 2.6b9 one, its three identity slots holding the ME-33 values
+ * (name = legacy_name, "User Definable", empty mode), so a rename takes effect and an unedited validate passes; the
+ * disk file changes only when the user applies. Byte 5 and every other byte stay as read. */
+static void lj_pe_upgrade_legacy(uint8_t *raw)
+{
+    static const struct { uint16_t off; int w; } slot[3] = { { 0x3E37, 30 }, { LJ_PE_MANUFACTURER_OFF, 30 }, { 0x3E75, 30 } };
+    char name[31];
+    size_t n = raw[0x0009] > 30 ? 30 : raw[0x0009];
+    const char *v[3];
+    int i;
+    if ((raw[0] | raw[1] << 8) == LJ_GS2_VERSION) return;
+    memcpy(name, raw + 0x000A, n); name[n] = 0;
+    v[0] = name; v[1] = LJ_GS2_LEGACY_MANUFACTURER; v[2] = "";
+    for (i = 0; i < 3; i++) { size_t k = strlen(v[i]); if (k > (size_t)slot[i].w) k = (size_t)slot[i].w; raw[slot[i].off] = (uint8_t)k; memcpy(raw + slot[i].off + 1, v[i], k); }
+    raw[0] = LJ_GS2_VERSION & 0xFF; raw[1] = LJ_GS2_VERSION >> 8;
 }
 
 int lj_pe_begin(lj_profile_edit *ed, const lj_profile *src)
@@ -166,6 +192,7 @@ int lj_pe_begin(lj_profile_edit *ed, const lj_profile *src)
     if (!src) lj_pe_defaults(ed->raw);
     else if (src->gs2_raw) memcpy(ed->raw, src->gs2_raw, LJ_GS2_REC_SIZE);
     else if (lj_gs2_write(src, ed->raw) != 0) return -1;      /* a built-in: serialised from a zeroed record (lj_gs2.h) */
+    if (src && src->gs2_raw) lj_pe_upgrade_legacy(ed->raw);
     if (src) lj_str_copy(ed->p.gs2_file, sizeof ed->p.gs2_file, src->gs2_file);
     lj_pe_refresh(ed);   /* -1 only while lj_gs2_parse is unavailable; the raw record is the working copy either way */
     ed->dirty = 0;
@@ -175,10 +202,8 @@ int lj_pe_begin(lj_profile_edit *ed, const lj_profile *src)
 int lj_pe_refresh(lj_profile_edit *ed)
 {
     char file[sizeof ed->p.gs2_file], err[128];
-    int k, last = 0;
     if (!ed) return -1;
-    for (k = 0; k < LJ_PROFILE_CH; k++) if (!ed->raw[LJ_PE_LEVELS_OFF + LJ_PE_LVL * k + 7]) last = k;
-    ed->raw[5] = (uint8_t)last;                               /* last enabled level offset [16 s4.1] */
+    if (ed->tab == LJ_PE_LEVELS) { lj_pe_last_level(ed->raw); ed->tab = LJ_PE_FIXTURE_INFO; }   /* byte 5 only after a Levels edit (LORD_FIXTURES-4) */
     lj_str_copy(file, sizeof file, ed->p.gs2_file);
     /* ponytail: no lj_layout_derive here (its tables are never freed, W1); the app derives on GS2_RELOAD after a save */
     if (lj_gs2_parse(ed->raw, &ed->p, err, sizeof err) != 0) { lj_str_copy(ed->p.gs2_file, sizeof ed->p.gs2_file, file); return -1; }
@@ -202,6 +227,7 @@ int lj_pe_set_u8(lj_profile_edit *ed, int field, int index, int v)
 {
     if (v < 0 || v > 255 || lj_pe_get_u8(ed, field, index) < 0) return -1;
     ed->raw[lj_pe_fields[field].off + index] = (uint8_t)v;
+    if (lj_pe_fields[field].kind == LJ_PEF_LEVELS) ed->tab = LJ_PE_LEVELS;   /* a Levels edit: the next refresh moves byte 5 (LORD_FIXTURES-4) */
     ed->dirty = 1;
     return 0;
 }

@@ -1,0 +1,14 @@
+Background cues and statics
+
+A background cue runs under the current cue. It is useful for a base
+look that stays while cues change on top. Open it from the C-L toolbar
+or View > Controls > Background Cue. The toolbar light shows when a
+background cue is active.
+
+Statics hold fixed values that override what the cues send. The Statics
+window is paged: each page has slots, and each slot stores the values of
+some fixtures. Turn a slot on to apply it. A slot can add to, replace or
+solo against the other slots, and slots can be grouped so that only one
+of a group is on at a time.
+
+The statics light on the toolbar is green while any static is active.

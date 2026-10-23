@@ -1,0 +1,31 @@
+The main window
+
+Along the top are the menus System, Setup, View, Fingers, LJ-Manager,
+Download and Help. Each drop-down menu ends with a Help item that opens
+this viewer.
+
+Below the menus are the toolbars. The sequence and cue toolbar shows the
+current sequence and cue numbers and turns a number yellow once that
+record has been saved. The cue list toolbar starts with C-L and the cue
+list name, followed by buttons for the cue list, background cue, statics
+and the input windows. The fixture toolbar opens the control windows of
+the selected fixture and holds Reset, Blackout, Freeze, Offline and the
+other global buttons. A button stays grey when the selected fixture has
+no such control.
+
+The status bar at the bottom shows the clock, the running indicator, a
+memory bar, the Grand Master level, the three modified flags (Seq.
+Modified, Cue Modified, CueList Modified) and the trigger light.
+
+The large area in the middle is the fixture desktop. Each fixture you
+have placed there is an icon with its number and name. Click an icon to
+select it; hold Ctrl to add to the selection, or drag a rectangle around
+several icons. The first fixture selected is the master, and the control
+windows follow it. Desktop tabs let you keep several pages of icons.
+
+Right-click the empty desktop for the desktop menu (grid, image, icon
+style, auto-arrange, tabs). Right-click an icon for the fixture menu
+(fixture info, notes, profile settings).
+
+View > Toolbars and View > Controls show and hide the toolbars and the
+control windows. Every window remembers where you left it.

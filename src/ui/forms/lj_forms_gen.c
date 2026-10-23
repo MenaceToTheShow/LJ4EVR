@@ -215,7 +215,7 @@
 
 /* ---- TABOUTFORM2.dfm.txt ---- */
 static const lj_ctl_desc taboutform2_panel1[] = {
-    { LJ_K_IMAGE, "Image1", 55, 3, 250, 113, .autosize = LJ_YES, .picture = "missing", .stretch = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1 },
+    { LJ_K_IMAGE, "Image1", 55, 3, 250, 113, .autosize = LJ_YES, .picture = "about-logo", .stretch = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1 },
 };
 static const lj_ctl_desc taboutform2_panel2[] = {
     { LJ_K_LABEL, "Label1", 64, 1, 16, 15, .caption = "(C)", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_OTHER, .font_name = "Arial", .font_height = -12, .font_style = LJ_FS_BOLD },
@@ -606,7 +606,7 @@ static const lj_column_desc tautoaddressform2_panel3_lv1_cols[] = {
     { .autosize = LJ_YES, .caption = "Address", .image_index = -1 },
 };
 static const lj_ctl_desc tautoaddressform2_panel3_panel1[] = {
-    { LJ_K_BITBTN, "bOk", 63, 3, 75, 25, .caption = "OK", .default_btn = LJ_YES, .enabled = LJ_NO, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 63, 3, 75, 25, .caption = "OK", .default_btn = LJ_YES, .enabled = LJ_NO, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
     { LJ_K_BITBTN, "BitBtn2", 141, 3, 72, 25, .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const lj_ctl_desc tautoaddressform2_panel3[] = {
@@ -696,7 +696,7 @@ static const lj_ctl_desc tautodelayform_panel1[] = {
     { LJ_K_BEVEL, "Bevel2", 4, 5, 152, 25, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_LABEL, "Label3", 35, 11, 81, 13, .caption = "Fixtures Selected", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_LABEL, "LFixMax", 11, 11, 21, 13, .caption = "100 ", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bOk", 161, 5, 226, 25, .caption = "&Apply", .default_btn = LJ_YES, .modal_result = 1, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 161, 5, 226, 25, .caption = "&Apply", .default_btn = LJ_YES, .modal_result = 1, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
 };
 static const lj_ctl_desc tautodelayform_ctls[] = {
     { LJ_K_RADIOGROUP, "RGOrder", 0, 73, 391, 94, .align = LJ_AL_CLIENT, .caption = "Delay Order", .columns_count = 2, .item_index = 0, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tautodelayform_rgorder_items, .nitems = LJ_COUNT_OF(tautodelayform_rgorder_items) },
@@ -1468,7 +1468,7 @@ static const lj_ctl_desc tcleditpanels_pplayda[] = {
     { LJ_K_LABEL, "Label50", 4, 15, 25, 13, .caption = "Play", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
     { LJ_K_EDIT, "eComDA", 300, 19, 200, 21, .max_length = 40, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "CommentChanged" } } },
     { LJ_K_EDIT, "eDAName", 57, 19, 200, 21, .tabstop = LJ_NO, .color = LJ_CLR(0xC0C0C0), .max_length = 30, .readonly = LJ_YES, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bBrowseDAPlay", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bBrowseDAClick" } } },
+    { LJ_K_BITBTN, "bBrowseDAPlay", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bBrowseDAClick" } } },
 };
 static const lj_ctl_desc tcleditpanels_pwaitdatime[] = {
     { LJ_K_LABEL, "Label36", 4, 15, 27, 13, .caption = "Wait", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
@@ -1495,7 +1495,7 @@ static const lj_ctl_desc tcleditpanels_pcueda[] = {
     { LJ_K_LABEL, "Label51", 4, 15, 23, 13, .caption = "Cue", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
     { LJ_K_EDIT, "eComDACue", 300, 19, 200, 21, .max_length = 40, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "CommentChanged" } } },
     { LJ_K_EDIT, "eCueDAName", 57, 19, 200, 21, .tabstop = LJ_NO, .color = LJ_CLR(0xC0C0C0), .max_length = 30, .readonly = LJ_YES, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bBrowseDACue", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bBrowseDAClick" } } },
+    { LJ_K_BITBTN, "bBrowseDACue", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bBrowseDAClick" } } },
 };
 static const lj_ctl_desc tcleditpanels_pseekdatime[] = {
     { LJ_K_LABEL, "Label52", 4, 23, 51, 13, .caption = "Seek DA", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
@@ -1520,7 +1520,7 @@ static const lj_ctl_desc tcleditpanels_pexecute[] = {
     { LJ_K_LABEL, "Label64", 4, 23, 47, 13, .caption = "Execute", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
     { LJ_K_EDIT, "eCOMExecute", 300, 19, 200, 21, .max_length = 40, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "CommentChanged" } } },
     { LJ_K_EDIT, "eExecuteProgram", 57, 19, 200, 21, .tabstop = LJ_NO, .color = LJ_CLR(0xC0C0C0), .max_length = 30, .readonly = LJ_YES, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bOpenExe", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOpenExeClick" } } },
+    { LJ_K_BITBTN, "bOpenExe", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOpenExeClick" } } },
 };
 static const lj_ctl_desc tcleditpanels_pcuemp[] = {
     { LJ_K_LABEL, "Label61", 4, 28, 43, 13, .caption = "MP File", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
@@ -1529,7 +1529,7 @@ static const lj_ctl_desc tcleditpanels_pcuemp[] = {
     { LJ_K_LABEL, "Label67", 4, 15, 29, 13, .caption = "Load", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
     { LJ_K_EDIT, "eComMPCue", 300, 19, 200, 21, .max_length = 40, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "CommentChanged" } } },
     { LJ_K_EDIT, "eCueMPName", 57, 19, 200, 21, .tabstop = LJ_NO, .color = LJ_CLR(0xC0C0C0), .max_length = 30, .readonly = LJ_YES, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bBrowseMPCue", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bBrowseMPCueClick" } } },
+    { LJ_K_BITBTN, "bBrowseMPCue", 258, 17, 41, 25, .hint = "Select File", .caption = "..", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 2, .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bBrowseMPCueClick" } } },
 };
 static const lj_ctl_desc tcleditpanels_pwaitmptime[] = {
     { LJ_K_LABEL, "Label68", 4, 15, 27, 13, .caption = "Wait", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
@@ -1817,7 +1817,7 @@ static const lj_column_desc tcolorscroldefform_lvpalette_cols[] = {
 };
 static const lj_ctl_desc tcolorscroldefform_panel1[] = {
     { LJ_K_BITBTN, "bCancel", 129, 4, 70, 25, .caption = "&Cancel", .tab_order = 0, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
-    { LJ_K_BITBTN, "bOk", 207, 4, 70, 25, .caption = "&Ok", .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 207, 4, 70, 25, .caption = "&Ok", .tab_order = 1, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
 };
 static const lj_ctl_desc tcolorscroldefform_ctls[] = {
     { LJ_K_BEVEL, "Bevel3", 3, 80, 155, 34, .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -1943,7 +1943,7 @@ const lj_form_desc lj_form_TCONFIGPRINTPREVIEWFORM = {
 
 /* ---- TCONFIGWARNFORM.dfm.txt ---- */
 static const lj_ctl_desc tconfigwarnform_panel1[] = {
-    { LJ_K_BITBTN, "bSave", 8, 4, 140, 25, .caption = "&Save  Anyway", .modal_result = 1, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bSave", 8, 4, 140, 25, .caption = "&Save  Anyway", .modal_result = 1, .tab_order = 0, .glyph = "save-19x17", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
     { LJ_K_BITBTN, "bCancel", 149, 4, 125, 25, .caption = "&Cancel", .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const lj_ctl_desc tconfigwarnform_ctls[] = {
@@ -2293,12 +2293,12 @@ static const lj_ctl_desc tcuelist2form_panel1[] = {
     { LJ_K_SPEEDBUTTON, "sbDATime", 81, 4, 39, 22, .tag = 2, .hint = "Show Digital Audio Timecode", .allow_all_up = LJ_YES, .group_index = 1, .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbDATimeMouseDown" }, { "OnMouseUp", "sbTimeCodeMouseUp" } } },
     { LJ_K_SPEEDBUTTON, "sbPCElapsed", 159, 4, 39, 22, .tag = 16, .hint = "Show PC Timecode (Elapsed)", .allow_all_up = LJ_YES, .group_index = 1, .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbTimeCodeMouseUp" } } },
     { LJ_K_SPEEDBUTTON, "sbPCClock", 199, 4, 39, 22, .tag = 8, .hint = "Show PC Timecode (Realtime)", .allow_all_up = LJ_YES, .group_index = 1, .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbTimeCodeMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbLockLine", 239, 4, 74, 22, .hint = "Keep active line visible", .allow_all_up = LJ_YES, .group_index = 3, .caption = "Lock", .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbLockLineMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbBrowse", 239, 27, 74, 24, .allow_all_up = LJ_YES, .group_index = 2, .caption = "Browse", .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_SPEEDBUTTON, "sbLockLine", 239, 4, 74, 22, .hint = "Keep active line visible", .allow_all_up = LJ_YES, .group_index = 3, .caption = "Lock", .glyph = "lockline", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbLockLineMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbBrowse", 239, 27, 74, 24, .allow_all_up = LJ_YES, .group_index = 2, .caption = "Browse", .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
     { LJ_K_SPEEDBUTTON, "sbGo", 324, 4, 47, 47, .hint = "Line Down (Manual)", .caption = "Go !", .enabled = LJ_NO, .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseDown", "sbGoMouseDown" } } },
     { LJ_K_SPEEDBUTTON, "sbBack", 372, 4, 47, 47, .hint = "Line Up (Manual)", .caption = "Back", .enabled = LJ_NO, .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "sbBackClick" } } },
-    { LJ_K_SPEEDBUTTON, "sbTop", 421, 4, 64, 23, .hint = "Start Cuelist (from top)", .allow_all_up = LJ_YES, .caption = "Top", .enabled = LJ_NO, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTopMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbRun", 421, 28, 64, 23, .hint = "Start Cuelist (from selected line)", .allow_all_up = LJ_YES, .caption = "Run", .enabled = LJ_NO, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbRunMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbTop", 421, 4, 64, 23, .hint = "Start Cuelist (from top)", .allow_all_up = LJ_YES, .caption = "Top", .enabled = LJ_NO, .glyph = "cltop", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTopMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbRun", 421, 28, 64, 23, .hint = "Start Cuelist (from selected line)", .allow_all_up = LJ_YES, .caption = "Run", .enabled = LJ_NO, .glyph = "clrun", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbRunMouseDown" } } },
     { LJ_K_SPEEDBUTTON, "sbMark1", 487, 4, 23, 23, .hint = "Goto Mark 1", .allow_all_up = LJ_YES, .caption = "1", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbMarkMouseUp" } } },
     { LJ_K_SPEEDBUTTON, "sbMark3", 487, 28, 23, 23, .tag = 2, .hint = "Goto Mark 3", .allow_all_up = LJ_YES, .caption = "3", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbMarkMouseUp" } } },
     { LJ_K_SPEEDBUTTON, "sbMark4", 511, 28, 23, 23, .tag = 3, .hint = "Goto Mark 4", .allow_all_up = LJ_YES, .caption = "4", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbMarkMouseUp" } } },
@@ -2644,15 +2644,15 @@ static const lj_ctl_desc tcuemacrocontrolform_panel3_panel4_pc1_tsparameters_psp
     { LJ_K_PAINTBOX, "pbSpeed", 0, 1, 147, 18, .hint = "Macro cycle time", .color = LJ_CLR(0xC0C0C0), .parent_color = LJ_NO, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnMouseDown", "pbBarMouseDown" }, { "OnMouseMove", "pbBarMouseMove" }, { "OnMouseUp", "pbBarMouseUp" }, { "OnPaint", "PBPaint" } } },
 };
 static const lj_ctl_desc tcuemacrocontrolform_panel3_panel4_pc1_tsparameters[] = {
-    { LJ_K_SPEEDBUTTON, "sbPosAmpDec", 0, 25, 21, 21, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbPosAmpInc", 173, 25, 21, 21, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbNegAmpDec", 0, 47, 21, 21, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbNegAmpInc", 173, 47, 21, 21, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbSpeedDec", 0, 87, 21, 21, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbSpeedInc", 173, 87, 21, 21, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbPosAmpDec", 0, 25, 21, 21, .glyph = "minus", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbPosAmpInc", 173, 25, 21, 21, .glyph = "plus", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbNegAmpDec", 0, 47, 21, 21, .glyph = "minus", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbNegAmpInc", 173, 47, 21, 21, .glyph = "plus", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbSpeedDec", 0, 87, 21, 21, .glyph = "minus", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbSpeedInc", 173, 87, 21, 21, .glyph = "plus", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbPosAmpDecMouseUp" } } },
     { LJ_K_LABEL, "Label1", 14, 111, 42, 13, .caption = "Direction", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "sbDirectionRev", 0, 127, 21, 21, .hint = "Reverse Direction", .group_index = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbDirectionMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbDirectionFwd", 20, 127, 21, 21, .hint = "Forward Direction", .group_index = 2, .down = LJ_YES, .glyph = "missing", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbDirectionMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbDirectionRev", 0, 127, 21, 21, .hint = "Reverse Direction", .group_index = 2, .glyph = "prev-arrow", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbDirectionMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbDirectionFwd", 20, 127, 21, 21, .hint = "Forward Direction", .group_index = 2, .down = LJ_YES, .glyph = "next-arrow", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbDirectionMouseUp" } } },
     { LJ_K_LABEL, "Label3", 1, 180, 119, 13, .caption = "Macro Parameter Update", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_SPEEDBUTTON, "sbUpdate", 147, 176, 75, 21, .allow_all_up = LJ_YES, .group_index = 3, .down = LJ_YES, .caption = "Enabled", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbUpdateMouseUp" } } },
     { LJ_K_SPEEDBUTTON, "sbSetAmpPos", 195, 25, 28, 21, .caption = "Set", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "SetClick" } } },
@@ -2661,7 +2661,7 @@ static const lj_ctl_desc tcuemacrocontrolform_panel3_panel4_pc1_tsparameters[] =
     { LJ_K_LABEL, "Label14", 1, 5, 87, 13, .caption = "Macro Base Value", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_SPEEDBUTTON, "sbSetFixed", 194, 1, 28, 21, .caption = "Set", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "SetClick" } } },
     { LJ_K_SPEEDBUTTON, "sbBaseOff", 145, 1, 47, 21, .allow_all_up = LJ_YES, .group_index = 4, .caption = "Off", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbBaseOffMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbDirectionBounce", 41, 127, 30, 21, .hint = "Bounce", .group_index = 2, .glyph = "missing", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbDirectionMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbDirectionBounce", 41, 127, 30, 21, .hint = "Bounce", .group_index = 2, .glyph = "bounce", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbDirectionMouseUp" } } },
     { LJ_K_SPEEDBUTTON, "sbRestart", 147, 153, 75, 22, .allow_all_up = LJ_YES, .group_index = 8, .caption = "Enabled", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseUp", "sbRestartMouseUp" } } },
     { LJ_K_LABEL, "Label2", 1, 158, 126, 13, .caption = "Restart macro on Cue load", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_PANEL, "pAmpPos", 23, 25, 148, 21, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tcuemacrocontrolform_panel3_panel4_pc1_tsparameters_pamppos, .nchildren = LJ_COUNT_OF(tcuemacrocontrolform_panel3_panel4_pc1_tsparameters_pamppos) },
@@ -2685,7 +2685,7 @@ static const lj_ctl_desc tcuemacrocontrolform_panel3_panel4_pc1_tsdelay[] = {
     { LJ_K_LABEL, "Label6", 115, 37, 23, 13, .caption = "From", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_SPEEDBUTTON, "sbClearDelay", 177, 4, 44, 21, .hint = "Clear Delay", .caption = "= 0", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbClearDelayClick" } } },
     { LJ_K_RADIOGROUP, "rgDelayStyle", 1, 120, 222, 45, .hint = "Select Delay Style", .caption = "Auto Delay Style ", .columns_count = 2, .item_index = 0, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tcuemacrocontrolform_panel3_panel4_pc1_tsdelay_rgdelaystyle_items, .nitems = LJ_COUNT_OF(tcuemacrocontrolform_panel3_panel4_pc1_tsdelay_rgdelaystyle_items), .events = { { "OnClick", "rgDelayStyleClick" } } },
-    { LJ_K_BITBTN, "bApplyDelay", 0, 172, 222, 25, .caption = "&Apply Auto Delay", .default_btn = LJ_YES, .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bApplyDelayClick" } } },
+    { LJ_K_BITBTN, "bApplyDelay", 0, 172, 222, 25, .caption = "&Apply Auto Delay", .default_btn = LJ_YES, .tab_order = 1, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bApplyDelayClick" } } },
     { LJ_K_UPDOWN, "udDelayStart", 135, 51, 24, 21, .associate = "eDelayStart", .min = 0, .max = 4095, .position = 0, .tab_order = 2, .thousands = LJ_NO, .wrap = LJ_NO, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_UPDOWN, "udDelayEnd", 197, 51, 24, 21, .associate = "eDelayEnd", .min = 0, .max = 4095, .position = 0, .tab_order = 3, .thousands = LJ_NO, .wrap = LJ_NO, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_CHECKBOX, "cbUseFullDelay", 1, 76, 143, 18, .caption = "Use full delay cycle values", .checked = LJ_YES, .state = "cbChecked", .tab_order = 4, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "cbDelayClick" } } },
@@ -2706,7 +2706,7 @@ static const char *const tcuemacrocontrolform_panel3_panel4_pc1_tsdelayorder_rgd
 static const lj_ctl_desc tcuemacrocontrolform_panel3_panel4_pc1_tsdelayorder[] = {
     { LJ_K_LABEL, "Label11", 7, 129, 103, 13, .caption = "Circular Groups Count", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_LABEL, "Label12", 7, 151, 110, 13, .caption = "Segment Groups Count", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "btnApply2", 1, 172, 220, 25, .caption = "&Apply Auto Delay", .default_btn = LJ_YES, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bApplyDelayClick" } } },
+    { LJ_K_BITBTN, "btnApply2", 1, 172, 220, 25, .caption = "&Apply Auto Delay", .default_btn = LJ_YES, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bApplyDelayClick" } } },
     { LJ_K_RADIOGROUP, "rgDelayOrder", 1, 3, 220, 103, .hint = "Select Fixture Delay Order", .caption = " Delay Order ", .item_index = 0, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1, .items = tcuemacrocontrolform_panel3_panel4_pc1_tsdelayorder_rgdelayorder_items, .nitems = LJ_COUNT_OF(tcuemacrocontrolform_panel3_panel4_pc1_tsdelayorder_rgdelayorder_items) },
     { LJ_K_CHECKBOX, "cbInvertChannelOrder", 8, 108, 193, 17, .hint = "Invert Selected Channel Order", .caption = "Invert Channel Order", .tab_order = 2, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_NUMEDIT, "eCircularCount", 161, 125, 34, 21, .hint = "Channels pr Cycle", .enabled = LJ_NO, .max_length = 3, .parent_show_hint = LJ_NO, .popup_menu = "DelayPop", .show_hint = LJ_YES, .tab_order = 3, .text = "2", .min = 2, .max = 100, .value = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "eCountChange" } } },
@@ -2752,9 +2752,9 @@ static const lj_ctl_desc tcuemacrocontrolform_pchannels_panel6[] = {
     { LJ_K_SPEEDBUTTON, "sbClearCh", 186, 3, 91, 20, .hint = "Clear Selected Channels", .caption = "Clear Offset(s)", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "sbNewMacroClick" } } },
     { LJ_K_SPEEDBUTTON, "sbClearFixture", 277, 3, 91, 20, .hint = "Clear Selected Fixtures", .caption = "Clear fixture(s)", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "sbNewMacroClick" } } },
     { LJ_K_SPEEDBUTTON, "sbDisableMacros", 461, 3, 91, 20, .hint = "Disable Macro Engine", .allow_all_up = LJ_YES, .group_index = 99, .caption = "Disable Macros", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_name = "MS Sans Serif", .font_height = -11, .font_style = 0, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "sbDisableMacrosClick" } } },
-    { LJ_K_SPEEDBUTTON, "sbSaveMacro", 2, 26, 183, 25, .allow_all_up = LJ_YES, .group_index = 6, .caption = "Save Macro", .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbSaveMacroMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbLoad", 187, 26, 184, 25, .allow_all_up = LJ_YES, .group_index = 7, .caption = "Load Macro", .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbLoadMouseUp" } } },
-    { LJ_K_SPEEDBUTTON, "sbNewMacro", 373, 26, 179, 25, .caption = "New Macro", .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbNewMacroClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbSaveMacro", 2, 26, 183, 25, .allow_all_up = LJ_YES, .group_index = 6, .caption = "Save Macro", .glyph = "save-19x17", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbSaveMacroMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbLoad", 187, 26, 184, 25, .allow_all_up = LJ_YES, .group_index = 7, .caption = "Load Macro", .glyph = "load-19x17", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseUp", "sbLoadMouseUp" } } },
+    { LJ_K_SPEEDBUTTON, "sbNewMacro", 373, 26, 179, 25, .caption = "New Macro", .glyph = "new", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbNewMacroClick" } } },
     { LJ_K_BITBTN, "bRestart", 369, 3, 91, 20, .hint = "Restart Macro Cycle", .caption = "Restart Macro", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bRestartClick" } } },
 };
 static const lj_column_desc tcuemacrocontrolform_pchannels_lvchannels_cols[] = {
@@ -2942,7 +2942,7 @@ static const lj_ctl_desc tcuestackform_pcuestack_odpanel21[] = {
     { LJ_K_LISTVIEW, "lvCues", 1, 1, 211, 241, .align = LJ_AL_CLIENT, .columns = tcuestackform_pcuestack_odpanel21_lvcues_cols, .ncolumns = LJ_COUNT_OF(tcuestackform_pcuestack_odpanel21_lvcues_cols), .column_click = LJ_NO, .drag_mode = "dmAutomatic", .grid_lines = LJ_YES, .multiselect = LJ_YES, .row_select = LJ_YES, .popup_menu = "CueStackPop", .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "lvCuesChange" }, { "OnEndDrag", "lvCuesEndDrag" }, { "OnDragDrop", "lvCuesDragDrop" }, { "OnDragOver", "lvCuesDragOver" }, { "OnStartDrag", "lvCuesStartDrag" } } },
 };
 static const lj_ctl_desc tcuestackform_pcuestack_panel1[] = {
-    { LJ_K_SPEEDBUTTON, "sbClearStack", 3, 3, 94, 25, .caption = "Clear Stack", .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbClearStackClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbClearStack", 3, 3, 94, 25, .caption = "Clear Stack", .glyph = "clearall", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbClearStackClick" } } },
     { LJ_K_SPEEDBUTTON, "sbClearCue", 3, 31, 94, 25, .allow_all_up = LJ_YES, .group_index = 1, .caption = "Clear Cue on Go", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_BITBTN, "bGo", 101, 3, 108, 53, .caption = "GO", .default_btn = LJ_YES, .enabled = LJ_NO, .modal_result = 1, .tab_order = 0, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bGoClick" } } },
 };
@@ -2959,7 +2959,7 @@ static const lj_ctl_desc tcuestackform_pcuepreset_odpanel22[] = {
     { LJ_K_STRINGGRID, "SG1", 1, 1, 246, 225, .align = LJ_AL_CLIENT, .col_count = 4, .default_col_width = 32, .default_row_height = 16, .default_drawing = LJ_NO, .row_count = 13, .font_color = LJ_CLR(0x000000), .options = "[goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect]", .parent_font = LJ_NO, .popup_menu = "PresetPop", .scroll_bars = "ssHorizontal", .tab_order = 0, .row_heights = tcuestackform_pcuepreset_odpanel22_sg1_rowh, .nrow_heights = 13, .font = LJ_FONT_ARIAL14, .font_name = "Arial", .font_height = -11, .font_style = 0, .fixed_rows = 1, .fixed_cols = 1, .events = { { "OnDragDrop", "SG1DragDrop" }, { "OnDragOver", "SG1DragOver" }, { "OnDrawCell", "SG1DrawCell" }, { "OnEndDrag", "SG1EndDrag" }, { "OnMouseDown", "SG1MouseDown" } } },
 };
 static const lj_ctl_desc tcuestackform_pcuepreset_panel5[] = {
-    { LJ_K_SPEEDBUTTON, "sbClearSeq", 3, 32, 94, 25, .caption = "Clear Seq", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbClearSeqMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbClearSeq", 3, 32, 94, 25, .caption = "Clear Seq", .glyph = "clearseq", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbClearSeqMouseDown" } } },
     { LJ_K_SPEEDBUTTON, "sbAuto", 99, 4, 30, 25, .hint = "Set Auto Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
     { LJ_K_SPEEDBUTTON, "sbManual", 131, 4, 30, 25, .hint = "Set Manual Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
     { LJ_K_SPEEDBUTTON, "sbMusic", 163, 4, 30, 25, .hint = "Set Audio Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
@@ -4505,7 +4505,7 @@ static const lj_ctl_desc tdmxinform_panel1[] = {
     { LJ_K_BITBTN, "bClear", 3, 4, 130, 25, .caption = "Clear Assigned", .tab_order = 0, .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bClearClick" } } },
     { LJ_K_BUTTON, "bAssign", 138, 4, 130, 25, .caption = "Assign Function", .tab_order = 1, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnClick", "bAssignClick" } } },
     { LJ_K_BITBTN, "bSave", 274, 4, 130, 25, .caption = "Save", .tab_order = 2, .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bSaveClick" } } },
-    { LJ_K_BITBTN, "bcancel", 409, 4, 130, 25, .caption = "&Close", .tab_order = 3, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bcancelClick" } } },
+    { LJ_K_BITBTN, "bcancel", 409, 4, 130, 25, .caption = "&Close", .tab_order = 3, .glyph = "close", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bcancelClick" } } },
 };
 static const lj_ctl_desc tdmxinform_panel2[] = {
     { LJ_K_LABEL, "lChIn", 8, 4, 99, 13, .caption = "DMX Channels In", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
@@ -4599,8 +4599,8 @@ static const lj_ctl_desc tdmxinvaluetranslationform_panel2_panel5_pbuttons[] = {
 };
 static const lj_ctl_desc tdmxinvaluetranslationform_panel2_panel5[] = {
     { LJ_K_LABEL, "lActive", 4, 9, 32, 13, .caption = "lActive", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "sbUp", 158, 4, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .enabled = LJ_NO, .flat = LJ_YES, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbUpClick" } } },
-    { LJ_K_SPEEDBUTTON, "sbDown", 182, 4, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .enabled = LJ_NO, .flat = LJ_YES, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbUpClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbUp", 158, 4, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .enabled = LJ_NO, .flat = LJ_YES, .glyph = "up", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbUpClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbDown", 182, 4, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .enabled = LJ_NO, .flat = LJ_YES, .glyph = "down", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbUpClick" } } },
     { LJ_K_PANEL, "pButtons", 5, 30, 154, 28, .bevel_outer = LJ_BV_NONE, .color = LJ_CLR(0xFF0000), .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tdmxinvaluetranslationform_panel2_panel5_pbuttons, .nchildren = LJ_COUNT_OF(tdmxinvaluetranslationform_panel2_panel5_pbuttons) },
 };
 static const lj_ctl_desc tdmxinvaluetranslationform_panel2[] = {
@@ -4628,7 +4628,7 @@ static const lj_ctl_desc tdmxinvaluetranslationform_ctls[] = {
     { LJ_K_OPENDIALOG, "OpenDialog1", 282, 136, 0, 0, .options = "[ofHideReadOnly, ofNoChangeDir, ofAllowMultiSelect, ofEnableSizing]", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
     { LJ_K_POPUPMENU, "Pop_Repository", 282, 72, 0, 0, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnPopup", "Pop_Click" } } },
     { LJ_K_POPUPMENU, "Pop_Channels", 48, 152, 0, 0, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnPopup", "Pop_Click" } } },
-    { LJ_K_IMAGELIST, "ilLogos", 225, 82, 0, 0, .picture = "missing", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
+    { LJ_K_IMAGELIST, "ilLogos", 225, 82, 0, 0, .picture = "imagelist-logos", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
     { LJ_K_TIMER, "Timer1", 247, 259, 0, 0, .enabled = LJ_NO, .interval = 100, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnTimer", "Timer1Timer" } } },
 };
 static const lj_menu_item_desc tdmxinvaluetranslationform_mainmenu1_m_options[] = {
@@ -4673,7 +4673,7 @@ const lj_form_desc lj_form_TDMXINVALUETRANSLATIONFORM = {
     .min_width = 450,
     .font_color = LJ_CLR(0x000000),
     .style = LJ_FS_STAYONTOP,
-    .icon = "missing",
+    .icon = "ico-translation",
     .menu = "MainMenu1",
     .text_height = 13,
     .icons = LJ_BI_GIVEN | LJ_BI_SYSMENU,
@@ -4696,7 +4696,7 @@ static const lj_ctl_desc tdmxoutform_panel2_pvalue[] = {
     { LJ_K_PAINTBOX, "pbValue", 1, 1, 47, 149, .align = LJ_AL_CLIENT, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnMouseDown", "pbValueMouseDown" }, { "OnMouseMove", "pbValueMouseMove" }, { "OnMouseUp", "pbValueMouseUp" }, { "OnPaint", "pbValuePaint" } } },
 };
 static const lj_ctl_desc tdmxoutform_panel2[] = {
-    { LJ_K_SPEEDBUTTON, "sbClear", 2, 177, 50, 22, .hint = "Clear overwrite values", .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .caption = "Clr", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbClearClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbClear", 2, 177, 50, 22, .hint = "Clear overwrite values", .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .caption = "Clr", .glyph = "clr", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbClearClick" } } },
     { LJ_K_SPINEDIT, "sevalue", 3, 153, 49, 22, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .max_length = 3, .max_value = 255, .min_value = 0, .tab_order = 0, .value = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "sevalueChange" } } },
     { LJ_K_PANEL, "pValue", 2, 1, 49, 151, .anchors = LJ_AK_LEFT | LJ_AK_TOP | LJ_AK_BOTTOM, .bevel_outer = LJ_BV_LOWERED, .parent_color = LJ_YES, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tdmxoutform_panel2_pvalue, .nchildren = LJ_COUNT_OF(tdmxoutform_panel2_pvalue), .events = { { "OnMouseMove", "pbValueMouseMove" }, { "OnMouseUp", "pbValueMouseUp" } } },
 };
@@ -4897,7 +4897,7 @@ const lj_form_desc lj_form_TEXPORTALLFORM = {
 
 /* ---- TEXPORTCONFIGFORM.dfm.txt ---- */
 static const lj_ctl_desc texportconfigform_panel1_panel2[] = {
-    { LJ_K_BITBTN, "BitBtn1", 0, 0, 141, 25, .caption = "Save to text file", .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "BitBtn1Click" } } },
+    { LJ_K_BITBTN, "BitBtn1", 0, 0, 141, 25, .caption = "Save to text file", .tab_order = 0, .glyph = "savefile", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "BitBtn1Click" } } },
     { LJ_K_BITBTN, "BitBtn2", 144, 0, 141, 25, .tab_order = 1, .kind_str = "bkClose", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const lj_ctl_desc texportconfigform_panel1[] = {
@@ -4982,7 +4982,7 @@ const lj_form_desc lj_form_TEXPORTFIXTUREFORM = {
 /* ---- TEXPORTTABLEFORM.dfm.txt ---- */
 static const lj_ctl_desc texporttableform_panel5_panel4[] = {
     { LJ_K_CHECKBOX, "cbOverwrite", 4, 16, 160, 17, .caption = "Overwrite existing files", .tab_order = 0, .font = LJ_FONT_SANS13B, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bExport", 4, 108, 160, 25, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .caption = "Export tables", .modal_result = 1, .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bExportClick" } } },
+    { LJ_K_BITBTN, "bExport", 4, 108, 160, 25, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .caption = "Export tables", .modal_result = 1, .tab_order = 1, .glyph = "export", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bExportClick" } } },
     { LJ_K_BITBTN, "BitBtn2", 4, 140, 160, 25, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .tab_order = 2, .kind_str = "bkCancel", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_PROGRESSBAR, "pg1", 4, 80, 160, 17, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .min = 0, .max = 100, .smooth = LJ_YES, .step = 1, .tab_order = 3, .font = LJ_FONT_SANS13B, .font_inherited = 1 },
 };
@@ -5033,7 +5033,7 @@ static const lj_column_desc texternalappsetupform_lv1_cols[] = {
 };
 static const lj_ctl_desc texternalappsetupform_panel1[] = {
     { LJ_K_LABEL, "Label1", 8, 8, 153, 13, .caption = "External application definition file", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "sbBrowse", 513, 24, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbBrowseClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbBrowse", 513, 24, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbBrowseClick" } } },
     { LJ_K_EDIT, "eFileName", 3, 24, 506, 21, .tabstop = LJ_NO, .anchors = LJ_AK_LEFT | LJ_AK_TOP | LJ_AK_RIGHT, .color = LJ_CLR(0xC0C0C0), .readonly = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
 };
 static const lj_ctl_desc texternalappsetupform_panel2[] = {
@@ -5241,8 +5241,8 @@ static const lj_ctl_desc tfindchannelform_panel1[] = {
     { LJ_K_CHECKBOX, "cbExcludeUsed", 8, 125, 166, 17, .caption = "Exclude 'configured' channels", .checked = LJ_YES, .state = "cbChecked", .tab_order = 6, .font = LJ_FONT_SANS13, .font_inherited = 1 },
 };
 static const lj_ctl_desc tfindchannelform_panel3[] = {
-    { LJ_K_BITBTN, "bStart", 12, 5, 75, 25, .caption = "Start", .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bStartClick" } } },
-    { LJ_K_BITBTN, "bCancel", 92, 5, 75, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
+    { LJ_K_BITBTN, "bStart", 12, 5, 75, 25, .caption = "Start", .tab_order = 0, .glyph = "play", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bStartClick" } } },
+    { LJ_K_BITBTN, "bCancel", 92, 5, 75, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 1, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
 };
 static const lj_ctl_desc tfindchannelform_ctls[] = {
     { LJ_K_PANEL, "Panel1", 0, 0, 179, 153, .align = LJ_AL_TOP, .parent_color = LJ_YES, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tfindchannelform_panel1, .nchildren = LJ_COUNT_OF(tfindchannelform_panel1) },
@@ -5307,7 +5307,7 @@ const lj_form_desc lj_form_TFINDPROFILEFORM = {
     .min_width = 300,
     .font_color = LJ_CLR(0x000000),
     .style = LJ_FS_STAYONTOP,
-    .icon = "missing",
+    .icon = "ico-find",
     .text_height = 13,
     .font = LJ_FONT_SANS13,
     .font_name = "MS Sans Serif",
@@ -5324,7 +5324,7 @@ const lj_form_desc lj_form_TFINDPROFILEFORM = {
 /* ---- TFINGERSERRORFORM.dfm.txt ---- */
 static const lj_ctl_desc tfingerserrorform_panel1[] = {
     { LJ_K_BITBTN, "bClose", 45, 8, 150, 25, .tab_order = 0, .kind_str = "bkIgnore", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bCloseClick" } } },
-    { LJ_K_BITBTN, "bSetup", 205, 8, 150, 25, .caption = "Fingers Setup", .tab_order = 1, .glyph = "missing", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bSetupClick" } } },
+    { LJ_K_BITBTN, "bSetup", 205, 8, 150, 25, .caption = "Fingers Setup", .tab_order = 1, .glyph = "fingers-setup", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bSetupClick" } } },
 };
 static const lj_ctl_desc tfingerserrorform_ctls[] = {
     { LJ_K_PANEL, "Panel1", 0, 38, 399, 39, .align = LJ_AL_BOTTOM, .bevel_outer = LJ_BV_LOWERED, .parent_color = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13B, .font_inherited = 1, .bevel_width = 1, .children = tfingerserrorform_panel1, .nchildren = LJ_COUNT_OF(tfingerserrorform_panel1) },
@@ -5518,7 +5518,7 @@ static const lj_ctl_desc tfingerssetupdialog_pc1_tsprefs[] = {
 };
 static const lj_ctl_desc tfingerssetupdialog_pc1_tsvirtual_panel3[] = {
     { LJ_K_LABEL, "Label1", 8, 5, 50, 13, .caption = "Skin File", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "sbFolder", 223, 20, 32, 22, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbFolderClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbFolder", 223, 20, 32, 22, .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbFolderClick" } } },
     { LJ_K_LABEL, "Label2", 280, 5, 123, 13, .caption = "Hot zone color (click)", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
     { LJ_K_SPEEDBUTTON, "sbSkinDefaultColor", 334, 20, 99, 23, .hint = "Click to select skin default hotzone color", .allow_all_up = LJ_YES, .group_index = 1, .caption = "Skin default", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_EDIT, "eVirtualSkinFile", 8, 20, 213, 21, .tabstop = LJ_NO, .color = LJ_CLR(0xC0C0C0), .readonly = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13B, .font_inherited = 1 },
@@ -5541,7 +5541,7 @@ static const lj_ctl_desc tfingerssetupdialog_pc1[] = {
     { LJ_K_TABSHEET, "tsVirtual", 0, 0, 0, 0, .caption = "Virtual Fingers", .image_index = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .children = tfingerssetupdialog_pc1_tsvirtual, .nchildren = LJ_COUNT_OF(tfingerssetupdialog_pc1_tsvirtual) },
 };
 static const lj_ctl_desc tfingerssetupdialog_panel1[] = {
-    { LJ_K_BITBTN, "bOk", 196, 5, 100, 25, .caption = "OK", .default_btn = LJ_YES, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 196, 5, 100, 25, .caption = "OK", .default_btn = LJ_YES, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
     { LJ_K_BITBTN, "bCancel", 299, 5, 100, 25, .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_BITBTN, "bHelp", 93, 5, 100, 25, .tab_order = 2, .kind_str = "bkHelp", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bHelpClick" } } },
 };
@@ -5828,7 +5828,7 @@ const lj_form_desc lj_form_TFINGERSUDFUNCTIONLISTFORM = {
 
 /* ---- TFIXTUREEXPORTWARNINGDIALOG.dfm.txt ---- */
 static const lj_ctl_desc tfixtureexportwarningdialog_panel1[] = {
-    { LJ_K_BITBTN, "bYes", 69, 9, 75, 25, .caption = "&Yes", .modal_result = 6, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bYes", 69, 9, 75, 25, .caption = "&Yes", .modal_result = 6, .tab_order = 0, .glyph = "yes", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
     { LJ_K_BITBTN, "bNo", 154, 9, 75, 25, .tab_order = 1, .kind_str = "bkNo", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_BITBTN, "BitBtn1", 238, 9, 75, 25, .tab_order = 2, .kind_str = "bkHelp", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
@@ -6579,7 +6579,7 @@ static const lj_ctl_desc tfunctionsform_odpanel1[] = {
 };
 static const lj_ctl_desc tfunctionsform_panel4[] = {
     { LJ_K_BITBTN, "bOk", 356, 4, 191, 25, .caption = "Accept &Hotkeys", .tab_order = 0, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
-    { LJ_K_BITBTN, "bCancel", 154, 4, 191, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
+    { LJ_K_BITBTN, "bCancel", 154, 4, 191, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 1, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
 };
 static const lj_ctl_desc tfunctionsform_ctls[] = {
     { LJ_K_PANEL, "Panel2", 343, 33, 407, 357, .align = LJ_AL_CLIENT, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .bevel_width = 1, .children = tfunctionsform_panel2, .nchildren = LJ_COUNT_OF(tfunctionsform_panel2) },
@@ -6659,8 +6659,8 @@ static const lj_ctl_desc tgenericmegaform_panel1_panel6[] = {
     { LJ_K_PANEL, "pFade", 89, 136, 56, 25, .bevel_width = 2, .caption = "Fade", .color = LJ_CLR(0x00FF00), .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnMouseDown", "pOffMouseDown" }, { "OnMouseUp", "pOffMouseUp" } } },
     { LJ_K_PANEL, "pSnap", 89, 108, 56, 25, .bevel_width = 2, .caption = "Snap", .color = LJ_CLR(0xFFFF00), .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnMouseDown", "pOffMouseDown" }, { "OnMouseUp", "pOffMouseUp" } } },
     { LJ_K_PANEL, "pOff", 89, 80, 56, 25, .bevel_width = 2, .caption = "Off", .color = LJ_CLR(0xFF0000), .tab_order = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnMouseDown", "pOffMouseDown" }, { "OnMouseUp", "pOffMouseUp" } } },
-    { LJ_K_BITBTN, "sbFaderUp", 5, 4, 80, 15, .tab_order = 3, .glyph = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbMouseUp" } } },
-    { LJ_K_BITBTN, "sbFaderDown", 5, 148, 80, 15, .modal_result = 1, .tab_order = 4, .glyph = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbMouseUp" } } },
+    { LJ_K_BITBTN, "sbFaderUp", 5, 4, 80, 15, .tab_order = 3, .glyph = "faderup", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbMouseUp" } } },
+    { LJ_K_BITBTN, "sbFaderDown", 5, 148, 80, 15, .modal_result = 1, .tab_order = 4, .glyph = "faderdown", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnMouseDown", "sbMouseDown" }, { "OnMouseUp", "sbMouseUp" } } },
 };
 static const lj_ctl_desc tgenericmegaform_panel1_pselected[] = {
     { LJ_K_SPEEDBUTTON, "SpeedButton3", 107, 0, 41, 25, .caption = "Clear", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "SpeedButton3Click" } } },
@@ -6787,7 +6787,7 @@ const lj_form_desc lj_form_TGENERICMEGAFORM = {
 /* ---- TGETBITMAPFORM.dfm.txt ---- */
 static const lj_ctl_desc tgetbitmapform_panel1[] = {
     { LJ_K_BITBTN, "bCancel", 39, 4, 75, 25, .caption = "&Cancel", .tab_order = 0, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
-    { LJ_K_BITBTN, "bOk", 119, 4, 75, 25, .caption = "&Ok", .enabled = LJ_NO, .modal_result = 1, .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 119, 4, 75, 25, .caption = "&Ok", .enabled = LJ_NO, .modal_result = 1, .tab_order = 1, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
 };
 static const lj_ctl_desc tgetbitmapform_ctls[] = {
     { LJ_K_LISTBOX, "LB1", 0, 0, 234, 292, .align = LJ_AL_CLIENT, .color = LJ_CLR(0xC0C0C0), .item_height = 31, .sorted = LJ_YES, .style = "lbOwnerDrawFixed", .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .item_index = -1, .events = { { "OnClick", "LB1Click" }, { "OnDrawItem", "LB1DrawItem" }, { "OnKeyDown", "LB1KeyDown" } } },
@@ -6892,7 +6892,7 @@ static const lj_ctl_desc tgetuserlibnameform_ctls[] = {
     { LJ_K_BEVEL, "Bevel2", 0, 31, 345, 26, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BEVEL, "Bevel3", 0, 57, 345, 32, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_CHECKBOX, "cbCopyFiles", 8, 35, 225, 17, .caption = "Copy files from current library", .tab_order = 3, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bOk", 95, 61, 75, 25, .caption = "OK", .default_btn = LJ_YES, .modal_result = 1, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bOk", 95, 61, 75, 25, .caption = "OK", .default_btn = LJ_YES, .modal_result = 1, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
     { LJ_K_BITBTN, "BitBtn2", 175, 61, 75, 25, .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_EDIT, "eName", 77, 6, 263, 21, .max_length = 30, .tab_order = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "eNameChange" } } },
     { LJ_K_MAINMENU, "MainMenu1", 232, 16, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -7129,12 +7129,12 @@ const lj_form_desc lj_form_TGRIDFORM = {
 
 /* ---- THARDWARESETUPFORM2.dfm.txt ---- */
 static const lj_ctl_desc thardwaresetupform2_panel1[] = {
-    { LJ_K_BITBTN, "bOk", 195, 2, 75, 25, .caption = "OK", .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 195, 2, 75, 25, .caption = "OK", .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
     { LJ_K_BITBTN, "BitBtn2", 275, 2, 75, 25, .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const lj_ctl_desc thardwaresetupform2_panel2_pc1_tsdmxhardware_panel3_panel5[] = {
-    { LJ_K_BITBTN, "bdetectHardware", 14, 2, 250, 25, .caption = "Detect DMX Hardware ", .tab_order = 0, .glyph = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bdetectHardwareClick" } } },
-    { LJ_K_BITBTN, "bClearhardware", 270, 2, 250, 25, .caption = "Clear DMX Hardware", .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClearhardwareClick" } } },
+    { LJ_K_BITBTN, "bdetectHardware", 14, 2, 250, 25, .caption = "Detect DMX Hardware ", .tab_order = 0, .glyph = "autodetect", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bdetectHardwareClick" } } },
+    { LJ_K_BITBTN, "bClearhardware", 270, 2, 250, 25, .caption = "Clear DMX Hardware", .tab_order = 1, .glyph = "erase", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClearhardwareClick" } } },
 };
 static const lj_ctl_desc thardwaresetupform2_panel2_pc1_tsdmxhardware_panel3_pconfiguredhardware[] = {
     { LJ_K_LABEL, "Label1", 4, 4, 120, 13, .caption = "Configured Hardware", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
@@ -7260,7 +7260,7 @@ static const char *const thardwaresetupform2_panel2_pc1_tsaudio_rgdigitalaudio_i
 };
 static const lj_ctl_desc thardwaresetupform2_panel2_pc1_tsaudio[] = {
     { LJ_K_LABEL, "Label4", 8, 128, 96, 13, .caption = "Path to Winamp.exe", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "sbWinamp", 366, 144, 23, 22, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbWinampClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbWinamp", 366, 144, 23, 22, .glyph = "winamp", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbWinampClick" } } },
     { LJ_K_RADIOGROUP, "RGAudio", 4, 4, 185, 61, .caption = " Audio Analyzer (via soundcard) ", .item_index = 0, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .items = thardwaresetupform2_panel2_pc1_tsaudio_rgaudio_items, .nitems = LJ_COUNT_OF(thardwaresetupform2_panel2_pc1_tsaudio_rgaudio_items) },
     { LJ_K_RADIOGROUP, "rgAudioCD", 191, 4, 208, 61, .caption = " CD-Audio (via CD-Rom) ", .item_index = 0, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1, .items = thardwaresetupform2_panel2_pc1_tsaudio_rgaudiocd_items, .nitems = LJ_COUNT_OF(thardwaresetupform2_panel2_pc1_tsaudio_rgaudiocd_items) },
     { LJ_K_RADIOGROUP, "rgDigitalAudio", 4, 65, 395, 59, .caption = " Digital Audio Player ", .item_index = 0, .tab_order = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .items = thardwaresetupform2_panel2_pc1_tsaudio_rgdigitalaudio_items, .nitems = LJ_COUNT_OF(thardwaresetupform2_panel2_pc1_tsaudio_rgdigitalaudio_items) },
@@ -7288,7 +7288,7 @@ static const lj_ctl_desc thardwaresetupform2_panel2_pc1_tsmidi_groupbox1[] = {
     { LJ_K_EDIT, "eMTCDevice", 7, 33, 194, 21, .color = LJ_CLR(0xC0C0C0), .readonly = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13B, .font_inherited = 1 },
     { LJ_K_RADIOGROUP, "rgMTCTimeout", 205, 21, 140, 81, .caption = "MTC TimeOut Value", .columns_count = 2, .font_color = LJ_CLR(0x000000), .item_index = 0, .parent_font = LJ_NO, .tab_order = 1, .font = LJ_FONT_SANS13, .font_name = "MS Sans Serif", .font_height = -11, .font_style = 0, .items = thardwaresetupform2_panel2_pc1_tsmidi_groupbox1_rgmtctimeout_items, .nitems = LJ_COUNT_OF(thardwaresetupform2_panel2_pc1_tsmidi_groupbox1_rgmtctimeout_items) },
     { LJ_K_COMBOBOX, "cbMTCDevices", 11, 138, 330, 21, .style = "csDropDownList", .font_color = LJ_CLR(0x000000), .item_height = 13, .parent_font = LJ_NO, .tab_order = 2, .font = LJ_FONT_SANS13, .font_name = "MS Sans Serif", .font_height = -11, .font_style = 0, .drop_down_count = 8, .item_index = -1 },
-    { LJ_K_BITBTN, "bMTCSeelct", 11, 167, 330, 25, .caption = "Select device for MIDI Timecode", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .tab_order = 3, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_name = "MS Sans Serif", .font_height = -11, .font_style = 0, .spacing = 4, .events = { { "OnClick", "bMTCSeelctClick" } } },
+    { LJ_K_BITBTN, "bMTCSeelct", 11, 167, 330, 25, .caption = "Select device for MIDI Timecode", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .tab_order = 3, .glyph = "mtc-select", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_name = "MS Sans Serif", .font_height = -11, .font_style = 0, .spacing = 4, .events = { { "OnClick", "bMTCSeelctClick" } } },
 };
 static const lj_ctl_desc thardwaresetupform2_panel2_pc1_tsmidi[] = {
     { LJ_K_RADIOGROUP, "rgMIDIIn", 4, 4, 173, 85, .caption = "MIDI In (MIDI Note commands)", .item_index = 0, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .items = thardwaresetupform2_panel2_pc1_tsmidi_rgmidiin_items, .nitems = LJ_COUNT_OF(thardwaresetupform2_panel2_pc1_tsmidi_rgmidiin_items) },
@@ -7545,7 +7545,7 @@ static const lj_ctl_desc tinitform1_panel1[] = {
     { LJ_K_LABEL, "LPreset", 80, 55, 12, 13, .caption = "....", .color = LJ_CLR(0xFFFF00), .parent_color = LJ_NO, .transparent = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1 },
 };
 static const lj_ctl_desc tinitform1_ctls[] = {
-    { LJ_K_IMAGE, "Image1", 2, 0, 250, 83, .autosize = LJ_YES, .picture = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1, .events = { { "OnClick", "Image1Click" } } },
+    { LJ_K_IMAGE, "Image1", 2, 0, 250, 83, .autosize = LJ_YES, .picture = "init-logo", .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1, .events = { { "OnClick", "Image1Click" } } },
     { LJ_K_LABEL, "lLoading1", 9, 172, 63, 19, .caption = "Loading", .color = LJ_CLR(0xFFFF00), .font_color = LJ_CLR(0x808080), .parent_color = LJ_NO, .parent_font = LJ_NO, .transparent = LJ_YES, .font = LJ_FONT_OTHER, .font_name = "Arial", .font_height = -16, .font_style = LJ_FS_BOLD },
     { LJ_K_LABEL, "lLoading2", 11, 171, 63, 19, .caption = "Loading", .color = LJ_CLR(0xFFFF00), .font_color = LJ_CLR(0xFFFF00), .parent_color = LJ_NO, .parent_font = LJ_NO, .transparent = LJ_YES, .font = LJ_FONT_OTHER, .font_name = "Arial", .font_height = -16, .font_style = LJ_FS_BOLD },
     { LJ_K_LABEL, "lVersion1", 52, 201, 136, 17, .caption = "Version 2.0 -Build 1", .color = LJ_CLR(0x808080), .font_color = LJ_CLR(0x808080), .parent_color = LJ_NO, .parent_font = LJ_NO, .transparent = LJ_YES, .font = LJ_FONT_OTHER, .font_name = "Arial", .font_height = -15, .font_style = LJ_FS_BOLD | LJ_FS_ITALIC },
@@ -7594,7 +7594,7 @@ static const lj_ctl_desc tinsertscenesform_ctls[] = {
     { LJ_K_LABEL, "Label4", 218, 66, 25, 13, .alignment = LJ_TA_RIGHT, .caption = "from", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
     { LJ_K_LABEL, "Label5", 285, 66, 12, 13, .alignment = LJ_TA_RIGHT, .caption = "to", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
     { LJ_K_LABEL, "Label6", 218, 37, 25, 13, .alignment = LJ_TA_RIGHT, .caption = "from", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
-    { LJ_K_SPEEDBUTTON, "sbselectseq", 4, 84, 104, 23, .caption = "Select seq", .flat = LJ_YES, .glyph = "missing", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbSelectSeqClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbselectseq", 4, 84, 104, 23, .caption = "Select seq", .flat = LJ_YES, .glyph = "load-19x17", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbSelectSeqClick" } } },
     { LJ_K_RADIOBUTTON, "CopyCurrent", 1, 6, 145, 17, .caption = "&Copy current scene", .checked = LJ_YES, .tab_order = 0, .tabstop = LJ_YES, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnClick", "CopyCurrentClick" } } },
     { LJ_K_RADIOBUTTON, "CopyFromCurrent", 1, 35, 184, 17, .caption = "&Insert from current sequence", .tab_order = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnClick", "CopyFromCurrentClick" } } },
     { LJ_K_RADIOBUTTON, "CopyFromSeq", 1, 64, 129, 17, .caption = "Copy from Sequence", .tab_order = 5, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnClick", "CopyFromSeqClick" } } },
@@ -7627,7 +7627,7 @@ const lj_form_desc lj_form_TINSERTSCENESFORM = {
     .client_width = 337,
     .color = LJ_CLR(0x808080),
     .font_color = LJ_CLR(0x000000),
-    .icon = "missing",
+    .icon = "ico-insertscene",
     .menu = "MainMenu1",
     .position = LJ_PO_OWNERFORMCENTER,
     .text_height = 13,
@@ -7811,7 +7811,7 @@ const lj_form_desc lj_form_TINTENSITYGROUPFORM = {
 
 /* ---- TINTERNALINTENSITYPATCHFORM.dfm.txt ---- */
 static const lj_ctl_desc tinternalintensitypatchform_panel1[] = {
-    { LJ_K_BITBTN, "bkOk", 56, 4, 75, 25, .caption = "OK", .default_btn = LJ_YES, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bkOkClick" } } },
+    { LJ_K_BITBTN, "bkOk", 56, 4, 75, 25, .caption = "OK", .default_btn = LJ_YES, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bkOkClick" } } },
     { LJ_K_BITBTN, "BitBtn2", 136, 4, 75, 25, .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const int tinternalintensitypatchform_panel2_sg1_rowh[] = { 16, 16, 16, 16, 16, 16, 16, 16, 16 };
@@ -7856,10 +7856,10 @@ const lj_form_desc lj_form_TINTERNALINTENSITYPATCHFORM = {
 
 /* ---- TLASERWARNINGFORM.dfm.txt ---- */
 static const lj_ctl_desc tlaserwarningform_ctls[] = {
-    { LJ_K_IMAGE, "Image1", 4, 13, 111, 100, .autosize = LJ_YES, .picture = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1, .events = { { "OnMouseDown", "DoMouseDown" } } },
+    { LJ_K_IMAGE, "Image1", 4, 13, 111, 100, .autosize = LJ_YES, .picture = "laser-warning", .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1, .events = { { "OnMouseDown", "DoMouseDown" } } },
     { LJ_K_LABEL, "Label1", 120, 40, 161, 24, .caption = "Laser(s) emitting!", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_OTHER, .font_name = "MS Sans Serif", .font_height = -19, .font_style = LJ_FS_BOLD, .events = { { "OnMouseDown", "DoMouseDown" } } },
     { LJ_K_LABEL, "Label2", 121, 72, 76, 13, .caption = "(click to disable)", .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnMouseDown", "DoMouseDown" } } },
-    { LJ_K_IMAGE, "Image2", 0, -8, 111, 100, .autosize = LJ_YES, .picture = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1 },
+    { LJ_K_IMAGE, "Image2", 0, -8, 111, 100, .autosize = LJ_YES, .picture = "laser-warning", .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1 },
     { LJ_K_TIMER, "Timer1", 248, 8, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnTimer", "Timer1Timer" } } },
 };
 const lj_form_desc lj_form_TLASERWARNINGFORM = {
@@ -8255,7 +8255,7 @@ static const lj_ctl_desc tlinkconfigform3_ctls[] = {
     { LJ_K_OPENDIALOG, "ImportFixDialog", 96, 32, 0, 0, .options = "[ofHideReadOnly, ofNoChangeDir, ofPathMustExist, ofFileMustExist]", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_POPUPMENU, "ConfiguredPop", 176, 32, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnPopup", "ConfiguredPopPopup" } } },
     { LJ_K_PRINTDIALOG, "PrintDialog1", 248, 32, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_IMAGELIST, "ilLogos", 73, 330, 0, 0, .picture = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1 },
+    { LJ_K_IMAGELIST, "ilLogos", 73, 330, 0, 0, .picture = "imagelist-logos", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_OPENDIALOG, "ReloadProfileDialog", 89, 97, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
 };
 static const lj_menu_item_desc tlinkconfigform3_mainmenu1_print1[] = {
@@ -8534,7 +8534,7 @@ static const lj_ctl_desc tljmanagerprefsform_panel1[] = {
     { LJ_K_BITBTN, "bCancel", 198, 4, 75, 25, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const lj_ctl_desc tljmanagerprefsform_panel2_groupbox1[] = {
-    { LJ_K_SPEEDBUTTON, "SpeedButton1", 355, 74, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "SpeedButton1Click" } } },
+    { LJ_K_SPEEDBUTTON, "SpeedButton1", 355, 74, 23, 22, .anchors = LJ_AK_TOP | LJ_AK_RIGHT, .glyph = "folder-browse", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "SpeedButton1Click" } } },
     { LJ_K_LABEL, "ldefaultPath", 7, 35, 6, 13, .caption = "()", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_CHECKBOX, "cbLaunchDefault", 8, 15, 350, 17, .caption = "Use default LJ Manager  instance", .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "cbClick" } } },
     { LJ_K_CHECKBOX, "cbLaunchAlternative", 8, 55, 350, 17, .caption = "Use specific LJ Manager instance", .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "cbClick" } } },
@@ -8650,16 +8650,16 @@ const lj_form_desc lj_form_TLOADMACROLIST = {
 /* ---- TLOGTIMECODEFORM.dfm.txt ---- */
 static const lj_ctl_desc tlogtimecodeform_panel1[] = {
     { LJ_K_LABEL, "lLogs", 33, 51, 79, 14, .alignment = LJ_TA_CENTER, .anchors = LJ_AK_LEFT | LJ_AK_TOP | LJ_AK_RIGHT, .caption = "000 Logs Total", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_ARIAL14B, .font_name = "Arial", .font_height = -11, .font_style = LJ_FS_BOLD },
-    { LJ_K_BITBTN, "bLog", 8, 4, 129, 41, .caption = "Log", .default_btn = LJ_YES, .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_OTHER, .font_name = "Arial", .font_height = -13, .font_style = LJ_FS_BOLD, .spacing = 4, .events = { { "OnMouseDown", "bLogMouseDown" } } },
+    { LJ_K_BITBTN, "bLog", 8, 4, 129, 41, .caption = "Log", .default_btn = LJ_YES, .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .tab_order = 0, .glyph = "log", .num_glyphs = 2, .font = LJ_FONT_OTHER, .font_name = "Arial", .font_height = -13, .font_style = LJ_FS_BOLD, .spacing = 4, .events = { { "OnMouseDown", "bLogMouseDown" } } },
 };
 static const lj_ctl_desc tlogtimecodeform_panel2[] = {
     { LJ_K_LABEL, "lElapsed", 91, 13, 50, 16, .alignment = LJ_TA_RIGHT, .caption = "00:00:00", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .font = LJ_FONT_OTHER, .font_name = "Arial", .font_height = -13, .font_style = LJ_FS_BOLD },
     { LJ_K_BITBTN, "bStartElapsed", 3, 8, 81, 25, .caption = "&Start Elapsed", .tab_order = 0, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bStartElapsedClick" } } },
 };
 static const lj_ctl_desc tlogtimecodeform_panel3[] = {
-    { LJ_K_BITBTN, "bAddLogs", 9, 31, 128, 25, .caption = "    &Add Logs", .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bAddLogsClick" } } },
-    { LJ_K_BITBTN, "bClearLogs", 9, 6, 128, 25, .caption = "    &Clear Logs", .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClearLogsClick" } } },
-    { LJ_K_BITBTN, "bInsertLogs", 9, 56, 128, 25, .caption = "    &Insert Logs", .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bInsertLogsClick" } } },
+    { LJ_K_BITBTN, "bAddLogs", 9, 31, 128, 25, .caption = "    &Add Logs", .tab_order = 0, .glyph = "addlogs", .num_glyphs = 2, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bAddLogsClick" } } },
+    { LJ_K_BITBTN, "bClearLogs", 9, 6, 128, 25, .caption = "    &Clear Logs", .tab_order = 1, .glyph = "clearlogs", .num_glyphs = 2, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClearLogsClick" } } },
+    { LJ_K_BITBTN, "bInsertLogs", 9, 56, 128, 25, .caption = "    &Insert Logs", .tab_order = 2, .glyph = "insertlogs", .num_glyphs = 2, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bInsertLogsClick" } } },
     { LJ_K_BITBTN, "bApplyLogs", 9, 81, 128, 25, .caption = "    A&pply Logs", .tab_order = 3, .num_glyphs = 2, .font = LJ_FONT_ARIAL14, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bApplyLogsClick" } } },
 };
 static const lj_ctl_desc tlogtimecodeform_panel4[] = {
@@ -9797,8 +9797,8 @@ static const char *const tprint2532form_panel1_lb1_items[] = {
 };
 static const lj_ctl_desc tprint2532form_panel1[] = {
     { LJ_K_CHECKLISTBOX, "LB1", 1, 1, 208, 155, .align = LJ_AL_LEFT, .columns_count = 2, .item_height = 13, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .item_index = -1, .items = tprint2532form_panel1_lb1_items, .nitems = LJ_COUNT_OF(tprint2532form_panel1_lb1_items), .events = { { "OnClick", "LB1Click" } } },
-    { LJ_K_BITBTN, "bPrint", 215, 94, 75, 25, .caption = "&Print", .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
-    { LJ_K_BITBTN, "bClose", 215, 126, 75, 25, .caption = "&Close", .modal_result = 1, .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bPrint", 215, 94, 75, 25, .caption = "&Print", .tab_order = 1, .glyph = "print", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bClose", 215, 126, 75, 25, .caption = "&Close", .modal_result = 1, .tab_order = 2, .glyph = "close", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
     { LJ_K_BUTTON, "bAll", 215, 8, 75, 25, .caption = "&All Pages", .tab_order = 3, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bAllClick" } } },
     { LJ_K_BUTTON, "bNone", 215, 40, 75, 25, .caption = "No Pages", .tab_order = 4, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bNoneClick" } } },
 };
@@ -10058,7 +10058,7 @@ const lj_form_desc lj_form_TREBUILDSETUPFORM = {
 static const lj_ctl_desc trenamefileform_ctls[] = {
     { LJ_K_LABEL, "Label1", 4, 13, 72, 13, .caption = "New File Name", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BEVEL, "Bevel1", 0, 0, 281, 37, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bOk", 24, 42, 75, 25, .caption = "OK", .default_btn = LJ_YES, .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bOk", 24, 42, 75, 25, .caption = "OK", .default_btn = LJ_YES, .tab_order = 1, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
     { LJ_K_BITBTN, "BitBtn2", 104, 42, 75, 25, .tab_order = 2, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_EDIT, "eFileName", 84, 9, 193, 21, .max_length = 28, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_BITBTN, "bHelp", 184, 42, 75, 25, .tab_order = 3, .kind_str = "bkHelp", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bHelpClick" } } },
@@ -10241,7 +10241,7 @@ static const lj_ctl_desc trgbpackdefform_panel1[] = {
     { LJ_K_LABEL, "lUsername", 4, 16, 60, 13, .caption = "lUsername", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
 };
 static const lj_ctl_desc trgbpackdefform_panel3_pbuttons[] = {
-    { LJ_K_BITBTN, "BitBtn1", 0, 0, 75, 25, .caption = "OK", .modal_result = 1, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "BitBtn1", 0, 0, 75, 25, .caption = "OK", .modal_result = 1, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4 },
     { LJ_K_BITBTN, "BitBtn2", 78, 0, 75, 25, .tab_order = 1, .kind_str = "bkCancel", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const lj_ctl_desc trgbpackdefform_panel3[] = {
@@ -10298,7 +10298,7 @@ static const lj_ctl_desc trgbpaletteform_padd[] = {
 static const lj_ctl_desc trgbpaletteform_ctls[] = {
     { LJ_K_PANEL, "pAdd", 0, 160, 172, 109, .align = LJ_AL_BOTTOM, .font_color = LJ_CLR(0x000000), .parent_color = LJ_YES, .parent_font = LJ_NO, .tab_order = 0, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD, .bevel_width = 1, .children = trgbpaletteform_padd, .nchildren = LJ_COUNT_OF(trgbpaletteform_padd) },
     { LJ_K_TREEVIEW, "tv1", 0, 0, 172, 160, .align = LJ_AL_CLIENT, .font_color = LJ_CLR(0x000000), .hide_selection = LJ_NO, .images = "ilLogos", .indent = 19, .parent_font = LJ_NO, .popup_menu = "tv1Pop", .readonly = LJ_YES, .right_click_select = LJ_YES, .row_select = LJ_YES, .show_lines = LJ_NO, .show_root = LJ_NO, .tab_order = 1, .tool_tips = LJ_NO, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD, .events = { { "OnChange", "tv1Change" }, { "OnCustomDrawItem", "tv1CustomDrawItem" }, { "OnDblClick", "tv1DblClick" } } },
-    { LJ_K_IMAGELIST, "ilLogos", 17, 18, 0, 0, .picture = "missing", .font = LJ_FONT_SANS13, .font_inherited = 1 },
+    { LJ_K_IMAGELIST, "ilLogos", 17, 18, 0, 0, .picture = "imagelist-logos", .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_MAINMENU, "MainMenu1", 96, 16, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_POPUPMENU, "tv1Pop", 24, 88, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnPopup", "PopClick" } } },
 };
@@ -10419,7 +10419,7 @@ static const lj_ctl_desc tsaveascuelistform_ctls[] = {
     { LJ_K_LABEL, "Label1", 62, 2, 79, 13, .caption = "CueList Name", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .transparent = LJ_YES, .font = LJ_FONT_SANS13B, .font_name = "MS Sans Serif", .font_height = -11, .font_style = LJ_FS_BOLD },
     { LJ_K_EDIT, "eCuelistNo", 4, 16, 49, 21, .color = LJ_CLR(0xFFFFFF), .max_length = 4, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnChange", "eCuelistNoChange" } } },
     { LJ_K_EDIT, "ECueListName", 61, 16, 150, 21, .tabstop = LJ_NO, .color = LJ_CLR(0xC0C0C0), .readonly = LJ_YES, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bSave", 31, 47, 75, 25, .caption = "&Save", .enabled = LJ_NO, .modal_result = 1, .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bSave", 31, 47, 75, 25, .caption = "&Save", .enabled = LJ_NO, .modal_result = 1, .tab_order = 2, .glyph = "save-19x17", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
     { LJ_K_BITBTN, "BitBtn2", 111, 47, 75, 25, .tab_order = 3, .kind_str = "bkCancel", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 const lj_form_desc lj_form_TSAVEASCUELISTFORM = {
@@ -10599,9 +10599,9 @@ static const lj_ctl_desc tsavecuelist2form_ctls[] = {
     { LJ_K_SHAPE, "Shape2", 0, 44, 273, 35, .brush_color = LJ_CLR(0xFF0000), .pen_width = 2, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_EDIT, "eCuelistNo", 4, 16, 31, 21, .tabstop = LJ_NO, .color = LJ_CLR(0xC0C0C0), .readonly = LJ_YES, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
     { LJ_K_EDIT, "eCuelistName", 39, 16, 229, 21, .max_length = 30, .tab_order = 1, .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bSave", 4, 49, 63, 25, .caption = "Save", .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .spacing = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bSaveClick" } } },
-    { LJ_K_BITBTN, "bSaveNew", 68, 49, 87, 25, .caption = "Save New", .tab_order = 3, .glyph = "missing", .num_glyphs = 2, .spacing = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bSaveClick" } } },
-    { LJ_K_BITBTN, "bSaveAs", 156, 49, 113, 25, .caption = "Save as Cuelist#", .tab_order = 4, .glyph = "missing", .num_glyphs = 2, .spacing = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bSaveAsClick" } } },
+    { LJ_K_BITBTN, "bSave", 4, 49, 63, 25, .caption = "Save", .tab_order = 2, .glyph = "save-19x17", .num_glyphs = 2, .spacing = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bSaveClick" } } },
+    { LJ_K_BITBTN, "bSaveNew", 68, 49, 87, 25, .caption = "Save New", .tab_order = 3, .glyph = "save-19x17", .num_glyphs = 2, .spacing = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bSaveClick" } } },
+    { LJ_K_BITBTN, "bSaveAs", 156, 49, 113, 25, .caption = "Save as Cuelist#", .tab_order = 4, .glyph = "save-19x17", .num_glyphs = 2, .spacing = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .events = { { "OnClick", "bSaveAsClick" } } },
     { LJ_K_MAINMENU, "MainMenu1", 120, 8, 0, 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
 };
 static const lj_menu_item_desc tsavecuelist2form_mainmenu1_preferences1[] = {
@@ -10645,7 +10645,7 @@ const lj_form_desc lj_form_TSAVECUELIST2FORM = {
 /* ---- TSAVELIGHTCORDERFILEDIALOG.dfm.txt ---- */
 static const lj_ctl_desc tsavelightcorderfiledialog_panel1[] = {
     { LJ_K_BITBTN, "bSave", 78, 4, 100, 25, .caption = "Save File", .tab_order = 0, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bSaveClick" } } },
-    { LJ_K_BITBTN, "bCancel", 182, 4, 100, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
+    { LJ_K_BITBTN, "bCancel", 182, 4, 100, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 1, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
 };
 static const lj_ctl_desc tsavelightcorderfiledialog_pagecontrol1_tabsheet1[] = {
     { LJ_K_RICHEDIT, "reUserNotes", 0, 0, 351, 193, .align = LJ_AL_CLIENT, .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -11123,8 +11123,8 @@ static const lj_ctl_desc tscanner1defsform_pc1[] = {
     { LJ_K_TABSHEET, "TabSheet5", 0, 0, 0, 0, .caption = "Levels && Id", .font = LJ_FONT_SANS13, .font_inherited = 1, .children = tscanner1defsform_pc1_tabsheet5, .nchildren = LJ_COUNT_OF(tscanner1defsform_pc1_tabsheet5) },
 };
 static const lj_ctl_desc tscanner1defsform_panel1[] = {
-    { LJ_K_BITBTN, "bOk", 219, 5, 75, 25, .caption = "OK", .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
-    { LJ_K_BITBTN, "bCancel", 139, 5, 75, 25, .caption = "Cancel", .modal_result = 2, .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bOk", 219, 5, 75, 25, .caption = "OK", .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "bCancel", 139, 5, 75, 25, .caption = "Cancel", .modal_result = 2, .tab_order = 1, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
 };
 static const lj_ctl_desc tscanner1defsform_ctls[] = {
     { LJ_K_PAGECONTROL, "PC1", 0, 0, 418, 201, .active_page = "TabSheet5", .tab_order = 0, .font = LJ_FONT_SANS13, .font_inherited = 1, .children = tscanner1defsform_pc1, .nchildren = LJ_COUNT_OF(tscanner1defsform_pc1), .events = { { "OnChange", "PC1Change" } } },
@@ -11174,7 +11174,7 @@ const lj_form_desc lj_form_TSCANNER1DEFSFORM = {
 
 /* ---- TSCANNER2DEFSFORM.dfm.txt ---- */
 static const lj_ctl_desc tscanner2defsform_panel1[] = {
-    { LJ_K_BITBTN, "bCancel", 6, 4, 217, 25, .caption = "Cancel", .modal_result = 2, .tab_order = 0, .tabstop = LJ_NO, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
+    { LJ_K_BITBTN, "bCancel", 6, 4, 217, 25, .caption = "Cancel", .modal_result = 2, .tab_order = 0, .tabstop = LJ_NO, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
     { LJ_K_BITBTN, "bApply", 226, 4, 170, 25, .caption = "Apply to Master Fixture", .tab_order = 1, .tabstop = LJ_NO, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bApplyClick" } } },
     { LJ_K_BITBTN, "bApplyAll", 399, 4, 170, 25, .caption = "A&pply to all Selected Fixtures", .tab_order = 2, .tabstop = LJ_NO, .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bApplyAllClick" } } },
 };
@@ -12378,7 +12378,7 @@ static const lj_ctl_desc tsnapshotsceneform_panel2[] = {
     { LJ_K_CHECKBOX, "cbAddScene", 6, 38, 355, 17, .caption = "Auto add scene to sequence", .tab_order = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .events = { { "OnClick", "cbOptionsClick" } } },
 };
 static const lj_ctl_desc tsnapshotsceneform_panel3_precordrealtime[] = {
-    { LJ_K_IMAGE, "iVideo", 72, 5, 16, 16, .picture = "missing", .transparent = LJ_YES, .font = LJ_FONT_SANS13B, .font_inherited = 1, .image_index = -1 },
+    { LJ_K_IMAGE, "iVideo", 72, 5, 16, 16, .picture = "video", .transparent = LJ_YES, .font = LJ_FONT_SANS13B, .font_inherited = 1, .image_index = -1 },
 };
 static const lj_ctl_desc tsnapshotsceneform_panel3[] = {
     { LJ_K_LABEL, "Label1", 13, 9, 73, 13, .alignment = LJ_TA_RIGHT, .caption = "Sample Rate", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
@@ -12579,7 +12579,7 @@ static const lj_ctl_desc tstaticentrypropertiesform_panel1[] = {
     { LJ_K_LABEL, "lPage", 4, 18, 33, 13, .caption = "lPage", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
 };
 static const lj_ctl_desc tstaticentrypropertiesform_panel2_pok[] = {
-    { LJ_K_BITBTN, "bOk", 0, 0, 75, 25, .caption = "OK", .modal_result = 1, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
+    { LJ_K_BITBTN, "bOk", 0, 0, 75, 25, .caption = "OK", .modal_result = 1, .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
     { LJ_K_BITBTN, "bApply", 80, 0, 75, 25, .caption = "Apply", .tab_order = 1, .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
     { LJ_K_BITBTN, "bCancel", 160, 0, 75, 25, .tab_order = 2, .kind_str = "bkCancel", .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
 };
@@ -12604,7 +12604,7 @@ static const lj_ctl_desc tstaticentrypropertiesform_panel3_panel7[] = {
     { LJ_K_LABEL, "Label4", 4, 78, 60, 13, .caption = "Fade Time", .font = LJ_FONT_SANS13B, .font_inherited = 1 },
     { LJ_K_SPEEDBUTTON, "SpeedButton1", 4, 144, 202, 22, .caption = "Set as Default", .enabled = LJ_NO, .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_SPEEDBUTTON, "SpeedButton2", 4, 168, 202, 22, .caption = "Apply Default", .enabled = LJ_NO, .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
-    { LJ_K_SPEEDBUTTON, "SpeedButton3", 38, 116, 68, 22, .caption = "Image", .enabled = LJ_NO, .glyph = "missing", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_SPEEDBUTTON, "SpeedButton3", 38, 116, 68, 22, .caption = "Image", .enabled = LJ_NO, .glyph = "photo", .layout = "blGlyphRight", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4 },
     { LJ_K_IMAGE, "img", 4, 107, 31, 30, .font = LJ_FONT_SANS13B, .font_inherited = 1, .image_index = -1 },
     { LJ_K_SPEEDBUTTON, "SpeedButton4", 107, 116, 58, 22, .caption = "Clear", .enabled = LJ_NO, .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
     { LJ_K_EDIT, "eName", 65, 4, 141, 21, .tab_order = 0, .font = LJ_FONT_SANS13B, .font_inherited = 1 },
@@ -12797,12 +12797,12 @@ static const lj_ctl_desc tstatics2prefsform_pagecontrol1_tspreferences[] = {
     { LJ_K_CHECKBOX, "cbViewLevels", 4, 56, 97, 17, .caption = "View Levels", .tab_order = 4, .font = LJ_FONT_ARIAL14B, .font_inherited = 1 },
 };
 static const lj_ctl_desc tstatics2prefsform_pagecontrol1_tstabs_panel2_panel4[] = {
-    { LJ_K_SPEEDBUTTON, "sbAddPage", 3, 5, 23, 22, .hint = "Add new page", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbDeletePage", 120, 5, 23, 22, .hint = "Delete page", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" } } },
-    { LJ_K_SPEEDBUTTON, "sbInsertPage", 26, 5, 23, 22, .hint = "Insert new page", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbEditPage", 49, 5, 23, 22, .hint = "Edit page name", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" } } },
-    { LJ_K_SPEEDBUTTON, "sbUp", 73, 5, 23, 22, .hint = "Add new page", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbDown", 97, 5, 23, 22, .hint = "Add new page", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbAddPage", 3, 5, 23, 22, .hint = "Add new page", .glyph = "addpage", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbDeletePage", 120, 5, 23, 22, .hint = "Delete page", .glyph = "deletepage", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbInsertPage", 26, 5, 23, 22, .hint = "Insert new page", .glyph = "insertpage", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbEditPage", 49, 5, 23, 22, .hint = "Edit page name", .glyph = "editpage", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbUp", 73, 5, 23, 22, .hint = "Add new page", .glyph = "up", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbDown", 97, 5, 23, 22, .hint = "Add new page", .glyph = "down", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
     { LJ_K_LABEL, "lPages", 146, 13, 37, 14, .caption = "lPages", .font = LJ_FONT_ARIAL14B, .font_inherited = 1 },
 };
 static const lj_column_desc tstatics2prefsform_pagecontrol1_tstabs_panel2_lvpages_cols[] = {
@@ -12842,8 +12842,8 @@ static const lj_column_desc tstatics2prefsform_pagecontrol1_tbgroups_panel5_lvgr
     { .autosize = LJ_YES, .caption = "Group Name", .image_index = -1 },
 };
 static const lj_ctl_desc tstatics2prefsform_pagecontrol1_tbgroups_panel5_panel6[] = {
-    { LJ_K_SPEEDBUTTON, "sbAddGroup", 3, 5, 23, 22, .hint = "Add new page", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbDeleteGroup", 30, 5, 23, 22, .hint = "Delete page", .glyph = "missing", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" } } },
+    { LJ_K_SPEEDBUTTON, "sbAddGroup", 3, 5, 23, 22, .hint = "Add new page", .glyph = "addgroup", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" }, { "OnMouseDown", "sbPageMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbDeleteGroup", 30, 5, 23, 22, .hint = "Delete page", .glyph = "deletegroup", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbPageButtonClick" } } },
 };
 static const lj_ctl_desc tstatics2prefsform_pagecontrol1_tbgroups_panel5[] = {
     { LJ_K_LISTVIEW, "lvGroups", 0, 0, 145, 166, .align = LJ_AL_CLIENT, .columns = tstatics2prefsform_pagecontrol1_tbgroups_panel5_lvgroups_cols, .ncolumns = LJ_COUNT_OF(tstatics2prefsform_pagecontrol1_tbgroups_panel5_lvgroups_cols), .column_click = LJ_NO, .grid_lines = LJ_YES, .hide_selection = LJ_NO, .multiselect = LJ_YES, .readonly = LJ_YES, .row_select = LJ_YES, .tab_order = 0, .view_style = "vsReport", .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .events = { { "OnChange", "lvChange" } } },
@@ -12860,9 +12860,9 @@ static const lj_ctl_desc tstatics2prefsform_pagecontrol1[] = {
     { LJ_K_TABSHEET, "tbGroups", 0, 0, 0, 0, .caption = "Groups", .image_index = 3, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .children = tstatics2prefsform_pagecontrol1_tbgroups, .nchildren = LJ_COUNT_OF(tstatics2prefsform_pagecontrol1_tbgroups) },
 };
 static const lj_ctl_desc tstatics2prefsform_panel1[] = {
-    { LJ_K_BITBTN, "bOk", 117, 3, 75, 25, .caption = "OK", .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
+    { LJ_K_BITBTN, "bOk", 117, 3, 75, 25, .caption = "OK", .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
     { LJ_K_BITBTN, "bApply", 197, 3, 75, 25, .caption = "Apply", .default_btn = LJ_YES, .tab_order = 1, .num_glyphs = 2, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
-    { LJ_K_BITBTN, "bCancel", 277, 3, 75, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
+    { LJ_K_BITBTN, "bCancel", 277, 3, 75, 25, .cancel = LJ_YES, .caption = "Cancel", .tab_order = 2, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bClick" } } },
 };
 static const lj_ctl_desc tstatics2prefsform_ctls[] = {
     { LJ_K_PAGECONTROL, "PageControl1", 0, 0, 473, 223, .active_page = "tbGroups", .align = LJ_AL_CLIENT, .tab_order = 0, .font = LJ_FONT_ARIAL14B, .font_inherited = 1, .children = tstatics2prefsform_pagecontrol1, .nchildren = LJ_COUNT_OF(tstatics2prefsform_pagecontrol1), .events = { { "OnChange", "PageControl1Change" } } },
@@ -13405,8 +13405,8 @@ static const lj_ctl_desc ttranslationeditform_panel3_panel1[] = {
     { LJ_K_BITBTN, "BitBtn3", 211, 264, 75, 25, .caption = "Load", .tab_order = 10, .font = LJ_FONT_SANS13B, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
 };
 static const lj_ctl_desc ttranslationeditform_panel3_panel5[] = {
-    { LJ_K_BITBTN, "bOk", 23, 5, 125, 25, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .caption = "OK", .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
-    { LJ_K_BITBTN, "BitBtn4", 152, 5, 125, 25, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .cancel = LJ_YES, .caption = "Cancel", .modal_result = 2, .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bOk", 23, 5, 125, 25, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .caption = "OK", .tab_order = 0, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bOkClick" } } },
+    { LJ_K_BITBTN, "BitBtn4", 152, 5, 125, 25, .anchors = LJ_AK_LEFT | LJ_AK_BOTTOM, .cancel = LJ_YES, .caption = "Cancel", .modal_result = 2, .tab_order = 1, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .spacing = 4 },
 };
 static const lj_ctl_desc ttranslationeditform_panel3[] = {
     { LJ_K_PANEL, "Panel4", 1, 232, 297, 150, .align = LJ_AL_TOP, .parent_color = LJ_YES, .tab_order = 2, .font = LJ_FONT_SANS13B, .font_inherited = 1, .bevel_width = 1, .children = ttranslationeditform_panel3_panel4, .nchildren = LJ_COUNT_OF(ttranslationeditform_panel3_panel4) },
@@ -13436,7 +13436,7 @@ const lj_form_desc lj_form_TTRANSLATIONEDITFORM = {
     .min_height = 460,
     .min_width = 460,
     .font_color = LJ_CLR(0x000000),
-    .icon = "missing",
+    .icon = "ico-translation",
     .menu = "MainMenu1",
     .position = LJ_PO_OWNERFORMCENTER,
     .text_height = 13,
@@ -13510,7 +13510,7 @@ const lj_form_desc lj_form_TUNASSIGNEDFORM = {
 
 /* ---- TUNBLOCKLASERSFORM.dfm.txt ---- */
 static const lj_ctl_desc tunblocklasersform_ctls[] = {
-    { LJ_K_IMAGE, "Image1", 4, 12, 111, 100, .autosize = LJ_YES, .picture = "missing", .transparent = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1 },
+    { LJ_K_IMAGE, "Image1", 4, 12, 111, 100, .autosize = LJ_YES, .picture = "laser-warning", .transparent = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .image_index = -1 },
     { LJ_K_LABEL, "Label1", 95, 8, 199, 24, .caption = "Enable laser output \?", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .transparent = LJ_YES, .font = LJ_FONT_OTHER, .font_name = "MS Sans Serif", .font_height = -19, .font_style = LJ_FS_BOLD },
     { LJ_K_LABEL, "Label2", 95, 40, 139, 24, .caption = "Please confirm", .font_color = LJ_CLR(0x000000), .parent_font = LJ_NO, .transparent = LJ_YES, .font = LJ_FONT_OTHER, .font_name = "MS Sans Serif", .font_height = -19, .font_style = LJ_FS_BOLD },
     { LJ_K_BITBTN, "BitBtn1", 123, 87, 75, 25, .tab_order = 0, .kind_str = "bkYes", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },
@@ -13573,10 +13573,10 @@ const lj_form_desc lj_form_TUPDATEBGCUESFORM = {
 
 /* ---- TUPDATECL2FORM.dfm.txt ---- */
 static const lj_ctl_desc tupdatecl2form_panel1[] = {
-    { LJ_K_BITBTN, "bUpdate", 31, 32, 284, 25, .caption = "Ok, do the update now", .default_btn = LJ_YES, .modal_result = 6, .tab_order = 1, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bUpdateClick" } } },
-    { LJ_K_BITBTN, "bRemindMe", 31, 60, 284, 25, .cancel = LJ_YES, .caption = "Don't update now, but remindme later", .modal_result = 4, .tab_order = 2, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bRemindMeClick" } } },
-    { LJ_K_BITBTN, "bCancel", 31, 87, 284, 25, .cancel = LJ_YES, .caption = "Don't update - don't remind me", .modal_result = 2, .tab_order = 3, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
-    { LJ_K_BITBTN, "bHelp", 31, 5, 284, 25, .caption = "Read help notes", .default_btn = LJ_YES, .tab_order = 0, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bHelpClick" } } },
+    { LJ_K_BITBTN, "bUpdate", 31, 32, 284, 25, .caption = "Ok, do the update now", .default_btn = LJ_YES, .modal_result = 6, .tab_order = 1, .glyph = "ok", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bUpdateClick" } } },
+    { LJ_K_BITBTN, "bRemindMe", 31, 60, 284, 25, .cancel = LJ_YES, .caption = "Don't update now, but remindme later", .modal_result = 4, .tab_order = 2, .glyph = "remind", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bRemindMeClick" } } },
+    { LJ_K_BITBTN, "bCancel", 31, 87, 284, 25, .cancel = LJ_YES, .caption = "Don't update - don't remind me", .modal_result = 2, .tab_order = 3, .glyph = "cancel", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCancelClick" } } },
+    { LJ_K_BITBTN, "bHelp", 31, 5, 284, 25, .caption = "Read help notes", .default_btn = LJ_YES, .tab_order = 0, .glyph = "help", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bHelpClick" } } },
 };
 static const lj_ctl_desc tupdatecl2form_ctls[] = {
     { LJ_K_BEVEL, "Bevel1", 0, 0, 337, 132, .align = LJ_AL_CLIENT, .style = "bsRaised", .font = LJ_FONT_SANS13, .font_inherited = 1 },
@@ -13749,10 +13749,10 @@ static const lj_ctl_desc tuserlibform_panel1[] = {
     { LJ_K_BITBTN, "bSelect", 7, 5, 170, 25, .caption = "Select User Library", .enabled = LJ_NO, .tab_order = 0, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bSelectClick" } } },
     { LJ_K_BITBTN, "bCreate", 7, 33, 170, 25, .caption = "&Create New Library", .tab_order = 1, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bCreateClick" } } },
     { LJ_K_BITBTN, "bDelete", 7, 62, 170, 25, .caption = "&Delete Library", .enabled = LJ_NO, .tab_order = 2, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bDeleteClick" } } },
-    { LJ_K_BITBTN, "bClose", 7, 186, 170, 25, .caption = "&Close", .modal_result = 2, .tab_order = 3, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
-    { LJ_K_BITBTN, "bRename", 6, 90, 170, 25, .caption = "&Rename Library", .enabled = LJ_NO, .tab_order = 4, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bRenameClick" } } },
-    { LJ_K_BITBTN, "bbackup", 8, 128, 170, 25, .caption = "Backup Library", .enabled = LJ_NO, .tab_order = 5, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bbackupClick" } } },
-    { LJ_K_BITBTN, "bRestore", 8, 153, 170, 25, .caption = "Restore Library", .tab_order = 6, .glyph = "missing", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bRestoreClick" } } },
+    { LJ_K_BITBTN, "bClose", 7, 186, 170, 25, .caption = "&Close", .modal_result = 2, .tab_order = 3, .glyph = "close", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4 },
+    { LJ_K_BITBTN, "bRename", 6, 90, 170, 25, .caption = "&Rename Library", .enabled = LJ_NO, .tab_order = 4, .glyph = "edit", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bRenameClick" } } },
+    { LJ_K_BITBTN, "bbackup", 8, 128, 170, 25, .caption = "Backup Library", .enabled = LJ_NO, .tab_order = 5, .glyph = "save-19x17", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bbackupClick" } } },
+    { LJ_K_BITBTN, "bRestore", 8, 153, 170, 25, .caption = "Restore Library", .tab_order = 6, .glyph = "load-19x17", .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bRestoreClick" } } },
 };
 static const lj_ctl_desc tuserlibform_panel2[] = {
     { LJ_K_LABEL, "Label1", 8, 7, 106, 13, .caption = "Current User Library is ", .font = LJ_FONT_SANS13, .font_inherited = 1 },

@@ -113,3 +113,13 @@ definitions reproduce the decode sample for sample; the 13 that do not:
 `test_genmacro` asserts the count, the names, every range above (the note's ranges, with 57 / 58 ours) and the sine
 family against `tests/vectors.h`. A user's own `Macros.Mac` replaces the table at run time (`<library>\Override\`,
 `docs/fidelity.md`).
+
+## W4 docs-release: the help topics
+
+| File | Tool | Inputs | Check |
+|---|---|---|---|
+| `src/windows/lj_help_topics_gen.c`, `.h` | `tools/help_check.py --write` | `help/*.txt` (our own topic text; line 1 the title, line 2 blank, ASCII, at most 72 columns) | CTest `help_check` (`--check`: the files current, every topic valid, no French / German words, and where `reference/` exists no run of 8 words shared with `lj-Help_chm_2.209.txt`, `LJ_2.100_Helpfile.txt` or `lj-Help2_6b6.txt`; `docs/user-guide.md` is checked the same way); `help_check_selftest` plants an 8-word run, a German topic and a stale file and must catch each; `test_help_viewer` |
+
+The topics are compiled in, index first and then in the order `help/index.txt`
+lists their titles; `lj_help_viewer_topic("<file stem>")` opens one. Both
+installers also ship the `.txt` files (`docs/building.md`).

@@ -30,6 +30,9 @@ int  lj_seq_form_add_scene(void);                    /* append a copy of the cur
 int  lj_seq_form_insert_scene(void);                 /* one copy of the current scene before it (the dialog's default) */
 int  lj_seq_form_delete_scene(void);                 /* the current scene; the last one left is reset to all-off */
 int  lj_seq_form_delete_all(void);                   /* one all-off scene */
+int  lj_seq_form_delete_range(int first, int last);  /* W4 Delete Scene(s): 0-based inclusive, clamped to the sequence; all = one all-off scene */
+int  lj_seq_form_insert_copies(int count);           /* W4 Insert: count copies of the current scene before it [03 s4.3]; the first copy becomes current */
+int  lj_seq_form_insert_from(const lj_sequence *src, int first, int last);   /* W4 Insert: src scenes first..last (0-based; NULL = the current sequence) before the current scene */
 int  lj_seq_form_goto(int index);                    /* 0-based; wraps at both ends */
 int  lj_seq_form_set_times(uint32_t scene_ms, uint32_t fade_ms);   /* current scene; Synchronize / Global rules applied; clamped to LJ_TIME_MAX_MS */
 void lj_seq_form_new(int force);                     /* "New Sequence": force = no "Current Sequence was modified" prompt */

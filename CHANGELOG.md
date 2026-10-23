@@ -10,6 +10,16 @@ single source of the number.
   DFMs, shared scrollbar fitting, five sans13 glyphs; `widthcorpus.py` retired.
 - W4 contracts (`docs/w4-contracts.md`): 102 W4 window ids in ten families with stub behaviour files, the W4 actions,
   one current-scene getter and one set-text helper (ME-129), the caption dump verb and `tools/caption_diff.py`.
+- W4 docs-release: Help opens a bundled viewer (`LJ_WIN_HELP`, code-built) with 15 topics of our own text
+  (`help/*.txt`, compiled in by `tools/help_check.py`; the `help_check` CTest refuses French / German text and any
+  8-word run shared with Martin's help); every main-menu, desktop-popup and icon-popup Help item reaches it
+  (`test_help_viewer`). Both installers carry `THIRD_PARTY_NOTICES.txt` with the full Apache-2.0, QLC+ NOTICE, miniz
+  MIT and SDL3 zlib texts plus the topics (ME-36): beside `lj4evr.exe`, and inside `LJ4EVR.app/Contents/Resources` on
+  macOS, where the `.dmg` now holds `LJ4EVR.app`, the Applications link and our icon. `release.yml` checks the
+  silently installed NSIS tree and the mounted `.dmg`, logs `lipo -info`, `codesign -dv` and `plutil -p`, refuses a
+  `vcruntime` dependency, and its notes carry the sacrifice list. About: the licence line is one PROPOSAL-tagged
+  constant and the provenance trademark line is shown (ME-37). New docs: `docs/user-guide.md`, `docs/provenance.md`,
+  `SECURITY.md`; `.bez` and the Import / Export / Override folders in `docs/file-formats.md`.
 
 ## [0.3.0] - 2026-10-22 - W3 Show control
 

@@ -1,9 +1,10 @@
 /* lj_gs2_dialogs.c - see lj_gs2_dialogs.h (W3 integrator: the gs2 track left the bodies open). TFixtureImportForm,
  * TExportFixtureForm and TExportAllForm; every DFM handler bound (ME-16). There is no native file dialog in W3, so the
  * folders are fixed inside the user library: <library>\Import\ is what Import lists, <library>\Export\ is where both
- * exports write (PROPOSAL folders, docs/fidelity.md). The sub-dialogs (TProfileImportModifiedFilesForm "File Exists",
- * TFixtureExportWarningDialog, TProfileNameOldStyleForm) are not opened: Import (check modified) keeps an existing
- * profile instead of asking (ponytail: add the File Exists box when a user needs the per-file choice). */
+ * exports write (PROPOSAL folders, docs/fidelity.md). W4 (dlg-config): Import (check modified) skips an identical existing
+ * profile and asks TProfileImportModifiedFilesForm "File Exists" for one whose record differs; Create Export File asks
+ * TFixtureExportWarningDialog "Warning" first and TFileExistsForm "File Already Exists" when the .Udf is there
+ * (lj_config_dialogs.c). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC */
 #include "windows/lj_gs2_dialogs.h"
 
@@ -21,6 +22,7 @@
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
+#include "windows/lj_config_dialogs.h"
 #include "windows/lj_windows.h"
 
 #define GS2_IMPORT_DIR "Import"   /* PROPOSAL folder: LJ2 asks with a TOpenDialog */
@@ -83,24 +85,62 @@ int lj_gs2_import_file(const char *path, char *err, size_t cap)
     return rc;
 }
 
+/* the import's record equals the UserFixtureDef copy byte for byte (both parsed; a .Udf is compared by its stream 0) */
+static int same_record(const char *import_path, const char *file)
+{
+    lj_profile a, b;
+    char rel[96], dst[LJ_PATH_CAP], err[160], base[64];
+    const char *dot = strrchr(file, '.');
+    int same;
+    memset(&a, 0, sizeof a); memset(&b, 0, sizeof b);
+    snprintf(base, sizeof base, "%.*s", (int)(dot ? (size_t)(dot - file) : strlen(file)), file);
+    if (snprintf(rel, sizeof rel, "UserFixtureDef/%s.GS2", base) >= (int)sizeof rel || lj_library_path(lj_ctx_get()->lib, rel, dst, sizeof dst) != 0) return 0;
+    if ((ends_with(import_path, ".GS2") ? lj_gs2_load(import_path, &a, err, sizeof err) : lj_udf_import(import_path, &a, err, sizeof err)) != 0 || lj_gs2_load(dst, &b, err, sizeof err) != 0) { lj_gs2_free(&a); lj_gs2_free(&b); return 0; }
+    same = a.gs2_raw && b.gs2_raw && memcmp(a.gs2_raw, b.gs2_raw, LJ_GS2_REC_SIZE) == 0;
+    lj_gs2_free(&a); lj_gs2_free(&b);
+    return same;
+}
+static int import_path(const char *name, char *path, size_t cap) { char rel[96]; return snprintf(rel, sizeof rel, "%s/%s", GS2_IMPORT_DIR, name) >= (int)sizeof rel || lj_library_path(lj_ctx_get()->lib, rel, path, cap) != 0 ? -1 : 0; }
+static struct { char names[GS2_ROWS][64]; int n, at, done; } iq;   /* the modified files waiting for "File Exists" */
+static void iq_next(void);
+static void iq_answer(int v, void *ud)
+{
+    char path[LJ_PATH_CAP], err[160];
+    (void)ud;
+    if (v < 0) iq.at = iq.n;                                  /* Cancel: the rest are kept */
+    else if (v == 1 && import_path(iq.names[iq.at], path, sizeof path) == 0) { if (lj_gs2_import_file(path, err, sizeof err) == 0) iq.done++; else lj_log("import profile: %s: %s", iq.names[iq.at], err); }
+    if (iq.at < iq.n) iq.at++;
+    iq_next();
+}
+static void iq_next(void)
+{
+    if (iq.at < iq.n) { lj_config_dlg_import_modified(iq.names[iq.at], iq_answer, NULL); return; }
+    if (iq.done) lj_desktop_run_action(LJ_ACT_GS2_RELOAD, 0);
+    iq.n = iq.at = iq.done = 0;
+    im_list();
+}
 int lj_gs2_import_folder(int keep_existing)
 {
-    char rel[96], path[LJ_PATH_CAP], err[160];
+    char path[LJ_PATH_CAP], err[160];
     int i, done = 0;
     im_list();
+    iq.n = iq.at = iq.done = 0;
     for (i = 0; i < im.n; i++) {
-        if (keep_existing && user_exists(im.names[i])) continue;
-        if (snprintf(rel, sizeof rel, "%s/%s", GS2_IMPORT_DIR, im.names[i]) >= (int)sizeof rel || lj_library_path(lj_ctx_get()->lib, rel, path, sizeof path) != 0) continue;
+        if (import_path(im.names[i], path, sizeof path) != 0) continue;
+        if (keep_existing && user_exists(im.names[i])) {      /* "check modified": identical = nothing to do, different = ask */
+            if (!same_record(path, im.names[i]) && iq.n < GS2_ROWS) lj_str_copy(iq.names[iq.n++], sizeof iq.names[0], im.names[i]);
+            continue;
+        }
         if (lj_gs2_import_file(path, err, sizeof err) != 0) { lj_log("import profile: %s: %s", im.names[i], err); continue; }
         done++;
     }
-    if (done) lj_desktop_run_action(LJ_ACT_GS2_RELOAD, 0);
-    im_list();
+    iq.done = done;
+    iq_next();
     return done;
 }
 
 static void im_all(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_folder(0); im.close_pending = 1; }
-static void im_sel(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_folder(1); im.close_pending = 1; }
+static void im_sel(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_folder(1); im.close_pending = 1; }   /* the File Exists boxes outlive the import window */
 static void im_ov(lj_widget *w, void *ud) { (void)ud; if (w) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; } }   /* Offline Visualizer files: design 8.5 */
 static const lj_binding im_b[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bImportAllClick", im_all, NULL },
@@ -130,16 +170,21 @@ static struct { lj_window *win, *all; int close_pending, all_close, n; const cha
 
 static int export_dir(char *out, size_t cap) { if (!lj_ctx_get()->lib || lj_library_path(lj_ctx_get()->lib, GS2_EXPORT_DIR, out, cap) != 0) return -1; lj_fs_mkdir(out); return 0; }
 
-int lj_gs2_export_one(int index, char *err, size_t cap)
+static int export_path(int index, int n, char *path, size_t cap)   /* Export\<base>.Udf, n > 0: Export\<base>_<n>.Udf (Rename New File; PROPOSAL rig name) */
 {
     lj_show *s = show();
-    char dir[LJ_PATH_CAP], path[LJ_PATH_CAP], base[64];
+    char dir[LJ_PATH_CAP], base[64];
     const char *dot;
-    if (!s || index < 0 || index >= s->ngs2 || export_dir(dir, sizeof dir) != 0) { snprintf(err, cap, "no user profile selected"); return -1; }
+    if (!s || index < 0 || index >= s->ngs2 || export_dir(dir, sizeof dir) != 0) return -1;
     dot = strrchr(s->gs2[index].gs2_file, '.');
     snprintf(base, sizeof base, "%.*s", (int)(dot ? (size_t)(dot - s->gs2[index].gs2_file) : strlen(s->gs2[index].gs2_file)), s->gs2[index].gs2_file);
-    if (snprintf(path, sizeof path, "%s/%s.Udf", dir, base) >= (int)sizeof path) { snprintf(err, cap, "path too long"); return -1; }
-    return lj_udf_export(path, &s->gs2[index], err, cap);
+    return (n ? snprintf(path, cap, "%s/%s_%d.Udf", dir, base, n) : snprintf(path, cap, "%s/%s.Udf", dir, base)) >= (int)cap ? -1 : 0;
+}
+int lj_gs2_export_one(int index, char *err, size_t cap)
+{
+    char path[LJ_PATH_CAP];
+    if (export_path(index, 0, path, sizeof path) != 0) { snprintf(err, cap, "no user profile selected"); return -1; }
+    return lj_udf_export(path, &show()->gs2[index], err, cap);
 }
 
 int lj_gs2_export_all(void)
@@ -159,13 +204,39 @@ int lj_gs2_export_all(void)
     return n;
 }
 
-static void ex_save(lj_widget *w, void *ud)
+static int ex_index = -1;
+static void ex_write(const char *path)
 {
     char err[160];
+    if (lj_udf_export(path, &show()->gs2[ex_index], err, sizeof err) != 0) lj_log("export profile: %s", err);
+    ex.close_pending = 1;
+}
+static void ex_exists(int choice, void *ud)
+{
+    char path[LJ_PATH_CAP];
+    int n;
+    (void)ud;
+    if (!show() || ex_index < 0 || ex_index >= show()->ngs2) return;
+    if (choice == 1 && export_path(ex_index, 0, path, sizeof path) == 0) ex_write(path);   /* Overwrite Existing */
+    else if (choice == 0) { for (n = 1; n < 1000 && export_path(ex_index, n, path, sizeof path) == 0 && lj_fs_exists(path); n++) { } if (n < 1000) ex_write(path); }   /* Rename New File */
+    else if (choice == 2) ex.close_pending = 1;               /* Skip New File */
+}
+static void ex_go(int yes, void *ud)
+{
+    char path[LJ_PATH_CAP];
+    (void)ud;
+    if (!yes || export_path(ex_index, 0, path, sizeof path) != 0) return;
+    if (lj_fs_exists(path)) lj_config_dlg_file_exists(path, ex_exists, NULL);   /* TFileExistsForm "File Already Exists" */
+    else ex_write(path);
+}
+static void ex_save(lj_widget *w, void *ud)
+{
+    char path[LJ_PATH_CAP];
     lj_widget *lb = ex.win ? lj_window_find(ex.win, "lb1") : NULL;
     (void)w; (void)ud;
-    if (lj_gs2_export_one(lb ? ((lj_w_list *)lb)->index : -1, err, sizeof err) != 0) { lj_log("export profile: %s", err); return; }
-    ex.close_pending = 1;
+    ex_index = lb ? ((lj_w_list *)lb)->index : -1;
+    if (export_path(ex_index, 0, path, sizeof path) != 0) { lj_log("export profile: no user profile selected"); return; }
+    lj_config_dlg_export_warning(ex_go, NULL);                /* TFixtureExportWarningDialog "Warning" unless switched off */
 }
 static const lj_binding ex_b[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
@@ -183,6 +254,9 @@ lj_window *lj_gs2_export_open(void)
     lj_w_list_set_items(lj_window_find(ex.win, "lb1"), ex.items, i);
     lj_window_set_text(ex.win, "lExportFile", export_dir(dir, sizeof dir) == 0 ? dir : "");
     on_cancel(ex.win, "bCancel", &ex.close_pending);
+    {   lj_widget *b;   /* the DFM has Save / Cancel disabled until the export file is prepared ("Export file ready..", exportlist.gif shows both live): ready at open here */
+        if ((b = lj_window_find(ex.win, "bSave")) != NULL) b->enabled = 1;
+        if ((b = lj_window_find(ex.win, "bCancel")) != NULL) b->enabled = 1; }
     lj_win_show(ex.win, 0);
     return ex.win;
 }

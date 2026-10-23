@@ -116,6 +116,7 @@ static lj_widget *btn(int id)
 }
 
 static void fn(enum lj_fn f) { lj_fn_run(f, 1); }
+#define LJ_TB_NA "Not available in LJ4EVR"   /* ME-29 hint */
 
 static void right_click(int id)   /* [F9]: open this control, close the others; Save = quick save; Load = quick load; Follow spot = dialog; Prev/Next = dialog */
 {
@@ -151,7 +152,7 @@ static void click(int id)
     case B_CL_STATICS: fn(LJ_FN_STATICS_CONTROL); break;
     case B_CL_CD:    fn(LJ_FN_CD_CONTROL); break;
     case B_CL_MIDIIN: lj_desktop_run_action(LJ_ACT_MIDI_IN, 0); break;
-    case B_CL_DMXIN: lj_desktop_run_action(LJ_ACT_DMX_IN, 0); break;   /* W4: the window opens, inputs greyed; still disabled until the hw-dmxin track lands */
+    case B_CL_DMXIN: lj_desktop_run_action(LJ_ACT_DMX_IN, 0); break;   /* W4: the Dmx In window opens, its inputs greyed (I7: window W4, input W5) */
     case B_CL_2532:  fn(LJ_FN_2532_CONTROL); break;
     case B_FX_INTENSITY: fn(LJ_FN_CTL_INTENSITY); break;
     case B_FX_MOVEMENT:  fn(LJ_FN_CTL_MOVEMENT); break;
@@ -291,7 +292,12 @@ void lj_desktop_toolbar_update(void)
     set_visible(B_FX_NEXT, ctx->show_nextprev);
     set_enabled(B_FX_ONLINE, ctx->allow_offline);
     set_enabled(B_FX_FREEZE, ctx->allow_freeze);
-    set_enabled(B_CL_CD, 0); set_enabled(B_CL_MCX, 0); set_enabled(B_CL_2518, 0); set_enabled(B_CL_DMXIN, 0);   /* F8: greyed until their waves (W4 / W5) */
+    {   /* F8 / I13: CD, MC-X and 2518 dropped for good, greyed with the hint (desc->hint keeps LJ2's text for the F8 order); DMX In opens (W4) */
+        static const int dropped[] = { B_CL_CD, B_CL_MCX, B_CL_2518 };
+        int k;
+        for (k = 0; k < LJ_COUNT_OF(dropped); k++) { set_enabled(dropped[k], 0); if ((w = btn(dropped[k])) != NULL) w->hint = LJ_TB_NA; }
+        set_enabled(B_CL_DMXIN, 1);
+    }
     if ((w = btn(B_FX_INCL)) != NULL) lj_w_set_caption(w, lj_sel_mode() == LJ_SEL_INCLUSIVE ? "Inclusive" : "Exclusive");
     if ((w = btn(B_FX_SOLO)) != NULL) lj_w_speedbutton_set_down(w, lj_sel_solo());
     if (viewed && ctx->view.tick_no != lj_tb_led_tick) {   /* W2: the three LEDs follow each new view copy; a window's direct lj_desktop_led_set holds until the next one */

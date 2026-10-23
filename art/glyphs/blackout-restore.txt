@@ -1,0 +1,17 @@
+palette .=C0C0C0 #=000000 g=808080 y=FFFF00
+................
+................
+.##############.
+.#gggggg###y###.
+.#gggggg##yyy##.
+.#gggggg#yyyyy#.
+.#gggggg##yy###.
+.#gggggg##yy###.
+.#gggggg##yy###.
+.#gggggg##yy###.
+.#gggggg##yy###.
+.#gggggg##yy###.
+.#gggggg##yy###.
+.##############.
+................
+................

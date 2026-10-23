@@ -1,16 +1,21 @@
-/* lj_prefs.c - see lj_prefs.h. Every OnXxx of TSTARTUPFORM is bound (ME-16); the
- * Select buttons need the list dialogs' pick-back (windows-b, W2) and log until then;
- * the Auto Launch list (startup.ini of the install folder) is W2. */
+/* lj_prefs.c - see lj_prefs.h. Every OnXxx of TSTARTUPFORM is bound (ME-16). W4 (dlg-desktop): the number fields are
+ * read back on Ok, Select Startup Cuelist opens TSelectCuelist2ModalForm (its pick comes back through
+ * lj_startup_options_set_cl), the other Select buttons open their lists (the number is typed), and the Auto Launch list
+ * lives in Startup.ini [AUTOLAUNCH] Count File1..n (ours, PROPOSAL: LJ2 keeps it in the install folder's startup.ini). */
 #include "windows/lj_prefs.h"
 
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "core/lj_log.h"
+#include "core/lj_str.h"
+#include "windows/lj_desktop_dialogs.h"
+#include "windows/lj_help_viewer.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
 
-typedef struct { lj_window *win; lj_startup_opts o; } lj_so_state;
+typedef struct { lj_window *win; lj_startup_opts o; char launch[LJ_LAUNCH_MAX][LJ_PATH_CAP]; const char *launch_ptr[LJ_LAUNCH_MAX]; int nlaunch; } lj_so_state;
 static lj_so_state so;
 
 void lj_startup_opts_load(lj_ini *ini, lj_startup_opts *o)
@@ -46,6 +51,17 @@ static void page_fill(void)
     lj_w_checkbox_set_checked(find("SeqRun"), so.o.seq_run); lj_w_checkbox_set_checked(find("ClRun"), so.o.cl_run);
     lj_w_checkbox_set_checked(find("cbRunMinimized"), so.o.minimized); lj_w_checkbox_set_checked(find("cbShowNotes"), so.o.show_notes);
     lj_w_radiogroup_set_index(find("RGAutolamp"), so.o.auto_lamp_on);
+    { int i; for (i = 0; i < so.nlaunch; i++) so.launch_ptr[i] = so.launch[i]; lj_w_list_set_items(find("lbauto"), so.launch_ptr, so.nlaunch); }
+}
+
+static int32_t number_back(const char *name)   /* the typed number, -1 when blank or not a number */
+{
+    const char *t = lj_w_edit_text(find(name));
+    char *end;
+    long v;
+    if (!t || !*t) return -1;
+    v = strtol(t, &end, 10);
+    return *end || v < 0 || v > 99999999 ? -1 : (int32_t)v;
 }
 
 int lj_startup_options_apply(void)
@@ -55,11 +71,28 @@ int lj_startup_options_apply(void)
     so.o.seq_run = (uint8_t)lj_w_checkbox_checked(find("SeqRun")); so.o.cl_run = (uint8_t)lj_w_checkbox_checked(find("ClRun"));
     so.o.minimized = (uint8_t)lj_w_checkbox_checked(find("cbRunMinimized")); so.o.show_notes = (uint8_t)lj_w_checkbox_checked(find("cbShowNotes"));
     so.o.auto_lamp_on = lj_w_radiogroup_index(find("RGAutolamp")); if (so.o.auto_lamp_on < 0) so.o.auto_lamp_on = 0;
+    so.o.seq = number_back("ESeqNum"); so.o.cue = number_back("ECueNum"); so.o.cl = number_back("EClNum"); so.o.pcue = number_back("ePCueNum");
     lj_startup_opts_save(ctx->main_ini, &so.o);
+    lj_auto_launch_save((const char *const *)so.launch_ptr, so.nlaunch);
     return 0;
 }
 
-static void na(lj_widget *w, void *ud) { (void)ud; lj_log("startup options: %s: list pick is W2 (windows-b lists)", w && w->name ? w->name : "?"); }
+static void on_select(lj_widget *w, void *ud)   /* ponytail: the Sequence / Cue / BG lists have no pick-back seam; the number is typed into the field */
+{
+    (void)w;
+    lj_win_open((enum lj_win)(intptr_t)ud);
+}
+static void on_browse(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_dlg_pick(LJ_PICK_LAUNCH); }
+static void on_delete(lj_widget *w, void *ud)   /* AutoPop Delete Entry: the selected row */
+{
+    const lj_w_list *l = (const lj_w_list *)find("lbauto");
+    (void)w; (void)ud;
+    if (!l || l->index < 0 || l->index >= so.nlaunch) return;
+    memmove(so.launch[l->index], so.launch[l->index + 1], sizeof so.launch[0] * (size_t)(so.nlaunch - l->index - 1));
+    so.nlaunch--;
+    page_fill();
+}
+static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_help_viewer_topic(NULL); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_startup_options_apply() == 0) lj_startup_options_close(); }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_startup_options_close(); }
 static void on_clear(lj_widget *w, void *ud)
@@ -72,10 +105,11 @@ static void on_clear(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_so_bindings[] = {
-    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "BOkClick", on_ok, NULL }, { "Help1Click", lj_handler_noop, NULL },
-    { "SeqSelectClick", na, NULL }, { "CueSelectClick", na, NULL }, { "ClSelectClick", na, NULL }, { "sbPCueSelectClick", na, NULL },
+    { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "BOkClick", on_ok, NULL }, { "Help1Click", on_help, NULL },
+    { "SeqSelectClick", on_select, (void *)(intptr_t)LJ_WIN_LIST_SEQ }, { "CueSelectClick", on_select, (void *)(intptr_t)LJ_WIN_LIST_CUE },
+    { "ClSelectClick", on_select, (void *)(intptr_t)LJ_WIN_SELECT_CUELIST_MODAL }, { "sbPCueSelectClick", on_select, (void *)(intptr_t)LJ_WIN_SELECT_BGCUE },
     { "SeqClearClick", on_clear, NULL }, { "CueClearClick", on_clear, NULL }, { "ClClearClick", on_clear, NULL }, { "sbPCueClearClick", on_clear, NULL },
-    { "bBrowseClick", na, NULL }, { "lbautoClick", lj_handler_noop, NULL }, { "P_DeleteClick", na, NULL }, { "AutoPopPopup", lj_handler_noop, NULL },
+    { "bBrowseClick", on_browse, NULL }, { "lbautoClick", lj_handler_noop, NULL }, { "P_DeleteClick", on_delete, NULL }, { "AutoPopPopup", lj_handler_noop, NULL },
     { NULL, NULL, NULL }
 };
 
@@ -85,9 +119,47 @@ lj_window *lj_startup_options_open(void)
     so.win = lj_window_create(&lj_form_TSTARTUPFORM, lj_so_bindings);
     if (!so.win) { lj_log("startup options: cannot create TStartupForm"); return NULL; }
     lj_startup_opts_load(lj_ctx_get()->main_ini, &so.o);
+    so.nlaunch = lj_auto_launch_load(so.launch, LJ_LAUNCH_MAX);
     page_fill();
     lj_win_show(so.win, 0);
     return so.win;
+}
+
+void lj_startup_options_set_cl(int32_t number) { if (so.win) { so.o.cl = number; number_field("EClNum", number); } }
+int lj_startup_options_add_launch(const char *path)
+{
+    if (!so.win || !path || !path[0] || so.nlaunch >= LJ_LAUNCH_MAX) return -1;
+    lj_str_copy(so.launch[so.nlaunch++], sizeof so.launch[0], path);
+    page_fill();
+    return 0;
+}
+
+static int startup_ini_path(char *dst, size_t cap) { const char *u = lj_ctx_get()->userdir; return u[0] && snprintf(dst, cap, "%sStartup.ini", u) < (int)cap ? 0 : -1; }
+int lj_auto_launch_load(char (*out)[LJ_PATH_CAP], int cap)
+{
+    char path[LJ_PATH_CAP], key[16];
+    lj_ini *ini;
+    int i, n, k = 0;
+    if (startup_ini_path(path, sizeof path) != 0 || !(ini = lj_ini_load(path))) return 0;
+    n = lj_ini_geti(ini, "AUTOLAUNCH", "Count", 0);
+    for (i = 1; i <= n && k < cap && k < LJ_LAUNCH_MAX; i++) {
+        snprintf(key, sizeof key, "File%d", i);
+        if (lj_str_copy(out[k], LJ_PATH_CAP, lj_ini_gets(ini, "AUTOLAUNCH", key, "")) == 0 && out[k][0]) k++;
+    }
+    lj_ini_free(ini);
+    return k;
+}
+void lj_auto_launch_save(const char *const *paths, int n)
+{
+    char path[LJ_PATH_CAP], key[16];
+    lj_ini *ini;
+    int i;
+    if (startup_ini_path(path, sizeof path) != 0) return;
+    if (!(ini = lj_ini_load(path)) && !(ini = lj_ini_new())) return;   /* [USERDIRECTORY] / [RESTORELIB] stay as they are */
+    lj_ini_seti(ini, "AUTOLAUNCH", "Count", n);
+    for (i = 0; i < n; i++) { snprintf(key, sizeof key, "File%d", i + 1); lj_ini_sets(ini, "AUTOLAUNCH", key, paths[i]); }
+    if (lj_ini_save(ini, path) != 0) lj_log("startup options: %s not saved", path);
+    lj_ini_free(ini);
 }
 
 void lj_startup_options_close(void)

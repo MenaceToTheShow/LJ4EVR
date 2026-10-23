@@ -230,15 +230,10 @@ static const char *const lj_ctl_c_gobo_stems[] = { "gobo_open", "gobo_cone", "go
 static void entry_look(const lj_ctl_c *c, const lj_ctl_row *r, int i, const lj_surface **tile, uint32_t *rgb)
 {
     const lj_pal_entry *e = &c->p->palette[pal_index(c, r->ch)].e[i];
-    *tile = e->bitmap[0] ? lj_glyph_get(e->bitmap) : NULL;
-    if (!*tile && e->bitmap[0]) {                              /* integrator: the hand files name tiles "Cone", the art stems are gobo_cone (art/glyphs) */
-        char stem[40];
-        size_t k;
-        snprintf(stem, sizeof stem, "gobo_%s", e->bitmap);
-        for (k = 5; stem[k]; k++) if (stem[k] >= 'A' && stem[k] <= 'Z') stem[k] = (char)(stem[k] - 'A' + 'a');
-        *tile = lj_glyph_get(stem);
-    }
+    uint32_t gel = 0;
     *rgb = e->used ? e->rgb & 0xFFFFFFu : LJ_CLR_BTNHIGHLIGHT;
+    if (lj_palette_look(e->bitmap, c->kind != LJ_CTL_COLORS, tile, &gel) == 1 && !*tile && (!e->used || e->rgb == 0))
+        *rgb = gel;                                                    /* Source-Images, our 31x30 tile, a split / text gel; a flat gel only where the entry has no colour of its own */
     if (!*tile && !e->bitmap[0] && e->used && e->rgb == 0 && c->kind != LJ_CTL_COLORS)
         *tile = lj_glyph_get(lj_ctl_c_gobo_stems[i % LJ_COUNT_OF(lj_ctl_c_gobo_stems)]);
 }

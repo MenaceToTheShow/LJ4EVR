@@ -21,4 +21,15 @@ lj_window  *lj_win_confirm(const char *caption, const char *line1, const char *l
 lj_window  *lj_win_message_window(void);                          /* the open lj_win_message / lj_win_confirm box, NULL when none */
 lj_window  *lj_win_close_prompt_window(void);                      /* the open TCLOSEORSAVEFORM, NULL when none */
 
+/* ---- W4 dlg-desktop (appended): the LStatus table's source tags, the two 'Notification !' boxes and the laser pair; the
+ * DESKTOP family (lj_desktop_dialogs.c) dispatches LJ_WIN_HOTKEY_WARNING / HARDWARE_WARNING / LASER_WARNING / UNBLOCK_LASERS
+ * here. lj_win_message_window() also answers these boxes when no confirm box is open (assert_prompt, shot). */
+const char *lj_warnings_status_source(enum lj_warning w);          /* "exe 0x18DFE0 ..." / "DFM TFREEZEWARNFORM Label1" */
+lj_window  *lj_warnings_w4_open(enum lj_win id);
+lj_window  *lj_warnings_w4_get(enum lj_win id);
+void        lj_warnings_w4_close(enum lj_win id);
+void        lj_warnings_w4_refresh(enum lj_win id);                /* the 100 ms poll: Edit Hotkeys / Select Function opening, no sACN universe mapped, laser demand / emission */
+int         lj_laser_fixture(int fixture);                         /* 1 = a laser profile (118 MAC250L, "Laser" in the name) */
+int         lj_laser_enabled(void);                                /* 1 after 'Enable laser output ?' Yes, 0 = blocked (start-up state, or clicked on the warning) */
+
 #endif /* LJ_WINDOWS_WARNINGS_H */

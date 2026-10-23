@@ -22,6 +22,9 @@
 #include "ui/widgets/lj_w_cuerow.h"
 #include "windows/lj_windows.h"
 #include "windows/lj_cue_pages.h"      /* W2 windows-a */
+#include "windows/lj_seq_form.h"       /* W4 dlg-show */
+#include "windows/lj_show_dialogs.h"
+#include "windows/lj_warnings.h"
 
 #define LJ_CUE_COLS   9
 #define LJ_CUE_BTN_W  30     /* measured from cuecontrol.gif, reduced, rig item: the numbered enable button left of the list */
@@ -139,7 +142,7 @@ static void build_row(int i, lj_cue_row *r)
     r->enabled = (uint8_t)(sl ? sl->enabled : 1);
     if (!sl || sl->seq == 0) {
         snprintf(key, sizeof key, "SlotName%d", i);
-        lj_str_copy(r->cell[1], LJ_CUE_CELL, lj_ini_gets(C()->forms_ini, "CUE", key, ""));
+        if (*lj_ini_gets(C()->forms_ini, "CUE", key, "")) snprintf(r->cell[1], LJ_CUE_CELL, "(%s)", lj_ini_gets(C()->forms_ini, "CUE", key, ""));   /* seqslotlabel.gif: "(Intensity)" on an empty slot */
         r->rgb = lj_cue_form_row_rgb(LJ_SLOT_EMPTY, 0, 0, 0, s.use_colors);
         return;
     }
@@ -247,7 +250,7 @@ static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
         return 1;
     }
     if (m->button == 1 && m->clicks == 2) {
-        if (lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "DBCLICKSEQ", 1) && cue_rec() && cue_rec()->slot[row].seq) lj_log("lj_cue_form: DoubleClick to Edit Sequence %04u: the sequence loader is W2", (unsigned)cue_rec()->slot[row].seq);
+        if (lj_ini_geti(lj_ctx_get()->forms_ini, "CUE", "DBCLICKSEQ", 1) && cue_rec() && cue_rec()->slot[row].seq) lj_seq_form_load(cue_rec()->slot[row].seq, 0);   /* DoubleClick to Edit Sequence */
         return 1;
     }
     if (m->ctrl) s.sel = (uint16_t)(s.sel ^ (1u << row));
@@ -258,6 +261,41 @@ static int grid_mouse(lj_widget *w, const lj_mouse_ev *m)
 }
 
 static const lj_widget_vt lj_cue_grid_vt = { grid_paint, grid_mouse, NULL, NULL };
+
+/* W4 (12 Q9): a sequence asked into a given slot; the two prompts of the save-sequence unit (exe 0x2261BC, 0x226210) */
+static uint32_t lj_cue_pending_seq;
+static int lj_cue_to_free(uint32_t seq_no)
+{
+    if (lj_cue_form_add_sequence(seq_no) > 0) return 0;
+    lj_win_message("Add Sequence to Cue", "No free sequence slots in cue - sequence not added to cue");
+    return -1;
+}
+static void lj_cue_nonprio(int yes, void *ud) { (void)ud; if (yes && lj_cue_pending_seq) lj_cue_to_free(lj_cue_pending_seq); lj_cue_pending_seq = 0; }
+int lj_cue_form_add_sequence_at(uint32_t seq_no, int slot)
+{
+    lj_cue *cue = cue_rec();
+    if (!cue || !seq_no) return -1;
+    if (slot < 1 || slot > LJ_CUE_SLOTS) return lj_cue_to_free(seq_no);
+    if (cue->slot[slot - 1].seq) {                                 /* PROPOSAL rig 12 Q9 row 83: the slot asked for is taken */
+        lj_cue_pending_seq = seq_no;
+        lj_win_confirm("Add Sequence to Cue", "No priority slots available - add sequence as non-priority sequence ?", NULL, lj_cue_nonprio, NULL);
+        return 0;
+    }
+    lj_lock();
+    lj_cue_add_sequence(cue, seq_no, slot);
+    lj_unlock();
+    modified();
+    lj_cue_form_refresh();
+    return slot;
+}
+static void grid_event(lj_widget *w, int ev, void *ud)   /* a sequence from the List of Sequences dropped on a slot row [03 s4.4] */
+{
+    int kind, number, x, y, row;
+    (void)ud;
+    if (ev != LJ_WEV_DRAG_DROP || lj_dnd_info(s.win, &kind, &number, &x, &y) != 0 || kind != LJ_REC_SEQ || number <= 0) return;
+    row = grid_row_at((lj_cue_grid *)w, y);
+    lj_cue_form_add_sequence_at((uint32_t)number, row >= 0 ? row + 1 : 0);
+}
 
 static void grid_layout(void)
 {
@@ -533,6 +571,7 @@ static void sb_down(lj_widget *w, void *ud)
     lj_cue_form_refresh();
 }
 
+static void bg_picked(uint32_t number, void *ud);
 static void sb_up(lj_widget *w, void *ud)
 {
     const char *n = w->name ? w->name : "";
@@ -543,10 +582,24 @@ static void sb_up(lj_widget *w, void *ud)
     else if (!strcmp(n, "sbGetCue")) { if (lj_list_cue_get()) lj_list_cue_close(); else lj_list_cue_open(); }
     else if (!strcmp(n, "sbLoop")) lj_win_toggle(LJ_WIN_LOOP_OPTIONS);      /* W2 windows-a: Cue Loop Control [03 s5.5] */
     else if (!strcmp(n, "sbCueTime")) lj_win_toggle(LJ_WIN_CUE_TIME);       /* W2 windows-a: Cue Time Control [03 s5.6] */
+    else if (!strcmp(n, "sbLoadBGCue")) lj_show_dlg_select_bgcue(bg_picked, NULL);   /* W4 dlg-show */
     else lj_log("lj_cue_form: %s is W2", n);                      /* BGCue / generic macro group [03 s5.4] */
 }
 
 static void w2(lj_widget *w, void *ud) { (void)ud; lj_log("lj_cue_form: %s: W2", w->name ? w->name : "?"); }
+static void open_name_slots(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_NAME_SLOTS); }      /* W4: Preferences > Sequence Slot Labels (TNameSlotsForm) */
+static void open_cue_builder(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_toggle(LJ_WIN_CUE_STACK); }    /* W4: Cue-Builder (TCueStackForm) [03 s5.8] */
+static void bg_picked(uint32_t number, void *ud)                  /* W4: sbLoadBGCue "Select BG Cue" -> TSelectBGCueForm: the cue latches it [03 s5.4] */
+{
+    lj_cue *cue = cue_rec();
+    char t[16];
+    (void)ud;
+    if (!cue) return;
+    lj_lock(); cue->bg_cue = number; lj_unlock();
+    snprintf(t, sizeof t, "%04u", (unsigned)number);
+    if (s.win) lj_window_set_text(s.win, "eBGCue", t);
+    lj_ctx_set_modified(LJ_MOD_CUE, 1);
+}
 
 /* ---- menus ---- */
 /* main = Main.Ini [CUE] (else forms.ini [CUE]); pref = 1 + the enum lj_engine_pref the row posts on a toggle (ME-93), 0 none */
@@ -655,8 +708,8 @@ static const lj_binding lj_cue_bindings[] = {
     { "eBGCueChange", lj_handler_noop, NULL }, { "eBGCueDragDrop", w2, NULL }, { "eBGCueDragOver", lj_handler_noop, NULL },
     { "eMacroChange", lj_handler_noop, NULL }, { "eMacroDblClick", w2, NULL }, { "eMacroDragDrop", w2, NULL }, { "eMacroDragOver", lj_handler_noop, NULL },
     { "MenuOptions", menu_options, NULL }, { "DefaultView1Click", default_view, NULL }, { "DefaultVisibleColumns1Click", default_columns, NULL },
-    { "ShowClick", show_click, NULL }, { "PrefsClick", prefs_click, NULL }, { "SlotsNames1Click", w2, NULL }, { "M_ShowasBPMClick", bpm_click, NULL },
-    { "Preferences1Click", prefs_open, NULL }, { "CueBuilder1Click", w2, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "ShowClick", show_click, NULL }, { "PrefsClick", prefs_click, NULL }, { "SlotsNames1Click", open_name_slots, NULL }, { "M_ShowasBPMClick", bpm_click, NULL },
+    { "Preferences1Click", prefs_open, NULL }, { "CueBuilder1Click", open_cue_builder, NULL }, { "Help1Click", lj_handler_noop, NULL },
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "FormHide", lj_handler_noop, NULL }, { "FormResize", on_resize, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
@@ -676,6 +729,7 @@ lj_window *lj_cue_form_open(void)
     lj_cue_form_col_widths();
     s.grid = lj_w_alloc(sizeof(lj_cue_grid), root, NULL, &lj_cue_grid_vt, 0);
     s.grid->base.name = "lj_cue_grid";
+    s.grid->base.on_event = grid_event;
     for (i = 0; i < LJ_CUE_COLS; i++) { s.grid->cols[i].caption = lj_cue_col_names[i]; s.grid->cols[i].width = s.col_w[i]; s.grid->cols[i].image_index = -1; s.grid->widths[i] = s.col_w[i]; }
     apply_advanced();
     sync_checks();
@@ -912,6 +966,7 @@ static void lc_load(uint32_t number, int edit)
 {
     if (number == 0) return;
     if (!s.has_host || !s.host.load_cue) { lj_log("lj_cue_form: load cue %04u: no loader (headless)", (unsigned)number); return; }
+    if (!edit && lj_show_dlg_capture_cue(number)) return;        /* W4 Cue Builder: Cue Capture takes load-cue commands */
     if (s.host.load_cue(s.host.ud, number, edit) != 0) lj_log("lj_cue_form: load cue %04u failed", (unsigned)number);
 }
 

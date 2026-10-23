@@ -28,6 +28,10 @@ static int          lj_ntabs, lj_cur_tab;
 static int          lj_move_all, lj_show_prog, lj_popup_fixture = -1;
 static uint8_t      lj_icon_move[LJ_FIXTURES];
 static const lj_surface *lj_wall; static int lj_wall_stretch, lj_wall_center;
+static lj_surface   lj_wall_own;                     /* W4: the decoded Tabs.Ini [IMAGE] File= (lj_wall points here when it is in force) */
+static char         lj_wall_file[LJ_PATH_CAP];
+static int        (*lj_bmp_loader)(const char *path, lj_surface *out);
+static lj_desktop_grid lj_grid = { 0, 8, 8, 0, 1 };  /* TGridForm DFM: UDV/UDH Position 8, SnapCenter Checked */
 
 static const lj_ctl_desc lj_tabs_desc = { LJ_K_TABCONTROL, "desktop_tabs", 0, 0, 791, 400, .align = LJ_AL_CLIENT, .font = LJ_FONT_ARIAL14, .tabstop = LJ_NO, .events = { { "OnChange", "desktop_tabs_change" } } };
 static const lj_ctl_desc lj_area_desc = { LJ_K_UNKNOWN, "desktop", 0, 0, 100, 100, .font = LJ_FONT_ARIAL14 };
@@ -39,7 +43,11 @@ static void area_paint(lj_widget *w, lj_surface *s)
     int ax, ay;
     lj_widget_abs(w, &ax, &ay);
     lj_fill(s, ax, ay, w->w, w->h, w->color);
-    if (lj_wall && lj_wall->px) {
+    if (lj_grid.on) {                                 /* "not possible to show wallpaper image and the grid at the same time" [01 s3.5]; dots as the Delphi designer grid (PROPOSAL rig, desktopgrid.gif shows the dialog only) */
+        int x, y;
+        for (y = 0; y < w->h; y += lj_grid.vsize)
+            for (x = 0; x < w->w; x += lj_grid.hsize) lj_fill(s, ax + x, ay + y, 1, 1, 0x000000u);
+    } else if (lj_wall && lj_wall->px) {
         if (lj_wall_stretch) {                        /* nearest-neighbour stretch to the area [F13]; integer only */
             int x, y;
             for (y = 0; y < w->h; y++)
@@ -121,15 +129,23 @@ static void tabs_load(void)
     lj_ini *ini = NULL;
     int i;
     lj_ntabs = 0;
+    lj_wall_stretch = 1; lj_wall_center = 0;   /* the shipped Tabs.Ini [IMAGE] Stretch=1 Center=0 */
     if (ctx->lib && lj_library_path(ctx->lib, "Tabs.Ini", path, sizeof path) == 0) ini = lj_ini_load(path);
     if (ini) {
         int n = lj_ini_geti(ini, "TABS", "Count", 1);
         for (i = 0; i < n && i < LJ_TABS_MAX; i++) {
             char key[16];
             snprintf(key, sizeof key, "TAB%d", i);
-            lj_str_copy(lj_tab_name[i], sizeof lj_tab_name[i], lj_ini_gets(ini, "TABNAMES", key, ""));
-            if (lj_tab_name[i][0]) lj_ntabs++;
+            lj_str_copy(lj_tab_name[lj_ntabs], sizeof lj_tab_name[0], lj_ini_gets(ini, "TABNAMES", key, ""));
+            if (lj_tab_name[lj_ntabs][0]) lj_ntabs++;
         }
+        lj_str_copy(lj_wall_file, sizeof lj_wall_file, lj_ini_gets(ini, "IMAGE", "File", ""));   /* W4: shipped File= Stretch=1 Center=0 */
+        lj_wall_stretch = lj_ini_geti(ini, "IMAGE", "Stretch", 1) != 0; lj_wall_center = lj_ini_geti(ini, "IMAGE", "Center", 0) != 0;
+        lj_grid.on = lj_ini_geti(ini, "GRID", "Use", lj_grid.on) != 0; lj_grid.snap = lj_ini_geti(ini, "GRID", "Snap", lj_grid.snap) != 0;
+        lj_grid.vsize = lj_ini_geti(ini, "GRID", "VSize", lj_grid.vsize); lj_grid.hsize = lj_ini_geti(ini, "GRID", "HSize", lj_grid.hsize);
+        lj_grid.snap_center = lj_ini_geti(ini, "GRID", "SnapCenter", lj_grid.snap_center) != 0;
+        if (lj_grid.vsize < 8 || lj_grid.vsize > 64) lj_grid.vsize = 8;   /* UDV / UDH Min 8 Max 64 */
+        if (lj_grid.hsize < 8 || lj_grid.hsize > 64) lj_grid.hsize = 8;
         lj_ini_free(ini);
     }
     if (lj_ntabs == 0) { lj_str_copy(lj_tab_name[0], sizeof lj_tab_name[0], "Default"); lj_ntabs = 1; }   /* the shipped library: [TABS] Count=1 [TABNAMES] TAB0=Default */
@@ -170,9 +186,26 @@ void lj_desktop_set_wallpaper(const lj_surface *img, int stretch, int center)
 }
 
 /* ---- placement ---- */
+static int snap_all(void)   /* W4: Snap Fixture Icons to Grid; the icon drag (lj_fixture_icons.c) ends in lj_desktop_config_save, so every move snaps here */
+{
+    lj_ctx *ctx = lj_ctx_get();
+    int i, changed = 0;
+    if (!lj_grid.snap || !ctx->show) return 0;
+    for (i = 0; i < LJ_FIXTURES; i++) {
+        lj_fixture *f = &ctx->show->fixture[i];
+        int x, y;
+        if (!f->link || !f->placed) continue;
+        x = lj_desktop_grid_snap(f->icon_x, lj_grid.hsize, LJ_FIXICON_W, lj_grid.snap_center);   /* ponytail: the Fixed Size tile extent; Image Size tiles snap as if fixed */
+        y = lj_desktop_grid_snap(f->icon_y, lj_grid.vsize, LJ_FIXICON_H, lj_grid.snap_center);
+        if (x != f->icon_x || y != f->icon_y) { f->icon_x = (int16_t)x; f->icon_y = (int16_t)y; changed = 1; }
+    }
+    return changed;
+}
+
 void lj_desktop_config_save(void)
 {
     const lj_ctx *ctx = lj_ctx_get();
+    if (snap_all()) lj_desktop_icons_refresh();
     if (ctx->show && ctx->lib && lj_show_save_config(ctx->show, ctx->lib) != 0) lj_log("desktop: Config.dat not saved");
 }
 
@@ -282,4 +315,137 @@ void lj_desktop_popup(enum lj_desktop_popup which, int x, int y, int fixture)   
     lj_window_client_rect(win, &cr);
     if (m->host && m->host->screen_pos) m->host->screen_pos(m->host->ud, win, &sx, &sy);
     lj_menu_popup(m, d, sx + cr.x + x, sy + cr.y + y);
+}
+
+/* ---- W4 dlg-desktop: tabs, grid, wallpaper, auto-arrange (lj_desktop_tabs.h) ---- */
+static void tabs_save(void)   /* the whole Tabs.Ini this file owns; keys of other owners in the file are kept */
+{
+    const lj_ctx *ctx = lj_ctx_get();
+    char path[LJ_PATH_CAP], key[16];
+    lj_ini *ini;
+    int i;
+    if (!ctx->lib || lj_library_path(ctx->lib, "Tabs.Ini", path, sizeof path) != 0) return;
+    if (!(ini = lj_ini_load(path)) && !(ini = lj_ini_new())) return;
+    lj_ini_seti(ini, "TABS", "Count", lj_ntabs);
+    for (i = 0; i < LJ_TABS_MAX; i++) {
+        snprintf(key, sizeof key, "TAB%d", i);
+        if (i < lj_ntabs || lj_ini_gets(ini, "TABNAMES", key, "")[0]) lj_ini_sets(ini, "TABNAMES", key, i < lj_ntabs ? lj_tab_name[i] : "");
+    }
+    lj_ini_sets(ini, "IMAGE", "File", lj_wall_file); lj_ini_seti(ini, "IMAGE", "Stretch", lj_wall_stretch); lj_ini_seti(ini, "IMAGE", "Center", lj_wall_center);
+    lj_ini_seti(ini, "GRID", "Use", lj_grid.on); lj_ini_seti(ini, "GRID", "VSize", lj_grid.vsize); lj_ini_seti(ini, "GRID", "HSize", lj_grid.hsize);
+    lj_ini_seti(ini, "GRID", "Snap", lj_grid.snap); lj_ini_seti(ini, "GRID", "SnapCenter", lj_grid.snap_center);
+    if (lj_ini_save(ini, path) != 0) lj_log("desktop: %s not saved", path);
+    lj_ini_free(ini);
+}
+
+static void tabs_changed(void)
+{
+    int i;
+    for (i = 0; i < lj_ntabs; i++) lj_tab_ptr[i] = lj_tab_name[i];
+    if (lj_cur_tab >= lj_ntabs) lj_cur_tab = lj_ntabs - 1;
+    if (lj_tabs) { lj_w_tabs *t = (lj_w_tabs *)lj_tabs; t->ntabs = lj_ntabs; t->active = lj_cur_tab; lj_widget_invalidate(lj_tabs); }
+    tabs_save();
+    lj_desktop_icons_refresh();
+}
+
+const char *lj_desktop_tab_name(int tab) { return tab >= 0 && tab < lj_ntabs ? lj_tab_name[tab] : ""; }
+int lj_desktop_tab_add(const char *name)
+{
+    if (!name || !name[0] || lj_ntabs >= LJ_TABS_MAX) return -1;
+    lj_str_copy(lj_tab_name[lj_ntabs++], sizeof lj_tab_name[0], name);
+    tabs_changed();
+    return 0;
+}
+int lj_desktop_tab_rename(int tab, const char *name)
+{
+    if (tab < 0 || tab >= lj_ntabs || !name || !name[0]) return -1;
+    lj_str_copy(lj_tab_name[tab], sizeof lj_tab_name[0], name);
+    tabs_changed();
+    return 0;
+}
+int lj_desktop_tab_delete(int tab)
+{
+    lj_ctx *ctx = lj_ctx_get();
+    int i;
+    if (tab < 0 || tab >= lj_ntabs || lj_ntabs <= 1) return -1;
+    for (i = 0; ctx->show && i < LJ_FIXTURES; i++) {   /* "To move an icon to another tab: Unassign Icon ..." [01 s3.7]: a deleted tab's icons go back to the Unassigned list */
+        lj_fixture *f = &ctx->show->fixture[i];
+        if (!f->placed) continue;
+        if (f->tab == tab) { f->placed = 0; lj_sel_set(i, 0, 0); }
+        else if (f->tab > tab) f->tab--;
+    }
+    memmove(lj_tab_name[tab], lj_tab_name[tab + 1], sizeof lj_tab_name[0] * (size_t)(lj_ntabs - tab - 1));
+    lj_ntabs--;
+    tabs_changed();
+    lj_desktop_config_save();
+    lj_unassigned_refresh();
+    return 0;
+}
+
+int lj_desktop_grid_snap(int v, int size, int icon_extent, int center)
+{
+    int c = center ? v + icon_extent / 2 : v;
+    if (size < 1) return v;
+    c = (c + size / 2) / size * size;
+    c = center ? c - icon_extent / 2 : c;
+    return c < 0 ? 0 : c;
+}
+void lj_desktop_grid_get(lj_desktop_grid *g) { *g = lj_grid; }
+void lj_desktop_grid_set(const lj_desktop_grid *g)
+{
+    lj_grid = *g;
+    lj_grid.on = g->on != 0; lj_grid.snap = g->snap != 0; lj_grid.snap_center = g->snap_center != 0;
+    if (lj_grid.vsize < 8) lj_grid.vsize = 8; else if (lj_grid.vsize > 64) lj_grid.vsize = 64;
+    if (lj_grid.hsize < 8) lj_grid.hsize = 8; else if (lj_grid.hsize > 64) lj_grid.hsize = 64;
+    tabs_save();
+    lj_desktop_config_save();                         /* snaps (and repaints the tiles) when Snap is on */
+    if (lj_the_area) lj_widget_invalidate(&lj_the_area->base);
+}
+
+static int wall_decode(const char *file)
+{
+    lj_surface s = { 0, 0, NULL };
+    if (!lj_bmp_loader) { lj_log("desktop: no bitmap decoder (headless): %s not shown", file); return -1; }
+    if (lj_bmp_loader(file, &s) != 0 || !s.px) { lj_surface_free(&s); return -1; }
+    lj_surface_free(&lj_wall_own);
+    lj_wall_own = s;
+    lj_wall = &lj_wall_own;
+    return 0;
+}
+void lj_desktop_tabs_set_bmp_loader(int (*load)(const char *path, lj_surface *out))
+{
+    lj_bmp_loader = load;
+    if (load && lj_wall_file[0] && wall_decode(lj_wall_file) != 0) lj_log("desktop: Tabs.Ini [IMAGE] File=%s does not decode", lj_wall_file);
+    if (lj_the_area) lj_widget_invalidate(&lj_the_area->base);
+}
+int lj_desktop_image_set(const char *file, int stretch, int center)
+{
+    if (file && file[0] && strcmp(file, lj_wall_file) != 0 && wall_decode(file) != 0) return -1;
+    if (!file || !file[0]) { if (lj_wall == &lj_wall_own) lj_wall = NULL; lj_surface_free(&lj_wall_own); lj_wall_file[0] = 0; }
+    else lj_str_copy(lj_wall_file, sizeof lj_wall_file, file);
+    lj_wall_stretch = stretch != 0; lj_wall_center = center != 0;
+    tabs_save();
+    if (lj_the_area) lj_widget_invalidate(&lj_the_area->base);
+    return 0;
+}
+const char *lj_desktop_image_file(void) { return lj_wall_file; }
+const lj_surface *lj_desktop_image(void) { return lj_wall && lj_wall->px ? lj_wall : NULL; }
+void lj_desktop_image_flags(int *stretch, int *center) { *stretch = lj_wall_stretch; *center = lj_wall_center; }
+
+void lj_desktop_auto_arrange(int by_type)
+{
+    lj_ctx *ctx = lj_ctx_get();
+    int order[LJ_FIXTURES], n = 0, i, j, cols;
+    if (!ctx->show) return;
+    for (i = 0; i < LJ_FIXTURES; i++) if (ctx->show->fixture[i].link && ctx->show->fixture[i].placed && ctx->show->fixture[i].tab == lj_cur_tab) order[n++] = i;
+    if (by_type)   /* "Arrange by Fixture Type": by profile id, then number (insertion sort keeps the number order inside a type) */
+        for (i = 1; i < n; i++)
+            for (j = i; j > 0 && ctx->show->fixture[order[j - 1]].profile_id > ctx->show->fixture[order[j]].profile_id; j--) { int t = order[j]; order[j] = order[j - 1]; order[j - 1] = t; }
+    cols = lj_the_area && lj_the_area->base.w >= LJ_ICON_PITCH ? lj_the_area->base.w / LJ_ICON_PITCH : 8;
+    for (i = 0; i < n; i++) {
+        lj_fixture *f = &ctx->show->fixture[order[i]];
+        f->icon_x = (int16_t)(4 + (i % cols) * LJ_ICON_PITCH); f->icon_y = (int16_t)(4 + (i / cols) * LJ_ICON_PITCH);
+    }
+    lj_desktop_icons_refresh();
+    lj_desktop_config_save();
 }

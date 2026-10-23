@@ -1,0 +1,47 @@
+# W4 dlg-desktop (docs/w4-contracts.md section 4, DESKTOP family): every id from its documented entry point and the three
+# 12 Q9 prompts through assert_prompt. Run: lj4evr --script tests/ui/scripts/w4_desktop_dialogs.lj4s (headless twin:
+# tests/ui/test_desktop_dialogs.c, which also drives the laser pair on a patched profile 118).
+click main.PD_AutoArrange
+assert_caption auto_arrange "Auto-Arrange Icons"
+click auto_arrange.bCancel
+click main.PD_Grid
+assert_caption desktop_grid "Desktop Grid"
+click desktop_grid.BOk
+click main.PD_Style
+assert_caption icon_style "Select Icon Style"
+click icon_style.BCancel
+click main.PD_Image
+assert_text desktop_image.Label3 "No Image"
+close desktop_image
+click main.PD_Tabs
+assert_caption desktop_tabs "Desktop tabs"
+click desktop_tabs.BOk
+click main.NextPreviousFixtureSelection1
+assert_caption nextprev_selection "Next/Previous Fixture Selection"
+click nextprev_selection.SetCustomOrder1
+assert_caption custom_order "Custom Fixture Selection Order"
+close custom_order
+close nextprev_selection
+open save_selection
+assert_caption save_selection "Save Custom Selection"
+close save_selection
+open auto_launch
+assert_caption auto_launch "Launching.."
+click auto_launch.bCancel
+open hotkey_warning
+assert_prompt "Notification !"
+assert_prompt "Normal keyboard operation is "
+click hotkey_warning.BitBtn1
+open hardware_warning
+assert_prompt "Notification !"
+assert_prompt "No Transmitterhardware configured."
+click hardware_warning.BitBtn1
+open unblock_lasers
+assert_prompt "Enable laser output ?"
+assert_caption unblock_lasers "Please confirm"
+click unblock_lasers.BitBtn2
+open laser_warning
+assert_prompt "Warning!"
+assert_text laser_warning.Label1 "Laser(s) emitting!"
+close laser_warning
+quit

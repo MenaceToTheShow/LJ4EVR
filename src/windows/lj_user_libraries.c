@@ -9,12 +9,13 @@
 #include "core/lj_str.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
+#include "windows/lj_file_dialogs.h"
 #include "windows/lj_warnings.h"
 
 enum { LJ_UL_MAX = 64 };   /* ponytail: libraries listed; raise when someone keeps more */
 
 static struct {
-    lj_window *win, *name_win; int close_pending, name_close_pending, rename;
+    lj_window *win, *name_win; int close_pending, name_close_pending;
     int n, row; char names[LJ_UL_MAX][LJ_LIBNAME_CAP]; char line[LJ_UL_MAX][LJ_PATH_CAP + LJ_LIBNAME_CAP + 8]; const char *items[LJ_UL_MAX];
 } ul;
 
@@ -77,7 +78,9 @@ static void on_delete_yes(int yes, void *ud)
     lj_ctx *c = lj_ctx_get();
     (void)ud;
     if (!yes || is_locked(ul.row)) return;
+    lj_file_dlg_progress(LJ_WIN_PROGRESS, NULL, NULL, 0);                                         /* "Deleting Files. Please Wait.." (exe 0x153AAC) */
     if (lj_library_delete(c->userdir, ul.names[ul.row]) != 0) lj_win_message("Warning", "Error erasing file ");   /* exe 0x232684 */
+    lj_file_dlg_progress(LJ_WIN_PROGRESS, NULL, NULL, -1);
     rebuild();
 }
 static void on_delete(lj_widget *w, void *ud)
@@ -88,17 +91,9 @@ static void on_delete(lj_widget *w, void *ud)
     snprintf(l1, sizeof l1, "Delete User Library \"%s\" ?", ul.names[ul.row]);                       /* exe 0x153A2C + 0x153A4C */
     lj_win_confirm("Please Confirm..", l1, "(This will delete all information contained in the library)", on_delete_yes, NULL);   /* exe 0x153A64 */
 }
-static void open_name(int rename)
-{
-    lj_widget *cb, *e;
-    if (!lj_user_lib_name_open()) return;
-    ul.rename = rename;
-    cb = lj_window_find(ul.name_win, "cbCopyFiles"); e = lj_window_find(ul.name_win, "eName");
-    if (cb) { cb->visible = !rename; lj_widget_invalidate(cb); }
-    lj_w_edit_set_text(e, rename && ul.row >= 0 ? ul.names[ul.row] : "");
-}
-static void on_create(lj_widget *w, void *ud) { (void)w; (void)ud; open_name(0); }
-static void on_rename(lj_widget *w, void *ud) { (void)w; (void)ud; if (!is_locked(ul.row)) open_name(1); }
+static void on_create(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_user_lib_name_open()) lj_w_edit_set_text(lj_window_find(ul.name_win, "eName"), ""); }
+static void on_renamed(int ok, void *ud) { (void)ud; if (ok) rebuild(); }
+static void on_rename(lj_widget *w, void *ud) { (void)w; (void)ud; if (!is_locked(ul.row)) lj_file_dlg_rename(ul.names[ul.row], on_renamed, NULL); }   /* W4: TRenameFileForm "Rename File" (MaxLength 28) */
 static void on_backup(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_BACKUP); }
 static void on_restore(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_RESTORE); }
 static void on_change(lj_widget *w, void *ud) { (void)ud; lj_user_libraries_select(lj_w_listview_index(w)); }
@@ -150,8 +145,12 @@ static void name_ok(void)
     int i, copy = lj_w_checkbox_checked(lj_window_find(ul.name_win, "cbCopyFiles")), rc;
     if (!name || !name[0]) return;
     for (i = 0; i < ul.n; i++) if (strcmp(ul.names[i], name) == 0) { lj_win_message("Warning", "File already exists"); return; }   /* exe 0x14D4F0, PROPOSAL use here */
-    if (ul.rename) rc = ul.row >= 0 && !is_locked(ul.row) ? lj_library_rename(c->userdir, ul.names[ul.row], name) : -1;
-    else rc = copy ? lj_library_copy(c->userdir, current(), name) : lj_library_create(c->userdir, name, &lib);
+    if (copy) {
+        lj_file_dlg_progress(LJ_WIN_COPYING_FILES, NULL, NULL, 0);                                /* "Copying Files - please wait.." */
+        rc = lj_library_copy(c->userdir, current(), name);
+        lj_file_dlg_progress(LJ_WIN_COPYING_FILES, NULL, NULL, -1);
+    }
+    else rc = lj_library_create(c->userdir, name, &lib);
     if (rc != 0) { lj_win_message("Warning", "Unable to create destination path"); return; }   /* exe 0x14CB70 */
     ul.name_close_pending = 1;
     rebuild();
@@ -181,7 +180,7 @@ lj_window *lj_user_lib_name_open(void)
     if (!ul.name_win) { lj_log("user libraries: cannot create TGetUserLibNameForm"); return NULL; }
     if ((b = lj_window_find(ul.name_win, "bOk")) != NULL) { b->on_event = name_event; b->ud = NULL; b->enabled = 0; }
     if ((b = lj_window_find(ul.name_win, "BitBtn2")) != NULL) { b->on_event = name_event; b->ud = NULL; }
-    ul.rename = 0; ul.name_close_pending = 0;
+    ul.name_close_pending = 0;
     lj_win_show(ul.name_win, 0);
     return ul.name_win;
 }

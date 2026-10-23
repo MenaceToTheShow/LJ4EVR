@@ -1,0 +1,11 @@
+palette .=C0C0C0 #=000000 g=808080 w=FFFFFF
+.......
+ggggggg
+gwwwwwg
+gww#wwg
+gw###wg
+gww#wwg
+gwwwwwg
+ggggggg
+.......
+.......

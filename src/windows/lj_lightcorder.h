@@ -17,4 +17,12 @@ void       lj_lightcorder_refresh(enum lj_win id);   /* repaint from the model /
 void       lj_lightcorder_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
 void       lj_lightcorder_step(uint64_t now_us);    /* every UI loop pass (lj_app_w4_idle): copies the frame under lj_lock at the chosen rate and writes on this thread; the engine does no I/O (ME-2, ME-24) */
 
+/* ---- lightcorder-debug track additions (below the contract block) ---- */
+#include <stddef.h>
+int         lj_lightcorder_recording(void);                   /* 1 while a take runs */
+uint32_t    lj_lightcorder_frames(void);                      /* frames in the current take (0 when none) */
+const char *lj_lightcorder_last_file(void);                   /* the .LLF the last Save File wrote, "" none */
+int         lj_lightcorder_max_time_text(char *dst, size_t cap, int card_mb, int channels, int hz);   /* lMaxTime: "Max recording time 3:24 (Min:Sec)" / the Hour:Min:Sec form (exe 0x1FF0DC / 0x1FF0A8) */
+int         lj_lightcorder_sys_notes(char *dst, size_t cap);  /* the "LightJockey (system) Notes" text of the current take */
+
 #endif /* LJ_WINDOWS_LIGHTCORDER_H */

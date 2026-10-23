@@ -198,6 +198,37 @@ static void test_custom_palettes(void)
     remove(path);
 }
 
+/* W4 dlg-config: ME-126 on a synthetic v1 record (the ME-33 values in the three slots, rename, Apply, re-read as 2609;
+ * byte 5 kept until a Levels edit, LORD_FIXTURES-4) and LORD_FIXTURES-3 (a built-in opened in the editor keeps its footprint) */
+static void test_me126(lj_profile_edit *ed)
+{
+    static uint8_t rec[LJ_GS2_REC_SIZE], out[LJ_GS2_REC_SIZE];
+    lj_profile p, back;
+    char err[160], t[40];
+    const lj_profile *mac550 = lj_fixlib_by_id(110);
+    lj_pe_begin(ed, NULL);
+    memcpy(rec, ed->raw, sizeof rec);
+    rec[0] = 1; rec[1] = 0; rec[5] = 0;                       /* format 1; byte 5 = 0 with every level enabled, as the library's old records */
+    rec[0x0009] = 13; memcpy(rec + 0x000A, "Martin Ego X4", 13);
+    memset(&p, 0, sizeof p); memset(&back, 0, sizeof back);
+    if (lj_gs2_read(rec, sizeof rec, &p, err, sizeof err) != 0) { printf("SKIP ME-126: %s\n", err); return; }
+    CHECK(lj_pe_begin(ed, &p) == 0);
+    lj_pe_get_str(ed, lj_pe_field_find("eFixtureName"), 0, t, sizeof t); CHECK(strcmp(t, "Martin Ego X4") == 0);
+    lj_pe_get_str(ed, lj_pe_field_find("cbManufacturer"), 0, t, sizeof t); CHECK(strcmp(t, LJ_GS2_LEGACY_MANUFACTURER) == 0);
+    lj_pe_get_str(ed, lj_pe_field_find("eFixtureMode"), 0, t, sizeof t); CHECK(t[0] == 0);
+    CHECK(lj_pe_validate(ed) == NULL);                        /* no "Please specify manufacturer" on an unedited old record */
+    CHECK(ed->raw[5] == 0);                                   /* untouched: byte 5 kept */
+    CHECK(lj_pe_set_str(ed, lj_pe_field_find("eFixtureName"), 0, "Ego X4") == 0 && lj_pe_set_str(ed, lj_pe_field_find("cbManufacturer"), 0, "Martin") == 0);
+    CHECK(lj_pe_refresh(ed) == 0 && lj_gs2_write(&ed->p, out) == 0);   /* Apply writes the working record */
+    CHECK(lj_gs2_read(out, sizeof out, &back, err, sizeof err) == 0 && back.format_version == LJ_GS2_VERSION && strcmp(back.name, "Ego X4") == 0 && strcmp(back.manufacturer, "Martin") == 0);
+    CHECK(out[5] == 0 && memcmp(out + 0x0009, rec + 0x0009, 31) == 0);   /* byte 5 and the legacy name travel as read */
+    CHECK(lj_pe_set_u8(ed, lj_pe_field_find("lvLevels"), 16 * 31 + 7, 1) == 0 && ed->raw[5] == 0 && lj_pe_refresh(ed) == 0 && ed->raw[5] == 30);   /* a Levels edit recomputes it at the refresh */
+    lj_gs2_free(&p); lj_gs2_free(&back);
+    if (!mac550) { printf("SKIP LORD_FIXTURES-3: no profile 110\n"); return; }
+    CHECK(lj_pe_begin(ed, mac550) == 0 && ed->raw[5] == mac550->footprint - 1);
+    CHECK(lj_pe_refresh(ed) == 0 && ed->p.footprint == mac550->footprint);
+}
+
 int lj_test_profile_editor(int argc, char **argv);
 int lj_test_profile_editor(int argc, char **argv)
 {
@@ -236,6 +267,7 @@ int lj_test_profile_editor(int argc, char **argv)
     test_roundtrip(&ed, &before);
     test_config_channels();
     test_custom_palettes();
+    test_me126(&ed);   /* W4 dlg-config */
     printf("test_profile_editor: %d fields, %d failure(s)\n", lj_pe_nfields, fails);
     return fails ? 1 : 0;
 }

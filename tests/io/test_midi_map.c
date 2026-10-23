@@ -122,6 +122,65 @@ static void lj_t_feed_mtc(void)
     { uint8_t m[3] = { 0xF1, 0x04, 0 }; uint8_t got[3]; while (lj_midi_poll(got)) {} lj_midi_post(m); CHECK(lj_midi_poll(got) == 1 && got[0] == 0xF1 && got[1] == 0x04); }   /* F1 rides the queue to the UI thread */
 }
 
+/* W4 da2532-fingers (appended): the LJ_FNF_EXT rows of the 2532 and Fingers surfaces through the map (fn = note, cc = level rows),
+ * their flags and captions, and the ext Learn (a CC only when asked for, the bind enables the kind). */
+static void lj_t_ext_rows(void)
+{
+    static const struct { enum lj_fn fn; int note; int flash; const char *cap; } rows[] = {
+        { LJ_FN_DA2532_LATCH_1, 10, 1, "2532 Latch 1" }, { LJ_FN_DA2532_FLASH_8, 11, 1, "2532 Flash 8" }, { LJ_FN_DA2532_USER_18, 12, 1, "2532 User Key 18" },
+        { LJ_FN_DA2532_PAGE_18, 13, 0, "2532 Page 18" }, { LJ_FN_DA2532_BANK_7, 14, 0, "2532 Bank 7" }, { LJ_FN_FINGERS_F_10, 15, 1, "Fingers F10" },
+        { LJ_FN_FINGERS_SLOT_TOP_1, 16, 1, "Fingers top slot 1" }, { LJ_FN_FINGERS_SLOT_BOT_12, 17, 1, "Fingers bottom slot 12" },
+        { LJ_FN_FINGERS_BUMP_12, 18, 1, "Fingers bump 12" }, { LJ_FN_FINGERS_BO, 19, 0, "Fingers B/O" } };
+    static const struct { enum lj_fn fn; int cc; const char *cap; } levels[] = {
+        { LJ_FN_FINGERS_FADER_1, 20, "Fingers fader 1" }, { LJ_FN_FINGERS_FADER_12, 21, "Fingers fader 12" }, { LJ_FN_FINGERS_GM, 22, "Fingers GM" }, { LJ_FN_FINGERS_JOG_5, 23, "Fingers jog wheel 5" } };
+    static lj_midi_map m;
+    lj_midi_map_entry e;
+    char cap[64];
+    int i, f, ch, note, cc;
+    for (f = LJ_FN_DA2532_LATCH_1; f <= LJ_FN_FINGERS_JOG_5; f++) {          /* every appended row is an extension, named in the table */
+        CHECK((lj_fn_table[f].flags & LJ_FNF_EXT) != 0);
+        CHECK(lj_fn_by_name(lj_fn_table[f].name) == (enum lj_fn)f);
+        lj_fn_bind((enum lj_fn)f, lj_t_handler, NULL);
+    }
+    f = LJ_FN_DA2532_BANK_7 - LJ_FN_DA2532_LATCH_1 + 1; i = LJ_FN_FINGERS_JOG_5 - LJ_FN_FINGERS_F_1 + 1;
+    CHECK(f == 8 + 8 + 18 + 18 + 7 && i == 10 + 36 + 12 + 12 + 1 + 1 + 5);
+    lj_midi_init(&m);
+    m.enabled[LJ_MIDI_FN] = 1; m.enabled[LJ_MIDI_CC] = 1;
+    for (i = 0; i < (int)(sizeof rows / sizeof rows[0]); i++) {
+        CHECK(lj_fn_caption(rows[i].fn, cap, sizeof cap) == 0 && strcmp(cap, rows[i].cap) == 0);
+        e = lj_t_entry(LJ_MIDI_FN, 0, rows[i].note, rows[i].fn, 0); CHECK(lj_midi_assign(&m, &e) == 0);
+        lj_t_calls = 0;
+        lj_t_send(&m, 0x90, rows[i].note, 0x40);
+        CHECK(lj_t_calls == 1 && lj_t_fn == rows[i].fn && lj_t_edge == 1);
+        lj_t_send(&m, 0x80, rows[i].note, 0);
+        CHECK(lj_t_calls == 1 + rows[i].flash && (!rows[i].flash || lj_t_edge == 0));   /* a key-up reaches the flash rows only */
+    }
+    for (i = 0; i < (int)(sizeof levels / sizeof levels[0]); i++) {
+        CHECK(lj_fn_caption(levels[i].fn, cap, sizeof cap) == 0 && strcmp(cap, levels[i].cap) == 0);
+        e = lj_t_entry(LJ_MIDI_CC, 0, levels[i].cc, levels[i].fn, 0); CHECK(lj_midi_assign(&m, &e) == 0);
+        lj_t_calls = 0;
+        lj_t_send(&m, 0xB0, levels[i].cc, 127); CHECK(lj_t_calls == 1 && lj_t_fn == levels[i].fn && lj_t_num == 100);
+        lj_t_send(&m, 0xB5, levels[i].cc, 0);   CHECK(lj_t_calls == 2 && lj_t_num == 0);
+    }
+    /* ext Learn: a CC only when asked for; lj_midi_learn_bind writes the entry and enables the kind */
+    lj_midi_init(&m);
+    lj_midi_learn_begin();                                                     /* the MIDI-IN window's Learn: notes only */
+    lj_t_send(&m, 0xB0, 30, 5); CHECK(lj_midi_learn_take_ext(&ch, &note, &cc) == 0);
+    lj_midi_learn_cancel();
+    lj_midi_learn_begin_ext(0);
+    lj_t_send(&m, 0xB0, 30, 5); CHECK(lj_midi_learn_take_ext(&ch, &note, &cc) == 0);
+    lj_t_send(&m, 0x93, 31, 5); CHECK(lj_midi_learn_take_ext(&ch, &note, &cc) == 1 && ch == 4 && note == 31 && cc == 0);
+    CHECK(lj_midi_learn_bind(&m, LJ_FN_DA2532_LATCH_2, ch, note, cc) == 0 && m.enabled[LJ_MIDI_FN] == 1 && m.n == 1);
+    lj_midi_learn_begin_ext(1);
+    lj_t_send(&m, 0xB1, 32, 99); CHECK(lj_midi_learn_take_ext(&ch, &note, &cc) == 1 && ch == 2 && note == 32 && cc == 1);
+    CHECK(lj_midi_learn_bind(&m, LJ_FN_FINGERS_FADER_2, ch, note, cc) == 0 && m.enabled[LJ_MIDI_CC] == 1 && m.n == 2);
+    CHECK(lj_midi_learn_bind(&m, LJ_FN_NONE, 0, 1, 0) == -1 && lj_midi_learn_bind(&m, LJ_FN_FINGERS_GM, 17, 1, 1) == -1 && lj_midi_learn_bind(&m, LJ_FN_FINGERS_GM, 0, 128, 1) == -1);
+    lj_t_calls = 0;
+    lj_t_send(&m, 0x93, 31, 5); CHECK(lj_t_calls == 1 && lj_t_fn == LJ_FN_DA2532_LATCH_2);
+    lj_t_send(&m, 0xB1, 32, 64); CHECK(lj_t_calls == 2 && lj_t_fn == LJ_FN_FINGERS_FADER_2 && lj_t_num == 50);
+    lj_fn_unbind_all();
+}
+
 int lj_test_midi_map(int argc, char **argv);
 int lj_test_midi_map(int argc, char **argv)
 {
@@ -251,6 +310,7 @@ int lj_test_midi_map(int argc, char **argv)
     lj_fn_unbind_all();
     lj_t_files();
     lj_t_feed_mtc();
+    lj_t_ext_rows();   /* W4 da2532-fingers */
     printf("test_midi_map: %d failure(s)\n", fails);
     return fails ? 1 : 0;
 }

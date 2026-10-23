@@ -14,6 +14,7 @@
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "windows/lj_dmx_in.h"
 #include "windows/lj_warnings.h"
 
 #define LJ_HS_NICS 16
@@ -209,6 +210,8 @@ lj_window *lj_hardware_setup_open(void)
 {
     static const char *const hidden[] = { "pUSB", "p4064Club", "p4064DJ", "pPCMCIA1", "pPCI", "pPCMCIA2" };
     static const char *const greyed[] = { "bdetectHardware", "bClearhardware", "cbUseDMXin" };
+    static const char *const dropped[] = { "tsOnekey", "tsAudio", "TSDA_RS232" };   /* W4-HW-0 / I13: Martin USB interfaces, Winamp / CD / Audio Analyzer (W5),
+                                                                                      * 2532 serial (keyboard / MIDI instead, D16), 2518 RS-232, MC-X: inputs greyed */
     static const char *const blank[] = { "lProtectionDeviceStatus", "lLicenseStatus", "Label10" };   /* D3: the licence lines are gone */
     lj_widget *panel, *w;
     size_t i;
@@ -218,6 +221,7 @@ lj_window *lj_hardware_setup_open(void)
     for (i = 0; i < LJ_COUNT_OF(hidden); i++) if ((w = find(hidden[i])) != NULL) w->visible = 0;
     for (i = 0; i < LJ_COUNT_OF(greyed); i++) if ((w = find(greyed[i])) != NULL) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; }
     for (i = 0; i < LJ_COUNT_OF(blank); i++) lj_w_set_caption(find(blank[i]), "");
+    for (i = 0; i < LJ_COUNT_OF(dropped); i++) lj_dmx_in_grey(find(dropped[i]), NULL, 0);
     panel = find("Panel3");
     if (!panel) { lj_hardware_setup_close(); return NULL; }
     build_page(panel);

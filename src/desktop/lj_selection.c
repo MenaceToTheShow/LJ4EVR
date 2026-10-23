@@ -1,7 +1,10 @@
 /* lj_selection.c - the desktop click rules of [01 s3.2] (CHM "Selecting fixtures on the desktop"). */
 #include "desktop/lj_selection.h"
 
+#include <stdio.h>
 #include <string.h>
+#include "core/lj_ini.h"
+#include "core/lj_str.h"
 #include "fixlib/lj_profile.h"
 #include "model/lj_show.h"
 
@@ -94,12 +97,38 @@ void lj_sel_all(void)
 
 void lj_sel_none(void) { clear_all(); bump(); }
 
-static void step(int dir)   /* [01 s3.3] default rule: by fixture number from the master; nothing selected -> lowest (Next) / highest (Previous) */
+static lj_nextprev_opts lj_np = { 1, 0, LJ_NP_TABS_ANY, 0 };
+static int lj_np_order[LJ_FIXTURES * 2], lj_np_n;   /* fixture index or LJ_SEL_BREAK */
+
+static int np_match(int k)   /* the dialog's filters, relative to the master */
 {
-    int i, n = LJ_FIXTURES, from = lj_master, pick = -1;
+    const lj_ctx *ctx = lj_ctx_get();
+    const lj_fixture *f;
+    if (!used(k)) return 0;
+    f = &ctx->show->fixture[k];
+    if (lj_np.same_type && lj_master >= 0 && !lj_sel_same_type(k, lj_master)) return 0;
+    if (lj_np.tabs == LJ_NP_TABS_CURRENT && (!f->placed || f->tab != lj_desktop_tab())) return 0;
+    if (lj_np.tabs == LJ_NP_TABS_SAME && lj_master >= 0 && (!f->placed || f->tab != ctx->show->fixture[lj_master].tab)) return 0;
+    return 1;
+}
+
+static void step(int dir)   /* [01 s3.3]: by fixture number from the master (nothing selected: lowest for Next, highest for Previous), or
+                             * through the custom order, where Selection Breaks make Next / Previous loop inside the master's block */
+{
+    int ring[LJ_FIXTURES * 2], n = 0, i, at = -1, pick = -1;
+    if (lj_np.custom && lj_np_n > 0) {
+        int lo = 0, hi = lj_np_n, m = -1;
+        for (i = 0; i < lj_np_n; i++) if (lj_np_order[i] == lj_master) { m = i; break; }
+        if (m >= 0) {
+            for (lo = m; lo > 0 && lj_np_order[lo - 1] != LJ_SEL_BREAK; lo--) { }
+            for (hi = m; hi < lj_np_n && lj_np_order[hi] != LJ_SEL_BREAK; hi++) { }
+        }
+        for (i = lo; i < hi; i++) if (lj_np_order[i] != LJ_SEL_BREAK) ring[n++] = lj_np_order[i];
+    } else for (i = 0; i < LJ_FIXTURES; i++) ring[n++] = i;
+    for (i = 0; i < n; i++) if (ring[i] == lj_master) { at = i; break; }
     for (i = 1; i <= n; i++) {
-        int k = from < 0 ? (dir > 0 ? i - 1 : n - i) : ((from + dir * i) % n + n) % n;
-        if (used(k)) { pick = k; break; }
+        int k = at < 0 ? ring[dir > 0 ? i - 1 : n - i] : ring[((at + dir * i) % n + n) % n];
+        if (np_match(k)) { pick = k; break; }
     }
     if (pick < 0) return;
     clear_all();
@@ -126,3 +155,90 @@ int lj_sel_same_type(int a, int b)
 }
 
 void lj_sel_reset(void) { clear_all(); lj_mode = LJ_SEL_INCLUSIVE; lj_solo = 0; bump(); }
+
+/* ---- W4 dlg-desktop: Next/Previous options, custom order, named custom selections (lj_selection.h) ---- */
+static int list_parse(const char *t, int *out, int cap, int breaks)   /* "3,7,0,12" fixture numbers (1-based) -> indices; 0 = break; untrusted text */
+{
+    int n = 0;
+    while (t && *t && n < cap) {
+        int v = 0, digits = 0;
+        while (*t >= '0' && *t <= '9' && digits < 4) { v = v * 10 + (*t++ - '0'); digits++; }
+        if (digits && v == 0 && breaks) out[n++] = LJ_SEL_BREAK;
+        else if (digits && v >= 1 && v <= LJ_FIXTURES) out[n++] = v - 1;
+        while (*t && *t != ',') t++;
+        if (*t == ',') t++;
+    }
+    return n;
+}
+static void list_text(char *dst, size_t cap, const int *e, int n)
+{
+    size_t len = 0;
+    int i;
+    dst[0] = 0;
+    for (i = 0; i < n && len + 6 < cap; i++) len += (size_t)snprintf(dst + len, cap - len, "%s%d", i ? "," : "", e[i] == LJ_SEL_BREAK ? 0 : e[i] + 1);
+}
+
+static void np_save(void)
+{
+    lj_ini *ini = lj_ctx_get()->main_ini;
+    char t[LJ_FIXTURES * 2 * 5];
+    lj_ini_seti(ini, "NEXTPREV", "Enabled", lj_np.enabled); lj_ini_seti(ini, "NEXTPREV", "SameType", lj_np.same_type);
+    lj_ini_seti(ini, "NEXTPREV", "Tabs", lj_np.tabs); lj_ini_seti(ini, "NEXTPREV", "Order", lj_np.custom);
+    list_text(t, sizeof t, lj_np_order, lj_np_n);
+    lj_ini_sets(ini, "NEXTPREV", "Custom", t);
+}
+void lj_sel_nextprev_load(void)
+{
+    lj_ctx *ctx = lj_ctx_get();
+    lj_np.enabled = lj_ini_geti(ctx->main_ini, "NEXTPREV", "Enabled", 1) != 0; lj_np.same_type = lj_ini_geti(ctx->main_ini, "NEXTPREV", "SameType", 0) != 0;
+    lj_np.tabs = lj_ini_geti(ctx->main_ini, "NEXTPREV", "Tabs", 0); lj_np.custom = lj_ini_geti(ctx->main_ini, "NEXTPREV", "Order", 0) != 0;
+    if (lj_np.tabs < LJ_NP_TABS_ANY || lj_np.tabs > LJ_NP_TABS_CURRENT) lj_np.tabs = LJ_NP_TABS_ANY;
+    lj_np_n = list_parse(lj_ini_gets(ctx->main_ini, "NEXTPREV", "Custom", ""), lj_np_order, LJ_FIXTURES * 2, 1);
+    ctx->show_nextprev = (uint8_t)lj_np.enabled;
+}
+void lj_sel_nextprev_get(lj_nextprev_opts *o) { *o = lj_np; }
+void lj_sel_nextprev_set(const lj_nextprev_opts *o)
+{
+    lj_np = *o;
+    lj_ctx_get()->show_nextprev = (uint8_t)(o->enabled != 0);
+    np_save();
+    lj_desktop_toolbar_update();
+}
+int lj_sel_custom_order(int *out, int cap) { int n = lj_np_n < cap ? lj_np_n : cap; memcpy(out, lj_np_order, sizeof *out * (size_t)(n > 0 ? n : 0)); return n; }
+void lj_sel_custom_order_set(const int *e, int n)
+{
+    int i;
+    lj_np_n = 0;
+    for (i = 0; i < n && lj_np_n < LJ_FIXTURES * 2; i++) if (e[i] == LJ_SEL_BREAK || (e[i] >= 0 && e[i] < LJ_FIXTURES)) lj_np_order[lj_np_n++] = e[i];
+    np_save();
+}
+
+int lj_custom_sel_count(void) { int n = lj_ini_geti(lj_ctx_get()->main_ini, "CUSTOMSEL", "Count", 0); return n < 0 ? 0 : n > LJ_CUSTOM_SEL_MAX ? LJ_CUSTOM_SEL_MAX : n; }
+const char *lj_custom_sel_name(int no)
+{
+    char key[16];
+    if (no < 1 || no > lj_custom_sel_count()) return "";
+    snprintf(key, sizeof key, "Name%d", no);
+    return lj_ini_gets(lj_ctx_get()->main_ini, "CUSTOMSEL", key, "");
+}
+int lj_custom_sel_get(int no, int *out, int cap)
+{
+    char key[16];
+    if (no < 1 || no > lj_custom_sel_count()) return -1;
+    snprintf(key, sizeof key, "Fix%d", no);
+    return list_parse(lj_ini_gets(lj_ctx_get()->main_ini, "CUSTOMSEL", key, ""), out, cap, 0);
+}
+int lj_custom_sel_save(int no, const char *name, const int *fix, int n)
+{
+    lj_ini *ini = lj_ctx_get()->main_ini;
+    char key[16], t[LJ_FIXTURES * 5], nm[LJ_CUSTOM_SEL_NAME];
+    int count = lj_custom_sel_count();
+    if (!ini || !name || !name[0] || n < 0 || n > LJ_FIXTURES) return -1;
+    if (no < 1 || no > count) { if (count >= LJ_CUSTOM_SEL_MAX) return -1; no = ++count; lj_ini_seti(ini, "CUSTOMSEL", "Count", count); }
+    lj_str_copy(nm, sizeof nm, name);
+    snprintf(key, sizeof key, "Name%d", no); lj_ini_sets(ini, "CUSTOMSEL", key, nm);
+    list_text(t, sizeof t, fix, n);
+    snprintf(key, sizeof key, "Fix%d", no); lj_ini_sets(ini, "CUSTOMSEL", key, t);
+    return no;
+}
+void lj_custom_sel_clear_all(void) { lj_ini_seti(lj_ctx_get()->main_ini, "CUSTOMSEL", "Count", 0); }

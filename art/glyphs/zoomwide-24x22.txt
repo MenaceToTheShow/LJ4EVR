@@ -1,0 +1,23 @@
+palette .=C0C0C0 #=000000 g=808080 y=FFFF00
+........................
+.....................##.
+..................y##y#.
+................y##yyy#.
+..............y##yyyyy#.
+...........y###yyyyyyy#.
+.........y##yyyyyyyyyy#.
+.......y##yyyyyyyyyyyy#.
+###.yy##yyyyyyyyyyyyyy#.
+#g#y##yyyyyyyyyyyyyyyy#.
+#g##yyyyyyyyyyyyyyyyyy#.
+#g#yyyyyyyyyyyyyyyyyyy#.
+#g##yyyyyyyyyyyyyyyyyy#.
+###.##yyyyyyyyyyyyyyyy#.
+......##yyyyyyyyyyyyyy#.
+........##yyyyyyyyyyyy#.
+..........###yyyyyyyyy#.
+.............##yyyyyyy#.
+...............##yyyyy#.
+.................##yyy#.
+...................##y#.
+.....................##.

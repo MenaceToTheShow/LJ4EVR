@@ -198,7 +198,26 @@ int lj_test_desktop(int argc, char **argv)
     CHECK(button_enabled(win, "tb_fixture_19") == 0 && button_enabled(win, "tb_fixture_20") == 0);
     ctx->allow_solo = ctx->show_nextprev = ctx->allow_offline = ctx->allow_freeze = 1;
     lj_desktop_toolbar_update();
-    CHECK(button_enabled(win, "tb_cuelist_7") == 0 && button_enabled(win, "tb_cuelist_10") == 0);   /* CD / DMX-in greyed (F8) */
+    CHECK(button_enabled(win, "tb_cuelist_7") == 0 && button_enabled(win, "tb_cuelist_10") == 1);   /* CD greyed, DMX In opens (F8, W4 hw-dmxin: was greyed until W4) */
+    {   /* W4 hw-dmxin (W4-HW-0, I13): every dropped-hardware entry point present, greyed, hint "Not available in LJ4EVR" */
+        static const char *const tb_dropped[] = { "tb_cuelist_7" /* CD: TMCICDForm2 */, "tb_cuelist_8" /* MC-X: TMCXSetupForm */, "tb_cuelist_9" /* 2518: TForm2518_2, TSetup2518Form */ };
+        static const char *const menu_dropped[] = { "M_Download2510" /* the five 2510 forms */, "M_Download2518" /* TD2518Form, TCreate2518MemStatusForm */,
+                                                    "M_ManagerPrefs" /* TLJManagerPrefsForm */, "M_CapturePanel" /* TCaptureForm */, "M_SandNetStatus" /* TSandNetStatusForm */,
+                                                    "PI_DefineAppLink" /* TExternalAppSetupForm, W5 */ };
+        int k, j, found;
+        for (k = 0; k < LJ_COUNT_OF(tb_dropped); k++) {
+            w = lj_window_find(win, tb_dropped[k]);
+            CHECK(w && !w->enabled && w->hint && strcmp(w->hint, "Not available in LJ4EVR") == 0);
+            CHECK(w && w->desc && w->desc->hint && strcmp(w->desc->hint, "Not available in LJ4EVR") != 0);   /* the F8 desc keeps LJ2's tooltip */
+        }
+        for (k = 0; k < LJ_COUNT_OF(menu_dropped); k++) {
+            lj_menu_rt *rt = lj_menu_rt_named(m, menu_dropped[k]);
+            CHECK(rt && !rt->enabled);
+            for (found = 0, j = 0; j < ninert; j++) found |= strcmp(inert[j].name, menu_dropped[k]) == 0 && strcmp(inert[j].hint, "Not available in LJ4EVR") == 0;
+            CHECK(found);
+        }
+        CHECK(lj_menu_rt_named(m, "PI_DefineAppLink") && !lj_menu_rt_named(m, "PI_DefineAppLink")->visible);   /* shown on an External Application/Device icon only */
+    }
     {   /* a MAC 500-like master through the table-driven rule: lj_profile_window on the two synthetic profiles */
         const lj_profile *p = &mh;
         CHECK(lj_profile_window(p, LJ_CTL_INTENSITY) && lj_profile_window(p, LJ_CTL_EXTENDED) && !lj_profile_window(p, LJ_CTL_LEVELS));

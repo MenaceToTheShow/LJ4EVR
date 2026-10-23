@@ -1,0 +1,19 @@
+Sequences
+
+A sequence is a list of scenes. A scene stores the values of the
+channels set to snap or fade, a fade time and a scene time. When the
+sequence runs, each scene fades in over its fade time and holds until
+its scene time has passed, then the next scene starts.
+
+The Sequence window (View > Controls > Sequence Control) shows the
+current scene as two numbers, for example 2:5 for scene 2 of 5. Use its
+buttons to add, insert, delete and step through scenes, and to set the
+fade and scene times. Times are in seconds with hundredths.
+
+Save Sequence stores the sequence in the user library with a number and
+a name. A sequence can be a chase: then the scenes follow each other at
+the chase speed instead of their own times.
+
+Loop options decide what happens at the last scene: loop, bounce, stop,
+or link to another cue. Sequence fades let one fade time apply to a
+whole sequence.

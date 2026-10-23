@@ -27,4 +27,23 @@ lj_window *lj_desktop_dlg_get(enum lj_win id);       /* NULL when closed */
 void       lj_desktop_dlg_refresh(enum lj_win id);   /* repaint from the model / engine view copy (seam 3); no-op when closed */
 void       lj_desktop_dlg_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
 
+/* ---- dlg-desktop additions (below the contract block) ----
+ * LJ_WIN_DEFAULT_OUTPUT has no window (windows/lj_default_output.h: the two Setup > Preferences > Default DMX Output leaves
+ * act at once); opening it logs why and returns NULL (fidelity row). The four warning ids live in lj_warnings.c.
+ * The OS file dialog (Desktop Image Get Image, Startup Options Browse) and the BMP decoder are the app's (platform/ and SDL
+ * are not includable here): it installs them with lj_desktop_dlg_set_host; the result is polled on the 100 ms refresh. */
+enum lj_pick { LJ_PICK_NONE = 0, LJ_PICK_IMAGE, LJ_PICK_LAUNCH };
+typedef struct {
+    int (*load_bmp)(const char *path, lj_surface *out);   /* CP1252 path -> 0x00RRGGBB surface the caller frees; 0 / -1 */
+    int (*pick_file)(int bmp_only);                        /* starts the OS open dialog (Bitmaps (*.bmp) | every file); 0 / -1 */
+    int (*pick_take)(char *dst, size_t cap);               /* 1 = a CP1252 path arrived, 0 = still open, -1 = cancelled */
+    int (*exec)(const char *path);                         /* Auto Launch, behind the Execute File rule (LORD_C-8); NULL = not wired */
+} lj_desktop_dlg_host;
+void       lj_desktop_dlg_set_host(const lj_desktop_dlg_host *h);   /* the struct must outlive the app; also hands load_bmp to the desktop wallpaper */
+int        lj_desktop_dlg_pick(enum lj_pick who);                   /* Get Image / Browse; -1 when no picker (headless) */
+void       lj_desktop_dlg_picked(enum lj_pick who, const char *path);   /* delivers a path as the picker does (tests) */
+lj_window *lj_desktop_dlg_save_selection(const int *fix, int n, int existing_no);   /* TSaveSelectionForm on an order of fixture indices (Fan Out sbSave; existing_no = the cb1 entry, 0 = none) */
+int        lj_desktop_dlg_saved_selection(void);                    /* the number the last Save / Save New wrote, 0 = none (Fan Out refills cb1) */
+int        lj_desktop_dlg_custom_move(int from, int to);            /* the Custom order drag (LV1DragDrop) by row; 0 / -1 */
+
 #endif /* LJ_WINDOWS_DESKTOP_DIALOGS_H */

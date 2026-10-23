@@ -406,22 +406,54 @@ static int lj_mkdirs_for(char *path, size_t from)   /* create every folder of `p
     return 0;
 }
 
+static int lj_zip_open(mz_zip_archive *zip, const char *zip_path)
+{
+    memset(zip, 0, sizeof *zip);
+    if (mz_zip_reader_init_file(zip, zip_path, 0)) return 0;
+    lj_log("library: cannot read %s", zip_path);
+    return -1;
+}
+
+/* Pass 1 (W2 LORD_C-5, W4-DLG-1): every entry checked before the first byte is written; the archive is untrusted. */
+static int lj_zip_check(mz_zip_archive *zip, const lj_library *lib, const char *zip_path)
+{
+    mz_uint i, n = mz_zip_reader_get_num_files(zip);
+    mz_uint64 total = 0;
+    for (i = 0; i < n; i++) {
+        mz_zip_archive_file_stat st;
+        char dst[LJ_PATH_CAP];
+        size_t len;
+        if (!mz_zip_reader_file_stat(zip, i, &st)) { lj_log("library: %s: entry %u unreadable", zip_path, (unsigned)i); return -1; }
+        len = strlen(st.m_filename);
+        total += st.m_uncomp_size;
+        if (!len || len + 1 != mz_zip_reader_get_filename(zip, i, NULL, 0)) { lj_log("library: restore refuses entry %u (empty, over %d bytes or an embedded NUL)", (unsigned)i, MZ_ZIP_MAX_ARCHIVE_FILENAME_SIZE - 1); return -1; }   /* stat truncates the name */
+        if (!lj_zip_name_ok(st.m_filename)) { lj_log("library: restore refuses entry \"%s\"", st.m_filename); return -1; }
+        if (total > (mz_uint64)LJ_RESTORE_MAX_BYTES) { lj_log("library: restore refuses %s (over %u bytes)", zip_path, (unsigned)LJ_RESTORE_MAX_BYTES); return -1; }
+        if (!mz_zip_reader_is_file_a_directory(zip, i) && (st.m_filename[len - 1] == '/' || st.m_filename[len - 1] == '\\')) { lj_log("library: restore refuses file entry \"%s\" (ends in a separator)", st.m_filename); return -1; }
+        if (lj_library_path(lib, st.m_filename, dst, sizeof dst) != 0) { lj_log("library: restore refuses entry \"%s\" (path over %d bytes)", st.m_filename, LJ_PATH_CAP - 1); return -1; }
+    }
+    if (!mz_zip_validate_archive(zip, 0)) { lj_log("library: %s is corrupt (CRC or header check failed)", zip_path); return -1; }   /* sizes capped above first */
+    return 0;
+}
+
+int lj_library_backup_check(const lj_library *lib, const char *zip_path)
+{
+    mz_zip_archive zip;
+    int r;
+    if (lj_zip_open(&zip, zip_path) != 0) return -1;
+    r = lj_zip_check(&zip, lib, zip_path);
+    mz_zip_reader_end(&zip);
+    return r;
+}
+
 int lj_library_restore(const lj_library *lib, const char *zip_path)
 {
     mz_zip_archive zip;
     mz_uint i, n;
-    mz_uint64 total = 0;
-    int ok = 1;
-    memset(&zip, 0, sizeof zip);
-    if (!mz_zip_reader_init_file(&zip, zip_path, 0)) { lj_log("library: cannot read %s", zip_path); return -1; }
+    int ok;
+    if (lj_zip_open(&zip, zip_path) != 0) return -1;
+    ok = lj_zip_check(&zip, lib, zip_path) == 0;
     n = mz_zip_reader_get_num_files(&zip);
-    for (i = 0; ok && i < n; i++) {                           /* pass 1: every entry is checked before the first byte is written */
-        mz_zip_archive_file_stat st;
-        if (!mz_zip_reader_file_stat(&zip, i, &st)) { ok = 0; break; }
-        total += st.m_uncomp_size;
-        if (!lj_zip_name_ok(st.m_filename)) { lj_log("library: restore refuses entry \"%s\"", st.m_filename); ok = 0; }
-        else if (total > (mz_uint64)LJ_RESTORE_MAX_BYTES) { lj_log("library: restore refuses %s (over %u bytes)", zip_path, (unsigned)LJ_RESTORE_MAX_BYTES); ok = 0; }
-    }
     for (i = 0; ok && i < n; i++) {                           /* pass 2: extract */
         mz_zip_archive_file_stat st;
         char dst[LJ_PATH_CAP];
@@ -612,4 +644,111 @@ int lj_library_used_by_cues(const lj_library *lib, enum lj_rec_kind kind, const 
     lj_cue_free(cue);
     free(cues);
     return count;
+}
+
+/* ---- W4 dlg-files: Data Restore, the Restore folder tree, the format-update scan (lj_library.h W4 block) ---- */
+
+int lj_library_startup_ini(const char *userdir, char *out, size_t cap) { return lj_startup_path(userdir, out, cap); }
+
+static int lj_icmp(const char *a, const char *b)
+{
+    for (;; a++, b++) {
+        int x = (unsigned char)*a, y = (unsigned char)*b;
+        if (x >= 'A' && x <= 'Z') x += 32;
+        if (y >= 'A' && y <= 'Z') y += 32;
+        if (x != y || !x) return x - y;
+    }
+}
+
+int lj_library_erase(const lj_library *lib)
+{
+    char root[LJ_PATH_CAP];
+    lj_library again;
+    lj_str_copy(root, sizeof root, lib->root);
+    root[strlen(root) - 1] = 0;
+    if (lj_fs_is_dir(root) && lj_walk(root, "", lj_rm_cb, NULL) != 0) { lj_log("library: cannot erase %s", root); return -1; }
+    return lj_library_create(lib->userdir, lib->name, &again);   /* the folders back, an empty DirInfo.Ini (the archive brings its own) */
+}
+
+int lj_library_dir_list(const char *dir, const char *ext, char names[][LJ_DIRENT_CAP], int max)
+{
+    lj_dir d;
+    char name[LJ_DIRENT_CAP], tmp[LJ_DIRENT_CAP];
+    int n = 0, is_dir, i, j;
+    size_t len, el = ext ? strlen(ext) : 0;
+    if (lj_dir_open(&d, dir) != 0) return -1;
+    while (n < max && lj_dir_next(&d, name, sizeof name, &is_dir) == 1) {
+        if (ext ? (is_dir || (len = strlen(name)) <= el || !lj_ieq(name + len - el, ext)) : !is_dir) continue;
+        lj_str_copy(names[n++], LJ_DIRENT_CAP, name);
+    }
+    lj_dir_close(&d);
+    for (i = 1; i < n; i++)                                   /* insertion sort, case-insensitive (TDirectoryListBox / TFileListBox order) */
+        for (j = i; j > 0 && lj_icmp(names[j - 1], names[j]) > 0; j--) { lj_str_copy(tmp, sizeof tmp, names[j]); lj_str_copy(names[j], LJ_DIRENT_CAP, names[j - 1]); lj_str_copy(names[j - 1], LJ_DIRENT_CAP, tmp); }
+    return n;
+}
+
+/* F56: an LJ4 record whose header format is below LJ_REC_FORMAT. Every kind is at 1 in v1.0.0, so only a synthetic
+ * "LJ4 <kind> 0" file reaches the update dialogs (docs/file-formats.md, the format-update section). */
+typedef struct { char (*rel)[LJ_REL_CAP]; char (*kind)[16]; int n, max; } lj_old_scan;
+
+static int lj_old_cb(void *ud, const char *abs, const char *rel, int is_dir)
+{
+    lj_old_scan *s = (lj_old_scan *)ud;
+    char line[64], kind[16], extra;
+    int fmt;
+    FILE *f;
+    if (is_dir || s->n >= s->max || strlen(rel) >= LJ_REL_CAP || (f = fopen(abs, "rb")) == NULL) return 0;
+    if (fgets(line, sizeof line, f) && strncmp(line, "LJ4 ", 4) == 0 && sscanf(line + 4, "%15s %d %c", kind, &fmt, &extra) == 2 && fmt >= 0 && fmt < LJ_REC_FORMAT) {
+        lj_str_copy(s->rel[s->n], LJ_REL_CAP, rel);
+        lj_str_copy(s->kind[s->n++], 16, kind);
+    }
+    fclose(f);
+    return 0;
+}
+
+int lj_library_outdated(const lj_library *lib, char rel[][LJ_REL_CAP], char kind[][16], int max)
+{
+    lj_old_scan s;
+    char root[LJ_PATH_CAP];
+    s.rel = rel; s.kind = kind; s.n = 0; s.max = max;
+    lj_str_copy(root, sizeof root, lib->root);
+    root[strlen(root) - 1] = 0;
+    return lj_walk(root, "", lj_old_cb, &s) == 0 ? s.n : -1;
+}
+
+int lj_library_update_file(const lj_library *lib, const char *rel)
+{
+    char path[LJ_PATH_CAP], tmp[LJ_PATH_CAP], line[64], kind[16], buf[65536], extra;
+    FILE *in, *out;
+    size_t n;
+    int fmt, ok;
+    if (lj_library_path(lib, rel, path, sizeof path) != 0 || snprintf(tmp, sizeof tmp, "%s.upd", path) >= (int)sizeof tmp) return -1;
+    if ((in = fopen(path, "rb")) == NULL) return -1;
+    if (!fgets(line, sizeof line, in) || strncmp(line, "LJ4 ", 4) != 0 || sscanf(line + 4, "%15s %d %c", kind, &fmt, &extra) != 2 || fmt >= LJ_REC_FORMAT
+        || (out = fopen(tmp, "wb")) == NULL) { fclose(in); return -1; }
+    ok = fprintf(out, "LJ4 %s %d%s", kind, LJ_REC_FORMAT, strchr(line, '\r') ? "\r\n" : "\n") > 0;   /* the grammar of format 0 is format 1's: only line 1 changes */
+    while (ok && (n = fread(buf, 1, sizeof buf, in)) > 0) ok = fwrite(buf, 1, n, out) == n;
+    ok = !ferror(in) && ok;
+    fclose(in);
+    ok = fclose(out) == 0 && ok;
+    if (ok) { remove(path); ok = rename(tmp, path) == 0; }   /* irreversible (F56): the old header is gone */
+    if (!ok) { remove(tmp); lj_log("library: cannot update %s", path); }
+    return ok ? 0 : -1;
+}
+
+int lj_library_replace(const lj_library *lib, const char *zip_path)
+{
+    size_t i, n = strlen(lib->root);
+    for (i = 0; i < n && zip_path[i]; i++) {                  /* an archive inside the library would be erased before it is read */
+        int x = (unsigned char)zip_path[i], y = (unsigned char)lib->root[i];
+        if (x == '/' || x == '\\') x = LJ_SEP;
+        if (y == '/' || y == '\\') y = LJ_SEP;
+        if (x >= 'A' && x <= 'Z') x += 32;
+        if (y >= 'A' && y <= 'Z') y += 32;
+        if (x != y) break;
+    }
+    if (i == n) { lj_log("library: %s lies inside %s; not restored over it", zip_path, lib->root); return -1; }
+    if (lj_library_backup_check(lib, zip_path) != 0) return -1;
+    if (lj_library_erase(lib) != 0) return -1;
+    return lj_library_restore(lib, zip_path);
 }

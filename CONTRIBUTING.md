@@ -19,11 +19,19 @@ find every window, caption, menu item and DMX behaviour where they left it.
 ## No Martin assets
 
 Nothing of Martin's enters the repository: no bitmaps, icons, cursors, RTF
-notes, font bitmaps, fixture library files or installer pieces. The
-`reference/` tree is gitignored and read as data only. Chrome and icons are
-redrawn (ours live in `packaging/icons/` and `art/`); fixture definitions come
-from open sources with provenance headers. A pull request that adds a binary
-from `reference/` is closed.
+notes, help text, font bitmaps, fixture library files, `Macros.Mac` samples or
+installer pieces. The `reference/` tree is gitignored and read as data only.
+Chrome and icons are redrawn (ours live in `packaging/icons/` and `art/`, CC0);
+fixture definitions come from open sources with provenance headers. A pull
+request that adds a binary from `reference/` is closed. `docs/provenance.md`
+lists every class of non-code bytes and where it came from; a new class gets a
+row there in the same pull request.
+
+Help topics (`help/*.txt`) are our own words. After editing one, run
+`python -I tools/help_check.py --write` and commit the regenerated
+`src/windows/lj_help_topics_gen.c` / `.h` with it. The `help_check` CTest fails on
+a stale generated file, a line over 72 columns, French or German text, and (on a
+machine with the reference tree) any run of 8 words shared with Martin's help.
 
 ## Code rules (design section 2.0, `docs/conventions.md`)
 
@@ -60,8 +68,15 @@ diff is the picture.
 - Generated files (`lj_*_gen.c`) are committed; regenerate with the tool named
   in the file's banner and commit the tool change and its output together.
 
+## Security
+
+Report vulnerabilities privately, as `SECURITY.md` describes; not in a public
+issue.
+
 ## Licence
 
-MIT (`LICENSE`). Third-party notices in `NOTICE`. By contributing you agree
-your changes are MIT. LightJockey is a trademark of Martin Professional; this
-project is not affiliated with Martin.
+MIT (`LICENSE`; a PROPOSAL until the maintainer's ruling before the public
+release). Third-party notices in `NOTICE`, shipped as `THIRD_PARTY_NOTICES.txt`.
+By contributing you agree your changes are MIT and your art is CC0. LightJockey
+is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed
+by Martin Professional or HARMAN.

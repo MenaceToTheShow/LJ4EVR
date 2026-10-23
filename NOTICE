@@ -1,10 +1,14 @@
 LJ4EVR third-party notices
 ==========================
 
-LJ4EVR itself is MIT-licensed (LICENSE). It ships with:
+LJ4EVR itself is released under the MIT licence (LICENSE; the licence is a
+PROPOSAL until the maintainer's ruling before the public release, design 13
+item 1). The installers ship this file as THIRD_PARTY_NOTICES.txt, followed by
+the full licence texts it names: beside lj4evr.exe on Windows, and in
+LJ4EVR.app/Contents/Resources on macOS.
 
 SDL3 (release-3.4.18), zlib licence
-  https://github.com/libsdl-org/SDL
+  https://github.com/libsdl-org/SDL  (linked statically)
   Copyright (C) 1997-2026 Sam Lantinga <slouken@libsdl.org>
   This software is provided 'as-is', without any express or implied warranty.
   In no event will the authors be held liable for any damages arising from the
@@ -23,16 +27,21 @@ miniz 3.0.2, MIT licence
   https://github.com/richgel999/miniz  (third_party/miniz/SOURCE records the sha256)
   Copyright 2013-2014 RAD Game Tools and Valve Software
   Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
-  Licensed under the MIT License; see third_party/miniz/LICENSE.
+  The full MIT text follows below (third_party/miniz/LICENSE).
 
 QLC+ fixture definitions (Martin/*.qxf), Apache License 2.0
   https://github.com/mcallegari/qlcplus  (third_party/qlcplus-fixtures/SOURCE records the commit)
-  Copyright the QLC+ contributors. Licensed under the Apache License, Version 2.0;
-  the LICENSE and NOTICE files are kept beside the fixture files. The definitions
-  are converted offline to C tables; the .qxf files are not read at runtime.
+  Copyright the QLC+ contributors. The definitions are converted offline to C
+  tables (src/fixlib/lj_profiles_gen.c, each profile marked "modified:
+  converted"); the .qxf files are not read at run time. The QLC+ NOTICE and the
+  full Apache License 2.0 text follow below.
 
-Fonts, artwork and provenance
-  Fonts and artwork are original pixel art drawn to metrics harvested from the
-  Delphi form files; no screen capture or font bitmap was used as a tracing
-  layer. LightJockey is a trademark of Martin Professional; LJ4EVR is not
-  affiliated.
+Fonts, artwork and help text
+  The bitmap fonts, glyphs, icons, swatches and tiles are original pixel art
+  drawn for LJ4EVR to metrics harvested from the Delphi form files, released
+  under CC0 1.0; no screen capture or font bitmap was used as a tracing layer.
+  The help topics are original text. Captions, geometry and DMX tables are
+  reproduced as facts (docs/provenance.md).
+
+LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated
+with or endorsed by Martin Professional or HARMAN.

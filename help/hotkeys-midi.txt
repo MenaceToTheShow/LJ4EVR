@@ -1,0 +1,14 @@
+Hotkeys and MIDI
+
+Setup > Hotkeys > Edit Hotkeys assigns keys to functions: go, stop, load
+cue, flash sequence, masters, and many more. Eight hotkey setups can be
+stored and switched. Setup > Hotkeys > Hotkeys Enabled turns all hotkeys
+on or off; the status bar shows when they are off.
+
+MIDI In (from the C-L toolbar) maps MIDI notes and controllers to the
+same functions. Press Learn, move the control on your MIDI device, and
+the mapping is made. MIDI time code can drive the waits of a cue list.
+
+The 2532 Direct Access window and the Virtual Fingers window give the
+layouts of those Martin panels on screen. Their keys and faders can be
+reached from the keyboard and from MIDI.

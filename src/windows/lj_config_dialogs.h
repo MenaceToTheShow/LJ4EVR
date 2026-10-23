@@ -39,4 +39,20 @@ void       lj_config_dlg_refresh(enum lj_win id);   /* repaint from the model / 
 void       lj_config_dlg_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
 void       lj_config_dlg_target(int fixture);       /* the fixture (index 0..LJ_FIXTURES-1) Fixture Info / Notes / Special act on; set by the app before lj_win_open */
 
+/* ---- dlg-config track additions (below the contract block) ---- */
+enum { LJ_FXD_SEQ = 1, LJ_FXD_PRESETS = 2, LJ_FXD_SETUP = 4, LJ_FXD_MACROS = 8, LJ_FXD_MISC = 16, LJ_FXD_ALL = 31 };   /* the copy filter / clear boxes [02 s2.9-2.10] */
+int  lj_config_dlg_fixture_data(int src, int dst, unsigned what);   /* F44: src >= 0 copies src's programming data onto dst (identical profile; data is keyed by DMX address [02 s1.4]), src < 0 clears dst: sequences (channels, preset refs, movement macros) and generic macros on disk and in memory, the fixture's preset file, setup (copy only), DefaultOut; 0 / -1 */
+int  lj_config_dlg_auto_address(int fixture, unsigned links, int *link, int *address);   /* F43: the first free range on the links of the mask (bit 0 = link 1, 0 = any): other fixtures only, global patches and colour-scroller addresses ignored, Generic Scanner 1 takes its 8; 0 / -1 none */
+int  lj_config_dlg_warnings(const char **rows, int max);            /* F41: the save-time warnings in LJ2's wording and order (rows NULL = count only); the count */
+void lj_config_dlg_add_fixtures(int profile_id);                    /* Fixture Configuration bAdd: TAddFixForm2 for that exe row */
+void lj_config_dlg_default_dmx(const int *fixtures, int n);         /* TApplyDefaultDMXForm: each profile's default DMX values into DefaultOut, then LJ_ACT_DEFAULT_OUT_APPLY; the box closes on the next refresh */
+void lj_config_dlg_pick_bitmap(int colors, void (*done)(const char *name, void *ud), void *ud);   /* TBitMapPickerForm2 over our art (D2): gobo tiles, or colour swatches */
+void lj_config_dlg_get_icon(void (*done)(const char *name, void *ud), void *ud);                  /* TGetBitmapForm over our fixture icons */
+void lj_config_dlg_value_types(const char *palette, unsigned char codes[5], void (*done)(void *ud), void *ud);   /* TPaletteValueTypeForm: OK writes the five codes [16 s5] back */
+void lj_config_dlg_apply_multi(int master, void (*apply)(int fixture, void *ud), void *ud);       /* TApplyMultiForm "Apply user profile": the selected user-definable fixtures, Identical Id Only */
+void lj_config_dlg_oldstyle_name(const char *legacy, void (*done)(const char *manufacturer, const char *name, void *ud), void *ud);   /* TProfileNameOldStyleForm (ME-126) */
+void lj_config_dlg_import_modified(const char *file, void (*done)(int use_import, void *ud), void *ud);   /* TProfileImportModifiedFilesForm: 1 import, 0 keep existing (its third button is Help) */
+void lj_config_dlg_file_exists(const char *path, void (*done)(int choice, void *ud), void *ud);           /* TFileExistsForm: 0 rename, 1 overwrite, 2 skip (its fourth button is Help) */
+void lj_config_dlg_export_warning(void (*done)(int yes, void *ud), void *ud);                            /* TFixtureExportWarningDialog unless "Never show this warning again" */
+
 #endif /* LJ_WINDOWS_CONFIG_DIALOGS_H */

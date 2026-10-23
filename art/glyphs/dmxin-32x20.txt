@@ -1,0 +1,21 @@
+palette .=C0C0C0 #=000000 r=FF0000 w=FFFFFF
+................................
+................................
+.##############################.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.#w##ww#www#w#w#wwwwwwrwwwwwww#.
+.#w#w#w##w##w#w#wwwwwrrwwwwwww#.
+.#w#w#w#w#w#ww#wwwwwrrrrrrrrww#.
+.#w#w#w#www#w#w#wwwwrrrrrrrrww#.
+.#w##ww#www#w#w#wwwwwrrwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwrwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.#wwwwwwwwwwwwwwwwwwwwwwwwwwww#.
+.##############################.
+................................
+................................

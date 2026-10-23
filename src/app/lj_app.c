@@ -35,11 +35,14 @@
 #include "model/lj_show.h"
 #include "platform/lj_platform.h"
 #include "platform/sdl/lj_sdl.h"
+#include "platform/sdl/lj_sdl_srcimg.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/lj_formsini.h"
 #include "ui/lj_menu.h"
 #include "ui/lj_window.h"
 #include "windows/lj_cue_form.h"
+#include "windows/lj_desktop_dialogs.h"
+#include <SDL3/SDL_dialog.h>                    /* W4 dlg-desktop: SDL_ShowOpenFileDialog */
 #include "windows/lj_prefs.h"
 #include "windows/lj_windows.h"
 #include "version.h"
@@ -117,6 +120,37 @@ static int  lj_app_host_pos(void *ud, const lj_window *w, int *x, int *y) { (voi
 static const lj_win_host lj_app_host = { NULL, lj_app_host_open, lj_app_host_close, lj_app_host_show, lj_app_host_move, lj_app_host_pos };   /* move/pos: the warning boxes centre on the main window (LORD_FIDELITY-12) */
 static int  lj_app_desktop_open(void *ud, lj_window *w, int stay_on_top) { return lj_app_host_open(ud, w, stay_on_top ? LJ_WF_STAY_ON_TOP : 0u); }
 static const lj_desktop_host lj_app_desktop_host = { NULL, lj_app_desktop_open, lj_app_host_close };   /* the Unassigned Fixtures list (W1 acceptance 2: it was built headless without this) */
+
+/* W4 dlg-desktop (appended): the OS open dialog for Desktop Image Get Image / Startup Options Browse (TOpenPictureDialog) and the
+ * BMP decoder, handed to windows/lj_desktop_dialogs.c. SDL may answer on another thread: the path waits under lj_lock until the
+ * 100 ms refresh takes it. Auto Launch has no exec here: launching stays behind the Execute File rule (LORD_C-8, integrator). */
+static struct { int state; char path[LJ_PATH_CAP]; } lj_app_pick;   /* state 0 idle, 1 open, 2 path, 3 cancelled */
+static void SDLCALL lj_app_pick_cb(void *ud, const char *const *files, int filter)
+{
+    (void)ud; (void)filter;
+    lj_lock();
+    if (files && files[0] && lj_utf8_to_cp1252(lj_app_pick.path, sizeof lj_app_pick.path, files[0]) == 0) lj_app_pick.state = 2;
+    else lj_app_pick.state = 3;
+    lj_unlock();
+}
+static int lj_app_pick_file(int bmp_only)
+{
+    static const SDL_DialogFileFilter bmp[] = { { "Bitmaps (*.bmp)", "bmp" } }, any[] = { { "All files", "*" } };   /* TImageSetupForm LoadDiag Filter */
+    lj_lock(); lj_app_pick.state = 1; lj_unlock();
+    SDL_ShowOpenFileDialog(lj_app_pick_cb, NULL, NULL, bmp_only ? bmp : any, 1, NULL, false);
+    return 0;
+}
+static int lj_app_pick_take(char *dst, size_t cap)
+{
+    int r;
+    lj_lock();
+    r = lj_app_pick.state == 2 ? 1 : lj_app_pick.state == 3 ? -1 : 0;
+    if (r == 1) lj_str_copy(dst, cap, lj_app_pick.path);
+    if (r) lj_app_pick.state = 0;
+    lj_unlock();
+    return r;
+}
+static const lj_desktop_dlg_host lj_app_dd_host = { lj_platform_load_bmp, lj_app_pick_file, lj_app_pick_take, NULL };
 
 /* W0 fallback for a generated form while lj_win_open has no body (ponytail: deleted with the windows track). */
 static lj_window *lj_app_open_form(const lj_form_desc *d)
@@ -395,6 +429,7 @@ int lj_app_main(int argc, char **argv)
     lj_hotkeys_init(&lj_a.hotkeys);
     c->show = show; c->lib = &lj_a.lib; c->sacn = &lj_a.sacn; c->hotkeys = &lj_a.hotkeys;
     lj_str_copy(c->userdir, sizeof c->userdir, lj_a.pref);
+    lj_sdl_srcimg_init(lj_a.pref);                                              /* W4-SRCIMG: <userdata>/Source-Images/ substitutes LJ2's own bitmaps for our art (design 7.8) */
     c->current_scene = 0; c->blind = 0;
     c->show_nextprev = 1;                                                       /* allow_freeze / allow_offline / allow_solo: lj_app_prefs_load from Main.Ini (ME-29) */
 
@@ -437,6 +472,7 @@ int lj_app_main(int argc, char **argv)
     lj_app_seam_start();
     lj_app_w3_start();                                               /* W3: cue-list runner, editor record, reloads, the W3 actions (lj_app_w3.c) */
     lj_app_w4_start();                                               /* W4: the actions that open W4 windows (lj_app_w4.c) */
+    lj_desktop_dlg_set_host(&lj_app_dd_host);                        /* W4 dlg-desktop: file dialog + BMP decoder (the saved wallpaper decodes here) */
     lj_ctl_set_host(&lj_app_host);                                   /* control windows reach the screen the way windows/ does */
     { static const enum lj_desktop_action acts[] = { LJ_ACT_CLOSE, LJ_ACT_FIXTURE_CONFIG, LJ_ACT_HARDWARE_SETUP, LJ_ACT_STARTUP_OPTIONS, LJ_ACT_SAVE_SEQUENCE, LJ_ACT_SAVE_CUE, LJ_ACT_CTL_OPEN_ONLY, LJ_ACT_RESTART };
       for (i = 0; i < LJ_COUNT_OF(acts); i++) lj_desktop_bind_action(acts[i], lj_app_action, NULL); }

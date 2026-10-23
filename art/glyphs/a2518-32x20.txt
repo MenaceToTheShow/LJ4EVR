@@ -1,0 +1,21 @@
+palette .=C0C0C0 #=000000 k=404040 y=FFFF00
+................................
+................................
+.##############################.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkyykkyyykkykkyyykkkkkkk#.
+.#kkkkkkkkykykkkyykkykykkkkkkk#.
+.#kkkkkkkykkyykkkykkyyykkkkkkk#.
+.#kkkkkkykkkkkykkykkykykkkkkkk#.
+.#kkkkkkyyykyykkyyykyyykkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.#kkkkkkkkkkkkkkkkkkkkkkkkkkkk#.
+.##############################.
+................................
+................................

@@ -503,3 +503,161 @@ Import (`lj_udf_parse`): the footer CRC is verified first (a mismatch, or a file
 checked; output beyond 16 MB aborts), then the size check of the record. Export (`lj_udf_export`): stream 0 =
 `lj_gs2_write`, a one-entry table (`gs2_file`, `User\UserFixtures\`), the footer; no bitmap stream (D2: the icon
 bitmap is the user's file).
+
+## W4 docs-release (WIZARD_STYLES-8): `.bez` shapes and the library's own folders
+
+### `MacroShapes\<name>.bez` (`model/lj_movemacro.h`, kind `bez`, format 1)
+
+One user Bezier shape for movement macros (04 s4.5, 17 s7.2), written by the
+Bezier editor, read at startup and on reload (`lj_app_bez_reload`). The folder
+name `MacroShapes` is a PROPOSAL (LJ2 lists `.bez` user shapes but its folder is
+not recorded). The file name without `.bez` is the name the macro drop-down shows.
+
+```
+LJ4 bez 1
+name="Figure 8"
+node 1 x=-16000 y=0 ix=-16000 iy=-9000 ox=-16000 oy=9000 line=0
+node 2 x=0 y=0 ix=-8000 iy=9000 ox=8000 oy=-9000 line=0
+node 3 x=16000 y=0 ix=16000 iy=-9000 ox=16000 oy=9000 line=1
+```
+
+- `name` up to 30 characters, required.
+- 3 to 64 `node` items (`LJ_BEZ_NODES_MAX`, PROPOSAL); the shape is closed (the
+  last node joins the first). `x` / `y` is the node, `ix iy` and `ox oy` its
+  incoming and outgoing handles, all in editor units -32768..32767 (the full pan /
+  tilt span, 17 s1); a missing handle defaults to the node itself. `line=1` makes
+  the segment leaving that node straight ("convert segments to lines").
+- Out-of-range values, a 65th node, fewer than 3 nodes or a missing name reject the
+  file; `lj_bez_set_load` logs and skips a bad file and loads the rest.
+- Sampling (`lj_bez_sample`, integer only): each segment gets `4096 / n` points
+  (the last one the remainder), cubic Bernstein form in exact 64-bit arithmetic,
+  then each axis is normalised to +-32767 around its centre.
+
+### The folders a user fills
+
+All inside the user library (`User\<library>\`; `Export\` is created on the first export). Their
+names are PROPOSALs (LJ2 asked with file dialogs or read from the installation),
+each recorded in `docs/fidelity.md`.
+
+| Folder | Read / written by | Contents |
+|---|---|---|
+| `Import\` | Fixture Configuration > Import Profile (`windows/lj_gs2_dialogs.c`) | `.GS2`, `.Udf`, `.Udo` profiles to import; listed in the import dialog, each file untrusted (every length and offset checked, `fixlib/lj_gs2.c`) |
+| `Export\` | Create Export File / Export All (`windows/lj_gs2_dialogs.c`) | the `.GS2` / `.Udf` files LJ4EVR writes |
+| `Override\` | startup and Generic Macro Editor > Options > Update User Shapes (`app/lj_app_w3.c`, ME-34) | a user's own `Macros.Mac` (+ `UserMacros.Mac` beside it) that replaces the 66 built-in generic macro shapes; nothing is shipped there |
+
+`Source-Images\` is not in the library: it sits in the data folder (the pref path)
+with `Glyphs\`, `Fixtures\`, `Colors\` and `Gobos\` sub-folders of `.bmp` files
+that replace our pictures by LJ2 file name (design 7.8, the art track's
+`platform/sdl/lj_sdl_srcimg.c`).
+
+## W4 lightcorder-debug: `LightCorderFiles\LCnnnn.LLF` (`model/lj_llf.h`; PROPOSAL format)
+
+LJ2 records a DMX link to `.LLF` files in a `LightCorderFiles` folder (exe 0x1FE558, the TSaveDialog filter
+`LightJockey LightCorder Files (*.LLF)`), but no Martin `.LLF` file or format description is known (note 13 s1.3), so
+the bytes are ours. The recorder (Cuelist > Tools > Record to LightCorder file) samples our own output frame
+(`lj_engine_frame()->out[link - 1]`, copied under `lj_lock` on the UI thread) at 10 / 20 / 40 Hz into an in-memory
+"card" of 4 / 8 / 16 / 32 / 64 MB, then Save File writes the whole take as `<library>\LightCorderFiles\LCnnnn.LLF`
+(first free nnnn; no platform save dialog yet). Little-endian:
+
+```
+offset size
+ 0     6   "LJ4LLF"
+ 6     2   version = 1
+ 8     1   link 1..4
+ 9     1   flags: bit 0 = compression ("Target File Compression" Enable); other bits 0
+10     2   channels: 64 | 128 | 256 | 512 (the first N addresses of the link)
+12     2   frequency Hz: 10 | 20 | 40
+14     2   0
+16     4   card bytes: 4, 8, 16, 32 or 64 MiB
+20     4   frame count
+24     4   data bytes (<= card bytes)
+28     4   user notes bytes (< 65536)
+32     4   system notes bytes (< 65536)
+36     4   0
+40         user notes, then system notes (CP1252, no NUL)
+...        frames: 0x00 + <channels> bytes = a full frame;
+                   0x01 = the previous frame again (only with compression, never first)
+```
+
+The card cap counts encoded bytes: a push that does not fit stops the take with `Lightcorder card memory full -
+recording stopped` (exe 0x1FF970). `Max recording time` (exe 0x1FF0DC / 0x1FF0A8) is the uncompressed worst case,
+card / ((channels + 1) x Hz). The system notes are the exe's text: `LightJockey Generated Lightcorder DMX Stream`,
+`File Created <dd-mm-yyyy> at <hh:mm:ss>`, `Recording Time : m:ss`, `Recorded number of channels : %d`,
+`Recording Frequency : %d Hz`, then `LightJockey Link Configuration` and one `%2d. %s (%s) at DMX address %d` line per
+fixture of the recorded link inside the recorded channels (number, user name, profile name, address).
+
+Reader (`lj_llf_read` / `lj_llf_parse`), every check before use: magic, version, link, channels, Hz, card size from the
+lists above; both notes lengths and the data length bounded; header + notes + data must equal the file size exactly
+(shorter = `truncated`, longer = `trailing bytes`); each frame tag valid, a full frame complete, a repeat only with
+compression and never first; the frame count must consume the data exactly; frames x channels capped at 256 MiB
+decoded. `tests/model/test_llf.c` refuses every prefix of a good file and the hostile variants.
+
+Ini key: `Main.Ini [DEBUG] DebugWindow=1` shows the hidden View > De&bugWindow item (PROPOSAL, the unhide of design 13
+item 10; `[DEBUG] MonitorLayer` is the DMX monitor's).
+
+## W4 dlg-files (2026-10-22)
+
+### Restore data `<userdir>RestoreData.lj4r` (`model/lj_restore_data.h`, W4-DLG-2; ours, not LJ2's `LightJockey.Bin`)
+
+The club "show-saver" snapshot of `[06 s4.2]`. One file per installation, beside `Hardware.Ini`. The container
+is a `.lj4b` (the zip of `lj_library_backup`, entries relative to the library root, `/` separators) whose
+`notes.txt` entry is the manifest:
+
+```
+LJ4 restore 1
+library="Club Night"
+created=2026-10-22T21:04:40
+```
+
+- `library=` is quoted like a record string and must be a valid folder name (no `\ / : * ? " < > |`, not `.` or
+  `..`); `created=` is local time, information only. A manifest with a format above 1, or none, is not restore data.
+- Create (System Preferences, Data Restore tab, Create Restore Data, Continue) writes `RestoreData.lj4r.tmp` and
+  renames it over the old file, so a failed create keeps the previous data set.
+- Restore (System, Restore Program Data, `Restart & Restore`) sets `Startup.ini [RESTORELIB] RESTORE=1` (LJ2's key)
+  and restarts. The next start (`lj_startup_library`, before `Main.Ini` is read) runs `lj_library_replace`: pass 1
+  over every entry and every CRC, then the library is erased, then extracted; `RESTORE=0`; `Start=` names the
+  restored library. When pass 1 fails nothing is erased, `RESTORE=1` stays, and the first window pass asks
+  `Restore data file seems to be corrupt - do you wish to abort the data restore process ?`; Yes deletes the file.
+- `Hardware.Ini` and `Startup.ini` are not in the snapshot (LJ2 also stored `Hardware.Ini`, `LJSound.Ini` and
+  `Startup.ini`): the data set restores show data, not this PC's network settings.
+- **The password is a prompt, not a security boundary.** `Startup.ini [RESTORELIB] Pass=` holds the 32-bit FNV-1a
+  of the password's CP1252 bytes as 8 hex digits (empty = none). It only hides the text: anyone who can edit
+  `Startup.ini` clears it, and the archive itself is not encrypted. `Main.Ini [RESTORE] Password=1` (the
+  `Password protect restore file` box) makes the Data Restore tab ask for it before Create Restore Data.
+
+### Untrusted archives (`.lj4b` and restore data; W2 LORD_C-5, W4-DLG-1)
+
+`lj_library_backup_check` is pass 1 of every restore and writes nothing. It refuses the whole archive when an
+entry name is empty, longer than 511 bytes or holds a NUL (miniz's stat would truncate it), starts with `/` or
+`\`, contains `:` or `..`, is a file entry ending in `/` or `\`, or makes `root + name` reach `LJ_PATH_CAP`
+(1024); when the uncompressed total passes 512 MiB; and when any entry fails `mz_zip_validate_archive` (a
+truncated or bit-flipped file). Restore User Library and Data Restore then erase the library before extracting
+(`lj_library_replace`, "restoring will completely replace the existing contents" [06 s4.1]); an archive that lies
+inside the library it would replace is refused.
+
+### Record format numbers and the update dialogs (F56, W4-DLG-4)
+
+Every LJ4 record kind writes format 1 (`LJ_REC_FORMAT`). The loaders read any format up to their own, so the
+update rule is about line 1 only: at start (`lj_file_dlg_startup`, once a window host exists) every file of the
+library whose line 1 is `LJ4 <kind> <n>` with `n < LJ_REC_FORMAT` is collected, and
+
+| kind | dialog | action |
+|---|---|---|
+| `cl` | TUpdateCl2Form `Datafile format update required` | `Ok, do the update now`; `Don't update now, but remindme later` (asked again next start); `Don't update - don't remind me` (`Main.Ini [UPDATE] NoCl2Reminder=1`, ours) |
+| `bgc` | TUpdateBGCuesForm `File Format Update Needed` | `Continue Update` / `Cancel Update` |
+| `patch` (`GlobalPatch.GPA`) | TPatchUpdateForm `Update to Patch Configuration` | `Update Now` / Cancel |
+| any other kind | TUpdateForm `Dataformat has Changed` | OK after `Backup Datafiles first` (`<userdir><library> (before update).lj4b`); Cancel asks `Do NOT update files - are you absolutely sure ?` |
+
+The update rewrites line 1 as `LJ4 <kind> 1` and keeps every other byte; it cannot be undone, and the next start
+shows nothing. No LJ4 record has ever been written below format 1, so in v1.0.0 only a synthetic
+`LJ4 <kind> 0` file (the tests write them) reaches these dialogs; the first real format change raises the kind's
+format and the dialog is already wired. TUpdateProgramForm (installation self-update) and TRebuildSetupForm
+(fixture palette rebuild) have no LJ4EVR trigger; they open only through `lj_win_open`.
+
+### Ini keys added by dlg-files
+
+| File | Section | Key | Meaning |
+|---|---|---|---|
+| `Startup.ini` (userdir) | `[RESTORELIB]` | `RESTORE` | `1` = restore the data set at the next start (LJ2's key) |
+| `Startup.ini` (userdir) | `[RESTORELIB]` | `Pass` | FNV-1a of the restore password, 8 hex digits; empty = none (ours) |
+| `Main.Ini` | `[UPDATE]` | `NoCl2Reminder` | `1` = `Don't update - don't remind me` was chosen (ours) |

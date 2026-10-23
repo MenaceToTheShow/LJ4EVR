@@ -18,7 +18,7 @@ const char *const lj_midi_kind_words[] = { "seq", "cue", "bgcue", "cl", "fn", "c
 
 /* the queue (OS thread -> UI thread, under lj_lock) and the UI-thread state (Learn, the last note per kind) */
 static struct { uint8_t msg[LJ_MIDI_QUEUE][3]; int head, n; uint32_t dropped; } lj_mq;
-static struct { int learning, learned, ch, note; int last_ch[LJ_MIDI_KIND_COUNT], last_note[LJ_MIDI_KIND_COUNT]; } lj_mu;
+static struct { int learning, learned, ch, note, want_cc, is_cc; int last_ch[LJ_MIDI_KIND_COUNT], last_note[LJ_MIDI_KIND_COUNT]; } lj_mu;
 
 void lj_midi_init(lj_midi_map *m)
 {
@@ -112,7 +112,7 @@ void lj_midi_inject(const uint8_t msg[3]) { lj_midi_post(msg); }
 
 /* ---- Learn: the next note on (after begin) is reported once; the notes after it dispatch normally ---- */
 
-void lj_midi_learn_begin(void)  { lj_mu.learning = 1; lj_mu.learned = 0; }
+void lj_midi_learn_begin(void)  { lj_mu.learning = 1; lj_mu.learned = 0; lj_mu.want_cc = 0; }
 void lj_midi_learn_cancel(void) { lj_mu.learning = 0; lj_mu.learned = 0; }
 int  lj_midi_learn_take(int *ch, int *note)
 {
@@ -135,8 +135,8 @@ const lj_midi_map_entry *lj_midi_dispatch(const lj_midi_map *m, const uint8_t ms
     status = msg[0] & 0xF0; ch = (msg[0] & 0x0F) + 1; note = msg[1];
     if (status != 0x90 && status != 0x80 && status != 0xB0) return NULL;   /* notes (05 s7) and the CC extension; program change / pressure / bend ignored */
     on = status == 0x90 && !(m->note0_is_off && msg[2] == 0);
-    if (status != 0xB0 && lj_mu.learning) {                       /* Learn takes the next note on, nothing else fires meanwhile */
-        if (on) { lj_mu.ch = ch; lj_mu.note = note; lj_mu.learned = 1; lj_mu.learning = 0; }
+    if (lj_mu.learning && (status != 0xB0 || lj_mu.want_cc)) {    /* Learn takes the next note on (or CC: W4 ext Learn), nothing else fires meanwhile */
+        if (on || status == 0xB0) { lj_mu.ch = ch; lj_mu.note = note; lj_mu.is_cc = status == 0xB0; lj_mu.learned = 1; lj_mu.learning = 0; }
         return NULL;
     }
     for (k = 0; k < LJ_MIDI_KIND_COUNT; k++)
@@ -324,4 +324,29 @@ int lj_midi_feed(const uint8_t *bytes, size_t n, uint8_t run[3], int *have, void
         if (run[0] == 0xF1) run[0] = 0;
     }
     return out;
+}
+
+/* ---- W4 da2532-fingers (appended): Learn for the LJ_FNF_EXT rows (lj_midi.h) ---- */
+
+void lj_midi_learn_begin_ext(int want_cc) { lj_midi_learn_begin(); lj_mu.want_cc = want_cc != 0; }
+
+int lj_midi_learn_take_ext(int *ch, int *note, int *is_cc)
+{
+    int cc = lj_mu.is_cc;
+    if (!lj_midi_learn_take(ch, note)) return 0;
+    if (is_cc) *is_cc = cc;
+    return 1;
+}
+
+int lj_midi_learn_bind(lj_midi_map *m, enum lj_fn fn, int ch, int note, int is_cc)
+{
+    lj_midi_map_entry e;
+    int k = is_cc ? LJ_MIDI_CC : LJ_MIDI_FN;
+    if (!m || (int)fn <= 0 || fn >= LJ_FN_COUNT || ch < 0 || ch > 16 || note < 0 || note > 127) return -1;
+    memset(&e, 0, sizeof e);
+    e.kind = (uint8_t)k; e.ch = (uint8_t)ch; e.note = (uint8_t)note; e.fn = (uint16_t)fn;
+    if (lj_midi_assign(m, &e) != 0) return -1;
+    if (!m->enabled[k]) { m->enabled[k] = 1; lj_log("MIDI-IN: %s enabled by Learn of %s", lj_midi_kind_words[k], lj_fn_table[fn].name); }   /* the binding fires at once */
+    if (m->channel[k] != 16 && m->channel[k] != ch) lj_log("MIDI-IN: %s is gated to channel %d; the learnt channel %d does not pass", lj_midi_kind_words[k], m->channel[k], ch);
+    return 0;
 }

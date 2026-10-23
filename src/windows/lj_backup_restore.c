@@ -11,6 +11,7 @@
 #include "core/lj_str.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
+#include "windows/lj_file_dialogs.h"
 #include "windows/lj_notes_form.h"
 #include "windows/lj_user_libraries.h"
 #include "windows/lj_warnings.h"
@@ -19,9 +20,11 @@
 #define LJ_BR_RESTORE_ERR "Error restoring file :"                              /* exe 0x2326CC */
 
 static struct { lj_window *win; lj_memo_edit ed; int close_pending; char pending[LJ_PATH_CAP]; } bk;
+enum { LJ_RS_ROWS = 64 };   /* ponytail: 64 file / folder rows shown; a fuller folder is cut at 64 */
 static struct {
-    lj_window *win; lj_widget *files; int close_pending; char path[LJ_PATH_CAP];
-    int n; char file[64][LJ_PATH_CAP]; char shown[64][LJ_LIBNAME_CAP + 8]; const char *items[64];   /* ponytail: one backup per library (64 libraries) */
+    lj_window *win; lj_widget *files, *dirs; int close_pending; char path[LJ_PATH_CAP];
+    int n; char file[LJ_RS_ROWS][LJ_PATH_CAP]; char shown[LJ_RS_ROWS][LJ_DIRENT_CAP]; const char *items[LJ_RS_ROWS];
+    char dir[LJ_PATH_CAP]; int ndir, nup; char drow[LJ_RS_ROWS][LJ_DIRENT_CAP + 2 * LJ_RS_ROWS]; char dsub[LJ_RS_ROWS][LJ_DIRENT_CAP]; const char *ditems[LJ_RS_ROWS];
     char notes[LJ_NOTES_CAP]; char split[LJ_NOTES_CAP]; const char *lines[256];
 } rs;
 
@@ -59,11 +62,14 @@ int lj_backup_create(const char *path)
     lj_widget *pg = bk.win ? lj_window_find(bk.win, "pg1") : NULL;
     if (!path) { if (lj_backup_path(def, sizeof def) != 0) return -1; path = def; }
     lj_window_set_text(bk.win, "lAction", "Backing up - please wait");                                  /* PROPOSAL rig: lAction's runtime texts */
+    if (backup_lib(&lib) == 0) { lj_file_dlg_progress(LJ_WIN_BACKUP_PROGRESS, "Label3", lib.root, 0); lj_file_dlg_progress(LJ_WIN_BACKUP_PROGRESS, "Label4", path, 0); }   /* TBackupForm "Backing Up": Reading / Writing */
     if (backup_lib(&lib) != 0 || lj_library_backup(&lib, path, bk.win ? bk.ed.text : "") != 0) {
+        lj_file_dlg_progress(LJ_WIN_BACKUP_PROGRESS, NULL, NULL, -1);
         lj_window_set_text(bk.win, "lAction", "");
         lj_win_message("Warning", LJ_BR_WRITE_ERR);
         return -1;
     }
+    lj_file_dlg_progress(LJ_WIN_BACKUP_PROGRESS, NULL, NULL, -1);
     if (pg) lj_w_progressbar_set(pg, 100);
     lj_window_set_text(bk.win, "lAction", path);
     return 0;
@@ -149,9 +155,15 @@ static void on_restart(int yes, void *ud) { (void)ud; if (yes) lj_desktop_run_ac
 static void on_restore_yes(int yes, void *ud)
 {
     lj_ctx *c = lj_ctx_get();
+    int rc;
     (void)ud;
     if (!yes || !c->lib) return;
-    if (lj_library_restore(c->lib, rs.path) != 0) { lj_win_message("Warning", LJ_BR_RESTORE_ERR); return; }
+    lj_file_dlg_progress(LJ_WIN_RESTORE_LIB_PROGRESS, NULL, NULL, 0);   /* "Deleting current files from directory" PG1, "Copying Backup Files into directory" PG2 */
+    rc = lj_library_replace(c->lib, rs.path);                           /* restoring "will completely replace the existing contents of the library" [06 s4.1] */
+    lj_w_progressbar_set(lj_window_find(lj_win_get(LJ_WIN_RESTORE_LIB_PROGRESS), "PG1"), 2);
+    lj_w_progressbar_set(lj_window_find(lj_win_get(LJ_WIN_RESTORE_LIB_PROGRESS), "PG2"), 2);
+    lj_file_dlg_progress(LJ_WIN_RESTORE_LIB_PROGRESS, NULL, NULL, -1);
+    if (rc != 0) { lj_win_message("Warning", LJ_BR_RESTORE_ERR); return; }
     lj_win_confirm("Please Confirm..", "Re-start LightJockey ?", "(There will be no prompt for unsaved data)", on_restart, NULL);   /* exe 0x2308BC */
 }
 
@@ -172,19 +184,88 @@ static void on_pick(lj_widget *w, int ev, void *ud)
     if ((ev == LJ_WEV_CLICK || ev == LJ_WEV_CHANGE) && i >= 0 && i < rs.n) lj_restore_set_file(rs.file[i]);
 }
 
+/* The Restore folder tree (W4-DLG-1): TDirectoryListBox rows = the folders of rs.dir from the root, indented two
+ * spaces per level, then its sub-folders one level deeper; TFileListBox = the *.lj4b files of rs.dir (Mask "*.LJB" in
+ * the DFM: the extension is ours, F51). Text rows without folder bitmaps (D2); the drive combo stays hidden. */
+static const char *rs_join(const char *dir)   /* the separator to append before a name ("" when dir ends in one) */
+{
+    size_t len = strlen(dir);
+    if (len && (dir[len - 1] == '/' || dir[len - 1] == '\\')) return "";
+    return strchr(dir, '\\') ? "\\" : "/";
+}
+
 static void fill_files(void)
 {
-    lj_ctx *c = lj_ctx_get();
-    char names[64][LJ_LIBNAME_CAP];
-    int i, n = lj_library_list(c->userdir, names, 64);
+    char names[LJ_RS_ROWS][LJ_DIRENT_CAP];
+    int i, n = lj_library_dir_list(rs.dir, LJ_LIBRARY_BACKUP_EXT, names, LJ_RS_ROWS);
     rs.n = 0;
     for (i = 0; i < n; i++) {
-        if (snprintf(rs.file[rs.n], sizeof rs.file[rs.n], "%s%s" LJ_LIBRARY_BACKUP_EXT, c->userdir, names[i]) >= (int)sizeof rs.file[rs.n] || !exists(rs.file[rs.n])) continue;
-        snprintf(rs.shown[rs.n], sizeof rs.shown[rs.n], "%s" LJ_LIBRARY_BACKUP_EXT, names[i]);
+        if (snprintf(rs.file[rs.n], sizeof rs.file[rs.n], "%s%s%s", rs.dir, rs_join(rs.dir), names[i]) >= (int)sizeof rs.file[rs.n]) continue;
+        lj_str_copy(rs.shown[rs.n], sizeof rs.shown[rs.n], names[i]);
         rs.items[rs.n] = rs.shown[rs.n];
         rs.n++;
     }
     if (rs.files) lj_w_list_set_items(rs.files, rs.items, rs.n);
+}
+
+/* component k of rs.dir ends at end[k] (exclusive, the separator kept for the root: "D:\" or "/") */
+static int rs_split(size_t end[LJ_RS_ROWS])
+{
+    size_t i, len = strlen(rs.dir);
+    int n = 0, in = 0;
+    for (i = 0; i <= len && n < LJ_RS_ROWS; i++) {
+        int sep = i == len || rs.dir[i] == '/' || rs.dir[i] == '\\';
+        if (!sep) { in = 1; continue; }
+        if (in) end[n++] = n == 0 ? i + (i < len) : i;          /* "D:" keeps its "\" */
+        else if (n == 0 && i == 0 && i < len) end[n++] = 1;     /* POSIX root "/" */
+        in = 0;
+    }
+    return n;
+}
+
+static void fill_dirs(void)
+{
+    size_t end[LJ_RS_ROWS], start = 0;
+    int n = rs_split(end), i;
+    for (i = 0; i < n; i++) {
+        while (i > 0 && start < end[i] && (rs.dir[start] == '/' || rs.dir[start] == '\\')) start++;
+        snprintf(rs.drow[i], sizeof rs.drow[i], "%*s%.*s", 2 * i, "", (int)(end[i] - start), rs.dir + start);
+        start = end[i];
+    }
+    rs.nup = n;
+    rs.ndir = lj_library_dir_list(rs.dir, NULL, rs.dsub, LJ_RS_ROWS - n);
+    if (rs.ndir < 0) rs.ndir = 0;
+    for (i = 0; i < rs.ndir; i++) snprintf(rs.drow[n + i], sizeof rs.drow[n + i], "%*s%s", 2 * n, "", rs.dsub[i]);
+    for (i = 0; i < n + rs.ndir; i++) rs.ditems[i] = rs.drow[i];
+    if (rs.dirs) { lj_w_list_set_items(rs.dirs, rs.ditems, n + rs.ndir); ((lj_w_list *)rs.dirs)->index = n - 1; lj_widget_invalidate(rs.dirs); }
+}
+
+int lj_restore_set_dir(const char *dir)
+{
+    if (!dir || !dir[0] || lj_str_copy(rs.dir, sizeof rs.dir, dir) != 0) return -1;
+    fill_dirs();
+    fill_files();
+    return 0;
+}
+
+int lj_restore_dir_row(int row)
+{
+    char d[LJ_PATH_CAP];
+    size_t end[LJ_RS_ROWS];
+    if (row < 0 || row >= rs.nup + rs.ndir) return -1;
+    if (row >= rs.nup) {
+        if (snprintf(d, sizeof d, "%s%s%s", rs.dir, rs_join(rs.dir), rs.dsub[row - rs.nup]) >= (int)sizeof d) return -1;
+        return lj_restore_set_dir(d);
+    }
+    rs_split(end);
+    snprintf(d, sizeof d, "%.*s", (int)end[row], rs.dir);
+    return lj_restore_set_dir(d);
+}
+
+static void on_dir(lj_widget *w, int ev, void *ud)
+{
+    (void)ud;
+    if (ev == LJ_WEV_CLICK || ev == LJ_WEV_DBLCLICK) lj_restore_dir_row(((lj_w_list *)w)->index);
 }
 
 /* on_file_change = lj_handler_noop: the stub FileList never fires; the code-built list does (on_pick) */
@@ -201,9 +282,14 @@ lj_window *lj_restore_open(void)
     if (rs.win) return rs.win;
     rs.win = lj_window_create(&lj_form_TLIBRARYRESTOREFORM, lj_rs_bindings);
     if (!rs.win) { lj_log("restore: cannot create TLibraryRestoreForm"); return NULL; }
-    rs.close_pending = 0; rs.path[0] = 0; rs.notes[0] = 0; rs.files = NULL;
+    rs.close_pending = 0; rs.path[0] = 0; rs.notes[0] = 0; rs.files = NULL; rs.dirs = NULL;
     if ((w = lj_window_find(rs.win, "DriveList")) != NULL) w->visible = 0;          /* ME-17 stubs, see the header */
-    if ((w = lj_window_find(rs.win, "DirList")) != NULL) w->visible = 0;
+    if ((w = lj_window_find(rs.win, "DirList")) != NULL && w->parent) {      /* W4-DLG-1: the folder tree over DirList's rect */
+        rs.dirs = lj_w_listbox_create(w->parent, NULL);
+        rs.dirs->x = w->x; rs.dirs->y = w->y; rs.dirs->w = w->w; rs.dirs->h = w->h;
+        rs.dirs->on_event = on_dir; rs.dirs->ud = NULL;
+        w->visible = 0;
+    }
     if ((fl = lj_window_find(rs.win, "FileList")) != NULL && fl->parent) {
         rs.files = lj_w_listbox_create(fl->parent, NULL);
         rs.files->x = fl->x; rs.files->y = fl->y; rs.files->w = fl->w; rs.files->h = fl->h;
@@ -212,7 +298,7 @@ lj_window *lj_restore_open(void)
     }
     lj_window_set_text(rs.win, "lLibName", ""); lj_window_set_text(rs.win, "lLibPath", ""); lj_window_set_text(rs.win, "lBackupTime", ""); lj_window_set_text(rs.win, "lPath", "");
     lj_window_set_text(rs.win, "lRestore", c->lib ? c->lib->name : "");
-    fill_files();
+    lj_restore_set_dir(c->userdir[0] ? c->userdir : ".");                     /* opens where Backup writes: <userdir> */
     show_notes();
     lj_win_show(rs.win, 0);
     return rs.win;
@@ -223,7 +309,7 @@ void lj_restore_close(void)
     if (!rs.win) return;
     lj_win_hide(rs.win);
     lj_window_destroy(rs.win);
-    rs.win = NULL; rs.files = NULL; rs.close_pending = 0;
+    rs.win = NULL; rs.files = NULL; rs.dirs = NULL; rs.close_pending = 0;
 }
 lj_window *lj_restore_window(void) { return rs.win; }
 void lj_restore_refresh(void) { if (rs.close_pending) lj_restore_close(); }

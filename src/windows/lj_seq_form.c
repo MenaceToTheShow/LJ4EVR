@@ -25,6 +25,7 @@
 #include "windows/lj_cue_form.h"
 #include "windows/lj_lists.h"
 #include "windows/lj_save_dialogs.h"
+#include "windows/lj_show_dialogs.h"
 #include "windows/lj_warnings.h"
 
 static lj_window *lj_sf_win;
@@ -184,6 +185,58 @@ int lj_seq_form_delete_scene(void)
     return lj_sf_after(rc);
 }
 
+int lj_seq_form_delete_range(int first, int last)
+{
+    lj_ctx *c = lj_ctx_get();
+    lj_sequence *s = lj_sf_seq();
+    int rc;
+    if (!s || !s->n) return -1;
+    if (first > last) { int t = first; first = last; last = t; }
+    if (first < 0) first = 0;
+    if (last >= s->n) last = s->n - 1;
+    if (first > last) return -1;
+    lj_lock();
+    rc = lj_sequence_delete(s, (uint16_t)first, (uint16_t)last);
+    if (rc == 0 && c->current_scene >= s->n) c->current_scene = (uint16_t)(s->n - 1);
+    lj_unlock();
+    return lj_sf_after(rc);
+}
+
+int lj_seq_form_insert_copies(int count)
+{
+    lj_ctx *c = lj_ctx_get();
+    lj_sequence *s = lj_sf_seq();
+    int i = -1;
+    if (!s || !s->n || count < 1 || s->n + count > LJ_SCENES_MAX) return -1;
+    lj_lock();
+    i = lj_sequence_insert(s, c->current_scene, (uint16_t)count, 1);
+    if (i >= 0) c->current_scene = (uint16_t)i;
+    lj_unlock();
+    return lj_sf_after(i >= 0 ? 0 : -1);
+}
+
+int lj_seq_form_insert_from(const lj_sequence *src, int first, int last)
+{
+    lj_ctx *c = lj_ctx_get();
+    lj_sequence *s = lj_sf_seq();
+    lj_scene *tmp;
+    int n, i, at;
+    if (!s || !s->n) return -1;
+    if (!src) src = s;
+    if (first > last) { int t = first; first = last; last = t; }
+    if (first < 0 || last >= src->n || !src->scenes) return -1;
+    n = last - first + 1;
+    if (s->n + n > LJ_SCENES_MAX) return -1;
+    if ((tmp = (lj_scene *)malloc((size_t)n * sizeof *tmp)) == NULL) return -1;   /* the source may be the current sequence: copy before the gap opens */
+    lj_lock();
+    for (i = 0; i < n; i++) lj_scene_copy(&tmp[i], &src->scenes[first + i]);
+    at = lj_sequence_insert(s, c->current_scene, (uint16_t)n, 0);
+    if (at >= 0) { for (i = 0; i < n; i++) lj_scene_copy(&s->scenes[at + i], &tmp[i]); c->current_scene = (uint16_t)at; }
+    lj_unlock();
+    free(tmp);
+    return lj_sf_after(at >= 0 ? 0 : -1);
+}
+
 int lj_seq_form_delete_all(void)
 {
     lj_ctx *c = lj_ctx_get();
@@ -318,6 +371,7 @@ int lj_seq_form_load(uint32_t number, int force)
 {
     lj_sequence *s = lj_sf_seq();
     if (!s || number == 0) return -1;
+    if (lj_show_dlg_capture_seq(number)) return 0;              /* W4 Cue Builder: Seq Capture takes load-sequence commands [03 s5.8] */
     lj_sf_load_no = number;
     if (!force && s->modified && lj_sf_warn("WarnSeq", 1)) {
         lj_win_confirm("Load Sequence", "Current Sequence was modified", "This will cancel any modifications since last save", lj_sf_load_now, NULL);
@@ -539,8 +593,8 @@ static void lj_sf_sb_event(lj_widget *w, int ev, void *ud)
     case LJ_SB_NEXT:   lj_sf_commit_times(); lj_seq_form_goto(c->current_scene + 1); break;
     case LJ_SB_REV:    lj_sf_playback(LJ_DIR_REV); break;
     case LJ_SB_FWD:    lj_sf_playback(LJ_DIR_FWD); break;
-    case LJ_SB_INSERT: lj_sf_commit_times(); lj_seq_form_insert_scene(); break;    /* ponytail: the Insert dialog's default; TINSERTSCENESFORM is deferred */
-    case LJ_SB_DELETE: lj_sf_commit_times(); lj_seq_form_delete_scene(); break;    /* ponytail: the Delete dialog's default; TDELETESCENESFORM is deferred */
+    case LJ_SB_INSERT: lj_sf_commit_times(); lj_win_open(LJ_WIN_INSERT_SCENES); break;   /* W4: TInsertScenesForm [03 s4.3] */
+    case LJ_SB_DELETE: lj_sf_commit_times(); lj_win_open(LJ_WIN_DELETE_SCENE); break;    /* W4: TDeleteSceneForm [03 s4.3] */
     case LJ_SB_ADD:    lj_sf_commit_times(); lj_seq_form_add_scene(); break;
     case LJ_SB_NEW:    lj_seq_form_new(0); break;
     case LJ_SB_SAVE:   lj_sf_commit_times(); lj_win_open(LJ_WIN_SAVE_SEQ); break;

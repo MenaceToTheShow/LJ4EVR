@@ -50,4 +50,15 @@ int  lj_library_restore_new(const char *userdir, const char *name, const char *z
 int  lj_library_select(const char *userdir, const char *name);                         /* "Select User Library": <userdir>Startup.ini [USERDIRECTORY] Start=<name>\ (LJ2's key, read at the next start, 18 s2); 0 / -1 */
 int  lj_library_used_by_cues(const lj_library *lib, enum lj_rec_kind kind, const uint32_t *numbers, int n, uint8_t *used);   /* Delete Files "Check Used Sequences" [03 s4.4, 06 s4]: used[i] = 1 when a cue on disk references numbers[i] (ascending, as lj_library_list_records returns them): SEQ = a slot, BG = bgcue=, MACRO = genmacro=; count used, -1 on error. Unreadable cues are skipped and logged */
 
+
+/* ---- W4 dlg-files additions (append-only) ---- */
+enum { LJ_REC_FORMAT = 1, LJ_REL_CAP = 128, LJ_DIRENT_CAP = 260 };   /* LJ_REC_FORMAT: every LJ4 record kind writes format 1 in v1.0.0 (F56) */
+int  lj_library_startup_ini(const char *userdir, char *out, size_t cap);              /* <userdir>Startup.ini; -1 truncated */
+int  lj_library_backup_check(const lj_library *lib, const char *zip_path);            /* pass 1 of lj_library_restore alone (the archive is untrusted): entry names relative without ".." or ":", no file entry ending in / or \, root + name < LJ_PATH_CAP, the uncompressed total capped, then every CRC (mz_zip_validate_archive); 0 / -1 + log, nothing written */
+int  lj_library_erase(const lj_library *lib);                                         /* every file and folder under the root removed, then the lj_library_create folders; Default too (a restore replaces the contents [06 s4]); 0 / -1 */
+int  lj_library_dir_list(const char *dir, const char *ext, char names[][LJ_DIRENT_CAP], int max);   /* ext NULL = sub-folders, else plain files ending in ext (any case); sorted case-insensitively; count or -1 */
+int  lj_library_outdated(const lj_library *lib, char rel[][LJ_REL_CAP], char kind[][16], int max);   /* F56: files under the root whose line 1 is "LJ4 <kind> <n>" with n < LJ_REC_FORMAT; rel uses '/'; count or -1 */
+int  lj_library_replace(const lj_library *lib, const char *zip_path);                 /* Restore Library / Data Restore [06 s4]: pass 1 over the whole archive, then erase, then extract; refuses an archive inside the library itself; 0 / -1 (nothing erased when the check fails) */
+int  lj_library_update_file(const lj_library *lib, const char *rel);                  /* rewrites line 1 as "LJ4 <kind> LJ_REC_FORMAT" (the rest byte-equal; irreversible); 0 / -1 (not an older LJ4 record) */
+
 #endif /* LJ_MODEL_LIBRARY_H */

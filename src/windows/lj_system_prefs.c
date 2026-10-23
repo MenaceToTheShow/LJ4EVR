@@ -6,6 +6,8 @@
 #include "core/lj_log.h"
 #include "ui/forms/lj_forms_gen.h"
 #include "ui/widgets/lj_widgets_basic.h"
+#include "model/lj_restore_data.h"
+#include "windows/lj_file_dialogs.h"
 
 typedef struct { const char *box; size_t off; const char *sec, *key; } lj_sp_box;
 #define LJ_BOX(b, f, s, k) { b, offsetof(lj_sysprefs, f), s, k }
@@ -84,7 +86,25 @@ static void exclusive(lj_widget *w, const char *a, const char *b)
 }
 static void on_confine(lj_widget *w, void *ud) { (void)ud; exclusive(w, "cbOpenOnDesktop", "cbOpenOnWindowsDesktop"); }
 static void on_instance(lj_widget *w, void *ud) { (void)ud; exclusive(w, "cbPrimary", "cbSecondary"); }
-static void w4(lj_widget *w, void *ud) { (void)ud; lj_log("system prefs: %s: the Data Restore data is W4", w && w->name ? w->name : "?"); }
+/* Data Restore tab [06 s4.2] (backupdatadialog.gif): no file = New Password and the password box greyed, bCreate
+ * "Create Restore Data (No File)"; a file = "(File Exists)" and both enabled; a file + cbEnablePassword + a password =
+ * the pPassword panel shown and the tab locked until ValidatePassword accepts it. */
+void lj_system_prefs_restore_state(void)
+{
+    lj_ctx *c = lj_ctx_get();
+    int file = lj_restore_data_exists(c->userdir), locked;
+    lj_widget *pp = find("pPassword"), *cb = find("cbEnablePassword");
+    if (!sp.win) return;
+    locked = file && lj_w_checkbox_checked(cb) && lj_restore_password_isset(c->userdir) && !lj_file_dlg_unlocked();
+    lj_w_set_caption(find("bCreate"), file ? "Create Restore Data (File Exists)" : "Create Restore Data (No File)");   /* exe 0x157520, 0x15754C */
+    if (pp) { pp->visible = (unsigned)locked; lj_widget_layout(pp->parent); lj_widget_invalidate(pp->parent); }
+    { lj_widget *b = find("bCreate"); if (b) { b->enabled = (unsigned)!locked; lj_widget_invalidate(b); } }
+    { lj_widget *b = find("bNewPassword"); if (b) { b->enabled = (unsigned)(file && !locked); lj_widget_invalidate(b); } }
+    if (cb) { cb->enabled = (unsigned)(file && !locked); lj_widget_invalidate(cb); }
+}
+static void on_create_data(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_CREATE_DATA); }
+static void on_new_password(lj_widget *w, void *ud) { (void)w; (void)ud; lj_file_dlg_new_password(); }
+static void on_validate(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_file_dlg_unlock(lj_w_edit_text(find("ePassword"))) == 0) lj_system_prefs_restore_state(); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_system_prefs_apply() == 0) sp.close_pending = 1; }
 static void on_cancel(lj_widget *w, void *ud) { (void)w; (void)ud; sp.close_pending = 1; }
 static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("system prefs: Help is W4"); }
@@ -93,7 +113,7 @@ static const lj_binding lj_sp_bindings[] = {
     { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "PC1Change", lj_handler_noop, NULL },
     { "cbOpenOnDesktopClick", on_confine, NULL }, { "cbExternal01Click", lj_handler_noop, NULL }, { "cbExternal10Click", lj_handler_noop, NULL },
     { "cbPrimaryClick", on_instance, NULL }, { "cbSecondaryClick", on_instance, NULL }, { "cbClick", lj_handler_noop, NULL }, { "cbSandnetClick", lj_handler_noop, NULL }, { "cbCaptureClick", lj_handler_noop, NULL },
-    { "bCreateClick", w4, NULL }, { "bNewPasswordClick", w4, NULL }, { "ePasswordKeyDown", lj_handler_noop, NULL }, { "ValidatePassword", w4, NULL },
+    { "bCreateClick", on_create_data, NULL }, { "bNewPasswordClick", on_new_password, NULL }, { "ePasswordKeyDown", lj_handler_noop, NULL }, { "ValidatePassword", on_validate, NULL },
     { "BCancelClick", on_cancel, NULL }, { "BokClick", on_ok, NULL }, { "Help1Click", on_help, NULL },
     { NULL, NULL, NULL } };
 
@@ -110,6 +130,7 @@ lj_window *lj_system_prefs_open(void)
     page_fill();
     for (i = 0; i < LJ_COUNT_OF(greyed); i++) { lj_widget *b = find(greyed[i]); if (b) b->enabled = 0; }   /* D12: no transmitter hardware here */
     lj_w_tabs_select(find("PC1"), 0);                                                                        /* opens on the first tab (DFM ActivePage = TabSheet4 is the designer's) */
+    lj_system_prefs_restore_state();
     lj_win_show(sp.win, 0);
     return sp.win;
 }

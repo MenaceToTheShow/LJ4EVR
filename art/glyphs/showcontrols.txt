@@ -1,0 +1,22 @@
+palette .=C0C0C0 #=000000 e=A0A0A0 n=000080
+..........................................
+..........................................
+.################.........................
+.#nnnnnnnnnnnnnn#.........................
+.#eeeeeeeeeeeee################...........
+.#eeeeeeeeeeeee#nnnnnnnnnnnnnn#...........
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#############
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#nnnnnnnnnnnn
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.#eeeeeeeeeeeee#eeeeeeeeeeeee#eeeeeeeeeeee
+.###############eeeeeeeeeeeee#eeeeeeeeeeee
+...............#eeeeeeeeeeeee#eeeeeeeeeeee
+...............###############eeeeeeeeeeee
+.............................#eeeeeeeeeeee
+.............................#############

@@ -12,7 +12,8 @@
 
 void              lj_fixture_icons_build(lj_widget *area);              /* the icon area these tiles live in */
 lj_widget        *lj_fixture_icon_widget(int fixture);                  /* NULL when not built */
-const lj_surface *lj_fixture_icon_bitmap(const lj_profile *p);          /* family silhouette: "movinghead" when the profile has a Movement window, else "dimmer" */
+const lj_surface *lj_fixture_icon_bitmap(const lj_profile *p);          /* Source-Images Fixtures\<bitmap> when present, else our family silhouette (lj_fixture_icon_stem) */
+const char       *lj_fixture_icon_stem(const char *name, const lj_profile *p);   /* art/icons stem for an exe / profile name (p may be NULL: name rules only, then "dimmer") */
 int               lj_desktop_icon_programmed(int fixture);              /* LJ_FIX_PROG_NONE / _SCENE / _SQ of lj_w_fixicon.h for the current sequence */
 int               lj_desktop_icon_style(void);                          /* 0 Fixed Size, 1 Image Size [F13] */
 void              lj_desktop_icon_style_set(int image_size);

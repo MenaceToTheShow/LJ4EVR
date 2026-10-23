@@ -4,7 +4,7 @@
  * with LJ2's keys, re-gates the toolbar and posts LJ_CMD_PREFS, seam 3); Cancel and the frame
  * discard it. The two "Open controls on ..." boxes and Primary / Secondary Instance are exclusive
  * pairs; the External Links boxes are inert (ME-31), Offline Visualizer / SandNet / Capture greyed
- * (D12); the Data Restore buttons are W4. */
+ * (D12); the Data Restore tab creates the restore data and sets its password (W4, lj_file_dialogs.h). */
 #ifndef LJ_WINDOWS_SYSTEM_PREFS_H
 #define LJ_WINDOWS_SYSTEM_PREFS_H
 
@@ -13,5 +13,7 @@
 void lj_system_prefs_refresh(void);   /* the pending close */
 int  lj_system_prefs_box_count(void); /* the check boxes bound to lj_sysprefs fields (tests walk them) */
 const char *lj_system_prefs_box(int i, const char **sec, const char **key);   /* DFM name of box i and its Main.Ini section/key; NULL out of range */
+
+void lj_system_prefs_restore_state(void);   /* W4: the Data Restore tab's enables, bCreate caption and password lock from the disk; no-op when closed */
 
 #endif /* LJ_WINDOWS_SYSTEM_PREFS_H */

@@ -226,8 +226,11 @@ static void page_button(lj_widget *w, void *ud)
     (void)ud;
     if (!strcmp(n, "sbAddPage")) name_open(0);
     else if (!strcmp(n, "sbInsertPage")) name_open(1);
-    else if (!strcmp(n, "sbEditPage")) { if (at >= 0) name_open(2); }
-    else if (!strcmp(n, "sbDeletePage")) { if (at >= 0) pages_edit(OP_DELETE, at, NULL); }
+    else if (!strcmp(n, "sbEditPage")) { if (at >= 0) name_open(2); else lj_win_message("Statics", "Get Page Error !"); }   /* exe 0x210958 [12 Q9]; trigger PROPOSAL rig 14 sB.8 item 2 */
+    else if (!strcmp(n, "sbDeletePage")) {
+        if (at >= 0) pages_edit(OP_DELETE, at, NULL);
+        else { char t[40]; snprintf(t, sizeof t, "Page Error (Idx = %d)", at); lj_win_message("Statics", t); }   /* exe 0x2189D4 [12 Q9]; trigger PROPOSAL rig 14 sB.8 item 2 */
+    }
     else if (!strcmp(n, "sbUp")) { if (at > 0) pages_edit(OP_UP, at, NULL); }
     else if (!strcmp(n, "sbDown")) { if (at >= 0) pages_edit(OP_DOWN, at, NULL); }
     else if (!strcmp(n, "sbAddGroup")) {                                   /* the first group still on its default name, ready to be named */

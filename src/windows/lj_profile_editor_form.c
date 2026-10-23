@@ -7,7 +7,10 @@
  *    persisted by LJ_ACT_FIXTURE_APPLY (Setup.<slot>.pal) - with TCopySetupForm "Copy Palettes from".
  *  - TChannelDefForm "Channel Configuration" (ME-32): per-offset caption and Grand Master control.
  * TQuickRGBDefForm "RGB Value" stands in for the Windows colour dialog of both (no platform colour dialog exists).
- * Bitmaps are our own art only (D2, ME-18): Set / Bitmaps step through the art table, nothing of Martin's is read. */
+ * Bitmaps are our own art only (D2, ME-18): Set opens Get Bitmap over our icons, Bitmaps / Gobo/Effects Bitmaps open Select
+ * Bitmap over our tiles (W4, lj_config_dialogs.c); nothing of Martin's is read. W4 (dlg-config): Palette Functions opens
+ * TPaletteValueTypeForm, Apply to all Selected Fixtures TApplyMultiForm, a format-0/1 record TProfileNameOldStyleForm
+ * (ME-126); Define Fixture Profile on Scanner 1 / Color Scroller 1 / RGB pack fixtures opens their definition windows. */
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "windows/lj_profile_editor_form.h"
 
@@ -28,6 +31,7 @@
 #include "ui/widgets/lj_w_checkbox.h"
 #include "ui/widgets/lj_w_edit.h"
 #include "desktop/lj_selection.h"
+#include "windows/lj_config_dialogs.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 
@@ -78,18 +82,6 @@ static void set_bitbtn(lj_window *win, const char *name, void (*fn)(lj_widget *,
 {
     lj_widget *b = win ? lj_window_find(win, name) : NULL;
     if (b) b->on_event = fn;
-}
-/* our art, never Martin's (D2, ME-18): the next art name after cur with the prefix, wrapping; "" when none */
-static const char *art_next(const char *prefix, const char *cur)
-{
-    int i, first = -1, at = -1, n = (int)strlen(prefix);
-    for (i = 0; i < lj_art_count; i++) {
-        if (strncmp(lj_art_table[i].name, prefix, (size_t)n) != 0) continue;
-        if (first < 0) first = i;
-        if (at >= 0) return lj_art_table[i].name;
-        if (cur && strcmp(lj_art_table[i].name, cur) == 0) at = i;
-    }
-    return first >= 0 ? lj_art_table[first].name : "";
 }
 static const char *profile_text(const lj_profile *p, char *buf, size_t cap)
 {
@@ -191,6 +183,7 @@ static struct {
     lj_profile_edit ed;                     /* ~38 KB, static (never a stack local) */
     int fixture, loading;
     lj_rows lv[LJ_COUNT_OF(lj_pe_lv)], pal[3], levels, funcs, manu;
+    int legacy;                             /* opened on a format-0/1 record (ME-126) */
     char manu_buf[LJ_PROFILE_CH][31];
     uint8_t clip[LJ_PAL_ENTRIES * 57]; int clip_ok, clip_color;
 } pe;
@@ -308,7 +301,7 @@ static void pe_paint(void)
         char *s = plain;
         lj_str_rtf_strip(plain, sizeof plain, (const char *)praw() + 0x0062, LJ_GS2_NOTES);
         while (s && *s && n < 256) { char *nl = strchr(s, '\n'); lines[n++] = s; if (nl) { *nl = 0; s = nl + 1; } else s = NULL; }
-        if (re) lj_w_memo_set_lines(re, (const char *const *)lines, n);
+        if (re) { lj_w_memo_set_lines(re, (const char *const *)lines, n); ((lj_w_memo *)re)->vscroll = (unsigned)(n * ((lj_w_memo *)re)->line_h > re->h - 8); }   /* LORD_FIDELITY-7: a RichEdit shows its bar only when the text overflows */
     }
     for (k = 0; k < 3; k++) {
         size_t j;
@@ -410,16 +403,12 @@ static void pe_on_cancel(lj_widget *w, void *ud)
     else lj_profile_editor_close();
 }
 static void pe_on_apply(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_profile_editor_commit(0) == 0) pe_bind_fixture(pe.fixture); }
-static void pe_on_apply_all(lj_widget *w, void *ud)
+static void pe_apply_one(int f, void *ud) { (void)ud; pe_bind_fixture(f); }
+static void pe_on_apply_all(lj_widget *w, void *ud)   /* TApplyMultiForm "Apply user profile": the selected user-definable fixtures, Identical Id Only (CHM scribble7334) */
 {
-    int f;
     (void)w; (void)ud;
     if (lj_profile_editor_commit(0) != 0) return;
-    /* ponytail: no "Identical Id Only" check list yet (CHM scribble7334): every selected user-definable fixture */
-    for (f = 0; f < LJ_FIXTURES; f++) {
-        const lj_fixture *x = lj_ctx_get()->show ? &lj_ctx_get()->show->fixture[f] : NULL;
-        if (x && x->link && lj_sel_is_selected(f) && (x->kind == LJ_FX_GS2 || x->profile_id == 46)) pe_bind_fixture(f);
-    }
+    lj_config_dlg_apply_multi(pe.fixture, pe_apply_one, NULL);
 }
 static void pe_on_save(lj_widget *w, void *ud) { (void)w; (void)ud; lj_profile_editor_commit(0); }
 static void pe_on_save_as(lj_widget *w, void *ud) { (void)w; (void)ud; lj_profile_editor_commit(1); }
@@ -437,14 +426,8 @@ static void pe_on_clear_profile(lj_widget *w, void *ud) { (void)w; (void)ud; lj_
 static void pe_on_files(lj_widget *w, void *ud) { (void)w; (void)ud; if (pe.win) lj_menu_set_enabled(lj_window_menus(pe.win), "M_Save", pe.ed.p.gs2_file[0] != 0); }   /* "only when loaded from a file" [02 s5.2] */
 static void pe_on_dirty(lj_widget *w, void *ud) { (void)w; (void)ud; if (!pe.loading) pe.ed.dirty = 1; }
 static void pe_on_close(lj_widget *w, void *ud) { pe_on_cancel(w, ud); }
-static void pe_on_set_icon(lj_widget *w, void *ud)
-{
-    char cur[40];
-    (void)w; (void)ud;
-    sstr_get(0x1063, 36, cur, sizeof cur);
-    lj_pe_set_str(&pe.ed, field_at(0x1063), 0, strcmp(cur, "dimmer") != 0 ? "dimmer" : "movinghead");   /* art/icons: our two family silhouettes, by name */
-    pe_paint();
-}
+static void pe_icon_done(const char *name, void *ud) { (void)ud; if (!pe.win) return; lj_pe_set_str(&pe.ed, field_at(0x1063), 0, name); pe_paint(); }
+static void pe_on_set_icon(lj_widget *w, void *ud) { (void)w; (void)ud; lj_config_dlg_get_icon(pe_icon_done, NULL); }   /* TGetBitmapForm over our icons (art/icons, by name) */
 static void pe_on_clear_icon(lj_widget *w, void *ud) { (void)w; (void)ud; lj_pe_set_str(&pe.ed, field_at(0x1063), 0, ""); pe_paint(); }
 
 static int lv_by_ctl(const char *name)
@@ -537,13 +520,12 @@ static void pe_on_delete_function(lj_widget *w, void *ud)   /* Clear Function: n
 }
 static void pe_on_level_status(lj_widget *w, void *ud)   /* Visible / Invisible / Disabled / Enabled / Disable All */
 {
-    int r = row_of(pfind("lvLevels")), k;
+    int r = row_of(pfind("lvLevels")), k, lv = lj_pe_field_find("lvLevels");
     (void)ud;
-    if (strcmp(w->name, "bDisableAll") == 0) { for (k = 0; k < LJ_PROFILE_CH; k++) praw()[0x35D1 + 16 * k + 7] = 1; }
-    else if (r >= 0) {
-        uint8_t *b = praw() + 0x35D1 + 16 * r;
-        if (strcmp(w->name, "bVisible") == 0) b[6] = 0; else if (strcmp(w->name, "bInvisible") == 0) b[6] = 1;
-        else if (strcmp(w->name, "bDisable") == 0) b[7] = 1; else if (strcmp(w->name, "bEnable") == 0) b[7] = 0;
+    if (strcmp(w->name, "bDisableAll") == 0) { for (k = 0; k < LJ_PROFILE_CH; k++) lj_pe_set_u8(&pe.ed, lv, 16 * k + 7, 1); }
+    else if (r >= 0) {                                        /* through lj_pe_set_u8: a Levels edit recomputes byte 5 (LORD_FIXTURES-4) */
+        if (strcmp(w->name, "bVisible") == 0) lj_pe_set_u8(&pe.ed, lv, 16 * r + 6, 0); else if (strcmp(w->name, "bInvisible") == 0) lj_pe_set_u8(&pe.ed, lv, 16 * r + 6, 1);
+        else if (strcmp(w->name, "bDisable") == 0) lj_pe_set_u8(&pe.ed, lv, 16 * r + 7, 1); else if (strcmp(w->name, "bEnable") == 0) lj_pe_set_u8(&pe.ed, lv, 16 * r + 7, 0);
     }
     pe.ed.dirty = 1;
     lj_pe_refresh(&pe.ed);
@@ -553,18 +535,22 @@ static void pe_on_levels_click(lj_widget *w, void *ud) { char t[8]; int r = row_
 static void pe_on_level_name(lj_widget *w, void *ud) { int r = row_of(pfind("lvLevels")); (void)ud; if (pe.loading || r < 0) return; sstr_put((uint16_t)(0x35D1 + 16 * r), 5, lj_w_edit_text(w)); pe_paint_lists(); }
 static void pe_on_pal_tab(lj_widget *w, void *ud) { (void)w; (void)ud; pe_paint_lists(); }
 static void pe_on_page(lj_widget *w, void *ud) { (void)w; (void)ud; pe_paint_lists(); }
-static void pe_on_get_bmp(lj_widget *w, void *ud)   /* Bitmaps: our gobo art by name (TBitMapPickerForm2 browses Martin's folders; D2) */
+static uint16_t pe_bmp_off;   /* the palette entry Select Bitmap answers for */
+static void pe_bmp_done(const char *name, void *ud)
+{
+    (void)ud;
+    if (!pe.win) return;
+    sstr_put((uint16_t)(pe_bmp_off + 11), 30, name);
+    praw()[pe_bmp_off] = 1;
+    pe_paint_lists();
+}
+static void pe_on_get_bmp(lj_widget *w, void *ud)   /* Bitmaps: TBitMapPickerForm2 over our tiles (D2) */
 {
     int i = pal_by_ctl(w->name), r = i >= 0 ? row_of(pfind(lj_pe_pal[i].lv)) : -1;
-    char cur[32];
-    uint16_t off;
     (void)ud;
     if (r < 0) return;
-    off = (uint16_t)(lj_pe_pal[i].pal[pal_index(i)] + 57 * r);
-    sstr_get((uint16_t)(off + 11), 30, cur, sizeof cur);
-    sstr_put((uint16_t)(off + 11), 30, art_next("gobo_", cur));
-    praw()[off] = 1;
-    pe_paint_lists();
+    pe_bmp_off = (uint16_t)(lj_pe_pal[i].pal[pal_index(i)] + 57 * r);
+    lj_config_dlg_pick_bitmap(lj_pe_pal[i].page == LJ_PE_FIXED_COLOR, pe_bmp_done, NULL);
 }
 static int pe_rgb_pal = -1;
 static void pe_rgb_done(uint32_t rgb)
@@ -588,7 +574,15 @@ static void pe_on_colors(lj_widget *w, void *ud)
     pe_rgb_pal = i;
     rgb_open((uint32_t)b[7] << 16 | (uint32_t)b[8] << 8 | b[9], pe_rgb_done);
 }
-static void pe_on_val_type(lj_widget *w, void *ud) { (void)ud; lj_log("profile editor: %s: TPaletteValueTypeForm %s (the codes are kept and shown)", w->name ? w->name : "?", LJ_PE_NA); }   /* ponytail: W4 */
+static void pe_val_done(void *ud) { (void)ud; pe.ed.dirty = 1; pe_paint_lists(); }
+static void pe_on_val_type(lj_widget *w, void *ud)   /* Palette Functions: TPaletteValueTypeForm edits the five codes in the record [16 s5] */
+{
+    static const char *const pal_name[3][2] = { { "Color 1", "Color 2" }, { "Gobo 1", "Gobo 2" }, { "Effects 1", "Effects 2" } };
+    int i = pal_by_ctl(w->name);
+    (void)ud;
+    if (i < 0) return;
+    lj_config_dlg_value_types(pal_name[i][pal_index(i)], praw() + lj_pe_pal[i].type[pal_index(i)], pe_val_done, NULL);
+}
 static void pe_on_lv_popup(lj_widget *w, void *ud)   /* P_lvClick: Insert / Delete / Clear / Clear all / Compact / Copy / Paste on the page's palette */
 {
     const lj_menu_item_desc *it = pe.win ? lj_window_menu_item(pe.win) : NULL;
@@ -631,6 +625,14 @@ static const lj_binding lj_pe_bindings[] = {
     { "lv_PopUp", lj_handler_noop, NULL }, { "P_lvClick", pe_on_lv_popup, NULL },
     { NULL, NULL, NULL } };
 
+static void pe_oldstyle_done(const char *manufacturer, const char *name, void *ud)   /* ME-126: the split identity into the 2.6b9 slots; takes effect on Apply / Save */
+{
+    (void)ud;
+    if (!pe.win) return;
+    lj_pe_set_str(&pe.ed, lj_pe_field_find("cbManufacturer"), 0, manufacturer);
+    lj_pe_set_str(&pe.ed, field_at(0x3E37), 0, name);
+    pe_paint();
+}
 lj_window *lj_profile_editor_open(void)
 {
     lj_ctx *ctx = lj_ctx_get();
@@ -641,9 +643,11 @@ lj_window *lj_profile_editor_open(void)
     pe.fixture = lj_sel_master();
     p = lj_show_profile(ctx->show, pe.fixture);
     if (lj_pe_begin(&pe.ed, p && p->gs2_raw ? p : NULL) != 0) lj_pe_begin(&pe.ed, NULL);   /* the USER2 placeholder: New Profile */
+    pe.legacy = p && p->gs2_raw && p->format_version != LJ_GS2_VERSION;   /* ME-126: the editor holds it as 2609 already (lj_pe_begin); the name box offers the split */
     if ((pe.win = lj_window_create(&lj_form_TSCANNER2DEFSFORM, lj_pe_bindings)) == NULL) { lj_log("profile editor: cannot create TScanner2DefsForm"); return NULL; }
     if ((w = pfind("cbDipSwitch")) != NULL) w->enabled = 0;   /* not located in the record (16 s10): shown, inert */
     if ((w = pfind("eDipOfs")) != NULL) w->enabled = 0;
+    if ((w = pfind("DipSwitch1")) != NULL) w->visible = lj_w_checkbox_checked(pfind("cbDipSwitch"));   /* LORD_FIDELITY-7 / LORD_FIXTURES-5: the switch art only with Show Adr DIPSwitch (userdeffixtureinfotab.gif; PROPOSAL rig: whether LJ2 hides it at FormShow or on the click) */
     for (i = 0; i < lj_fixlib_count() && n < LJ_PROFILE_CH; i++) {   /* the combo's list: manufacturers of the exe rows, first-seen order */
         const lj_exe_row *r = lj_fixlib_row(i);
         if (!r || !r->manufacturer || !r->manufacturer[0]) continue;
@@ -655,6 +659,7 @@ lj_window *lj_profile_editor_open(void)
     if ((w = pfind("cbManufacturer")) != NULL) lj_w_combobox_set_items(w, pe.manu.p, n);
     pe_paint();
     lj_win_show(pe.win, 0);
+    if (pe.legacy) { char legacy[32]; sstr_get(0x3E37, 30, legacy, sizeof legacy); lj_config_dlg_oldstyle_name(legacy, pe_oldstyle_done, NULL); }   /* TProfileNameOldStyleForm "Oldstyle profile name" */
     return pe.win;
 }
 void lj_profile_editor_close(void) { rgb_close(); close_win(&pe.win); }
@@ -717,8 +722,14 @@ static void cf_set(int e, uint32_t rgb, const char *bmp)   /* one override: "eit
 }
 static void cf_rgb_done(uint32_t rgb) { if (cf.win) cf_set(cf_entry(), rgb, ""); }
 static void cf_on_rgb(lj_widget *w, void *ud) { int pi = cf_pal(), e = cf_entry(); (void)w; (void)ud; if (pi >= 0 && e >= 0) rgb_open(cf.work[pi].e[e].used ? cf.work[pi].e[e].rgb : cf_profile()->palette[pi].e[e].rgb, cf_rgb_done); }
-static void cf_on_gobo_bmp(lj_widget *w, void *ud) { int pi = cf_pal(), e = cf_entry(); (void)w; (void)ud; if (pi >= 0 && e >= 0) cf_set(e, LJ_CUSTOM_NO_RGB, art_next("gobo_", cf.work[pi].e[e].bitmap)); }
-static void cf_on_color_bmp(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("customize fixture: Color Bitmaps: %s (our colours are RGB values; D2)", LJ_PE_NA); }
+static int cf_bmp_entry = -1;
+static void cf_bmp_done(const char *name, void *ud) { (void)ud; if (cf.win && cf_bmp_entry >= 0) cf_set(cf_bmp_entry, LJ_CUSTOM_NO_RGB, name); }
+static void cf_on_bmp(lj_widget *w, void *ud)   /* Gobo/Effects Bitmaps / Color Bitmaps: TBitMapPickerForm2 over our tiles (D2) */
+{
+    (void)ud;
+    if (cf_pal() < 0 || (cf_bmp_entry = cf_entry()) < 0) return;
+    lj_config_dlg_pick_bitmap(strcmp(w->name, "bGetColorBMP") == 0, cf_bmp_done, NULL);
+}
 static void cf_on_clear(lj_widget *w, void *ud) { (void)w; (void)ud; cf_set(cf_entry(), LJ_CUSTOM_NO_RGB, ""); }
 static void cf_on_menu(lj_widget *w, void *ud)
 {
@@ -804,21 +815,24 @@ static const lj_binding lj_cf_bindings[] = {
     { "pc1Change", lj_handler_noop, NULL }, { "tc1Change", cf_on_tab, NULL }, { "LV1Change", lj_handler_noop, NULL }, { "LV1DragDrop", lj_handler_noop, NULL }, { "LV1DragOver", lj_handler_noop, NULL },
     { "lvDefsChange", lj_handler_noop, NULL }, { "lvDefsSelectItem", lj_handler_noop, NULL }, { "bClearOVClick", lj_handler_noop, NULL }, { "DefaultOVLink1Click", lj_handler_noop, NULL },   /* the O/V tab: present, inert (D12) */
     { "bApplyClick", cf_on_apply, NULL }, { "bCancelClick", cf_on_cancel, NULL },
-    { "bGetGoboBmpClick", cf_on_gobo_bmp, NULL }, { "bGetColorBMPClick", cf_on_color_bmp, NULL }, { "bGetRGBClick", cf_on_rgb, NULL },
+    { "bGetGoboBmpClick", cf_on_bmp, NULL }, { "bGetColorBMPClick", cf_on_bmp, NULL }, { "bGetRGBClick", cf_on_rgb, NULL },
     { "bClearClick", cf_on_clear, NULL }, { "B_CopyClick", cf_on_copy, NULL },
     { "M_DefaultPaletteClick", cf_on_menu, NULL }, { "M_DefaultAllPalettesClick", cf_on_menu, NULL }, { "M_ClearPaletteClick", cf_on_menu, NULL }, { "M_ClearAllClick", cf_on_menu, NULL },
     { NULL, NULL, NULL } };
 
 /* the fixture icon popup item [01 s3.6, LORD_FIDELITY-26]: built-ins say "Customize Fixture", user-definable and generic
  * dimmer / switch profiles "Define Fixture Profile" (the latter opening Channel Configuration, CHM genericdmxprofiles) */
-enum { CF_CUSTOMIZE = 0, CF_DEFINE_PROFILE, CF_DEFINE_CHANNELS, CF_NONE };
+enum { CF_CUSTOMIZE = 0, CF_DEFINE_PROFILE, CF_DEFINE_CHANNELS, CF_NONE, CF_DEFINE_SCANNER1, CF_DEFINE_SCROLLER, CF_DEFINE_RGBPACK };
 static int cf_kind(int f)
 {
     const lj_show *sh = lj_ctx_get()->show;
     const lj_profile *p;
     if (!sh || f < 0 || f >= LJ_FIXTURES || !sh->fixture[f].link) return CF_NONE;
     if (sh->fixture[f].kind == LJ_FX_GS2 || sh->fixture[f].profile_id == 46) return CF_DEFINE_PROFILE;
+    if (sh->fixture[f].profile_id == 43) return CF_DEFINE_SCANNER1;   /* User Definable Generic Scanner 1 (02 s5.5) */
+    if (sh->fixture[f].profile_id == 42) return CF_DEFINE_SCROLLER;   /* User Definable Color Scroller 1 (02 s5.6) */
     p = lj_fixlib_by_id(sh->fixture[f].profile_id);
+    if (p && strcmp(p->manufacturer, "Generic") == 0 && strcmp(p->name, "RGB Pack") == 0) return CF_DEFINE_RGBPACK;   /* "for RGB packs the RGB pack configuration dialog" (CHM genericrgbpack.htm) */
     if (p && strcmp(p->manufacturer, "Generic") == 0 && (strcmp(p->name, "DMX Dimmer") == 0 || strcmp(p->name, "DMX Switch Pack") == 0)) return CF_DEFINE_CHANNELS;
     return CF_CUSTOMIZE;
 }
@@ -833,6 +847,9 @@ lj_window *lj_customize_fixture_open(void)
     switch (cf_kind(f)) {                                     /* LJ_ACT_CUSTOMIZE_FIXTURE lands here for every profile kind */
     case CF_DEFINE_PROFILE:  return lj_win_open(LJ_WIN_PROFILE_EDITOR);
     case CF_DEFINE_CHANNELS: return lj_win_open(LJ_WIN_CHANNEL_CONFIG);
+    case CF_DEFINE_SCANNER1: lj_config_dlg_target(f); return lj_win_open(LJ_WIN_SCANNER1_DEFS);
+    case CF_DEFINE_SCROLLER: lj_config_dlg_target(f); return lj_win_open(LJ_WIN_COLOR_SCROLLER_DEFS);
+    case CF_DEFINE_RGBPACK:  lj_config_dlg_target(f); return lj_win_open(LJ_WIN_RGBPACK_DEFS);
     case CF_NONE: return NULL;
     default: break;
     }

@@ -1,0 +1,21 @@
+Output
+
+LJ4EVR sends DMX as sACN (E1.31) over Ethernet. Open Setup > Hardware
+Setup and choose the network card, the universe for each link, and
+multicast or a list of unicast addresses. Any sACN node or console on
+the same network can then receive the universes. The source appears with
+the name LJ4EVR and the computer name.
+
+Packets go out at up to about 40 per second while values change, and
+about once a second while nothing changes, so a receiver always knows
+the source is alive.
+
+The Grand Master scales every intensity channel. Master Intensity also
+has submasters for groups of fixtures. Blackout closes the shutter or
+intensity of every fixture. Freeze holds the output where it is while
+the cues keep their clocks. Offline stops new values going to the wire;
+the receivers keep the last values.
+
+The DMX Output window (View > Dmx Output) shows the value of every
+channel. Default DMX output sets values that are sent when nothing else
+controls a channel.

@@ -224,13 +224,15 @@ int lj_gs2_parse(const uint8_t rec[LJ_GS2_REC_SIZE], lj_profile *out, char *err,
 int lj_gs2_write(const lj_profile *in, uint8_t rec[LJ_GS2_REC_SIZE])
 {
     lj_profile tmp;
+    int i;
     if (!in || !rec) return -1;
-    tmp = *in;                                                       /* xfer takes a mutable profile; w = 1 only reads it */
+    tmp = *in;                                                      /* xfer takes a mutable profile; w = 1 only reads it */
     if (in->gs2_raw) memcpy(rec, in->gs2_raw, LJ_GS2_REC_SIZE);
     else {                                                           /* built-in / new profile: a zeroed 2.6b9 record */
         memset(rec, 0, LJ_GS2_REC_SIZE);
         rec[4] = 0x2E;                                               /* const04 [16 s4.1] */
         tmp.format_version = LJ_GS2_VERSION;
+        for (i = tmp.footprint ? tmp.footprint : LJ_PROFILE_CH; i < LJ_PROFILE_CH; i++) tmp.level_invisible[i] = tmp.level_disabled[i] = 1;   /* LORD_FIXTURES-3: past the footprint = the library's (1,1) "unused" pattern [16 s3.1], so byte 5 keeps footprint - 1 */
     }
     lj_gs2_xfer(1, &tmp, rec);
     return 0;

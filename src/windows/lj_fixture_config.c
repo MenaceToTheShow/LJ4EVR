@@ -1,8 +1,10 @@
 /* lj_fixture_config.c - see lj_fixture_config.h. Every OnXxx of TLINKCONFIGFORM3 is
  * bound (ME-16). Import Profile, Export All, Create Export File and Reload profile
- * data open lj_gs2_dialogs.c / run the app's reload (ME-31, W3); Find, Print and the
- * Offline Visualizer exports log "Not available in LJ4EVR"; Copy From Fixture / Clear
- * Fixture Data are W4 (ME-105). */
+ * data open lj_gs2_dialogs.c / run the app's reload (ME-31, W3); Print and the
+ * Offline Visualizer exports log "Not available in LJ4EVR". W4 (dlg-config): Add Fixture(s),
+ * Calculate addresses, Find profile, Copy From Fixture / Clear Fixture Data (F44) and the
+ * save-time Warnings (F41) open the CONFIG dialogs of lj_config_dialogs.c; the Fixture
+ * Configuration prompts of [12 Q9] are raised here verbatim. */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen / localtime of the export (ME-92) */
 #include "windows/lj_fixture_config.h"
 
@@ -19,6 +21,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "windows/lj_config_dialogs.h"
 #include "windows/lj_warnings.h"
 
 #define LJ_FC_TREE_MAX  640                 /* 201 leaves + at most 201 name folders + manufacturers */
@@ -39,6 +42,8 @@ typedef struct {
     char lfix[48], laddr[48], padr[64];
     /* notes */
     char note_buf[4096]; const char *note_lines[LJ_FC_NOTE_LINES]; int note_n;
+    uint8_t addr_ok[LJ_FIXTURES];          /* the address-change warning was answered Yes for this row this session */
+    uint8_t is_new[LJ_FIXTURES];           /* the save chain's new / modified rows */
 } lj_fc_state;
 static lj_fc_state fc;
 
@@ -215,13 +220,15 @@ static void panel_fill(void)
     fc.loading = 0;
 }
 
-void lj_fixture_config_refresh(void) { if (!fc.win) return; list_build(); panel_fill(); }
+static void popup_gate(void);
+void lj_fixture_config_refresh(void) { if (!fc.win) return; list_build(); panel_fill(); popup_gate(); }
 
 int lj_fixture_config_select(int fixture)
 {
     if (fixture < -1 || fixture >= LJ_FIXTURES) return -1;
     fc.sel = fixture;
     panel_fill();
+    popup_gate();
     return 0;
 }
 
@@ -291,17 +298,57 @@ static void remove_fixture(int i)
     list_build(); panel_fill();
 }
 
+/* ---- Save (F41, [02 s2.6], 12 Q9): the warning list, "Clear data for new fixtures ?", the default DMX values, then Config.dat ---- */
+static int fc_ini(const char *key) { return lj_ini_geti(lj_ctx_get()->forms_ini, "FIXTURECONF", key, 1); }   /* LJ2's keys incl. the "Promt" typo */
+static int same_profile(const lj_fixture *a, const lj_fixture *b) { return a->kind == b->kind && a->profile_id == b->profile_id && strcmp(a->gs2_file, b->gs2_file) == 0; }
+static int fc_mark_new(void)   /* rows whose profile is new since the last save: their data space is re-used [02 s2.6] */
+{
+    lj_show *sh = show();
+    int i, n = 0;
+    for (i = 0; i < LJ_FIXTURES; i++) {
+        fc.is_new[i] = (uint8_t)(sh && used(&sh->fixture[i]) && (!fc.snapshot || !used(&fc.snapshot[i]) || !same_profile(&sh->fixture[i], &fc.snapshot[i])));
+        n += fc.is_new[i];
+    }
+    return n;
+}
+static int fc_write(void);
+static void fc_apply_default(int yes, void *ud)
+{
+    int list[LJ_FIXTURES], i, n = 0;
+    (void)ud;
+    for (i = 0; yes && i < LJ_FIXTURES; i++) if (fc.is_new[i]) list[n++] = i;
+    if (n) lj_config_dlg_default_dmx(list, n);
+    fc_write();
+}
+static void fc_clear_new(int yes, void *ud)
+{
+    int i;
+    (void)ud;
+    for (i = 0; yes && i < LJ_FIXTURES; i++) if (fc.is_new[i]) lj_config_dlg_fixture_data(-1, i, LJ_FXD_ALL);
+    if (fc_ini("AlwaysApplyDefault")) fc_apply_default(1, NULL);
+    else lj_win_confirm("Please Confirm..", "Apply Default DMX values to new/modified fixtures ?", NULL, fc_apply_default, NULL);   /* exe 0x1B3EDC */
+}
+int lj_fixture_config_save_anyway(void)
+{
+    if (!show()) return -1;
+    if (!fc_mark_new()) return fc_write();
+    if (fc_ini("PromtClearOnSave")) { lj_win_confirm("Please Confirm..", "Clear data for new fixtures ?", NULL, fc_clear_new, NULL); return 1; }   /* exe 0x1B3EB4 */
+    fc_clear_new(0, NULL);
+    return lj_win_message_window() ? 1 : 0;
+}
 int lj_fixture_config_save(void)
 {
+    if (!show()) return -1;
+    if (lj_config_dlg_warnings(NULL, 0) > 0) { lj_win_open(LJ_WIN_CONFIG_WARN); return 1; }   /* TCONFIGWARNFORM: Save  Anyway / Cancel */
+    return lj_fixture_config_save_anyway();
+}
+static int fc_write(void)
+{
     lj_ctx *ctx = lj_ctx_get();
-    const char *msg;
     if (!ctx->show) return -1;
-    msg = lj_config_validate(ctx->show);
-    if (msg) { lj_win_message("Warnings", msg); return -1; }          /* TCONFIGWARNFORM's list is W2; the first warning in the message box */
     if (ctx->lib && lj_show_save_config(ctx->show, ctx->lib) != 0) { lj_win_message("Fixture Configuration", "Error saving Config.dat"); return -1; }
     if (ctx->engine) { lj_lock(); lj_engine_rebind(ctx->engine); lj_unlock(); }
-    if (fc.snapshot) memcpy(fc.snapshot, ctx->show->fixture, sizeof ctx->show->fixture);
-    fc.modified = 0;
+    lj_fixture_config_mark_saved();
     lj_desktop_icons_refresh();
     lj_unassigned_open();                                            /* "After Close, new fixtures land in the Unassigned Fixtures list" [02 s2.6] */
     lj_unassigned_refresh();
@@ -319,7 +366,7 @@ static void on_tree_change(lj_widget *w, void *ud)
     notes_show(fc.sel_profile);
     set_enabled("bAdd", fc.sel_profile >= 0 && lj_fixture_config_tree_available(i));
 }
-static void on_add(lj_widget *w, void *ud) { (void)w; (void)ud; if (fc.sel_profile >= 0) lj_fixture_config_add((uint16_t)fc.sel_profile, 1, 0); }
+static void on_add(lj_widget *w, void *ud) { (void)w; (void)ud; if (fc.sel_profile >= 0) lj_config_dlg_add_fixtures(fc.sel_profile); }   /* TAddFixForm2 [02 s2.3] */
 static void on_list_change(lj_widget *w, void *ud) { (void)ud; lj_fixture_config_select(lj_w_listview_index(w)); }
 
 static void remove_result(int yes, void *ud) { (void)ud; if (yes) remove_fixture(fc.sel); }
@@ -331,25 +378,51 @@ static void on_remove(lj_widget *w, void *ud)
     if (ctx->forms_ini && !lj_ini_geti(ctx->forms_ini, "FIXTURECONF", "ConfirmRemove", 1)) { remove_fixture(fc.sel); return; }
     lj_win_confirm("Please Confirm..", "Remove Selected Fixtures ?", NULL, remove_result, NULL);   /* exe 0x1B15F4 */
 }
-static void on_clear(lj_widget *w, void *ud)
+static void clear_settings(int yes, void *ud)
 {
     lj_show *sh = show();
     lj_fixture *f;
     const lj_exe_row *r;
-    (void)w; (void)ud;
-    if (!sh || fc.sel < 0) return;
+    (void)ud;
+    if (!yes || !sh || fc.sel < 0) return;
     f = &sh->fixture[fc.sel]; r = row_by_id(f->profile_id);
     f->invert_pan = f->invert_tilt = f->swap_pt = f->ignore_bo = f->ignore_gm = f->link_strobe_gm = 0;
     lj_str_copy(f->user_name, sizeof f->user_name, r && r->tag ? r->tag : "");
     fc.modified = 1;
     list_build(); panel_fill();
 }
+static void on_clear(lj_widget *w, void *ud)
+{
+    (void)w; (void)ud;
+    if (fc.sel < 0) return;
+    if (fc_ini("ConfirmClear")) lj_win_confirm("Please Confirm..", "Clear Selected Fixtures ?", NULL, clear_settings, NULL);   /* exe 0x1B179C */
+    else clear_settings(1, NULL);
+}
+/* changing the address of a saved fixture invalidates its programs [02 s1.4]: exe 0x1B2FDC, once per row and session;
+ * "No" puts the saved address back. Caption = its first line, the two labels its last two (PROPOSAL rig: TConfirmForm has
+ * two labels; the copy-from-fixture sentence is not shown). */
+static void addr_answer(int yes, void *ud)
+{
+    int f = (int)(intptr_t)ud;
+    if (yes) { fc.addr_ok[f] = 1; return; }
+    if (fc.snapshot) lj_fixture_config_set_address(f, fc.snapshot[f].link, fc.snapshot[f].address);
+}
+static void ui_set_address(int f, int link, int address)
+{
+    lj_show *sh = show();
+    const lj_fixture *s = fc.snapshot ? &fc.snapshot[f] : NULL;
+    if (lj_fixture_config_set_address(f, link, address) != 0 || !sh) return;
+    if (!s || fc.addr_ok[f] || !used(s) || !s->address || !same_profile(s, &sh->fixture[f]) || (s->link == sh->fixture[f].link && s->address == sh->fixture[f].address)) return;
+    if (lj_win_message_window()) return;
+    lj_win_confirm("IMPORTANT WARNING", "Changing the DMX address for an alreay programmed fixture will invalidate existing programs.",
+                   "Do you wish to change the fixtures DMX address ?", addr_answer, (void *)(intptr_t)f);
+}
 static void on_link(lj_widget *w, void *ud)
 {
     lj_show *sh = show();
     (void)ud;
     if (fc.loading || !sh || fc.sel < 0 || !w->name || strlen(w->name) < 4) return;
-    lj_fixture_config_set_address(fc.sel, w->name[3] - '0', sh->fixture[fc.sel].address);
+    ui_set_address(fc.sel, w->name[3] - '0', sh->fixture[fc.sel].address);
     lj_w_speedbutton_set_down(w, 1);
 }
 static void addr_from_edit(void)
@@ -361,7 +434,7 @@ static void addr_from_edit(void)
     v = strtol(t, NULL, 10);
     if (v < 0) v = 0;
     if (v > LJ_LINK_CH) v = LJ_LINK_CH;
-    if (v != sh->fixture[fc.sel].address) lj_fixture_config_set_address(fc.sel, sh->fixture[fc.sel].link ? sh->fixture[fc.sel].link : 1, (int)v);
+    if (v != sh->fixture[fc.sel].address) ui_set_address(fc.sel, sh->fixture[fc.sel].link ? sh->fixture[fc.sel].link : 1, (int)v);
     else lj_w_dipswitch_set_value(find("DipSwitch1"), (int)v);
 }
 static void on_addr_exit(lj_widget *w, void *ud) { (void)w; (void)ud; addr_from_edit(); }
@@ -375,9 +448,9 @@ static void on_ud(lj_widget *w, void *ud)
     v = sh->fixture[fc.sel].address + lj_w_udbutton_delta(w);
     if (v < 0) v = 0;
     if (v > LJ_LINK_CH) v = LJ_LINK_CH;
-    lj_fixture_config_set_address(fc.sel, sh->fixture[fc.sel].link ? sh->fixture[fc.sel].link : 1, v);
+    ui_set_address(fc.sel, sh->fixture[fc.sel].link ? sh->fixture[fc.sel].link : 1, v);
 }
-static void on_auto(lj_widget *w, void *ud) { (void)w; (void)ud; if (fc.sel >= 0 && lj_fixture_config_calculate(fc.sel) != 0) lj_win_message("Fixture Configuration", "No free DMX addresses"); }
+static void on_auto(lj_widget *w, void *ud) { (void)w; (void)ud; if (fc.sel >= 0) lj_win_open(LJ_WIN_AUTO_ADDRESS); }   /* TAutoAddressForm2 "Calculate addresses" (F43) */
 static void on_flag(lj_widget *w, void *ud)
 {
     lj_show *sh = show();
@@ -419,6 +492,24 @@ static void on_locate(lj_widget *w, void *ud)
     ((lj_w_treeview *)tv)->index = i;
     for (r = 0; lj_w_treeview_visible_item(tv, r) >= 0; r++) if (lj_w_treeview_visible_item(tv, r) == i) { ((lj_w_treeview *)tv)->sb.pos = r; break; }
     on_tree_change(tv, NULL);
+}
+static void on_find(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_FIND_PROFILE); }   /* TFindProfileForm "Find profile.." [02 s2.3] */
+/* Copy From Fixture / Clear Fixture Data: "only after the configuration is saved, only for fixtures with a valid address" [02 s2.9-2.10] */
+static void popup_gate(void)
+{
+    lj_menu *m = fc.win ? lj_window_menus(fc.win) : NULL;
+    int ok = fc.sel >= 0 && lj_fixture_config_saved(fc.sel);
+    if (!m) return;
+    lj_menu_set_enabled(m, "P_Clone", ok); lj_menu_set_enabled(m, "P_Clear", ok);
+}
+static void on_popup(lj_widget *w, void *ud) { (void)w; (void)ud; popup_gate(); }
+static void on_clone(lj_widget *w, void *ud)
+{
+    const lj_menu_item_desc *it = lj_window_menu_item(fc.win);
+    (void)w; (void)ud;
+    if (fc.sel < 0 || !lj_fixture_config_saved(fc.sel)) return;
+    lj_config_dlg_target(fc.sel);
+    lj_win_open(it && it->name && !strcmp(it->name, "P_Clear") ? LJ_WIN_CLEANUP : LJ_WIN_COPY_FROM);
 }
 static void on_notes(lj_widget *w, void *ud) { lj_show *sh = show(); (void)w; (void)ud; if (sh && fc.sel >= 0) notes_show(sh->fixture[fc.sel].profile_id); }
 /* ---- Export to text file (ME-31, ME-92): TEXPORTCONFIGFORM "Configuration Export" shows the text in re1, "Save to text file"
@@ -555,14 +646,14 @@ static const lj_binding lj_fc_bindings[] = {
     { "lvConfigChange", on_list_change, NULL }, { "lvConfigColumnClick", lj_handler_noop, NULL }, { "lvConfigCompare", lj_handler_noop, NULL }, { "lvConfigDragDrop", lj_handler_noop, NULL },
     { "lvConfigDragOver", lj_handler_noop, NULL }, { "lvConfigKeyDown", lj_handler_noop, NULL },
     { "tvAvailableChange", on_tree_change, NULL }, { "tvAvailableMouseDown", lj_handler_noop, NULL },
-    { "sbFindClick", na, NULL }, { "sbLocateClick", on_locate, NULL }, { "sbCollapseClick", on_collapse, NULL }, { "bAddClick", on_add, NULL },
+    { "sbFindClick", on_find, NULL }, { "sbLocateClick", on_locate, NULL }, { "sbCollapseClick", on_collapse, NULL }, { "bAddClick", on_add, NULL },
     { "bSaveClick", on_save, NULL }, { "bRemoveClick", on_remove, NULL }, { "bRemoveDragDrop", lj_handler_noop, NULL }, { "bRemoveDragOver", lj_handler_noop, NULL }, { "bClearClick", on_clear, NULL },
     { "LinkMouseDown", on_link, NULL }, { "eAdrExit", on_addr_exit, NULL }, { "eAdrKeyUp", on_addr_key, NULL }, { "UdButton1Change", on_ud, NULL }, { "bAutoAddressClick", on_auto, NULL },
     { "cbInvPanClick", on_flag, NULL }, { "cbIntensitySpecialClick", on_flag, NULL }, { "EUserNameKeyUp", on_username, NULL },
     { "M_PrintClick", on_print, NULL }, { "M_ImportProfileClick", on_gs2, NULL }, { "LocalHelpClick", lj_handler_noop, NULL }, { "M_ExportAllClick", on_gs2, NULL },
     { "WarningsClick", on_warnings, NULL }, { "PrefsClick", on_warnings, NULL }, { "Help2Click", lj_handler_noop, NULL },
     { "popAvailablePopup", lj_handler_noop, NULL }, { "M_CreateExportFileClick", on_gs2, NULL }, { "M_CreateOVExportClick", na, NULL }, { "M_DeleteProfileClick", na, NULL },
-    { "ConfiguredPopPopup", lj_handler_noop, NULL }, { "P_FixtureNotesClick", on_notes, NULL }, { "P_CloneClick", na, NULL }, { "P_ClearClick", na, NULL }, { "P_ReloadProfileDataClick", on_gs2, NULL },
+    { "ConfiguredPopPopup", on_popup, NULL }, { "P_FixtureNotesClick", on_notes, NULL }, { "P_CloneClick", on_clone, NULL }, { "P_ClearClick", on_clone, NULL }, { "P_ReloadProfileDataClick", on_gs2, NULL },
     { NULL, NULL, NULL }
 };
 
@@ -571,7 +662,7 @@ lj_window *lj_fixture_config_open(void)
     lj_ctx *ctx = lj_ctx_get();
     lj_widget *tv;
     lj_menu *m;
-    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */, "P_Clone", "P_Clear" /* ME-105: re-tagged W4, docs/fidelity.md row "Copy From Fixture / Clear Fixture Data" */,
+    static const char *const greyed[] = { "M_Print" /* ME-31: no printing path */,
                                           "M_CreateExportfileOV", "M_CreateOVExport" /* Offline Visualizer: design 8.5 */, "M_DeleteProfile" /* W4 */ };
     static const char *const checks[][2] = { { "M_RemoveFixtures", "ConfirmRemove" }, { "M_OverwriteFixtures", "ConfirmOverwrite" }, { "M_ClearFixtures", "ConfirmClear" }, { "M_PrompClear", "PromtClearOnSave" }, { "M_ApplyDefault", "AlwaysApplyDefault" } };
     size_t i;
@@ -589,6 +680,7 @@ lj_window *lj_fixture_config_open(void)
     lj_w_tabs_select(find("PCNotes"), 0);                             /* LJ Profile Notes in front, as fixtureconfiguration.jpg shows (the DFM's ActivePage is the O/V page) */
     set_enabled("bAdd", 0);
     lj_w_set_caption(find("sbMartin"), "Martin");                  /* F42: the blank locate button captioned with text, no logo (D2; fidelity row) */
+    memset(fc.addr_ok, 0, sizeof fc.addr_ok);
     lj_fixture_config_refresh();
     lj_win_show(fc.win, 0);
     return fc.win;
@@ -603,4 +695,47 @@ void lj_fixture_config_close(void)
     fc.win = NULL;
     free(fc.snapshot); fc.snapshot = NULL;
     fc.tree_n = 0; fc.tree_leaves = 0; fc.sel = -1; fc.modified = 0;
+}
+
+/* ---- dlg-config track (W4): the seams the CONFIG dialogs use ---- */
+int lj_fixture_config_selected(void) { return fc.win ? fc.sel : -1; }
+int lj_fixture_config_saved(int f)
+{
+    lj_show *sh = show();
+    return sh && fc.snapshot && !fc.modified && f >= 0 && f < LJ_FIXTURES && used(&sh->fixture[f]) && sh->fixture[f].address
+        && memcmp(&sh->fixture[f], &fc.snapshot[f], sizeof sh->fixture[f]) == 0;
+}
+void lj_fixture_config_mark_saved(void)
+{
+    lj_show *sh = show();
+    if (sh && fc.snapshot) memcpy(fc.snapshot, sh->fixture, sizeof sh->fixture);
+    fc.modified = 0;
+    memset(fc.addr_ok, 0, sizeof fc.addr_ok);
+}
+int lj_fixture_config_put(int f, uint16_t profile_id)
+{
+    lj_show *sh = show();
+    const lj_exe_row *r = row_by_id(profile_id);
+    if (!sh || !r || !lj_fixlib_by_id(profile_id) || f < 0 || f >= LJ_FIXTURES) return -1;
+    memset(&sh->fixture[f], 0, sizeof sh->fixture[f]);
+    sh->fixture[f].kind = LJ_FX_BUILTIN; sh->fixture[f].profile_id = profile_id; sh->fixture[f].link = 1;   /* address 0: "has no DMX Address" until set */
+    lj_str_copy(sh->fixture[f].user_name, sizeof sh->fixture[f].user_name, r->tag ? r->tag : "");
+    fc.modified = 1;
+    fc.sel = f;
+    if (fc.win) { list_build(); panel_fill(); }
+    return 0;
+}
+int lj_fixture_config_tree_select(int id)
+{
+    lj_widget *tv = fc.win ? find("tvAvailable") : NULL;
+    int i, k, lvl, r;
+    for (i = 0; i < fc.tree_n && fc.tree_id[i] != id; i++) { }
+    if (!tv || i >= fc.tree_n) return -1;
+    for (k = i - 1, lvl = lj_w_treeview_level(tv, i); k >= 0 && lvl > 0; k--)   /* expand every ancestor folder */
+        if (lj_w_treeview_level(tv, k) < lvl) { lj_w_treeview_expand(tv, k, 1); lvl = lj_w_treeview_level(tv, k); }
+    ((lj_w_treeview *)tv)->index = i;
+    for (r = 0; lj_w_treeview_visible_item(tv, r) >= 0; r++) if (lj_w_treeview_visible_item(tv, r) == i) { ((lj_w_treeview *)tv)->sb.pos = r; break; }
+    on_tree_change(tv, NULL);
+    lj_widget_invalidate(tv);
+    return 0;
 }

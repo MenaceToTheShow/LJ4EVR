@@ -1,0 +1,27 @@
+Fixtures
+
+Setup > Fixture Configuration is where the rig is described. The tree on
+the left lists the fixture profiles by maker. Choose a profile, set how
+many fixtures and the first address, and add them. Each fixture gets a
+number, a user name, a link (the output universe) and a DMX start
+address.
+
+Calculate addresses fills in the addresses one after another, skipping
+channels that are already used. Copy Fixture and Copy From take the
+settings of one fixture to others. Clear Fixture Data removes stored
+values for the selected fixtures. When you save with overlapping
+addresses the warnings box lists every conflict so you can fix it or
+save anyway.
+
+The built-in profiles cover the Martin fixtures of the LightJockey era
+plus generic dimmers, switches, RGB fixtures, smoke machines and hazers.
+More Martin fixtures come from the QLC+ fixture library, converted into
+the program. You can also build your own with the Generic Fixture
+Profile editor, and import or export .GS2 and .Udf profile files.
+
+A new fixture first appears in the Unassigned Fixtures list (View >
+Unassigned Fixtures). Drag it onto the desktop to use it.
+
+Global Patch (Setup > Global Patch) moves single channels to other
+addresses, sets HTP groups and decides what each output channel does at
+zero.

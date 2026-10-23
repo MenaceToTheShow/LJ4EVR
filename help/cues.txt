@@ -1,0 +1,19 @@
+Cues
+
+A cue plays up to twelve sequences at once, one in each slot. The Cue
+window lists the slots with the sequence number, name, scene counter,
+times, status and loop mode. Slot 12 has the highest priority and slot 1
+the lowest when two slots set the same channel.
+
+Add a sequence to the current cue from the Sequence window or the list
+of sequences. Save Cue stores the cue with a number and a name; the
+window caption then shows that number and name. Go starts the cue, Stop
+halts it, and the trigger buttons step the slots by hand.
+
+Cue pages group cues for quick access. The Time Control window scales
+the times of the whole cue or of single slots, from 1 to 999 percent of
+what was programmed.
+
+A cue can be transparent: it then loads on top of the running cue
+instead of replacing it. Flash sequences play only while their key or
+button is held, unless latching is turned on.

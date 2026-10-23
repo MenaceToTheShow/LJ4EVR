@@ -273,7 +273,7 @@ int lj_global_patch_menu(const char *item)
         gp->htp_changed = 1;
     }
     else if (strcmp(item, "P_OutSeq") == 0 || strcmp(item, "P_InSeq") == 0 || strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0)
-        lj_log("global patch: %s: not in W2 (the sequence dialogs and the DMX-in enable switch come with DMX in)", item);   /* ponytail: DMX in is W3+ */
+        lj_log("global patch: %s: Not available in LJ4EVR", item);   /* the DMX-in three are greyed at open (I7: input W5); P_OutSeq's dialog is not built (ponytail: no DFM names it) */
     else return -1;
     return 0;
 }
@@ -317,6 +317,17 @@ static void on_close(lj_widget *w, void *ud)
     else lj_global_patch_close();
 }
 
+/* W4 (hw-dmxin): double-click on the DMX In source field opens the Dmx In window (LJ_ACT_DMX_IN). PROPOSAL: no LJ2 control of
+ * TGlobalPatchForm opens it; the W4 contract names "the Global Patch DMX-in source" as its second entry point. */
+static lj_widget_vt lj_gp_in_vt;
+static int (*lj_gp_in_mouse)(lj_widget *, const lj_mouse_ev *);
+static int src_in_mouse(lj_widget *w, const lj_mouse_ev *m)
+{
+    int rc = lj_gp_in_mouse ? lj_gp_in_mouse(w, m) : 0;
+    if (m->type == LJ_EV_MOUSE_DOWN && m->button == 1 && m->clicks == 2 && w->enabled) lj_desktop_run_action(LJ_ACT_DMX_IN, 0);
+    return rc;
+}
+
 static const lj_binding lj_gp_bindings[] = {
     { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL },
     { "lv1Data", lj_handler_noop, NULL }, { "bOkClick", on_ok, NULL }, { "bSetClick", on_set, NULL }, { "bClearClick", on_clear, NULL },
@@ -349,6 +360,12 @@ lj_window *lj_global_patch_open(void)
         lj_w_list_set_items(clb, items, LJ_HTP_GROUPS);
     }
     lj_menu_set_checked(lj_window_menus(gp->win), "M_HTPgroupsaffectedgyGM", lj_global_patch_htp_masters());
+    {
+        static const char *const w5[] = { "P_InSeq", "P_EnableUse", "P_EnableIgnore" };   /* DMX-in input side, W5 (I7): greyed, hint in the log line of lj_global_patch_menu */
+        lj_widget *in = find("eSourceIn");
+        for (k = 0; k < LJ_COUNT_OF(w5); k++) lj_menu_set_enabled(lj_window_menus(gp->win), w5[k], 0);
+        if (in) { if (!lj_gp_in_mouse) { lj_gp_in_vt = *in->vt; lj_gp_in_mouse = in->vt->mouse; lj_gp_in_vt.mouse = src_in_mouse; } in->vt = &lj_gp_in_vt; }
+    }
     fill_list();
     panel_fill();
     lj_win_show(gp->win, 0);

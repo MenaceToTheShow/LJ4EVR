@@ -1,0 +1,22 @@
+Not available in LJ4EVR
+
+This version does not include:
+
+- the Audio Analyzer and audio triggers;
+- DMX input over sACN, and the DMX-in value tables;
+- the RS-232 and TCP remote protocol;
+- string output to external applications;
+- the importer for .LJB files;
+- the LJ MediaPlayer;
+- Art-Net output.
+
+They are planned for a later version. Their menu items, toolbar buttons
+and cue list commands are still there, greyed, with the hint "Not
+available in LJ4EVR". The DMX In windows open so you can see their
+settings, but their input controls stay greyed.
+
+The Martin hardware that LightJockey 2 drove directly (the 2510 and 2518
+controllers, the MC-X, the CD control, SandNet and the USB interfaces)
+is replaced by network output, so those items are greyed for good. The
+help is English only; the other languages of the original help are not
+included.

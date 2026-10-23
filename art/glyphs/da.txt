@@ -1,0 +1,17 @@
+palette .=C0C0C0 #=000000 w=FFFFFF
+################
+#wwwwwwwwwwwwww#
+#wwwwwwwwwwwwww#
+#wwwwwwwwwwwwww#
+#wwwwwwwwwwwwww#
+#www##www#wwwww#
+#www#w#w#w#wwww#
+#www#w#w###wwww#
+#www#w#w#w#wwww#
+#www##ww#w#wwww#
+#wwwwwwwwwwwwww#
+#wwwwwwwwwwwwww#
+#wwwwwwwwwwwwww#
+#wwwwwwwwwwwwww#
+#wwwwwwwwwwwwww#
+.###############

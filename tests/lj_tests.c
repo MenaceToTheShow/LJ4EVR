@@ -101,6 +101,18 @@ int lj_test_genmacro_editor(int argc, char **argv);   /* W3 genmacro: the editor
 /* W4 (appended) */
 int lj_test_align(int argc, char **argv);   /* W4 track 0, ME-43 */
 int lj_test_ctx_scene(int argc, char **argv);   /* W4 entry, ME-129 */
+int lj_test_help_viewer(int argc, char **argv);   /* W4 docs-release */
+int lj_test_dmx_in(int argc, char **argv);   /* W4 hw-dmxin */
+int lj_test_llf(int argc, char **argv);   /* W4 lightcorder-debug */
+int lj_test_debug_form(int argc, char **argv);   /* W4 lightcorder-debug */
+int lj_test_desktop_dialogs(int argc, char **argv);   /* W4 dlg-desktop */
+int lj_test_show_dialogs(int argc, char **argv);   /* W4 dlg-show */
+int lj_test_art_census(int argc, char **argv);   /* W4 art */
+int lj_test_srcimg(int argc, char **argv);       /* W4 art */
+int lj_test_config_dialogs(int argc, char **argv);   /* W4 dlg-config */
+int lj_test_da2532_fingers(int argc, char **argv);   /* W4 da2532-fingers */
+int lj_test_file_dialogs(int argc, char **argv);   /* W4 dlg-files */
+int lj_test_restore_data(int argc, char **argv);   /* W4 dlg-files */
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
     { "font_cells", lj_test_font_cells },
@@ -196,6 +208,18 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     /* W4 (appended) */
     { "test_align", lj_test_align },   /* ME-43: the full align pass reproduces every DFM at its design client, 0 misplaced (tests/ui/test_align.c) */
     { "test_ctx_scene", lj_test_ctx_scene },   /* ME-129: one current-scene getter, NULL past the end, the clamp once where the sequence shrinks (tests/ui/test_ctx_scene.c) */
+    { "test_help_viewer", lj_test_help_viewer },   /* docs-release: every Help leaf opens LJ_WIN_HELP, the topics, About notices / trademark line, golden W4HELP_VIEWER (tests/ui/test_help_viewer.c) */
+    { "test_dmx_in", lj_test_dmx_in },   /* hw-dmxin: Dmx In from the toolbar and the Global Patch source, inputs greyed with the hint, the four DMX-in sub-windows, dropped Hardware Setup tabs, goldens W4DMX_* (tests/ui/test_dmx_in.c) */
+    { "test_llf", lj_test_llf },   /* lightcorder-debug: .LLF round trip from a replay, card cap, truncated / hostile files refused, the recorder + save dialogs headless, W4LC_* goldens (tests/model/test_llf.c) */
+    { "test_debug_form", lj_test_debug_form },   /* lightcorder-debug: the Debug window (unhide, drops, layer_of ME-28, hardware tabs greyed), Statics / Msg debug, System Memory, W4DBG_* goldens (tests/ui/test_debug_form.c) */
+    { "test_desktop_dialogs", lj_test_desktop_dialogs },   /* dlg-desktop: the 13 DESKTOP ids from their entry points, ME-16, 'Notification !' / 'Warning!' / 'Enable laser output ?' through assert_prompt, LORD_FIDELITY-12, W4DD_* goldens (tests/ui/test_desktop_dialogs.c) */
+    { "test_show_dialogs", lj_test_show_dialogs },   /* dlg-show: the 16 SHOW ids from their entry points, ME-16, ME-120 Offset / Sort, ME-127, the cue-slot and Statics 2 Q9 prompts through assert_prompt, W4SD_* goldens (tests/ui/test_show_dialogs.c) */
+    { "art_census", lj_test_art_census },   /* art: W4-ART-1 / -2 counts, every profile -> an icon, every named palette entry -> a tile or gel, 0 unresolved (tests/fonts/test_art.c) */
+    { "test_srcimg", lj_test_srcimg },   /* art: W4-SRCIMG substitution through an in-memory loader (tests/gfx/test_srcimg.c); lj4evr_srcimg_test runs the SDL half */
+    { "test_config_dialogs", lj_test_config_dialogs },   /* dlg-config: the 25 CONFIG ids from their entry points, ME-16, F41 warnings + Save  Anyway, F43 address rows, F44 copy / clear, the Fixture Configuration Q9 prompts through assert_prompt, ME-126 old-style name, W4C_* goldens (tests/ui/test_config_dialogs.c) */
+    { "test_da2532_fingers", lj_test_da2532_fingers },   /* W4 da2532-fingers: the 7 DA2532 + 10 FINGERS windows headless, 2532 latch / flash / pages / Record / file, the midi script row, EXT Learn, Fingers fader CC / bump / GM / F keys / slots / jog, keyboard EXT row, goldens W4DA_* (tests/ui/test_da2532_fingers.c) */
+    { "test_file_dialogs", lj_test_file_dialogs },   /* dlg-files: the 19 FILES ids + please_wait open, the Startup Status countdown, Data Restore from the prefs tab and System menu (create, change, restore), password prompts, the F56 update dialogs on synthetic older records, Rename / Delete / Restore folder tree, goldens FD_* (tests/ui/test_file_dialogs.c) */
+    { "test_restore_data", lj_test_restore_data },   /* dlg-files: restore-data round trip, password, truncated / CRC / hostile archives refused (LORD_C-5), ME-130 U:<new folder>, F56 header rewrite (tests/model/test_restore_data.c) */
 };
 
 int main(int argc, char **argv)

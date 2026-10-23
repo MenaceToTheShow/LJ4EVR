@@ -148,7 +148,10 @@ static void test_customize(lj_show *sh)
     click(in(w, "bClear"));
     work = lj_customize_fixture_work();
     CHECK(work && work[0].e[0].used == 1 && work[0].e[0].rgb == LJ_CUSTOM_NO_RGB && !work[0].e[0].bitmap[0]);
-    click(in(w, "bGetGoboBmp"));                               /* our art only: a gobo_* name */
+    click(in(w, "bGetGoboBmp"));                               /* our art only: a gobo_* name, picked in Select Bitmap (W4 dlg-config) */
+    {   lj_window *bp = lj_win_get(LJ_WIN_BITMAP_PICKER); lj_widget *lv = bp ? lj_window_find(bp, "LV1") : NULL;
+        CHECK(lv != NULL);
+        if (lv) { ((lj_w_listview *)lv)->index = 0; lj_w_emit(lv, LJ_WEV_DBLCLICK); } }
     CHECK(work && strncmp(work[0].e[0].bitmap, "gobo_", 5) == 0 && work[0].e[0].rgb == LJ_CUSTOM_NO_RGB);
     click(in(w, "bCopy"));                                     /* TCopySetupForm builds with its handlers bound (ME-16); Apply closes it with the form */
     click(in(w, "bApply"));

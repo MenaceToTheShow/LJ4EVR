@@ -3,9 +3,9 @@
  * <userdir><name>.lj4b with the Notes box as notes.txt (model lj_library_backup), and a .lj4b
  * unzipped back into the open library (lj_library_restore) after the confirm prompt, then the
  * "Re-start LightJockey ?" prompt (LJ_ACT_RESTART), as restoring into the active library restarts
- * LJ2. The Restore form's TDriveComboBox / TDirectoryListBox / TFileListBox have no widget yet
- * (ME-17, ui owner): the two folder controls are hidden and the file list is a code-built TListBox
- * over FileList's rect listing <userdir><library>.lj4b for every library that has one. */
+ * LJ2. The Restore form's TDirectoryListBox / TFileListBox have no widget (ME-17): code-built TListBoxes
+ * over their rects carry the folder tree (W4-DLG-1, from <userdir>) and the *.lj4b files of the folder
+ * picked; the drive combo stays hidden. A restore replaces the library (lj_library_replace). */
 #ifndef LJ_WINDOWS_BACKUP_RESTORE_H
 #define LJ_WINDOWS_BACKUP_RESTORE_H
 
@@ -26,5 +26,9 @@ lj_window *lj_restore_window(void);
 void       lj_restore_refresh(void);
 int        lj_restore_set_file(const char *path);          /* picks a .lj4b: notes into Re1, labels filled; -1 when not readable */
 int        lj_restore_run(void);                           /* bRestore: the confirm prompt; 0 / -1 (no file) */
+
+/* W4 dlg-files: the Restore folder tree */
+int lj_restore_set_dir(const char *dir);   /* the folder the tree and the file list show; -1 empty or too long */
+int lj_restore_dir_row(int row);           /* a tree row: 0..ancestors-1 = that ancestor (0 = the root), then the sub-folders; -1 out of range */
 
 #endif /* LJ_WINDOWS_BACKUP_RESTORE_H */

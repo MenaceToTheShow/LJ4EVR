@@ -15,4 +15,9 @@ void       lj_help_viewer_refresh(enum lj_win id);   /* repaint from the model /
 void       lj_help_viewer_bind_fns(void);            /* lj_fn rows and lj_desktop actions this family answers; called from lj_win_set_host */
 int        lj_help_viewer_topic(const char *topic); /* opens the viewer at a topic file name (help/<topic>.txt); NULL / "" = the index; 0 / -1 */
 
+/* ---- docs-release additions ---- */
+int  lj_help_viewer_find(const char *topic);           /* index into lj_help_topics (lj_help_topics_gen.h); NULL / "" = 0 (index); -1 unknown */
+int  lj_help_viewer_current(void);                     /* the topic shown, -1 when closed */
+void lj_help_viewer_click(lj_widget *w, void *ud);     /* an lj_binding fn for any window's Help item: ud = the topic name (const char *) or NULL */
+
 #endif /* LJ_WINDOWS_HELP_VIEWER_H */

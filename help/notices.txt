@@ -1,0 +1,17 @@
+Notices and licence
+
+LJ4EVR is free software. The licence is in the LICENSE file of the
+source code, and the About box names it.
+
+LJ4EVR includes SDL3 (zlib licence), miniz (MIT licence) and fixture
+definitions from the QLC+ project (Apache License 2.0). Their full
+licence texts are in THIRD_PARTY_NOTICES.txt, which is installed next to
+the program on Windows and inside the app bundle (Contents/Resources) on
+macOS.
+
+The fonts, icons and artwork were drawn for this project and are
+released to the public domain (CC0). The help text you are reading was
+written for LJ4EVR.
+
+LightJockey is a trademark of Martin Professional. LJ4EVR is not
+affiliated with or endorsed by Martin Professional or HARMAN.

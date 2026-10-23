@@ -109,4 +109,12 @@ int  lj_mtc_feed(lj_mtc *t, uint8_t qf_data, uint64_t now_us);    /* one quarter
 int  lj_mtc_time(const lj_mtc *t, uint64_t now_us, uint32_t *ms); /* 0 with the last time, -1 when none or older than LJ_MTC_TIMEOUT_MS (the time-out preference acts on -1) */
 int  lj_midi_feed(const uint8_t *bytes, size_t n, uint8_t run[3], int *have, void (*msg)(const uint8_t m[3], void *ud), void *ud);   /* LORD_C-6 byte-stream parser (running status, F1 carried as {F1, data, 0}); messages emitted */
 
+/* ---- W4 da2532-fingers (appended, D16): Learn for the LJ_FNF_EXT rows (the 2532 keys, the Fingers surface). The MIDI-IN
+ * window's Learn is unchanged (notes only); this variant may also take a control change (the fader / GM / jog level rows),
+ * reports which, and lj_midi_learn_bind writes the `fn` (note) or `cc` entry at the learnt channel and note, enabling that
+ * kind when it was off (logged) so the binding fires at once. UI thread only, like Learn. */
+void lj_midi_learn_begin_ext(int want_cc);
+int  lj_midi_learn_take_ext(int *ch, int *note, int *is_cc);                        /* 1 once after a capture (is_cc = 1 for a CC), else 0 */
+int  lj_midi_learn_bind(lj_midi_map *m, enum lj_fn fn, int ch, int note, int is_cc); /* 0 / -1 (bad fn / range, map full) */
+
 #endif /* LJ_IO_MIDI_H */
