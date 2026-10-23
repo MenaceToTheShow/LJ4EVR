@@ -776,3 +776,22 @@ Wording fixes the verifier offered (non-blocking), applied to this log only:
 | 21 | ME-152 | holds | verifier: the ten per-second lines and the 441-frame save line quoted above; ME-24 ticked. Not re-run (LAN multicast). |
 | 22 | ME-153 | holds | here, vault `design.md`: `scaled in microseconds` 2, `UI-side pin` 2, `arialblack18` 6, `movementmacro.gif` 2, `532 bytes` 2; revision line `design.md:1024` unchanged, byte-equal to the r1 quote. |
 | 23 | ME-157 | holds | verifier: the four records in the windows-msvc log of 39909521611 (no Administrators SID, `%LOCALAPPDATA%\Programs\LJ4EVR`, HKU key and no HKLM key, `DisplayVersion=0.3.0`). |
+
+### CI (`ci.yml`, run 39912230811, head `f96982a` = "W4: fix pass A r2")
+
+Attempt 1: five jobs green; windows-msvc red on `test_lock_hold` alone (`FAIL lock hold 31567 us >= 2000 us`, 118 of 119
+passed), the W1 wall-clock row on a shared hosted VM (the same row and cause as the W3 and W4 first attempts above);
+determinism skipped. `gh run rerun 39912230811 --failed`. Attempt 2: **success, six of six**:
+
+    generate-check   success   self-hosted lj4evr-<runner-host>-3
+    linux-gcc-asan   success   self-hosted lj4evr-<runner-host>-1   (-fno-sanitize-recover=all, ME-140)
+    linux-clang      success   self-hosted lj4evr-<runner-host>-2
+    windows-msvc     success   GitHub-hosted                 (ME-157 standard-user install step included)
+    macos-clang      success   GitHub-hosted
+    determinism      success   self-hosted lj4evr-<runner-host>-3
+        frames-{linux,windows,macos}.bin   1,641,600 bytes each, sha256 5b13f41930362b75a7aa6f9c53f77db2d315a4039ea5a18da664ea1263114b50 (cmp equal)
+        replay-frames.bin linux = windows = macos   c46fee4ceff60245c9b504a6d7b2028fca0d0ba6008e1f541af7c8279545039d
+
+The Linux jobs ran on the interim self-hosted runners, as the verdict allows while atlas-ci2 is down; ME-159 (Part B)
+moves them to hosted runners. With this run every Part A condition holds: items 1-23 on their *Verify* lines and a
+six-green `ci.yml` run on main.
