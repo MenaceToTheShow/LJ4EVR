@@ -186,3 +186,13 @@ The local sweeps now show nothing, except two items that are not CI errors and w
 After the fixes, `test_layering --cc gcc`: 0 finding(s). The generator checks are current: qxf2c, fontpack, artpack,
 gen_vectors, exe_profiles_check, help_check, dfm2c. The four Windows trees are still 0 warnings, and ctest is still
 117 / 116 / 117 of the same.
+
+Second CI run (`5c4efd7`): windows-msvc and generate-check were green. Three failures remained, fixed here:
+- gcc 14 `format-truncation` at `lj_config_dialogs.c:953` (`rg_save`, `v[80]` -> `v[128]`).
+- `W4C_FILE_EXISTS` differed on Linux and macOS: the memo showed the library path, whose separators differ per OS.
+  It now shows the file name only (PROPOSAL rig). The golden was re-rendered (797 px, the memo line) with a REVIEWED row.
+- `test_restore_data:214` on Linux: `lj_library_dir_list` cut at `max` before sorting, so readdir order chose the
+  entries. It now keeps the first `max` names in sorted order as it reads them.
+
+`test_lock_hold` (`lock hold 2359 us >= 2000 us` on linux-clang) is the W1 timing row on a loaded shared runner.
+Nothing in W4 touches `core/lj_lock`, so it is left as is.

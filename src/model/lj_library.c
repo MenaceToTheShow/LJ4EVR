@@ -674,16 +674,17 @@ int lj_library_dir_list(const char *dir, const char *ext, char names[][LJ_DIRENT
 {
     lj_dir d;
     char name[LJ_DIRENT_CAP], tmp[LJ_DIRENT_CAP];
-    int n = 0, is_dir, i, j;
+    int n = 0, is_dir, i;
     size_t len, el = ext ? strlen(ext) : 0;
     if (lj_dir_open(&d, dir) != 0) return -1;
-    while (n < max && lj_dir_next(&d, name, sizeof name, &is_dir) == 1) {
+    if (max <= 0) return 0;
+    while (lj_dir_next(&d, name, sizeof name, &is_dir) == 1) {   /* the first max names in sorted order, whatever order the OS lists them in */
         if (ext ? (is_dir || (len = strlen(name)) <= el || !lj_ieq(name + len - el, ext)) : !is_dir) continue;
-        lj_str_copy(names[n++], LJ_DIRENT_CAP, name);
+        if (n == max && lj_icmp(name, names[max - 1]) >= 0) continue;
+        lj_str_copy(names[n < max ? n++ : max - 1], LJ_DIRENT_CAP, name);
+        for (i = n - 1; i > 0 && lj_icmp(names[i - 1], names[i]) > 0; i--) { lj_str_copy(tmp, sizeof tmp, names[i]); lj_str_copy(names[i], LJ_DIRENT_CAP, names[i - 1]); lj_str_copy(names[i - 1], LJ_DIRENT_CAP, tmp); }   /* insertion, case-insensitive (TDirectoryListBox / TFileListBox order) */
     }
     lj_dir_close(&d);
-    for (i = 1; i < n; i++)                                   /* insertion sort, case-insensitive (TDirectoryListBox / TFileListBox order) */
-        for (j = i; j > 0 && lj_icmp(names[j - 1], names[j]) > 0; j--) { lj_str_copy(tmp, sizeof tmp, names[j]); lj_str_copy(names[j], LJ_DIRENT_CAP, names[j - 1]); lj_str_copy(names[j - 1], LJ_DIRENT_CAP, tmp); }
     return n;
 }
 

@@ -871,8 +871,10 @@ static const lj_binding fe_b[] = { { "bRenameClick", fe_rename, NULL }, { "bOver
 static void fe_init(lj_window *win)
 {
     char t[LJ_PATH_CAP + 32];
+    const char *f = cd.fe_path, *p;
     (void)win;
-    snprintf(t, sizeof t, "File already exists\n%s", cd.fe_path);   /* exe "File already exists" (0x14D4F0) */
+    for (p = cd.fe_path; *p; p++) if (*p == '/' || *p == '\\') f = p + 1;
+    snprintf(t, sizeof t, "File already exists\n%s", f);   /* exe "File already exists" (0x14D4F0); the file name only, PROPOSAL rig (the same text on every OS) */
     memo_text(cw(FE, "Memo1"), t);
 }
 void lj_config_dlg_file_exists(const char *path, void (*done)(int choice, void *ud), void *ud)
@@ -947,7 +949,7 @@ static void rg_load(void)
 }
 static void rg_save(void)
 {
-    char path[LJ_PATH_CAP], key[16], v[80];
+    char path[LJ_PATH_CAP], key[16], v[128];
     lj_ini *ini = lj_ini_new();
     int i;
     for (i = 0; i < rg.n; i++) { snprintf(key, sizeof key, "Entry%d", i); snprintf(v, sizeof v, "%s|%s|%06X", rg.type[i], rg.name[i], (unsigned)rg.rgb[i]); lj_ini_sets(ini, "RGBPALETTE", key, v); }
