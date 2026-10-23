@@ -36,10 +36,10 @@ jobs:
       - name: Layering and conventions
         run: python3 -I tools/test_layering.py --src src --cc gcc
       - name: Generated files are current
-        # Each --check tool lands with its wave (design 9.2); run the ones that exist.
+        # every --check tool exists since W2; a missing one fails the step (W4 WIZARD_STYLES-14)
         run: |
           for t in qxf2c fontpack artpack gen_vectors exe_profiles_check; do
-            if [ -f "tools/$t.py" ]; then echo "== $t"; python3 -I "tools/$t.py" --check; fi
+            echo "== $t"; python3 -I "tools/$t.py" --check || exit 1
           done
 
   linux-gcc-asan:
@@ -92,13 +92,16 @@ jobs:
           mkdir -p udf-corpus && cp build-linux-clang/lj_w3_synthetic.Udf udf-corpus/   # ME-114: an lj_udf_export seed (test_uiscript_w3)
           build-fuzz/fuzz_udf udf-corpus -max_total_time=60 -max_len=32768
           # W5-X-HOSTILE: the five W5 parsers, 60 s each (target:max_len)
-          cmake --build build-fuzz --target fuzz_sacn_rx fuzz_vtr fuzz_artnet fuzz_remote fuzz_ljb
+          cmake --build build-fuzz --target fuzz_sacn_rx fuzz_vtr fuzz_artnet fuzz_remote fuzz_ljb fuzz_ljb_index
           # ME-186: each starts from its CTest row's proven seed (lj4evr_tests <row> --seed <dir>), not a 1-byte corpus
           for f in fuzz_sacn_rx:1024 fuzz_artnet:1024 fuzz_remote:4096 fuzz_vtr:16384 fuzz_ljb:65536; do
             t=${f%%:*}
             build-linux-clang/lj4evr_tests $t --seed corp-$t
             build-fuzz/$t corp-$t -max_total_time=60 -max_len=${f##*:}
           done
+          # W5 LORD_C-7: fuzz_ljb's second mode mutates the inflated index (stored raw in its seed) and deflates it again
+          build-linux-clang/lj4evr_tests fuzz_ljb --seed-index corp-fuzz_ljb_index
+          build-fuzz/fuzz_ljb_index corp-fuzz_ljb_index -max_total_time=60 -max_len=65536
 
   windows-msvc:
     runs-on: windows-latest
@@ -144,6 +147,13 @@ jobs:
           findstr /c:"no binding for handler" selftest-debug.txt && exit /b 1
           findstr /c:"unknown event" selftest-debug.txt && exit /b 1
           cd build-release-win && cpack -G NSIS || exit /b 1
+      - name: MSVC AddressSanitizer, LJ_SDL=OFF, Debug ctest (W5 LORD_C-12 = W4 LORD_C-3; it caught LORD_C-1 where gcc did not)
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+          cmake -S . -B build-asan-win -G Ninja -DCMAKE_C_COMPILER=cl -DCMAKE_BUILD_TYPE=Debug -DLJ_SDL=OFF -DLJ_SANITIZE=address || exit /b 1
+          cmake --build build-asan-win || exit /b 1
+          ctest --test-dir build-asan-win --output-on-failure || exit /b 1
       - name: Standard-user install (ME-157, ME-45; a fresh local account outside Administrators, on this throwaway runner)
         shell: pwsh
         run: |

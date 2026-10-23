@@ -19,8 +19,10 @@ extern const lj_form_desc lj_form_TSEQUENCEFORM;
 static int hits[32];
 static void count(lj_widget *w, void *ud) { (void)w; (*(int *)ud)++; }
 
+#ifdef NDEBUG   /* LORD_C-12: read only by the release-only ME-16 row below (clang -Wunused-but-set-global) */
 static int logged;
 static void sink(void *ud, const char *line) { (void)ud; (void)line; logged++; }
+#endif
 
 /* a hand-built form: OK (Default) / Cancel buttons, a panel that takes drops, two edits */
 static const lj_ctl_desc mini_ctls[] = {
@@ -222,8 +224,6 @@ int lj_test_window(int argc, char **argv)
         CHECK(logged == 4);                                         /* CancelClick, DropDrop, DropOver unbound + Nope unmatched */
         lj_window_destroy(mw);
     }
-#else
-    (void)sink;
 #endif
     CHECK(lj_window_create(NULL, NULL) == NULL);
     lj_window_destroy(NULL);

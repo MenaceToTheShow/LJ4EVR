@@ -58,9 +58,11 @@ static int comp_ok(const char *s, size_t n)
     if (!n || (n == 1 && s[0] == '.') || (n == 2 && s[0] == '.' && s[1] == '.') || s[n - 1] == '.' || s[n - 1] == ' ') return 0;
     for (i = 0; i < n; i++) if ((unsigned char)s[i] < 0x20 || strchr("<>:\"/\\|?*", s[i])) return 0;
     for (stem = 0; stem < n && s[stem] != '.'; stem++) {}
+    while (stem && s[stem - 1] == ' ') stem--;                           /* LORD_C-8: "CON .txt" is CON to Windows */
     for (i = 0; i < 6; i++) {
+        int d = stem == 4 ? (unsigned char)s[3] : 0;
         if (stem < 3 || ci(s[0]) != dev[i][0] || ci(s[1]) != dev[i][1] || ci(s[2]) != dev[i][2]) continue;
-        if (i < 4 ? stem == 3 : stem == 4 && s[3] >= '1' && s[3] <= '9') return 0;
+        if (i < 4 ? stem == 3 : (d >= '1' && d <= '9') || d == 0xB9 || d == 0xB2 || d == 0xB3) return 0;   /* CP1252 superscript 1 2 3 count (LORD_C-8) */
     }
     return 1;
 }

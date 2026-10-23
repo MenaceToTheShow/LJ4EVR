@@ -37,6 +37,6 @@ int lj_palette_look(const char *name, int gobo_first, const lj_surface **tile, u
 
 typedef int (*lj_srcimg_loader)(const char *folder, const char *file, lj_surface *out);   /* 0 = decoded into out (gfx owns it from then), -1 = absent or malformed */
 void lj_srcimg_set_loader(lj_srcimg_loader fn);     /* NULL = off; either way the cache is emptied */
-const lj_surface *lj_srcimg_get(const char *folder, const char *file, int cell_w, int cell_h);   /* cached loader result; cell_w/h > 0 crops the left cell when the height matches (2- and 4-state strips); NULL when off or absent */
+const lj_surface *lj_srcimg_get(const char *folder, const char *file, int cell_w, int cell_h);   /* cached loader result; cell_w/h > 0 crops the left cell when the height matches (2- and 4-state strips); NULL when off, absent, or (with a cell) another height or narrower (LORD_C-11) */
 
 #endif /* LJ_GFX_GLYPHS_H */

@@ -95,6 +95,64 @@ static size_t ljb_build(uint8_t *out, size_t cap)   /* the fuzz seed: two zlib e
     return ljb_pack(out, cap, e, 3);
 }
 
+static uint32_t rd32le(const uint8_t *p) { return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24; }
+
+/* LORD_C-7: the container c (cn bytes, trailer honest) with its index replaced by the raw records idx[0..in), deflated
+ * again when z, else stored raw (the fuzz_ljb_index libFuzzer seed); trailer size and CRC rewritten. 0 when it does not fit. */
+static size_t ljb_reindex(uint8_t *out, size_t cap, const uint8_t *c, size_t cn, const uint8_t *idx, size_t in, int z)
+{
+    uint32_t ioff = rd32le(c + cn - LJ_LJB_TRAILER + 16);
+    mz_ulong zl;
+    if (ioff > cap || cap - ioff < LJ_LJB_TRAILER) return 0;
+    memcpy(out, c, ioff);
+    zl = (mz_ulong)(cap - ioff - LJ_LJB_TRAILER);
+    if (z ? mz_compress2(out + ioff, &zl, idx, (mz_ulong)in, 6) != MZ_OK : in > zl) return 0;
+    if (!z) { memcpy(out + ioff, idx, in); zl = (mz_ulong)in; }
+    memcpy(out + ioff + zl, c + cn - LJ_LJB_TRAILER, LJ_LJB_TRAILER);
+    le32(out + ioff + zl + 12, (uint32_t)zl);
+    recrc(out, ioff + zl + LJ_LJB_TRAILER);
+    return ioff + zl + LJ_LJB_TRAILER;
+}
+
+/* the seed's index inflated into idx (cap >= 3 x 532 + 1); its length, 3 x 532 when the seed is sound */
+static size_t ljb_seed_index(uint8_t *idx, size_t cap, const uint8_t *seed, size_t sn)
+{
+    const uint8_t *t = seed + sn - LJ_LJB_TRAILER;
+    return tinfl_decompress_mem_to_mem(idx, cap, seed + rd32le(t + 16), rd32le(t + 12), TINFL_FLAG_PARSE_ZLIB_HEADER);
+}
+
+/* LORD_C-7 second mode: mutate the inflated index (kept at n x 532 so it passes the size rule), deflate it again, then
+ * open and extract; the per-record checks behind the inflate are what this mode reaches. Some must open (the mode works). */
+static int fuzz_ljb_index(const uint8_t *seed, size_t sn)
+{
+    static uint8_t idx[3 * LJ_LJB_INDEX_REC + 1], m[3 * LJ_LJB_INDEX_REC + 64], buf[16384];
+    const size_t want = 3 * LJ_LJB_INDEX_REC;
+    size_t n, mn, xn = 0;
+    uint8_t *x = NULL;
+    lj_ljb b;
+    char err[128];
+    uint32_t s = 0x2C9u, k;
+    int i, bad = 0, opened = 0;
+    if (ljb_seed_index(idx, sizeof idx, seed, sn) != want) { printf("FAIL fuzz_ljb index: seed index\n"); return 1; }
+    for (i = 0; i < LJ_FUZZ_ITERS; i++) {
+        memcpy(m, idx, want); mn = want;
+        for (k = lj_fuzz_next(&s) % 8 + 1; k > 0; k--) lj_fuzz_mutate(m, &mn, sizeof m, &s);
+        if (mn < want) memset(m + mn, 0, want - mn);
+        if (!(n = ljb_reindex(buf, sizeof buf, seed, sn, m, want, 1))) { if (!bad++) printf("FAIL index iteration %d: re-deflate\n", i); continue; }
+        if (lj_ljb_open(&b, buf, n, err, sizeof err) != 0) continue;
+        opened++;
+        for (k = 0; k < b.n; k++) {
+            if (lj_ljb_extract(&b, k, &x, &xn, err, sizeof err) == 0 && xn != b.e[k].usz) { if (!bad++) printf("FAIL index iteration %d: entry %u size\n", i, (unsigned)k); }
+            if (!lj_ljb_path_ok(b.e[k].folder, b.e[k].name)) { if (!bad++) printf("FAIL index iteration %d: entry %u path passed open\n", i, (unsigned)k); }
+            free(x); x = NULL;
+        }
+        lj_ljb_free(&b);
+    }
+    if (!opened && !bad++) printf("FAIL fuzz_ljb index: no mutated index opened\n");
+    printf("fuzz_ljb index: %d iterations, %d opened, %s\n", LJ_FUZZ_ITERS, opened, bad ? "FAIL" : "PASS");
+    return bad;
+}
+
 int lj_test_fuzz_ljb(int argc, char **argv)
 {
     static uint8_t seed[8192], buf[8192 + 64];
@@ -113,6 +171,15 @@ int lj_test_fuzz_ljb(int argc, char **argv)
         return 1;
     }
     free(x); x = NULL; lj_ljb_free(&b);
+    if (argc >= 3 && strcmp(argv[1], "--seed-index") == 0) {   /* LORD_C-7: the fuzz_ljb_index corpus, its index stored raw */
+        static uint8_t idx[3 * LJ_LJB_INDEX_REC + 1], raw[16384];
+        static char opt[] = "--seed";
+        char *a[3];
+        size_t in = ljb_seed_index(idx, sizeof idx, seed, sn), rn;
+        a[0] = argv[0]; a[1] = opt; a[2] = argv[2];
+        rn = in == 3 * LJ_LJB_INDEX_REC ? ljb_reindex(raw, sizeof raw, seed, sn, idx, in, 0) : 0;
+        return rn && lj_fuzz_seed(3, a, "show-index.LJB", raw, rn) == 1 ? 0 : 1;
+    }
     if (lj_fuzz_seed(argc, argv, "show.LJB", seed, sn)) return 0;   /* ME-186 */
     for (i = 0; i < LJ_FUZZ_ITERS; i++) {
         memcpy(buf, seed, sn); n = sn;
@@ -127,6 +194,7 @@ int lj_test_fuzz_ljb(int argc, char **argv)
         lj_ljb_free(&b);
     }
     printf("fuzz_ljb: %d iterations, %s\n", LJ_FUZZ_ITERS, bad ? "FAIL" : "PASS");
+    bad += fuzz_ljb_index(seed, sn);
     return bad ? 1 : 0;
 }
 
@@ -221,6 +289,9 @@ static void test_container(void)
     CHECK(!lj_ljb_path_ok("C:\\", "a") && !lj_ljb_path_ok("", "a:b") && !lj_ljb_path_ok("", "a/b") && !lj_ljb_path_ok("a/", "b") && !lj_ljb_path_ok("a", "b"));
     CHECK(!lj_ljb_path_ok("", "CON") && !lj_ljb_path_ok("", "con.txt") && !lj_ljb_path_ok("", "Nul") && !lj_ljb_path_ok("LPT1\\", "a") && !lj_ljb_path_ok("", "com9.ini"));
     CHECK(!lj_ljb_path_ok("", "a.") && !lj_ljb_path_ok("", "a ") && !lj_ljb_path_ok("", "a\tb") && !lj_ljb_path_ok("", "a*b") && !lj_ljb_path_ok("", "a?"));
+    /* LORD_C-8: CP1252 superscript digits are COM / LPT digits; spaces before the extension leave the device name */
+    CHECK(!lj_ljb_path_ok("", "COM\xB9.txt") && !lj_ljb_path_ok("", "lpt\xB2") && !lj_ljb_path_ok("COM\xB3\\", "a") && !lj_ljb_path_ok("", "CON .txt") && !lj_ljb_path_ok("", "com1  .ini"));
+    CHECK(lj_ljb_path_ok("", "COM\xB4.txt") && lj_ljb_path_ok("", "CONX .txt"));
     printf("ljb container: %d failures after the refusal rows\n", fails);
 }
 
