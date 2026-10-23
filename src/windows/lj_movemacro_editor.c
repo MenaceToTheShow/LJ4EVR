@@ -47,12 +47,6 @@ static void help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("movement: 
 /* ---------------------------------------------------------------------------------------------------------------
  * shared: the current scene, the selected fixtures that have pan / tilt, their position in readout units (17 s1)
  * ------------------------------------------------------------------------------------------------------------- */
-static lj_scene *cur_scene(void)
-{
-    lj_ctx *c = lj_ctx_get();
-    if (!c->show || !c->show->current_seq || !c->show->current_seq->scenes || c->current_scene >= c->show->current_seq->n) return NULL;
-    return &c->show->current_seq->scenes[c->current_scene];
-}
 
 static const lj_profile *pt_profile(int f)
 {
@@ -194,7 +188,7 @@ static void mm_fill(void)
     mm.nfx = sel_fixtures(mm.fx);
     mm.serial = lj_sel_serial();
     lj_lock();
-    sc = cur_scene();
+    sc = lj_ctx_scene();
     memset(&m, 0, sizeof m);
     if (master_macro(sc)) m = *master_macro(sc);
     lj_unlock();
@@ -223,7 +217,7 @@ static void mm_apply(int what, int v)
     int i;
     if (mm.filling || !mm.nfx) return;
     lj_lock();
-    sc = cur_scene();
+    sc = lj_ctx_scene();
     for (i = 0; sc && i < mm.nfx; i++) {
         lj_movemacro *m = &sc->macro[mm.fx[i]];
         int k;
@@ -252,7 +246,7 @@ static void mm_apply(int what, int v)
 static void trace_paint(lj_widget *w, lj_surface *s)
 {
     lj_ctx *c = lj_ctx_get();
-    lj_scene *sc = cur_scene();
+    lj_scene *sc = lj_ctx_scene();
     int ax, ay, i, k;
     lj_widget_abs(w, &ax, &ay);
     lj_fill(s, ax, ay, w->w, w->h, 0x0000FFu);
@@ -681,7 +675,7 @@ static void fo_paint_grid(lj_widget *w, void *ud)            /* pb1Paint: the pr
 {
     lj_window *win = lj_window_of(w);
     lj_surface *s = win ? lj_window_surface(win) : NULL;
-    lj_scene *sc = cur_scene();
+    lj_scene *sc = lj_ctx_scene();
     int ax, ay, i, order[LJ_FIXTURES], n;
     (void)ud;
     if (!s || !fo.win) return;
@@ -699,7 +693,7 @@ int lj_fan_out_apply(void)                                   /* the Delta bars /
     lj_scene *sc;
     if (n < 2) return -1;                                    /* "all selected fixtures (2 or more)" */
     lj_lock();
-    sc = cur_scene();
+    sc = lj_ctx_scene();
     for (i = 0; sc && i < n; i++) if (pt_read(sc, order[i], &pan[order[i]], &tilt[order[i]])) { pan[order[i]] = tilt[order[i]] = 0; }
     rc = sc ? lj_fan_out(pan, tilt, order, n, lj_w_dragbar_value(fo.dpan), lj_w_dragbar_value(fo.dtilt), lj_w_checkbox_checked(lj_window_find(fo.win, "cbCenter"))) : -1;
     for (i = 0; rc == 0 && i < n; i++) pt_write(sc, order[i], pan[order[i]], tilt[order[i]]);
@@ -717,7 +711,7 @@ static void fo_spread(int axis)
     lj_scene *sc;
     if (n < 2) return;
     lj_lock();
-    sc = cur_scene();
+    sc = lj_ctx_scene();
     for (i = 0; sc && i < n; i++) if (pt_read(sc, order[i], &pan[order[i]], &tilt[order[i]])) pan[order[i]] = tilt[order[i]] = 0;
     if (sc && lj_fan_spread(axis ? tilt : pan, order, n) == 0) { for (i = 0; i < n; i++) pt_write(sc, order[i], pan[order[i]], tilt[order[i]]); scene_modified(); }
     lj_unlock();
@@ -845,7 +839,7 @@ int lj_auto_delay_apply(void)                                /* Apply: delays in
     if (n < 1 || lj_delay_order(lj_ctx_get()->show, sel, n, order_of[ro < 0 ? 0 : ro], order)) return -1;
     if (lj_mm_auto_delay(n, st < 0 ? 0 : st, ad.max_delay, ad.count, ad.segments, &ad.seed, d)) return -1;
     lj_lock();
-    sc = cur_scene();
+    sc = lj_ctx_scene();
     for (i = 0; sc && i < n; i++) {
         lj_movemacro *m = &sc->macro[order[i]];
         m->delay = d[i];

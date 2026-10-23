@@ -151,6 +151,7 @@ static void click(int id)
     case B_CL_STATICS: fn(LJ_FN_STATICS_CONTROL); break;
     case B_CL_CD:    fn(LJ_FN_CD_CONTROL); break;
     case B_CL_MIDIIN: lj_desktop_run_action(LJ_ACT_MIDI_IN, 0); break;
+    case B_CL_DMXIN: lj_desktop_run_action(LJ_ACT_DMX_IN, 0); break;   /* W4: the window opens, inputs greyed; still disabled until the hw-dmxin track lands */
     case B_CL_2532:  fn(LJ_FN_2532_CONTROL); break;
     case B_FX_INTENSITY: fn(LJ_FN_CTL_INTENSITY); break;
     case B_FX_MOVEMENT:  fn(LJ_FN_CTL_MOVEMENT); break;

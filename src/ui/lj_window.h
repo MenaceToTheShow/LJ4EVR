@@ -23,6 +23,7 @@ void lj_handler_noop(lj_widget *w, void *ud);   /* ME-101: the one do-nothing bi
 lj_window *lj_window_create(const lj_form_desc *desc, const lj_binding *bindings);   /* instantiates the tree in DFM order; NULL + log on failure */
 void       lj_window_destroy(lj_window *win);                                        /* frees the tree and the surface; NULL is a no-op */
 lj_widget *lj_window_find(lj_window *win, const char *dfm_name);                     /* "ESeqNo", "sb7"; NULL when absent */
+int        lj_window_set_text(lj_window *win, const char *dfm_name, const char *text);   /* ME-129: the runtime caption of a named captioned widget, repainted; -1 when absent or uncaptioned */
 void       lj_window_event(lj_window *win, const lj_ui_event *ev);                   /* mouse/key/char/timer/focus/expose/resize/close */
 void       lj_window_paint(lj_window *win);                                          /* repaints dirty rects into the surface; after it lj_window_dirty() lists what changed */
 void       lj_window_set_caption(lj_window *win, const char *caption);               /* runtime captions: "SEQUENCE [0000 No Name]" [F19] */

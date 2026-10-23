@@ -62,18 +62,16 @@ static struct {
     uint32_t sel_serial;
 } e = { .cur = -1 };
 
-static lj_ctx *ctx(void) { return lj_ctx_get(); }
-static lj_genmacro *gm(void) { return ctx()->gm_edit; }
-static const lj_gm_shapes *shapes(void) { return ctx()->gm_shapes && ctx()->gm_shapes->n ? ctx()->gm_shapes : &lj_gm_shapes_builtin; }
+static lj_genmacro *gm(void) { return lj_ctx_get()->gm_edit; }
+static const lj_gm_shapes *shapes(void) { return lj_ctx_get()->gm_shapes && lj_ctx_get()->gm_shapes->n ? lj_ctx_get()->gm_shapes : &lj_gm_shapes_builtin; }
 static int named(const lj_widget *w, const char *n) { return w && w->name && !strcmp(w->name, n); }
 static void apply(void) { lj_desktop_run_action(LJ_ACT_GENMACRO_APPLY, 0); }
 static void post(int kind, uint32_t a, uint32_t b) { lj_cmd c; memset(&c, 0, sizeof c); c.kind = (uint8_t)kind; c.a = a; c.b = b; lj_ctx_post(&c); }
-static void set_text(lj_window *win, const char *name, const char *t) { lj_widget *w = win ? lj_window_find(win, name) : NULL; if (w) { lj_w_set_caption(w, t); lj_widget_invalidate(w); } }
 
 /* ---- fixtures, offsets, channel codes ---- */
 static int fx_code(int f, int ofs)                               /* address code of fixture f's offset, -1 unpatched / outside */
 {
-    const lj_fixture *x = ctx()->show ? &ctx()->show->fixture[f] : NULL;
+    const lj_fixture *x = lj_ctx_get()->show ? &lj_ctx_get()->show->fixture[f] : NULL;
     int c;
     if (!x || !x->link) return -1;
     c = lj_addr_code(x->link, x->address) + ofs;
@@ -216,7 +214,7 @@ void lj_genmacro_editor_reprofile(void) { if (e.win) { e.sel_serial = lj_sel_ser
 
 void lj_genmacro_editor_refresh(void)
 {
-    lj_ctx *c = ctx();
+    lj_ctx *c = lj_ctx_get();
     lj_widget *lv;
     char t[96];
     int lo, hi;
@@ -227,15 +225,15 @@ void lj_genmacro_editor_refresh(void)
     fill_rows();
     if ((lv = lj_window_find(e.win, "lvChannels")) != NULL) { int keep = lj_w_listview_index(lv); lj_w_listview_set_items(lv, e.rows, e.foot); ((lj_w_listview *)lv)->index = keep; }
     if (lj_genmacro_editor_caption(t, sizeof t) == 0) lj_window_set_caption(e.win, t);
-    set_text(e.win, "lFixType", e.prof ? e.prof->name : "");
-    snprintf(t, sizeof t, "%d", e.nfx); set_text(e.win, "lFixCount", t);
-    snprintf(t, sizeof t, "%d", e.foot); set_text(e.win, "lChanCount", t);     /* PROPOSAL rig 14 sA.7: the offsets of the type */
-    set_text(e.win, "lMacro", e.pan.shape < shapes()->n ? shapes()->name[e.pan.shape] : "");
+    lj_window_set_text(e.win, "lFixType", e.prof ? e.prof->name : "");
+    snprintf(t, sizeof t, "%d", e.nfx); lj_window_set_text(e.win, "lFixCount", t);
+    snprintf(t, sizeof t, "%d", e.foot); lj_window_set_text(e.win, "lChanCount", t);     /* PROPOSAL rig 14 sA.7: the offsets of the type */
+    lj_window_set_text(e.win, "lMacro", e.pan.shape < shapes()->n ? shapes()->name[e.pan.shape] : "");
     if (e.pan.cycle_ds) { char v[16]; time_text(v, sizeof v, e.pan.cycle_ds); snprintf(t, sizeof t, "Cycle time: %s seconds", v); }   /* EXE 0x33A8EC "Cycle time: %.1f seconds" (genericmacroeditor.gif) */
     else lj_str_copy(t, sizeof t, "Cycle time: never");                         /* EXE 0x33A8D0 */
-    set_text(e.win, "lTime", t);
+    lj_window_set_text(e.win, "lTime", t);
     minmax(&e.pan, &lo, &hi);
-    snprintf(t, sizeof t, "Min/Max : %d/%d", lo, hi); set_text(e.win, "lMinMax", t);   /* EXE 0x3399F8 "Min/Max : %d/%d" (genericmacroeditor.gif) */
+    snprintf(t, sizeof t, "Min/Max : %d/%d", lo, hi); lj_window_set_text(e.win, "lMinMax", t);   /* EXE 0x3399F8 "Min/Max : %d/%d" (genericmacroeditor.gif) */
     if (c->engine && (lv = lj_window_find(e.win, "sbDisableMacros")) != NULL && lj_w_speedbutton_down(lv) != !c->view.gm_engine_on) lj_w_speedbutton_set_down(lv, !c->view.gm_engine_on);   /* the engine's state (hotkeys too); headless: as the DFM */
     if ((lv = lj_window_find(e.win, "sbRestart")) != NULL && gm() && lj_w_speedbutton_down(lv) != (gm()->restart_on_load != 0)) lj_w_speedbutton_set_down(lv, gm()->restart_on_load);
     lj_window_invalidate_all(e.win);
@@ -429,7 +427,7 @@ static void on_menu_toggle(lj_widget *w, void *ud)               /* Clear Macro 
     (void)w; (void)ud;
     if (!rt) return;
     rt->checked = !rt->checked;
-    if (ctx()->main_ini && it->name) lj_ini_seti(ctx()->main_ini, "MACRO", !strcmp(it->name, "M_ClearOnClose") ? "ClearOnClose" : "SlowUpdate", rt->checked);
+    if (lj_ctx_get()->main_ini && it->name) lj_ini_seti(lj_ctx_get()->main_ini, "MACRO", !strcmp(it->name, "M_ClearOnClose") ? "ClearOnClose" : "SlowUpdate", rt->checked);
 }
 static void on_random_by(lj_widget *w, void *ud)
 {
@@ -437,14 +435,14 @@ static void on_random_by(lj_widget *w, void *ud)
     int by_fx = it && it->name && !strcmp(it->name, "M_RandomByFixture");
     (void)w; (void)ud;
     lj_menu_set_checked(lj_window_menus(e.win), "M_RandomByOffset", !by_fx); lj_menu_set_checked(lj_window_menus(e.win), "M_RandomByFixture", by_fx);
-    if (ctx()->main_ini) lj_ini_seti(ctx()->main_ini, "MACRO", "RandomByFixture", by_fx);   /* PROPOSAL key; the delay is per fixture either way here */
+    if (lj_ctx_get()->main_ini) lj_ini_seti(lj_ctx_get()->main_ini, "MACRO", "RandomByFixture", by_fx);   /* PROPOSAL key; the delay is per fixture either way here */
 }
 static void on_reload_shapes(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_GM_SHAPES_RELOAD, 0); }
 static void on_pop_channel(lj_widget *w, void *ud)               /* Get Base Value / Positive / Negative Amplitude from current sequence */
 {
     const lj_menu_item_desc *it = lj_window_menu_item(e.win);
-    const lj_sequence *sq = ctx()->show ? ctx()->show->current_seq : NULL;
-    int c = e.nfx && e.cur >= 0 ? fx_code(e.fx[0], e.cur) : -1, v, sc = ctx()->view.cur_scene;
+    const lj_sequence *sq = lj_ctx_get()->show ? lj_ctx_get()->show->current_seq : NULL;
+    int c = e.nfx && e.cur >= 0 ? fx_code(e.fx[0], e.cur) : -1, v, sc = lj_ctx_get()->view.cur_scene;
     (void)w; (void)ud;
     if (!it || !it->name || c < 0 || !sq || !sq->scenes || sc >= sq->n) return;
     v = sq->scenes[sc].val[c];
@@ -495,9 +493,9 @@ lj_window *lj_genmacro_editor_open(void)
     e.pan.base_on = 1;                                           /* "base-value enabled, value = 0" (CHM 5811) */
     if ((e.win = lj_window_create(&lj_form_TCUEMACROCONTROLFORM, gm_bindings)) == NULL) { lj_log("genmacro editor: cannot create TCueMacroControlForm"); return NULL; }
     if ((w = lj_window_find(e.win, "sbBaseOff")) != NULL) lj_w_speedbutton_set_down(w, 0);
-    lj_menu_set_checked(lj_window_menus(e.win), "M_RandomByFixture", lj_ini_geti(ctx()->main_ini, "MACRO", "RandomByFixture", 0));
-    lj_menu_set_checked(lj_window_menus(e.win), "M_RandomByOffset", ctx()->main_ini ? !lj_ini_geti(ctx()->main_ini, "MACRO", "RandomByFixture", 0) : 1);
-    lj_menu_set_checked(lj_window_menus(e.win), "M_ClearOnClose", lj_ini_geti(ctx()->main_ini, "MACRO", "ClearOnClose", 0));
+    lj_menu_set_checked(lj_window_menus(e.win), "M_RandomByFixture", lj_ini_geti(lj_ctx_get()->main_ini, "MACRO", "RandomByFixture", 0));
+    lj_menu_set_checked(lj_window_menus(e.win), "M_RandomByOffset", lj_ctx_get()->main_ini ? !lj_ini_geti(lj_ctx_get()->main_ini, "MACRO", "RandomByFixture", 0) : 1);
+    lj_menu_set_checked(lj_window_menus(e.win), "M_ClearOnClose", lj_ini_geti(lj_ctx_get()->main_ini, "MACRO", "ClearOnClose", 0));
     collect(); e.sel_serial = lj_sel_serial();
     fill_shapes();
     lj_genmacro_editor_refresh();
@@ -515,14 +513,14 @@ static int sv_write(uint32_t number)
     char path[LJ_PATH_CAP];
     lj_widget *n = sv.win ? lj_window_find(sv.win, "eMacroName") : NULL;
     const char *bad;
-    if (!g || !ctx()->lib || !number) return -1;
+    if (!g || !lj_ctx_get()->lib || !number) return -1;
     if (number > LJ_MACROS_MAX) { lj_win_message("Save Macro", "Error : Maximum number of Macros exceeded"); return -1; }   /* EXE 0x1f9ee0 */
     if ((rec = lj_genmacro_new_rec()) == NULL) return -1;
     lj_lock(); *rec = *g; lj_unlock();
     rec->number = number;
     if (n && lj_w_edit_text(n)) lj_str_copy(rec->name, sizeof rec->name, lj_w_edit_text(n));
     if (!rec->name[0]) snprintf(rec->name, sizeof rec->name, "Macro #%u", (unsigned)number);   /* EXE 0x1f9ec8 "Macro #%d" */
-    if ((bad = lj_genmacro_validate(rec)) != NULL || lj_library_record_path(ctx()->lib, LJ_REC_MACRO, number, path, sizeof path) != 0 || lj_genmacro_save(path, rec) != 0) {
+    if ((bad = lj_genmacro_validate(rec)) != NULL || lj_library_record_path(lj_ctx_get()->lib, LJ_REC_MACRO, number, path, sizeof path) != 0 || lj_genmacro_save(path, rec) != 0) {
         lj_log("save macro %04u: %s", (unsigned)number, bad ? bad : "not written");
         free(rec); return -1;
     }
@@ -562,7 +560,7 @@ static void sv_click(lj_widget *w, void *ud)                     /* BSaveClick: 
     const lj_genmacro *g = gm();
     lj_widget *x;
     (void)ud;
-    if (!g || !ctx()->lib) return;
+    if (!g || !lj_ctx_get()->lib) return;
     if (named(w, "bSaveAsMacro")) {
         if (!sv.as && (sv.as = lj_window_create(&lj_form_TSAVEASMACRODIALOG, as_bindings)) != NULL) {
             if ((x = lj_window_find(sv.as, "eMacroName")) != NULL) lj_w_edit_set_text(x, g->name);
@@ -572,15 +570,15 @@ static void sv_click(lj_widget *w, void *ud)                     /* BSaveClick: 
         }
         return;
     }
-    if (sv_write(named(w, "Bsave") && g->number ? g->number : lj_library_next_number(ctx()->lib, LJ_REC_MACRO)) == 0) sv_after();
+    if (sv_write(named(w, "Bsave") && g->number ? g->number : lj_library_next_number(lj_ctx_get()->lib, LJ_REC_MACRO)) == 0) sv_after();
 }
 static void sv_prefs(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(sv.win);
     (void)w; (void)ud;
-    if (!it || !it->name || !ctx()->forms_ini) return;
-    if (!strcmp(it->name, "M_AutoClose")) lj_ini_seti(ctx()->forms_ini, "SAVEMACRO", "AutoClose", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEMACRO", "AutoClose", 1));
-    else if (!strcmp(it->name, "M_EnterSave")) lj_ini_seti(ctx()->forms_ini, "SAVEMACRO", "SaveOnEnter", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEMACRO", "SaveOnEnter", 0));
+    if (!it || !it->name || !lj_ctx_get()->forms_ini) return;
+    if (!strcmp(it->name, "M_AutoClose")) lj_ini_seti(lj_ctx_get()->forms_ini, "SAVEMACRO", "AutoClose", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEMACRO", "AutoClose", 1));
+    else if (!strcmp(it->name, "M_EnterSave")) lj_ini_seti(lj_ctx_get()->forms_ini, "SAVEMACRO", "SaveOnEnter", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEMACRO", "SaveOnEnter", 0));
     sv_fill();
 }
 static void sv_close_ev(lj_widget *w, void *ud) { (void)w; (void)ud; lj_save_genmacro_close(); }
@@ -609,11 +607,11 @@ void lj_select_genmacro_refresh(void)
     lj_widget *lv;
     int i;
     if (!sl.win) return;
-    sl.n = ctx()->lib ? lj_library_list_records(ctx()->lib, LJ_REC_MACRO, sl.no, SL_MAX) : 0;
+    sl.n = lj_ctx_get()->lib ? lj_library_list_records(lj_ctx_get()->lib, LJ_REC_MACRO, sl.no, SL_MAX) : 0;
     if (sl.n < 0) sl.n = 0;
     for (i = 0; i < sl.n; i++) {
         const char *name = "";
-        if (lj_library_record_path(ctx()->lib, LJ_REC_MACRO, sl.no[i], path, sizeof path) == 0 && lj_genmacro_load(path, &tmp, err, sizeof err) == 0) name = tmp.name;
+        if (lj_library_record_path(lj_ctx_get()->lib, LJ_REC_MACRO, sl.no[i], path, sizeof path) == 0 && lj_genmacro_load(path, &tmp, err, sizeof err) == 0) name = tmp.name;
         if (lj_number_text(sl.no[i], no, sizeof no) != 0) no[0] = 0;
         snprintf(sl.txt[i], sizeof sl.txt[i], "%s\t%s", no, name);
         sl.rows[i] = sl.txt[i];
@@ -638,16 +636,16 @@ static void sl_pop(lj_widget *w, void *ud)
     if (!it || !it->name || !n) return;
     if (!strcmp(it->name, "popEdit")) sl_edit(n);
     else if (!strcmp(it->name, "popAddToCue")) lj_desktop_run_action(LJ_ACT_GENMACRO_TO_CUE, (int)n);
-    else if (!strcmp(it->name, "popDeleteMacro") && ctx()->lib) { if (lj_library_delete_record(ctx()->lib, LJ_REC_MACRO, n) != 0) lj_log("delete macro %04u failed", (unsigned)n); lj_select_genmacro_refresh(); }
+    else if (!strcmp(it->name, "popDeleteMacro") && lj_ctx_get()->lib) { if (lj_library_delete_record(lj_ctx_get()->lib, LJ_REC_MACRO, n) != 0) lj_log("delete macro %04u failed", (unsigned)n); lj_select_genmacro_refresh(); }
 }
 static void sl_prefs(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(sl.win);
     const char *key;
     (void)w; (void)ud;
-    if (!it || !it->name || !ctx()->main_ini) return;
+    if (!it || !it->name || !lj_ctx_get()->main_ini) return;
     key = !strcmp(it->name, "M_BrowseToEdit") ? "BrowseToEditor" : "BrowseToCue";
-    lj_ini_seti(ctx()->main_ini, "MACROLIST", key, !lj_ini_geti(lj_ctx_get()->main_ini, "MACROLIST", key, 0));
+    lj_ini_seti(lj_ctx_get()->main_ini, "MACROLIST", key, !lj_ini_geti(lj_ctx_get()->main_ini, "MACROLIST", key, 0));
     lj_menu_set_checked(lj_window_menus(sl.win), it->name, lj_ini_geti(lj_ctx_get()->main_ini, "MACROLIST", key, 0));
 }
 static void sl_close_ev(lj_widget *w, void *ud) { (void)w; (void)ud; lj_select_genmacro_close(); }
@@ -673,7 +671,7 @@ lj_window *lj_select_genmacro_get(void) { return sl.win; }
 /* ---- hotkeys: Generic Macro Functions [01 s7, 05 s11.2, 14 sA.9] ---- */
 static void fn_gm(enum lj_fn fn, int edge, uint32_t prog, void *ud)
 {
-    const lj_engine_status *v = &ctx()->view;
+    const lj_engine_status *v = &lj_ctx_get()->view;
     (void)prog; (void)ud;
     if (!edge) return;
     switch (fn) {

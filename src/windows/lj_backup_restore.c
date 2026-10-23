@@ -26,7 +26,6 @@ static struct {
 } rs;
 
 static int exists(const char *path) { FILE *f = fopen(path, "rb"); if (f) fclose(f); return f != NULL; }
-static void label(lj_window *w, const char *name, const char *text) { lj_w_set_caption(w ? lj_window_find(w, name) : NULL, text); }
 
 /* the library Backup works on: the one picked in User Libraries while that window is open, else the open one */
 static int backup_lib(lj_library *out)
@@ -59,14 +58,14 @@ int lj_backup_create(const char *path)
     char def[LJ_PATH_CAP];
     lj_widget *pg = bk.win ? lj_window_find(bk.win, "pg1") : NULL;
     if (!path) { if (lj_backup_path(def, sizeof def) != 0) return -1; path = def; }
-    label(bk.win, "lAction", "Backing up - please wait");                                  /* PROPOSAL rig: lAction's runtime texts */
+    lj_window_set_text(bk.win, "lAction", "Backing up - please wait");                                  /* PROPOSAL rig: lAction's runtime texts */
     if (backup_lib(&lib) != 0 || lj_library_backup(&lib, path, bk.win ? bk.ed.text : "") != 0) {
-        label(bk.win, "lAction", "");
+        lj_window_set_text(bk.win, "lAction", "");
         lj_win_message("Warning", LJ_BR_WRITE_ERR);
         return -1;
     }
     if (pg) lj_w_progressbar_set(pg, 100);
-    label(bk.win, "lAction", path);
+    lj_window_set_text(bk.win, "lAction", path);
     return 0;
 }
 
@@ -94,10 +93,10 @@ lj_window *lj_backup_open(void)
     if (!bk.win) { lj_log("backup: cannot create TLibraryBackupForm"); return NULL; }
     bk.close_pending = 0; bk.ed.text[0] = 0; bk.ed.changed = 0;
     if (!tm || strftime(when, sizeof when, "%Y-%m-%d %H:%M", tm) == 0) when[0] = 0;
-    label(bk.win, "lLibName", have ? lib.name : "");
-    label(bk.win, "lLibPath", have ? lib.root : "");
-    label(bk.win, "lBackupTime", when);
-    label(bk.win, "lAction", "");
+    lj_window_set_text(bk.win, "lLibName", have ? lib.name : "");
+    lj_window_set_text(bk.win, "lLibPath", have ? lib.root : "");
+    lj_window_set_text(bk.win, "lBackupTime", when);
+    lj_window_set_text(bk.win, "lAction", "");
     lj_memo_edit_attach(&bk.ed, lj_window_find(bk.win, "Re1"));
     lj_win_show(bk.win, 0);
     return bk.win;
@@ -138,9 +137,9 @@ int lj_restore_set_file(const char *path)
     if (len >= sizeof name) len = sizeof name - 1;
     memcpy(name, base, len); name[len] = 0;
     if (lj_library_backup_notes(path, rs.notes, sizeof rs.notes) != 0) rs.notes[0] = 0;
-    label(rs.win, "lLibName", name);                                   /* the archive carries no original name / path / time (model, recorded): the file name stands in */
-    label(rs.win, "lLibPath", ""); label(rs.win, "lBackupTime", "");
-    label(rs.win, "lPath", lj_ctx_get()->lib ? lj_ctx_get()->lib->root : "");   /* Target Library Path = the library the files go to (userlibrestore.gif), not the archive */
+    lj_window_set_text(rs.win, "lLibName", name);                                   /* the archive carries no original name / path / time (model, recorded): the file name stands in */
+    lj_window_set_text(rs.win, "lLibPath", ""); lj_window_set_text(rs.win, "lBackupTime", "");
+    lj_window_set_text(rs.win, "lPath", lj_ctx_get()->lib ? lj_ctx_get()->lib->root : "");   /* Target Library Path = the library the files go to (userlibrestore.gif), not the archive */
     show_notes();
     { lj_widget *b = rs.win ? lj_window_find(rs.win, "bRestore") : NULL; if (b) { b->enabled = 1; lj_widget_invalidate(b); } }   /* Enabled = False in the DFM until a file is picked */
     return 0;
@@ -211,8 +210,8 @@ lj_window *lj_restore_open(void)
         rs.files->on_event = on_pick; rs.files->ud = NULL;
         fl->visible = 0;
     }
-    label(rs.win, "lLibName", ""); label(rs.win, "lLibPath", ""); label(rs.win, "lBackupTime", ""); label(rs.win, "lPath", "");
-    label(rs.win, "lRestore", c->lib ? c->lib->name : "");
+    lj_window_set_text(rs.win, "lLibName", ""); lj_window_set_text(rs.win, "lLibPath", ""); lj_window_set_text(rs.win, "lBackupTime", ""); lj_window_set_text(rs.win, "lPath", "");
+    lj_window_set_text(rs.win, "lRestore", c->lib ? c->lib->name : "");
     fill_files();
     show_notes();
     lj_win_show(rs.win, 0);

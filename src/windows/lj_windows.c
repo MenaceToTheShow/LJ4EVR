@@ -45,6 +45,17 @@
 #include "windows/lj_gdc_form.h"
 #include "windows/lj_profile_editor_form.h"
 #include "windows/lj_gs2_dialogs.h"
+/* W4 (docs/w4-contracts.md section 3): one behaviour file per window family */
+#include "windows/lj_config_dialogs.h"
+#include "windows/lj_show_dialogs.h"
+#include "windows/lj_file_dialogs.h"
+#include "windows/lj_desktop_dialogs.h"
+#include "windows/lj_dmx_in.h"
+#include "windows/lj_da2532.h"
+#include "windows/lj_fingers.h"
+#include "windows/lj_lightcorder.h"
+#include "windows/lj_debug_form.h"
+#include "windows/lj_help_viewer.h"
 
 static const char *const lj_win_classes[LJ_WIN_COUNT] = {
     "TSequenceForm", "TCurrentCue", "TSaveSeqForm", "TSaveCueForm", "TSeqListForm", "TCueListForm", "TLinkConfigForm3" /* windows-c: the DFM class (no TFixtureConfigForm exists) */,
@@ -57,7 +68,9 @@ static const char *const lj_win_classes[LJ_WIN_COUNT] = {
     "TSystemPrefsForm", "TDeleteSequencesForm", "TDeleteCuesForm", "TDeleteCuelistsForm", "TDeleteBGCuesForm", "TDeleteGenericMacrosForm",
     "TUserLibForm", "TGetUserLibNameForm", "TLibraryBackupForm", "TLibraryRestoreForm", "TNoteForm", "TAboutForm2", "TAutoLampForm",
     /* W3 */
-    "TCuelist2Form", "TSaveCuelist2Form", "TSelectCuelist2Form", "TClSetCueTrigForm", "TLogTimeCodeForm", "TCueMacroControlForm", "TSaveMacroDialog", "TLoadMacroList", "TMovementMacroForm" /* code-built */, "TDeleteMacrosForm", "TFanOutForm", "TAutoDelayForm", "TCueMacroForm", "TGenericMegaForm", "TFollowSpotForm", "TFollowListForm", "TDefault2Form", "TScanner2DefsForm", "TFixtureSetupForm", "TChannelDefForm", "TFixtureImportForm", "TExportFixtureForm" };
+    "TCuelist2Form", "TSaveCuelist2Form", "TSelectCuelist2Form", "TClSetCueTrigForm", "TLogTimeCodeForm", "TCueMacroControlForm", "TSaveMacroDialog", "TLoadMacroList", "TMovementMacroForm" /* code-built */, "TDeleteMacrosForm", "TFanOutForm", "TAutoDelayForm", "TCueMacroForm", "TGenericMegaForm", "TFollowSpotForm", "TFollowListForm", "TDefault2Form", "TScanner2DefsForm", "TFixtureSetupForm", "TChannelDefForm", "TFixtureImportForm", "TExportFixtureForm",
+    /* W4 (docs/w4-contracts.md section 3) */
+    "TAddFixForm2", "TApplyDefaultDMXForm", "TApplyMultiForm", "TAutoAddressForm2", "TCleanUpForm", "TCloneForm", "TCopyFromForm", "TConfigWarnForm", "TFixtureExportWarningDialog", "TFileExistsForm", "TFindProfileForm", "TFixtureInfoForm", "TFixtureNotesForm", "TFixtureSpecialForm", "THiddenFixtureForm", "TInternalIntensityPatchForm", "TScanner1DefsForm", "TColorScrolDefForm", "TRGBPackDefForm", "TPaletteValueTypeForm", "TProfileNameOldStyleForm", "TProfileImportModifiedFilesForm", "TBitMapPickerForm2", "TGetBitmapForm", "TRGBPaletteForm", "TCueStackForm", "TModalSelectCueForm", "TDeleteSceneForm", "TInsertScenesForm", "TSetSequenceForm", "TSeqUsedForm", "TSelectBGCueForm", "TSaveStaticForm", "TStaticsControlForm", "TStaticSlotNameForm", "TStaticsReplaceForm", "TNameSlotsForm", "TSelectCuelist2ModalForm", "TSortTimeCodeForm", "TTimeCodeOffsetForm", "TMovementOptionsForm", "TBackupForm", "TRestoreLibProgressForm", "TCopyingFilesForm", "TRenameFileForm", "TProgressForm", "TPrintWaitForm", "TRestoreDataForm", "TCreateDataForm", "TCompressRestoreDataForm", "TRestoreProgressForm", "TNewPasswordForm", "TUpdateForm", "TUpdateFileForm", "TUpdateProgramForm", "TUpdateBGCuesForm", "TUpdateCl2Form", "TPatchUpdateForm", "TRebuildSetupForm", "TInitForm1", "TAutoArrangeForm", "TGridForm", "TIconStyleForm", "TImageSetupForm", "TLayerManagerForm", "TNextPrevSelectionForm", "TCustomOrderForm", "TSaveSelectionForm", "TAutoLaunchForm", "TShowHotKeyWarningForm", "TShowHardwareWarningForm", "TLaserWarningForm", "TUnblockLasersForm", "TDmxInForm", "TDMXInValueTranslationForm", "TTranslationEditForm", "TValueTableImportErrorForm", "TExportTableForm", "TDa2532Form_3", "TButtonFunctions2532Form", "TColorScheme2532Form", "TDA2532_TabColorsForm", "TDa2532TabHeight", "TEdit2532TextForm", "TName2532PagesForm", "TLJFingersMainForm", "TFingersSetupDialog", "TFingersStatus", "TFingersErrorForm", "TFingersSkinSelectForm", "TFingersFunctionListForm", "TFingersJogFunctionListForm", "TFingersPageFunctionListForm", "TFingersSlotFunctionListForm", "TFingersUDFunctionListForm", "TLightCorderDialog", "TSaveLightCorderFileDialog", "TDebugForm", "TStaticsDebugForm", "TMsgDebugForm", "TMemoryViewForm", "THelpViewer" };
 static const char *const lj_win_ids[LJ_WIN_COUNT] = {
     "seq_form", "cue_form", "save_seq", "save_cue", "list_seq", "list_cue", "fixture_config",
     "master_intensity", "hardware_setup", "dmx_monitor", "startup_options", "warnings", "close_prompt", "please_wait",
@@ -69,7 +82,9 @@ static const char *const lj_win_ids[LJ_WIN_COUNT] = {
     "system_prefs", "delete_seq", "delete_cue", "delete_cl", "delete_bg", "delete_macro",
     "user_libraries", "user_lib_name", "backup", "restore", "notes", "about", "striking_lamps",
     /* W3 */
-    "cuelist_form", "save_cuelist", "select_cuelist", "cl_set_cue_trig", "log_timecode", "genmacro_editor", "save_genmacro", "select_genmacro", "movemacro_editor", "delete_movemacro", "fan_out", "auto_delay", "cue_macro_control", "gdc_form", "followspot_form", "followspot_list", "seq_fades", "profile_editor", "customize_fixture", "channel_config", "gs2_import", "gs2_export" };
+    "cuelist_form", "save_cuelist", "select_cuelist", "cl_set_cue_trig", "log_timecode", "genmacro_editor", "save_genmacro", "select_genmacro", "movemacro_editor", "delete_movemacro", "fan_out", "auto_delay", "cue_macro_control", "gdc_form", "followspot_form", "followspot_list", "seq_fades", "profile_editor", "customize_fixture", "channel_config", "gs2_import", "gs2_export",
+    /* W4 */
+    "add_fixtures", "apply_default_dmx", "apply_multi", "auto_address", "cleanup", "clone", "copy_from", "config_warn", "export_warning", "file_exists", "find_profile", "fixture_info", "fixture_notes", "fixture_special", "hidden_fixture", "intensity_patch", "scanner1_defs", "color_scroller_defs", "rgbpack_defs", "palette_value_type", "profile_name_oldstyle", "profile_import_modified", "bitmap_picker", "get_bitmap", "rgb_palette", "cue_stack", "modal_select_cue", "delete_scene", "insert_scenes", "set_sequence", "seq_used", "select_bgcue_old", "save_static", "statics_control", "static_slot_name", "statics_replace", "name_slots", "select_cuelist_modal", "sort_timecode", "timecode_offset", "movement_options", "backup_progress", "restore_lib_progress", "copying_files", "rename_file", "progress", "print_wait", "restore_data", "create_data", "compress_restore", "restore_progress", "new_password", "update", "update_file", "update_program", "update_bgcues", "update_cl2", "patch_update", "rebuild_setup", "init_form", "auto_arrange", "desktop_grid", "icon_style", "desktop_image", "desktop_tabs", "nextprev_selection", "custom_order", "save_selection", "auto_launch", "hotkey_warning", "hardware_warning", "laser_warning", "unblock_lasers", "dmx_in", "dmxin_translation", "translation_edit", "value_table_error", "export_table", "da2532", "da2532_functions", "da2532_colors", "da2532_tab_colors", "da2532_tab_height", "da2532_text", "da2532_page_names", "fingers", "fingers_setup", "fingers_status", "fingers_error", "fingers_skin", "fingers_functions", "fingers_jog_functions", "fingers_page_functions", "fingers_slot_functions", "fingers_ud_functions", "lightcorder", "save_lightcorder", "debug", "statics_debug", "msg_debug", "memory_view", "help" };
 
 /* windows-a: the dispatch, one row per window id naming its behaviour file; windows-b/c add their rows by index
  * (a row left empty = that track has not landed: open logs and returns NULL). */
@@ -154,16 +169,144 @@ static const lj_win_ops lj_win_table[LJ_WIN_COUNT] = {
 };
 static const lj_win_ops *lj_win_ops_of(enum lj_win id) { return (int)id >= 0 && id < LJ_WIN_COUNT ? &lj_win_table[id] : NULL; }
 
+/* W4 (docs/w4-contracts.md section 3): the window families. An id with no lj_win_table row dispatches by id through its family's four
+ * functions, one behaviour file per family; the tracks replace the stub bodies, never these tables. */
+enum { LJ_WFAM_NONE = 0, LJ_WFAM_CONFIG, LJ_WFAM_SHOW, LJ_WFAM_FILES, LJ_WFAM_DESKTOP, LJ_WFAM_DMXIN, LJ_WFAM_DA2532, LJ_WFAM_FINGERS, LJ_WFAM_LIGHTCORDER, LJ_WFAM_DEBUG, LJ_WFAM_HELP, LJ_WFAM_COUNT };
+typedef struct { lj_window *(*open)(enum lj_win); void (*close)(enum lj_win); lj_window *(*get)(enum lj_win); void (*refresh)(enum lj_win); } lj_win_fam_ops;
+static const lj_win_fam_ops lj_win_fams[LJ_WFAM_COUNT] = {
+    [LJ_WFAM_CONFIG] = { lj_config_dlg_open, lj_config_dlg_close, lj_config_dlg_get, lj_config_dlg_refresh },
+    [LJ_WFAM_SHOW] = { lj_show_dlg_open, lj_show_dlg_close, lj_show_dlg_get, lj_show_dlg_refresh },
+    [LJ_WFAM_FILES] = { lj_file_dlg_open, lj_file_dlg_close, lj_file_dlg_get, lj_file_dlg_refresh },
+    [LJ_WFAM_DESKTOP] = { lj_desktop_dlg_open, lj_desktop_dlg_close, lj_desktop_dlg_get, lj_desktop_dlg_refresh },
+    [LJ_WFAM_DMXIN] = { lj_dmx_in_open, lj_dmx_in_close, lj_dmx_in_get, lj_dmx_in_refresh },
+    [LJ_WFAM_DA2532] = { lj_da2532_open, lj_da2532_close, lj_da2532_get, lj_da2532_refresh },
+    [LJ_WFAM_FINGERS] = { lj_fingers_open, lj_fingers_close, lj_fingers_get, lj_fingers_refresh },
+    [LJ_WFAM_LIGHTCORDER] = { lj_lightcorder_open, lj_lightcorder_close, lj_lightcorder_get, lj_lightcorder_refresh },
+    [LJ_WFAM_DEBUG] = { lj_debug_form_open, lj_debug_form_close, lj_debug_form_get, lj_debug_form_refresh },
+    [LJ_WFAM_HELP] = { lj_help_viewer_open, lj_help_viewer_close, lj_help_viewer_get, lj_help_viewer_refresh },
+};
+static const unsigned char lj_win_fam_of[LJ_WIN_COUNT] = {
+    [LJ_WIN_ADD_FIXTURES] = LJ_WFAM_CONFIG,
+    [LJ_WIN_APPLY_DEFAULT_DMX] = LJ_WFAM_CONFIG,
+    [LJ_WIN_APPLY_MULTI] = LJ_WFAM_CONFIG,
+    [LJ_WIN_AUTO_ADDRESS] = LJ_WFAM_CONFIG,
+    [LJ_WIN_CLEANUP] = LJ_WFAM_CONFIG,
+    [LJ_WIN_CLONE] = LJ_WFAM_CONFIG,
+    [LJ_WIN_COPY_FROM] = LJ_WFAM_CONFIG,
+    [LJ_WIN_CONFIG_WARN] = LJ_WFAM_CONFIG,
+    [LJ_WIN_EXPORT_WARNING] = LJ_WFAM_CONFIG,
+    [LJ_WIN_FILE_EXISTS] = LJ_WFAM_CONFIG,
+    [LJ_WIN_FIND_PROFILE] = LJ_WFAM_CONFIG,
+    [LJ_WIN_FIXTURE_INFO] = LJ_WFAM_CONFIG,
+    [LJ_WIN_FIXTURE_NOTES] = LJ_WFAM_CONFIG,
+    [LJ_WIN_FIXTURE_SPECIAL] = LJ_WFAM_CONFIG,
+    [LJ_WIN_HIDDEN_FIXTURE] = LJ_WFAM_CONFIG,
+    [LJ_WIN_INTENSITY_PATCH] = LJ_WFAM_CONFIG,
+    [LJ_WIN_SCANNER1_DEFS] = LJ_WFAM_CONFIG,
+    [LJ_WIN_COLOR_SCROLLER_DEFS] = LJ_WFAM_CONFIG,
+    [LJ_WIN_RGBPACK_DEFS] = LJ_WFAM_CONFIG,
+    [LJ_WIN_PALETTE_VALUE_TYPE] = LJ_WFAM_CONFIG,
+    [LJ_WIN_PROFILE_NAME_OLDSTYLE] = LJ_WFAM_CONFIG,
+    [LJ_WIN_PROFILE_IMPORT_MODIFIED] = LJ_WFAM_CONFIG,
+    [LJ_WIN_BITMAP_PICKER] = LJ_WFAM_CONFIG,
+    [LJ_WIN_GET_BITMAP] = LJ_WFAM_CONFIG,
+    [LJ_WIN_RGB_PALETTE] = LJ_WFAM_CONFIG,
+    [LJ_WIN_CUE_STACK] = LJ_WFAM_SHOW,
+    [LJ_WIN_MODAL_SELECT_CUE] = LJ_WFAM_SHOW,
+    [LJ_WIN_DELETE_SCENE] = LJ_WFAM_SHOW,
+    [LJ_WIN_INSERT_SCENES] = LJ_WFAM_SHOW,
+    [LJ_WIN_SET_SEQUENCE] = LJ_WFAM_SHOW,
+    [LJ_WIN_SEQ_USED] = LJ_WFAM_SHOW,
+    [LJ_WIN_SELECT_BGCUE_OLD] = LJ_WFAM_SHOW,
+    [LJ_WIN_SAVE_STATIC] = LJ_WFAM_SHOW,
+    [LJ_WIN_STATICS_CONTROL] = LJ_WFAM_SHOW,
+    [LJ_WIN_STATIC_SLOT_NAME] = LJ_WFAM_SHOW,
+    [LJ_WIN_STATICS_REPLACE] = LJ_WFAM_SHOW,
+    [LJ_WIN_NAME_SLOTS] = LJ_WFAM_SHOW,
+    [LJ_WIN_SELECT_CUELIST_MODAL] = LJ_WFAM_SHOW,
+    [LJ_WIN_SORT_TIMECODE] = LJ_WFAM_SHOW,
+    [LJ_WIN_TIMECODE_OFFSET] = LJ_WFAM_SHOW,
+    [LJ_WIN_MOVEMENT_OPTIONS] = LJ_WFAM_SHOW,
+    [LJ_WIN_BACKUP_PROGRESS] = LJ_WFAM_FILES,
+    [LJ_WIN_RESTORE_LIB_PROGRESS] = LJ_WFAM_FILES,
+    [LJ_WIN_COPYING_FILES] = LJ_WFAM_FILES,
+    [LJ_WIN_RENAME_FILE] = LJ_WFAM_FILES,
+    [LJ_WIN_PROGRESS] = LJ_WFAM_FILES,
+    [LJ_WIN_PRINT_WAIT] = LJ_WFAM_FILES,
+    [LJ_WIN_RESTORE_DATA] = LJ_WFAM_FILES,
+    [LJ_WIN_CREATE_DATA] = LJ_WFAM_FILES,
+    [LJ_WIN_COMPRESS_RESTORE] = LJ_WFAM_FILES,
+    [LJ_WIN_RESTORE_PROGRESS] = LJ_WFAM_FILES,
+    [LJ_WIN_NEW_PASSWORD] = LJ_WFAM_FILES,
+    [LJ_WIN_UPDATE] = LJ_WFAM_FILES,
+    [LJ_WIN_UPDATE_FILE] = LJ_WFAM_FILES,
+    [LJ_WIN_UPDATE_PROGRAM] = LJ_WFAM_FILES,
+    [LJ_WIN_UPDATE_BGCUES] = LJ_WFAM_FILES,
+    [LJ_WIN_UPDATE_CL2] = LJ_WFAM_FILES,
+    [LJ_WIN_PATCH_UPDATE] = LJ_WFAM_FILES,
+    [LJ_WIN_REBUILD_SETUP] = LJ_WFAM_FILES,
+    [LJ_WIN_INIT_FORM] = LJ_WFAM_FILES,
+    [LJ_WIN_AUTO_ARRANGE] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_DESKTOP_GRID] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_ICON_STYLE] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_DESKTOP_IMAGE] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_DESKTOP_TABS] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_NEXTPREV_SELECTION] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_CUSTOM_ORDER] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_SAVE_SELECTION] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_AUTO_LAUNCH] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_HOTKEY_WARNING] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_HARDWARE_WARNING] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_LASER_WARNING] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_UNBLOCK_LASERS] = LJ_WFAM_DESKTOP,
+    [LJ_WIN_DMX_IN] = LJ_WFAM_DMXIN,
+    [LJ_WIN_DMXIN_TRANSLATION] = LJ_WFAM_DMXIN,
+    [LJ_WIN_TRANSLATION_EDIT] = LJ_WFAM_DMXIN,
+    [LJ_WIN_VALUE_TABLE_ERROR] = LJ_WFAM_DMXIN,
+    [LJ_WIN_EXPORT_TABLE] = LJ_WFAM_DMXIN,
+    [LJ_WIN_DA2532] = LJ_WFAM_DA2532,
+    [LJ_WIN_DA2532_FUNCTIONS] = LJ_WFAM_DA2532,
+    [LJ_WIN_DA2532_COLORS] = LJ_WFAM_DA2532,
+    [LJ_WIN_DA2532_TAB_COLORS] = LJ_WFAM_DA2532,
+    [LJ_WIN_DA2532_TAB_HEIGHT] = LJ_WFAM_DA2532,
+    [LJ_WIN_DA2532_TEXT] = LJ_WFAM_DA2532,
+    [LJ_WIN_DA2532_PAGE_NAMES] = LJ_WFAM_DA2532,
+    [LJ_WIN_FINGERS] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_SETUP] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_STATUS] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_ERROR] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_SKIN] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_FUNCTIONS] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_JOG_FUNCTIONS] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_PAGE_FUNCTIONS] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_SLOT_FUNCTIONS] = LJ_WFAM_FINGERS,
+    [LJ_WIN_FINGERS_UD_FUNCTIONS] = LJ_WFAM_FINGERS,
+    [LJ_WIN_LIGHTCORDER] = LJ_WFAM_LIGHTCORDER,
+    [LJ_WIN_SAVE_LIGHTCORDER] = LJ_WFAM_LIGHTCORDER,
+    [LJ_WIN_DEBUG] = LJ_WFAM_DEBUG,
+    [LJ_WIN_STATICS_DEBUG] = LJ_WFAM_DEBUG,
+    [LJ_WIN_MSG_DEBUG] = LJ_WFAM_DEBUG,
+    [LJ_WIN_MEMORY_VIEW] = LJ_WFAM_DEBUG,
+    [LJ_WIN_HELP] = LJ_WFAM_HELP,
+    [LJ_WIN_PLEASE_WAIT] = LJ_WFAM_FILES,   /* existing id, the files track gives it a row (the startup status window lives in app/lj_startup.c) or deletes it with a fidelity row (W4-WIN) */
+    [LJ_WIN_DEFAULT_OUTPUT] = LJ_WFAM_DESKTOP,   /* existing id, the desktop track gives it a row or deletes it with a fidelity row (W4-WIN) */
+    [LJ_WIN_SAVE_PRESET] = LJ_WFAM_SHOW,   /* existing id, the show track gives it a row or deletes it with a fidelity row (W4-WIN) */
+};
+static const lj_win_fam_ops *lj_win_fam(enum lj_win id) { return (int)id >= 0 && id < LJ_WIN_COUNT && lj_win_fam_of[id] ? &lj_win_fams[lj_win_fam_of[id]] : NULL; }
+
 lj_window *lj_win_open(enum lj_win id)
 {
     const lj_win_ops *o = lj_win_ops_of(id);
-    if (!o || !o->open) { lj_log("lj_win_open: %s has no behaviour file yet", lj_win_id_name(id)); return NULL; }
-    return o->open();
+    const lj_win_fam_ops *f = lj_win_fam(id);
+    if (o && o->open) return o->open();
+    if (f) return f->open(id);
+    lj_log("lj_win_open: %s has no behaviour file yet", lj_win_id_name(id));
+    return NULL;
 }
-void lj_win_close(enum lj_win id) { const lj_win_ops *o = lj_win_ops_of(id); if (o && o->close) o->close(); }
+void lj_win_close(enum lj_win id) { const lj_win_ops *o = lj_win_ops_of(id); const lj_win_fam_ops *f = lj_win_fam(id); if (o && o->close) o->close(); else if (f) f->close(id); }
 void lj_win_toggle(enum lj_win id) { if (lj_win_get(id)) lj_win_close(id); else lj_win_open(id); }
-lj_window *lj_win_get(enum lj_win id) { const lj_win_ops *o = lj_win_ops_of(id); return o && o->get ? o->get() : NULL; }
-void lj_win_refresh(enum lj_win id) { const lj_win_ops *o = lj_win_ops_of(id); if (o && o->refresh) o->refresh(); }
+lj_window *lj_win_get(enum lj_win id) { const lj_win_ops *o = lj_win_ops_of(id); const lj_win_fam_ops *f = lj_win_fam(id); return o && o->get ? o->get() : f ? f->get(id) : NULL; }
+void lj_win_refresh(enum lj_win id) { const lj_win_ops *o = lj_win_ops_of(id); const lj_win_fam_ops *f = lj_win_fam(id); if (o && o->refresh) o->refresh(); else if (f) f->refresh(id); }
 void lj_win_refresh_all(void) { int i; for (i = 0; i < LJ_WIN_COUNT; i++) lj_win_refresh((enum lj_win)i); }
 void lj_win_close_all(void) { int i; for (i = 0; i < LJ_WIN_COUNT; i++) lj_win_close((enum lj_win)i); }
 lj_window *lj_win_find(const char *form)
@@ -179,7 +322,8 @@ static const lj_win_host *lj_win_the_host;   /* windows-c: stored so the behavio
 void lj_win_set_host(const lj_win_host *host) { lj_win_the_host = host; lj_seq_form_bind_fns(); lj_cue_form_bind_fns(); lj_master_intensity_bind_fns(); lj_bgcue_form_bind_fns(); lj_statics2_form_bind_fns(); lj_smoke_control_bind_fns() /* W2 windows-b */;
     lj_loop_options_bind_fns(); lj_cue_time_bind_fns(); lj_cue_pages_bind_fns(); /* W2 windows-a */
     lj_htp_groups_bind_fns(); lj_fixture_groups_bind_fns(); lj_position_presets_bind_fns(); lj_user_palettes_bind_fns(); /* W2 windows-c */
-    lj_cuelist_form_bind_fns(); lj_genmacro_editor_bind_fns(); lj_movemacro_editor_bind_fns(); lj_gdc_form_bind_fns(); lj_profile_editor_form_bind_fns(); lj_gs2_dialogs_bind_fns(); /* W3 */ }
+    lj_cuelist_form_bind_fns(); lj_genmacro_editor_bind_fns(); lj_movemacro_editor_bind_fns(); lj_gdc_form_bind_fns(); lj_profile_editor_form_bind_fns(); lj_gs2_dialogs_bind_fns(); /* W3 */
+    lj_config_dlg_bind_fns(); lj_show_dlg_bind_fns(); lj_file_dlg_bind_fns(); lj_desktop_dlg_bind_fns(); lj_dmx_in_bind_fns(); lj_da2532_bind_fns(); lj_fingers_bind_fns(); lj_lightcorder_bind_fns(); lj_debug_form_bind_fns(); lj_help_viewer_bind_fns(); /* W4 families */ }
 
 static int lj_caption(char *dst, size_t cap, const char *prefix, uint32_t number, const char *name, const char *suffix)
 {
@@ -195,7 +339,7 @@ int lj_win_caption_main(char *dst, size_t cap, const char *library)
 {
     int n;
     if (!dst || cap == 0) return -1;
-    n = snprintf(dst, cap, "Martin LightJockey (User lib: %s)", library ? library : "Default");
+    n = snprintf(dst, cap, LJ_MAIN_CAPTION_FMT, library ? library : "Default");   /* ME-37: the one caption constant (desktop/lj_desktop.h) */
     return (n < 0 || (size_t)n >= cap) ? -1 : 0;
 }
 
@@ -217,6 +361,8 @@ int  lj_win_is_dialog(enum lj_win id)
     /* W3 typing dialogs (GDC_FORM is not one: its command line yields to assigned hotkeys, CHM thegenericdmxcontrol) */
     case LJ_WIN_SAVE_CUELIST: case LJ_WIN_CL_SET_CUE_TRIG: case LJ_WIN_SAVE_GENMACRO: case LJ_WIN_FOLLOWSPOT_FORM:
     case LJ_WIN_PROFILE_EDITOR: case LJ_WIN_CUSTOMIZE_FIXTURE: case LJ_WIN_CHANNEL_CONFIG: case LJ_WIN_GS2_IMPORT: case LJ_WIN_GS2_EXPORT:
+    /* W4 typing dialogs (a track that finds another tells the integrator; this list is the contract's) */
+    case LJ_WIN_ADD_FIXTURES: case LJ_WIN_AUTO_ADDRESS: case LJ_WIN_FIND_PROFILE: case LJ_WIN_FIXTURE_NOTES: case LJ_WIN_SCANNER1_DEFS: case LJ_WIN_COLOR_SCROLLER_DEFS: case LJ_WIN_RGBPACK_DEFS: case LJ_WIN_PROFILE_NAME_OLDSTYLE: case LJ_WIN_DELETE_SCENE: case LJ_WIN_INSERT_SCENES: case LJ_WIN_SET_SEQUENCE: case LJ_WIN_SAVE_STATIC: case LJ_WIN_STATIC_SLOT_NAME: case LJ_WIN_NAME_SLOTS: case LJ_WIN_TIMECODE_OFFSET: case LJ_WIN_RENAME_FILE: case LJ_WIN_RESTORE_DATA: case LJ_WIN_NEW_PASSWORD: case LJ_WIN_DESKTOP_GRID: case LJ_WIN_DESKTOP_TABS: case LJ_WIN_SAVE_SELECTION: case LJ_WIN_TRANSLATION_EDIT: case LJ_WIN_DA2532_TAB_HEIGHT: case LJ_WIN_DA2532_TEXT: case LJ_WIN_DA2532_PAGE_NAMES: case LJ_WIN_SAVE_LIGHTCORDER:
         return 1;
     default: return 0;
     }

@@ -36,7 +36,6 @@
 #define FORMS_SEC "GENERIC"     /* forms.ini section, exe 0x1E5AC4 */
 
 static const char *menu_item_name(lj_window *win) { const lj_menu_item_desc *it = win ? lj_window_menu_item(win) : NULL; return it && it->name ? it->name : ""; }
-static void set_caption(lj_window *win, const char *name, const char *text) { lj_widget *w = win ? lj_window_find(win, name) : NULL; if (w) { lj_w_set_caption(w, text); lj_widget_invalidate(w); } }
 static void set_enabled(lj_window *win, const char *name, int on) { lj_widget *w = win ? lj_window_find(win, name) : NULL; if (w && (int)w->enabled != (on != 0)) { w->enabled = on != 0; lj_widget_invalidate(w); } }
 static int mouse_in(lj_window *win, lj_widget *w, int *x, int *y)    /* the last mouse event, widget-relative */
 {
@@ -69,12 +68,6 @@ static void lv_hook_install(lv_hook *h, lj_widget *lv, void (*change)(lj_widget 
     if (!lv) return;
     h->prev = lv->on_event; h->ud = lv->ud; h->change = change;
     lv->on_event = lv_hook_event; lv->ud = h;
-}
-static lj_scene *cur_scene(void)
-{
-    lj_ctx *c = lj_ctx_get();
-    lj_sequence *s = c->show ? c->show->current_seq : NULL;
-    return s && s->scenes && c->current_scene < s->n ? &s->scenes[c->current_scene] : NULL;
 }
 static void scene_written(void) { lj_seq_form_mark_modified(); lj_seq_form_post_current(); }
 static int lib_path(const char *rel, char *out, size_t cap) { lj_ctx *c = lj_ctx_get(); return c->lib ? lj_library_path(c->lib, rel, out, cap) : -1; }
@@ -128,7 +121,7 @@ static void caption_update(void)
     if (hidden) snprintf(t, sizeof t, GDC_CAPTION " (%d Channels Hidden)", hidden); else lj_str_copy(t, sizeof t, GDC_CAPTION);   /* exe 0x1E5258 " (", 0x1E5264 " Channels Hidden)" */
     lj_window_set_caption(g.win, t);
     snprintf(t, sizeof t, "%d Channels", sel);                                                          /* pSelected, exe 0x1E778C " Channels" */
-    set_caption(g.win, "pSelected", t);
+    lj_window_set_text(g.win, "pSelected", t);
 }
 
 static void cells_build(void)
@@ -173,7 +166,7 @@ static int run_prog(const lj_gdc_prog *p)
     st->percent = (uint8_t)g.pref[GP_PCT]; st->empty_clears = (uint8_t)g.pref[GP_EMPTYCLEAR];
     if (!c->show) return -1;
     lj_lock();
-    if ((sc = cur_scene()) != NULL) n = lj_gdc_run(p, c->show, st, sc);
+    if ((sc = lj_ctx_scene()) != NULL) n = lj_gdc_run(p, c->show, st, sc);
     lj_unlock();
     if (n > 0) scene_written();
     if (g.grid) lj_widget_invalidate(g.grid);
@@ -231,7 +224,7 @@ static void on_draw_cell(lj_widget *w, void *ud)
     lj_w_grid *gr = (lj_w_grid *)w;
     lj_surface *s = gr->draw_surf;
     const lj_font *f = lj_w_font_of(w);
-    lj_scene *sc = cur_scene();
+    lj_scene *sc = lj_ctx_scene();
     int code = cell_code(gr->draw_col, gr->draw_row), x = gr->draw_rect.x, y = gr->draw_rect.y, v = 0, st = LJ_OFF;
     char t[16];
     (void)ud;
@@ -676,8 +669,8 @@ static void fs_fill(void)
         lj_w_grid_set_cell(g1, 0, r, fs.cell[r][0]); lj_w_grid_set_cell(g1, 1, r, fs.cell[r][1]);
         lj_w_grid_set_cell(g1, 2, r, fs.cell[r][2]); lj_w_grid_set_cell(g1, 3, r, fs.cell[r][3]);
     }
-    snprintf(t, sizeof t, "&Apply Current Scene to %d", fs.row + 1); set_caption(fs.win, "bApplyScene", t);   /* exe 0x1A2D94 */
-    snprintf(t, sizeof t, "&Clear Settings in %d", fs.row + 1); set_caption(fs.win, "bClear", t);           /* exe 0x1A2DB8 */
+    snprintf(t, sizeof t, "&Apply Current Scene to %d", fs.row + 1); lj_window_set_text(fs.win, "bApplyScene", t);   /* exe 0x1A2D94 */
+    snprintf(t, sizeof t, "&Clear Settings in %d", fs.row + 1); lj_window_set_text(fs.win, "bClear", t);           /* exe 0x1A2DB8 */
     lj_widget_invalidate(g1);
 }
 static void fs_cols(void)                     /* number, On/Off, name, static: 20 (DFM DefaultColWidth) / 30 / 150 / rest, measured from editfollowspot.gif (reduced 0.69), rig item */
@@ -699,7 +692,7 @@ int lj_followspot_form_apply_scene(void)
     if (!c->show) return -1;
     for (i = 0; i < LJ_FIXTURES; i++) nsel += (sel[i] = (uint8_t)(lj_sel_is_selected(i) != 0));
     lj_lock();
-    if ((sc = cur_scene()) != NULL) rc = lj_followspot_record(&c->show->followspot[fs.row], c->show, sc, sel);
+    if ((sc = lj_ctx_scene()) != NULL) rc = lj_followspot_record(&c->show->followspot[fs.row], c->show, sc, sel);
     lj_unlock();
     if (rc != 0) { lj_win_message("Edit FollowSpot Settings", "No Followspot Fixtures Selected"); return -1; }   /* exe 0x1A3050 */
     for (i = 0; i < LJ_FIXTURES; i++) nrec += c->show->followspot[fs.row].selected[i];

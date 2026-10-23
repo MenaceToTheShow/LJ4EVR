@@ -66,12 +66,13 @@ typedef struct {
     uint8_t         followspot;        /* the active follow spot setting 1..20, 0 = none (tb_fixture_18 latches; LJ_FN_CLEAR_FOLLOWSPOT clears) */
 } lj_ctx;
 lj_ctx *lj_ctx_get(void);                                   /* the one context; zeroed until the app fills it */
+lj_scene *lj_ctx_scene(void);                               /* ME-129: the current sequence's current scene, NULL past the end; the clamp happens where a sequence shrinks (delete / load), never on read */
 void    lj_ctx_set_modified(enum lj_modified which, int on); /* also repaints the status bar flag */
 void    lj_ctx_set_scene(uint16_t index);                   /* under lj_lock: ctx->current_scene, then LJ_CMD_CURRENT_SEQ; repaints the counter "X:Y" */
 void    lj_ctx_post(const lj_cmd *cmd);                     /* lj_lock + lj_engine_cmd + lj_unlock, at_us stamped with lj_clock_us when 0 */
 
 /* ---- main window ---- */
-#define LJ_MAIN_CAPTION_FMT "Martin LightJockey (User lib: %s)"   /* ME-37: THE caption literal [01 s2.1, F1]; "Please Wait.." (the DFM caption) shows until the library is open (LORD_FIDELITY-20) */
+#define LJ_MAIN_CAPTION_FMT "Martin LightJockey (User lib: %s)"   /* ME-37: THE caption literal, verbatim from the exe [01 s2.1, F1]; the only one (lj_win_caption_main formats it). Fallback if Joey rules the trademark out (one-constant change): "LJ4EVR (User lib: %s)". "Please Wait.." (the DFM caption) shows until the library is open (LORD_FIDELITY-20) */
 #define LJ_DND_FIXTURE 100                                        /* lj_dnd kind: Unassigned list -> desktop, number = fixture index */
 lj_window *lj_desktop_create(void);                         /* menu (TLJMainForm tables, ME-29 visibility table), three toolbars, status bar, tabs, icon area; caption "Martin LightJockey (User lib: <name>)"; NULL + log */
 void       lj_desktop_destroy(lj_window *win);
@@ -123,6 +124,8 @@ enum lj_desktop_action {
     LJ_ACT_GS2_EXPORT_ALL /* TLINKCONFIGFORM3 Export All: one .GS2 per user profile through lj_gs2_save (ME-31) */,
     LJ_ACT_FOLLOWSPOT_APPLY /* arg = setting 1..20 (0 = Clear Followspot): lj_followspot_apply into the current scene, the associated static, Intensity + Movement opened */,
     LJ_ACT_FIXTURE_APPLY /* arg = fixture index: Customize Fixture / Channel Configuration Ok: Config.dat + Setup.<slot>.pal saved, lj_engine_rebind */,
+    /* W4 (appended; bound by app/lj_app_w4.c to their W4 windows) */
+    LJ_ACT_DEBUG_WINDOW /* View > De&bugWindow (hidden) */, LJ_ACT_FINGERS_SETUP /* &Fingers > Fingers Setup */, LJ_ACT_DMX_IN /* C-L toolbar DMX In, Global Patch DMX-in source */,
     LJ_ACT_COUNT
 };
 typedef void (*lj_desktop_action_fn)(enum lj_desktop_action a, int arg, void *ud);

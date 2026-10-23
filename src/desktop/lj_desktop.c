@@ -28,6 +28,12 @@ static struct { lj_desktop_action_fn fn; void *ud; unsigned complained:1; } lj_a
 
 lj_ctx *lj_ctx_get(void) { return &lj_the_ctx; }
 
+lj_scene *lj_ctx_scene(void)
+{
+    lj_sequence *s = lj_the_ctx.show ? lj_the_ctx.show->current_seq : NULL;
+    return s && s->scenes && lj_the_ctx.current_scene < s->n ? &s->scenes[lj_the_ctx.current_scene] : NULL;
+}
+
 void lj_ctx_post(const lj_cmd *cmd)
 {
     lj_cmd c = *cmd;

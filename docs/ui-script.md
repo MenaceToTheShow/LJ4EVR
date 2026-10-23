@@ -159,3 +159,16 @@ macros, positions at two ticks with the macro frozen (speed 0).
 W3 integrator 2: `shot` also captures the open confirm / message box (`lj_win_message_window()`, the window `assert_prompt`
 reads) as `<stem>-TConfirmForm.png`. `tests/ui/scripts/w3_wire_circle.lj4s` (the wire half of W3 acceptance 4) and the
 persistence pair `w3_positions_1.lj4s` / `w3_positions_2.lj4s` run like the W2 pair (docs/w3-integration.md section 9).
+
+## W4 verbs (contracts seat 2026-10-22; body in `src/app/lj_uiscript.c`)
+
+| Line | Effect |
+|---|---|
+| `dump_captions <path>` | appends one `Class<TAB>object<TAB>property<TAB>value` line (CP1252) per runtime Caption / Text / Hint of every widget, per Caption / Hint of every menu item and per form caption, for every open `lj_win` window, to `path` (relative to the working directory). `tools/caption_diff.py --dump <path>` compares the file with `13-dfm-captions.tsv` (W4 acceptance 1, F55) |
+
+`tests/ui/scripts/w4_captions.lj4s` opens every window id that opens without a selection (all but `warnings`,
+`close_prompt`, `position_presets`, `customize_fixture`, `channel_config` and the three ids with no row), dumps,
+closes it, and quits. Run it in a scratch library (`lj4evr U:<name> --script tests/ui/scripts/w4_captions.lj4s`, back
+up `%APPDATA%\LJ4EVR` first: the run saves `forms.ini` and `Main.Ini`), then
+`python -I tools/caption_diff.py --dump caption_dump.tsv -v`. The captions track extends the script as W4 windows land
+(it is regenerated from `lj_win_ids`, minus the ids that need a selection).

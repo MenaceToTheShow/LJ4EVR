@@ -113,12 +113,6 @@ static lj_mv *mv_of(lj_window *win)
     return g ? ((lj_mv_grid *)g)->mv : NULL;
 }
 
-static lj_scene *scene_of(void)
-{
-    lj_ctx *c = lj_ctx_get();
-    if (!c->show || !c->show->current_seq || !c->show->current_seq->scenes || c->current_scene >= c->show->current_seq->n) return NULL;
-    return &c->show->current_seq->scenes[c->current_scene];
-}
 
 static int fixture_base(const lj_mv *mv, int f)        /* address code of the fixture's channel 1, -1 when unused or another profile */
 {
@@ -202,7 +196,7 @@ static void repaint(lj_mv *mv)
 /* the master's state from the scene into the window */
 static void reload(lj_mv *mv)
 {
-    lj_scene *sc = scene_of();
+    lj_scene *sc = lj_ctx_scene();
     int base;
     uint8_t ofs[4];
     mv->preset = 0;
@@ -231,7 +225,7 @@ static void move_to(lj_mv *mv, int32_t pan, int32_t tilt, int force_absolute)
     if (!which || mv->master < 0) return;
     dp = pan - mv->pan; dt = tilt - mv->tilt;
     lj_lock();
-    sc = scene_of();
+    sc = lj_ctx_scene();
     if (sc) {
         for (i = 0; i < mv->nfx; i++) {
             if (mv->absolute || force_absolute || mv->fx[i] == mv->master) write_pos(mv, sc, mv->fx[i], pan, tilt, which);
@@ -248,7 +242,7 @@ static void set_states(lj_mv *mv, int which, uint8_t state)
     lj_scene *sc;
     int i;
     lj_lock();
-    sc = scene_of();
+    sc = lj_ctx_scene();
     if (sc) { for (i = 0; i < mv->nfx; i++) write_state(mv, sc, mv->fx[i], which, state); mark_modified(); }
     lj_unlock();
 }
@@ -406,7 +400,7 @@ static void on_widget(lj_widget *w, int ev, void *ud)
     else if (strcmp(n, "MvClear") == 0) lj_ctl_movement_preset_clear(mv->win);
     else if (strcmp(n, "MvClrMacro") == 0) {   /* W3: clears the movement macro of the selected fixtures from the scene */
         lj_scene *sc; int i;
-        lj_lock(); sc = scene_of();
+        lj_lock(); sc = lj_ctx_scene();
         if (sc) { for (i = 0; i < mv->nfx; i++) memset(&sc->macro[mv->fx[i]], 0, sizeof sc->macro[0]); mark_modified(); }
         lj_unlock();
     }
@@ -561,7 +555,7 @@ void lj_ctl_movement_refresh(lj_window *win) { lj_mv *mv = mv_of(win); if (mv) r
 int lj_ctl_movement_position(lj_window *win, int32_t *pan, int32_t *tilt)
 {
     lj_mv *mv = mv_of(win);
-    if (!mv || mv->master < 0 || !scene_of() || fixture_base(mv, mv->master) < 0) return -1;
+    if (!mv || mv->master < 0 || !lj_ctx_scene() || fixture_base(mv, mv->master) < 0) return -1;
     *pan = mv->pan; *tilt = mv->tilt;
     return 0;
 }
@@ -577,7 +571,7 @@ void lj_ctl_movement_home_selected(void)
     int f, n = 0;
     memset(&mv, 0, sizeof mv);
     lj_lock();
-    sc = scene_of();
+    sc = lj_ctx_scene();
     for (f = 0; sc && f < LJ_FIXTURES; f++) {
         if (!lj_sel_is_selected(f) && f != lj_sel_master()) continue;
         if (!(mv.p = lj_show_profile(c->show, f)) || (!mv.p->pt16 && !mv.p->pt8)) continue;
@@ -632,7 +626,7 @@ int lj_ctl_movement_preset_record(lj_window *win, int n, int filter)
     int32_t pan, tilt;
     if (!mv || n < 1 || n > LJ_PRESETS || !show || mv->master < 0) return -1;
     lj_lock();
-    sc = scene_of();
+    sc = lj_ctx_scene();
     if (!sc) rc = -1;
     else for (f = 0; f < LJ_FIXTURES; f++) {
         lj_preset *pr = &show->preset[f][n - 1];
@@ -653,7 +647,7 @@ int lj_ctl_movement_preset_apply(lj_window *win, int n)
     int i, rc = -1;
     if (!mv || n < 1 || n > LJ_PRESETS || !show) return -1;
     lj_lock();
-    sc = scene_of();
+    sc = lj_ctx_scene();
     if (sc) for (i = 0; i < mv->nfx; i++) {
         const lj_preset *pr = &show->preset[mv->fx[i]][n - 1];
         if (!pr->used || fixture_base(mv, mv->fx[i]) < 0) continue;
@@ -674,7 +668,7 @@ void lj_ctl_movement_preset_clear(lj_window *win)
     int i;
     if (!mv) return;
     lj_lock();
-    sc = scene_of();
+    sc = lj_ctx_scene();
     if (sc) { for (i = 0; i < mv->nfx; i++) sc->preset[mv->fx[i]] = 0; mark_modified(); }
     lj_unlock();
     reload(mv);

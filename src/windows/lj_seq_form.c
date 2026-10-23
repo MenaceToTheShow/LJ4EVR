@@ -39,14 +39,6 @@ static struct { uint32_t se, st, fe, ft; } lj_sf_bar;
 
 static lj_sequence *lj_sf_seq(void) { lj_ctx *c = lj_ctx_get(); return c->show ? c->show->current_seq : NULL; }
 
-static lj_scene *lj_sf_scene(void)
-{
-    lj_ctx *c = lj_ctx_get();
-    lj_sequence *s = lj_sf_seq();
-    if (!s || s->n == 0 || !s->scenes) return NULL;
-    if (c->current_scene >= s->n) c->current_scene = (uint16_t)(s->n - 1);
-    return &s->scenes[c->current_scene];
-}
 
 void lj_seq_form_post_current(void)
 {
@@ -111,7 +103,7 @@ static void lj_sf_update(void)
 {
     lj_ctx *c = lj_ctx_get();
     lj_sequence *s = lj_sf_seq();
-    lj_scene *sc = lj_sf_scene();
+    lj_scene *sc = lj_ctx_scene();
     char buf[64];
     uint32_t number = s ? s->number : 0;
     const char *name = s ? s->name : "";
@@ -223,7 +215,7 @@ int lj_seq_form_goto(int index)
 int lj_seq_form_set_times(uint32_t scene_ms, uint32_t fade_ms)
 {
     lj_sequence *s = lj_sf_seq();
-    lj_scene *sc = lj_sf_scene();
+    lj_scene *sc = lj_ctx_scene();
     int changed = 0;
     uint16_t i;
     if (!s || !sc) return -1;
@@ -245,7 +237,7 @@ int lj_seq_form_set_times(uint32_t scene_ms, uint32_t fade_ms)
 
 static void lj_sf_commit_times(void)
 {
-    lj_scene *sc = lj_sf_scene();
+    lj_scene *sc = lj_ctx_scene();
     uint32_t sm, fm;
     const char *es = lj_sf_win ? lj_w_edit_text(lj_window_find(lj_sf_win, "ES")) : NULL;
     const char *ef = lj_sf_win ? lj_w_edit_text(lj_window_find(lj_sf_win, "EF")) : NULL;
@@ -454,7 +446,7 @@ static void lj_sf_on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_sf_cl
 static void lj_sf_on_sync(lj_widget *w, void *ud)
 {
     lj_sequence *s = lj_sf_seq();
-    lj_scene *sc = lj_sf_scene();
+    lj_scene *sc = lj_ctx_scene();
     (void)ud;
     if (lj_sf_loading || !s) return;
     s->sync_times = (uint8_t)lj_w_checkbox_checked(w);
@@ -465,7 +457,7 @@ static void lj_sf_on_sync(lj_widget *w, void *ud)
 static void lj_sf_on_global_scene(lj_widget *w, void *ud)
 {
     lj_sequence *s = lj_sf_seq();
-    lj_scene *sc = lj_sf_scene();
+    lj_scene *sc = lj_ctx_scene();
     (void)ud;
     if (lj_sf_loading || !s) return;
     s->global_scene_time = (uint8_t)lj_w_checkbox_checked(w);
@@ -476,7 +468,7 @@ static void lj_sf_on_global_scene(lj_widget *w, void *ud)
 static void lj_sf_on_global_fade(lj_widget *w, void *ud)
 {
     lj_sequence *s = lj_sf_seq();
-    lj_scene *sc = lj_sf_scene();
+    lj_scene *sc = lj_ctx_scene();
     (void)ud;
     if (lj_sf_loading || !s) return;
     s->global_fade_time = (uint8_t)lj_w_checkbox_checked(w);
@@ -492,7 +484,7 @@ static void lj_sf_on_ud(lj_widget *w, void *ud)
     int d = lj_w_udbutton_delta(w);
     uint32_t sm, fm, step = (uint32_t)LJ_SEQ_TIME_STEP_MS;
     lj_sf_commit_times();
-    sc = lj_sf_scene();
+    sc = lj_ctx_scene();
     if (!sc) return;
     sm = sc->scene_ms; fm = sc->fade_ms;
     if (ud) { sm = d > 0 ? sm + step : sm > step ? sm - step : 0; }

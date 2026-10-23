@@ -122,20 +122,13 @@ unsigned lj_ctl_states(const lj_ctl_win *c, const lj_ctl_row *row)
 
 /* ---- the scene seam (lj_ctl.h): current scene under lj_lock ---- */
 
-static lj_scene *cur_scene(void)
-{
-    lj_ctx *x = lj_ctx_get();
-    lj_sequence *s = x->show ? x->show->current_seq : NULL;
-    if (!s || !s->scenes || x->current_scene >= s->n) return NULL;
-    return &s->scenes[x->current_scene];
-}
 
 static int prog_write(uint16_t ch, int value, int state)    /* value < 0 = keep; state LJ_PROG_KEEP = keep; 0 / -1 */
 {
     lj_scene *s;
     if (ch >= LJ_CHANS) return -1;
     lj_lock();
-    s = cur_scene();
+    s = lj_ctx_scene();
     if (s) {
         if (value >= 0) s->val[ch] = (uint8_t)value;
         if (state != LJ_PROG_KEEP) s->state[ch] = (uint8_t)state;
@@ -152,7 +145,7 @@ int lj_prog_get(uint16_t ch, uint8_t *value, uint8_t *state)
     lj_scene *s;
     if (ch >= LJ_CHANS) return -1;
     lj_lock();
-    s = cur_scene();
+    s = lj_ctx_scene();
     if (s) { if (value) *value = s->val[ch]; if (state) *state = s->state[ch]; }
     lj_unlock();
     return s ? 0 : -1;
@@ -205,7 +198,7 @@ int lj_prog_cycle_state(uint16_t ch, int dir, uint8_t states_allowed)
     unsigned mask = (states_allowed & LJ_STATES_ALL) ? (states_allowed & LJ_STATES_ALL) : LJ_STATES_ALL;
     if (ch >= LJ_CHANS) return LJ_OFF;
     lj_lock();
-    s = cur_scene();
+    s = lj_ctx_scene();
     if (s) {
         st = s->state[ch];
         for (i = 1; i <= 3; i++) {                       /* D10: +1 Off -> Snap -> Fade -> Off, -1 the reverse; ME-27: skip what the mask forbids */

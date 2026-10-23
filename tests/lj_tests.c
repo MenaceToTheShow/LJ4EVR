@@ -100,6 +100,7 @@ int lj_test_profiles_w3(int argc, char **argv);   /* W3 profiles */
 int lj_test_genmacro_editor(int argc, char **argv);   /* W3 genmacro: the editor and its dialogs headless */
 /* W4 (appended) */
 int lj_test_align(int argc, char **argv);   /* W4 track 0, ME-43 */
+int lj_test_ctx_scene(int argc, char **argv);   /* W4 entry, ME-129 */
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
     { "font_cells", lj_test_font_cells },
@@ -194,6 +195,7 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_genmacro_editor", lj_test_genmacro_editor },   /* genmacro: Generic Macro Editor + Save / Select Macro headless, ME-16, F19 caption, F39 shapes, golden W3GM_EDITOR (tests/ui/test_genmacro_editor.c) */
     /* W4 (appended) */
     { "test_align", lj_test_align },   /* ME-43: the full align pass reproduces every DFM at its design client, 0 misplaced (tests/ui/test_align.c) */
+    { "test_ctx_scene", lj_test_ctx_scene },   /* ME-129: one current-scene getter, NULL past the end, the clamp once where the sequence shrinks (tests/ui/test_ctx_scene.c) */
 };
 
 int main(int argc, char **argv)

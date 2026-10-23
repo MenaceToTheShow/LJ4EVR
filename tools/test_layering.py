@@ -79,6 +79,9 @@ KEYWORDS = {"void", "int", "char", "unsigned", "signed", "short", "long", "const
             "int32_t", "int64_t", "bool", "_Bool", "restrict", "_Static_assert", "register", "auto"}
 
 NOOP_RE = re.compile(r'void\s+(\w+)\s*\(\s*lj_widget\s*\*\s*w\s*,\s*void\s*\*\s*ud\s*\)\s*\{\s*\(void\)\s*w\s*;\s*\(void\)\s*ud\s*;\s*\}')
+SCENE_GETTER_RE = re.compile(r'\bstatic\s+(?:const\s+)?lj_scene\s*\*\s*(\w+)\s*\(\s*void\s*\)')                       # ME-129
+COPY_RE = re.compile(r'\bstatic\s+(?:(?:int|void)\s+(\w+)\s*\(\s*lj_window\s*\*\s*\w+\s*,\s*const\s+char\s*\*\s*name\s*,\s*const\s+char\s*\*\s*\w+\s*\)'
+                     r'|lj_library\s*\*\s*(lib)\s*\(\s*void\s*\)|lj_ctx\s*\*\s*(ctx)\s*\(\s*void\s*\))')                    # ME-129
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*([<"])([^>"]+)[>"]', re.M)
 
 
@@ -232,7 +235,7 @@ def main():
     findings = []
     headers = []
     nfiles = 0
-    noops = ternaries = 0
+    noops = ternaries = scene_getters = helper_copies = 0
     selfcheck_ids()
     group_text = "".join(open(os.path.join(src, g), encoding="latin-1").read() for g in GROUP_HEADERS)
     for g in GROUP_HEADERS:
@@ -315,6 +318,14 @@ def main():
             for _ in re.finditer(r'\?\s*lj_ini_get[is]\s*\(', code):
                 ternaries += 1
                 findings.append("%s: \"? lj_ini_get\" ternary; lj_ini_geti/gets take a NULL ini (ME-101)" % rel)
+            # 9. ME-129 counts, both must stay 0: private current-scene getters (lj_ctx_scene is the one) and private
+            #    set-caption-by-name / lib() / ctx() copies (lj_window_set_text, lj_ctx_get()->lib, lj_ctx_get())
+            for m in SCENE_GETTER_RE.finditer(code):
+                scene_getters += 1
+                findings.append("%s: %s is a private current-scene getter; use lj_ctx_scene (ME-129)" % (rel, m.group(1)))
+            for m in COPY_RE.finditer(code):
+                helper_copies += 1
+                findings.append("%s: %s copies lj_window_set_text / lj_ctx_get (ME-129)" % (rel, m.group(1) or m.group(2) or m.group(3)))
     # 6. headers alone
     with tempfile.TemporaryDirectory() as tmp:
         for h in headers:
@@ -323,8 +334,9 @@ def main():
                 findings.append("%s: does not compile alone:\n    %s" % (h, err.replace("\n", "\n    ")))
     for f in findings:
         print(f)
-    print("test_layering: %d file(s) checked, %d header(s) compiled alone, noop handlers %d, ini ternaries %d, %d finding(s)"
-          % (nfiles, len(headers), noops, ternaries, len(findings)))
+    print("test_layering: %d file(s) checked, %d header(s) compiled alone, noop handlers %d, ini ternaries %d, "
+          "scene getters %d, set-text/lib/ctx copies %d, %d finding(s)"
+          % (nfiles, len(headers), noops, ternaries, scene_getters, helper_copies, len(findings)))
     return 1 if findings else 0
 
 

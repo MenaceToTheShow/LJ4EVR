@@ -27,9 +27,7 @@
 #define GS2_EXPORT_DIR "Export"   /* PROPOSAL folder: LJ2 asks with a TSaveDialog / folder box */
 #define GS2_ROWS 256
 
-static lj_library *lib(void) { return lj_ctx_get()->lib; }
 static lj_show *show(void) { return lj_ctx_get()->show; }
-static void caption(lj_window *win, const char *name, const char *text) { lj_widget *w = win ? lj_window_find(win, name) : NULL; if (w) { lj_w_set_caption(w, text); lj_widget_invalidate(w); } }
 static int ends_with(const char *s, const char *ext)   /* ASCII case fold */
 {
     size_t a = strlen(s), b = strlen(ext), i;
@@ -50,7 +48,7 @@ static int user_exists(const char *file)   /* UserFixtureDef\<base>.GS2 is on di
     FILE *f;
     const char *dot = strrchr(file, '.');
     snprintf(base, sizeof base, "%.*s", (int)(dot ? (size_t)(dot - file) : strlen(file)), file);
-    if (snprintf(rel, sizeof rel, "UserFixtureDef/%s.GS2", base) >= (int)sizeof rel || lj_library_path(lib(), rel, path, sizeof path) != 0 || !(f = fopen(path, "rb"))) return 0;
+    if (snprintf(rel, sizeof rel, "UserFixtureDef/%s.GS2", base) >= (int)sizeof rel || lj_library_path(lj_ctx_get()->lib, rel, path, sizeof path) != 0 || !(f = fopen(path, "rb"))) return 0;
     fclose(f);
     return 1;
 }
@@ -60,8 +58,8 @@ static void im_list(void)
     static const char *const ext[] = { ".Udf", ".Udo", ".GS2" };
     int i, k;
     im.n = 0;
-    for (k = 0; lib() && k < LJ_COUNT_OF(ext); k++) {
-        int got = lj_library_list_files(lib(), GS2_IMPORT_DIR, ext[k], im.names + im.n, GS2_ROWS - im.n);
+    for (k = 0; lj_ctx_get()->lib && k < LJ_COUNT_OF(ext); k++) {
+        int got = lj_library_list_files(lj_ctx_get()->lib, GS2_IMPORT_DIR, ext[k], im.names + im.n, GS2_ROWS - im.n);
         if (got > 0) im.n += got;
     }
     for (i = 0; i < im.n; i++) {
@@ -69,7 +67,7 @@ static void im_list(void)
                  user_exists(im.names[i]) ? "Exists" : "New");   /* PROPOSAL rig: the Type / Status texts */
         im.rowp[i] = im.rows[i];
     }
-    if (im.win) { lj_w_listview_set_items(lj_window_find(im.win, "lv1"), im.rowp, im.n); caption(im.win, "lFileName", im.dir); }
+    if (im.win) { lj_w_listview_set_items(lj_window_find(im.win, "lv1"), im.rowp, im.n); lj_window_set_text(im.win, "lFileName", im.dir); }
 }
 
 int lj_gs2_import_file(const char *path, char *err, size_t cap)
@@ -77,10 +75,10 @@ int lj_gs2_import_file(const char *path, char *err, size_t cap)
     lj_profile p;
     char rel[96], dst[LJ_PATH_CAP];
     int rc;
-    if (!lib()) { snprintf(err, cap, "no library"); return -1; }
+    if (!lj_ctx_get()->lib) { snprintf(err, cap, "no library"); return -1; }
     memset(&p, 0, sizeof p);
     rc = ends_with(path, ".GS2") ? lj_gs2_load(path, &p, err, cap) : lj_udf_import(path, &p, err, cap);
-    if (rc == 0 && (snprintf(rel, sizeof rel, "UserFixtureDef/%s", p.gs2_file) >= (int)sizeof rel || lj_library_path(lib(), rel, dst, sizeof dst) != 0 || lj_gs2_save(dst, &p) != 0)) { snprintf(err, cap, "cannot write %s", rel); rc = -1; }
+    if (rc == 0 && (snprintf(rel, sizeof rel, "UserFixtureDef/%s", p.gs2_file) >= (int)sizeof rel || lj_library_path(lj_ctx_get()->lib, rel, dst, sizeof dst) != 0 || lj_gs2_save(dst, &p) != 0)) { snprintf(err, cap, "cannot write %s", rel); rc = -1; }
     lj_gs2_free(&p);
     return rc;
 }
@@ -92,7 +90,7 @@ int lj_gs2_import_folder(int keep_existing)
     im_list();
     for (i = 0; i < im.n; i++) {
         if (keep_existing && user_exists(im.names[i])) continue;
-        if (snprintf(rel, sizeof rel, "%s/%s", GS2_IMPORT_DIR, im.names[i]) >= (int)sizeof rel || lj_library_path(lib(), rel, path, sizeof path) != 0) continue;
+        if (snprintf(rel, sizeof rel, "%s/%s", GS2_IMPORT_DIR, im.names[i]) >= (int)sizeof rel || lj_library_path(lj_ctx_get()->lib, rel, path, sizeof path) != 0) continue;
         if (lj_gs2_import_file(path, err, sizeof err) != 0) { lj_log("import profile: %s: %s", im.names[i], err); continue; }
         done++;
     }
@@ -114,7 +112,7 @@ lj_window *lj_gs2_import_open(void)
     if (im.win) return im.win;
     if (!(im.win = lj_window_create(&lj_form_TFIXTUREIMPORTFORM, im_b))) { lj_log("import profile: cannot create TFixtureImportForm"); return NULL; }
     im.close_pending = 0;
-    if (!lib() || lj_library_path(lib(), GS2_IMPORT_DIR, im.dir, sizeof im.dir) != 0) im.dir[0] = 0;
+    if (!lj_ctx_get()->lib || lj_library_path(lj_ctx_get()->lib, GS2_IMPORT_DIR, im.dir, sizeof im.dir) != 0) im.dir[0] = 0;
     else lj_fs_mkdir(im.dir);
     if ((w = lj_window_find(im.win, "cbImportOVFiles")) != NULL) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; }
     on_cancel(im.win, "bCancel", &im.close_pending);
@@ -130,7 +128,7 @@ void lj_gs2_import_refresh(void) { if (im.close_pending) lj_gs2_import_close(); 
 
 static struct { lj_window *win, *all; int close_pending, all_close, n; const char *items[GS2_ROWS]; char names[GS2_ROWS][64], log[GS2_ROWS][96]; const char *logp[GS2_ROWS]; } ex;
 
-static int export_dir(char *out, size_t cap) { if (!lib() || lj_library_path(lib(), GS2_EXPORT_DIR, out, cap) != 0) return -1; lj_fs_mkdir(out); return 0; }
+static int export_dir(char *out, size_t cap) { if (!lj_ctx_get()->lib || lj_library_path(lj_ctx_get()->lib, GS2_EXPORT_DIR, out, cap) != 0) return -1; lj_fs_mkdir(out); return 0; }
 
 int lj_gs2_export_one(int index, char *err, size_t cap)
 {
@@ -183,7 +181,7 @@ lj_window *lj_gs2_export_open(void)
     ex.close_pending = 0;
     for (i = 0; s && i < s->ngs2 && i < GS2_ROWS; i++) { lj_str_copy(ex.names[i], sizeof ex.names[i], s->gs2[i].gs2_file); ex.items[i] = ex.names[i]; }   /* copies: a reload frees show->gs2 */
     lj_w_list_set_items(lj_window_find(ex.win, "lb1"), ex.items, i);
-    caption(ex.win, "lExportFile", export_dir(dir, sizeof dir) == 0 ? dir : "");
+    lj_window_set_text(ex.win, "lExportFile", export_dir(dir, sizeof dir) == 0 ? dir : "");
     on_cancel(ex.win, "bCancel", &ex.close_pending);
     lj_win_show(ex.win, 0);
     return ex.win;

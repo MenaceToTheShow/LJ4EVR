@@ -5,6 +5,12 @@ single source of the number.
 
 ## [Unreleased]
 
+- W4 track 0 (ME-125): full VCL align with AdjustClientRect insets and the DFM tab page rect (`test_align` 0
+  misplaced), group-header pairing / identifier / OS_ALLOW checks, dfm2c event names and whole blobs from the binary
+  DFMs, shared scrollbar fitting, five sans13 glyphs; `widthcorpus.py` retired.
+- W4 contracts (`docs/w4-contracts.md`): 102 W4 window ids in ten families with stub behaviour files, the W4 actions,
+  one current-scene getter and one set-text helper (ME-129), the caption dump verb and `tools/caption_diff.py`.
+
 ## [0.3.0] - 2026-10-22 - W3 Show control
 
 Cue lists, generic and movement macros, Generic DMX Control, follow spots, sequence fades, user fixture profiles and the

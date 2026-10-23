@@ -43,7 +43,8 @@ enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLC
                   LJ_US_ASSERT_FILE, LJ_US_ASSERT_PPS, LJ_US_ASSERT_CLIENT, LJ_US_ASSERT_POS, LJ_US_LOG, LJ_US_QUIT,
                   /* W2 (appended) */ LJ_US_MIDI, LJ_US_HOTKEY, LJ_US_ASSERT_LED, LJ_US_ASSERT_FILE_LINE, LJ_US_SLEEP_UNTIL_TICK, LJ_US_MOVE,
                   /* W3 (appended; assert_pos keeps its W1 row: a fixture number as the first word is the W3 form) */
-                  LJ_US_CL_LOAD, LJ_US_CL_GOTO, LJ_US_CL_EXECUTE, LJ_US_CL_ASSERT_LINE, LJ_US_GS2_IMPORT, LJ_US_ASSERT_PROMPT, LJ_US_MM_SET, LJ_US_VERBS };
+                  LJ_US_CL_LOAD, LJ_US_CL_GOTO, LJ_US_CL_EXECUTE, LJ_US_CL_ASSERT_LINE, LJ_US_GS2_IMPORT, LJ_US_ASSERT_PROMPT, LJ_US_MM_SET,
+                  /* W4 (appended) */ LJ_US_DUMP_CAPTIONS, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
     { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
@@ -51,7 +52,9 @@ static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ
     /* W2 (appended; docs/ui-script.md "W2 verbs"): parsed and type-checked here, executed by the app track (lj_us_exec_w2) */
     { "midi", 3, 3 }, { "hotkey", 2, 2 }, { "assert_led", 2, 2 }, { "assert_file_line", 2, 2 }, { "sleep_until_tick", 1, 1 }, { "move", 3, 3 },
     /* W3 (appended; docs/ui-script.md "W3 verbs") */
-    { "cl_load", 1, 1 }, { "cl_goto", 1, 1 }, { "cl_execute", 0, 0 }, { "cl_assert_line", 2, 2 }, { "gs2_import", 1, 1 }, { "assert_prompt", 1, 1 }, { "mm_set", 4, 4 } };   /* assert_view gains W2 field names inside its W1 row */
+    { "cl_load", 1, 1 }, { "cl_goto", 1, 1 }, { "cl_execute", 0, 0 }, { "cl_assert_line", 2, 2 }, { "gs2_import", 1, 1 }, { "assert_prompt", 1, 1 }, { "mm_set", 4, 4 },
+    /* W4 (appended; docs/ui-script.md "W4 verbs") */
+    { "dump_captions", 1, 1 } };   /* assert_view gains W2 field names inside its W1 row */
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -844,6 +847,45 @@ static int lj_us_exec_w3(lj_us_stmt *st)
     }
 }
 
+/* ---- W4: dump_captions <path> (W4-CAP): the runtime Caption / Text / Hint of every widget and the Caption / Hint of
+ * every menu item of each open window, one "Class<TAB>object<TAB>property<TAB>value" line each (CP1252), appended to
+ * path; tools/caption_diff.py compares them with 13-dfm-captions.tsv. ---- */
+static void lj_us_dump_widget(FILE *f, const char *form, const lj_widget *w)
+{
+    const lj_widget *c;
+    const char *t;
+    if (w->desc && w->name) {
+        if ((t = lj_w_caption(w)) != NULL) fprintf(f, "%s\t%s\tCaption\t%s\n", form, w->name, t);
+        if ((t = lj_w_edit_text(w)) != NULL) fprintf(f, "%s\t%s\tText\t%s\n", form, w->name, t);
+        if (w->hint) fprintf(f, "%s\t%s\tHint\t%s\n", form, w->name, w->hint);
+    }
+    for (c = w->first; c; c = c->next) lj_us_dump_widget(f, form, c);
+}
+
+static int lj_us_dump_captions(const char *path)
+{
+    FILE *f = fopen(path, "ab");
+    int id, i;
+    if (!f) { lj_us_failf(lj_us.line, "dump_captions: cannot write %s", path); return -1; }
+    for (id = 0; id < LJ_WIN_COUNT; id++) {
+        lj_window *win = lj_win_get((enum lj_win)id);
+        const lj_form_desc *d = win ? lj_window_desc(win) : NULL;
+        lj_menu *m;
+        if (!d || !d->class_name) continue;
+        fprintf(f, "%s\t%s\tCaption\t%s\n", d->class_name, d->name ? d->name : "", lj_window_caption(win)->text);
+        lj_us_dump_widget(f, d->class_name, lj_window_root(win));
+        if ((m = lj_window_menus(win)) != NULL)
+            for (i = 0; i < m->nrt; i++) {
+                const lj_menu_item_desc *it = m->rt[i].item;
+                if (!it || !it->name) continue;
+                if (it->caption) fprintf(f, "%s\t%s\tCaption\t%s\n", d->class_name, it->name, it->caption);
+                if (it->hint) fprintf(f, "%s\t%s\tHint\t%s\n", d->class_name, it->name, it->hint);
+            }
+    }
+    fclose(f);
+    return 0;
+}
+
 /* ---- step ------------------------------------------------------------------------- */
 
 static int lj_us_exec(lj_us_stmt *st)
@@ -937,6 +979,8 @@ static int lj_us_exec(lj_us_stmt *st)
         return lj_us_exec_w2(st);
     case LJ_US_CL_LOAD: case LJ_US_CL_GOTO: case LJ_US_CL_EXECUTE: case LJ_US_CL_ASSERT_LINE: case LJ_US_GS2_IMPORT: case LJ_US_ASSERT_PROMPT: case LJ_US_MM_SET:
         return lj_us_exec_w3(st);
+    case LJ_US_DUMP_CAPTIONS:
+        return lj_us_dump_captions(st->arg[0]);
     default:
         return -1;
     }

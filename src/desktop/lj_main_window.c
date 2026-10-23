@@ -50,7 +50,6 @@ static const lj_main_inert_leaf lj_inert[] = {   /* dropped back-ends: greyed, h
     { "M_RestartSound", LJ_NA_HINT }, { "M_StartDAPlayer", LJ_NA_HINT }, { "M_WinampModule", LJ_NA_HINT },
     { "M_OfflineLaunch", LJ_NA_HINT }, { "M_OfflineEnable", LJ_NA_HINT }, { "M_OfflineDisable", LJ_NA_HINT }, { "OfflinePrefs", LJ_NA_HINT },
     { "M_OfflineAutoLaunch", LJ_NA_HINT }, { "M_Autoloadlastusedscene", LJ_NA_HINT }, { "M_OfflineFixtureSelect", LJ_NA_HINT }, { "M_AutoMinimizeondialogs", LJ_NA_HINT },
-    { "M_FingersSetup", LJ_NA_HINT },
 };
 static const char lj_removed[] = "Offlinebar1";   /* View > Toolbars > Offline Toolbar: removed under D12, docs/fidelity.md */
 
@@ -153,6 +152,7 @@ static void h_fingers(lj_widget *w, void *ud)
     (void)ud;
     if (item_is(w, "M_FingersStatus")) fn(LJ_FN_FINGERS_STATUS_PANEL);
     else if (item_is(w, "M_VirtualFingers")) fn(LJ_FN_VIRTUAL_FINGERS);
+    else if (item_is(w, "M_FingersSetup")) lj_desktop_run_action(LJ_ACT_FINGERS_SETUP, 0);   /* W4: keyboard / MIDI transport (D16) */
     else h_inert(w, ud);
 }
 static void h_followspot(lj_widget *w, void *ud) { (void)w; (void)ud; lj_desktop_run_action(LJ_ACT_FOLLOWSPOT_SETTINGS, 0); }
@@ -209,7 +209,8 @@ static void h_view_control(lj_widget *w, void *ud)   /* ViewControlClick: by Tag
     }
     if (item_is(w, "M_ViewBackgroundCue")) fn(LJ_FN_TOGGLE_BGCUE_CONTROL);
     else if (item_is(w, "M_ViewStatics")) fn(LJ_FN_STATICS_CONTROL);
-    else h_inert(w, ud);   /* M_ViewDebug (hidden): the W4 Debug window */
+    else if (item_is(w, "M_ViewDebug")) lj_desktop_run_action(LJ_ACT_DEBUG_WINDOW, 0);   /* hidden in the DFM; the debug track settles the unhide (PROPOSAL) */
+    else h_inert(w, ud);
 }
 
 /* Clear This / Selected Fixtures: every channel of the footprint Off in the current scene [01 s3.6] */

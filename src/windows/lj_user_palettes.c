@@ -93,7 +93,6 @@ static int kind_offsets(const lj_profile *p, uint8_t on[LJ_PROFILE_CH])
     return n;
 }
 static int takes(int f, int filter) { return filter == 2 ? 1 : filter == 1 ? lj_sel_is_selected(f) : f == lj_sel_master(); }
-static lj_scene *scene_now(void) { lj_ctx *c = lj_ctx_get(); return c->show && c->show->current_seq && c->current_scene < c->show->current_seq->n ? &c->show->current_seq->scenes[c->current_scene] : NULL; }
 
 /* visits every channel (address code) of the kind for the filtered fixtures; fn returns 1 when it counted */
 static int each_channel(int filter, int (*fn)(int ch, void *ud), void *ud)
@@ -109,14 +108,14 @@ static int each_channel(int filter, int (*fn)(int ch, void *ud), void *ud)
     }
     return n;
 }
-static int rec_ch(int ch, void *ud) { lj_user_palette *e = ud; lj_scene *s = scene_now(); e->val[ch] = s->val[ch]; e->state[ch] = s->state[ch]; return 1; }
-static int put_ch(int ch, void *ud) { const lj_user_palette *e = ud; lj_scene *s = scene_now(); if (e->state[ch] == LJ_OFF) return 0; s->val[ch] = e->val[ch]; s->state[ch] = e->state[ch]; return 1; }   /* only Snap/Fade entries apply [04 s9] */
-static int clr_ch(int ch, void *ud) { const lj_user_palette *e = ud; lj_scene *s = scene_now(); if (e->state[ch] == LJ_OFF || s->state[ch] == LJ_OFF || s->val[ch] != e->val[ch]) return 0; s->state[ch] = LJ_OFF; return 1; }
+static int rec_ch(int ch, void *ud) { lj_user_palette *e = ud; lj_scene *s = lj_ctx_scene(); e->val[ch] = s->val[ch]; e->state[ch] = s->state[ch]; return 1; }
+static int put_ch(int ch, void *ud) { const lj_user_palette *e = ud; lj_scene *s = lj_ctx_scene(); if (e->state[ch] == LJ_OFF) return 0; s->val[ch] = e->val[ch]; s->state[ch] = e->state[ch]; return 1; }   /* only Snap/Fade entries apply [04 s9] */
+static int clr_ch(int ch, void *ud) { const lj_user_palette *e = ud; lj_scene *s = lj_ctx_scene(); if (e->state[ch] == LJ_OFF || s->state[ch] == LJ_OFF || s->val[ch] != e->val[ch]) return 0; s->state[ch] = LJ_OFF; return 1; }
 
 int lj_user_palettes_record(int index, const char *name, int filter)
 {
     lj_user_palette *e;
-    if (!up.win || !scene_now() || index >= up.list.n) return -1;
+    if (!up.win || !lj_ctx_scene() || index >= up.list.n) return -1;
     e = (lj_user_palette *)calloc(1, sizeof *e);
     if (!e) lj_fatal("user palettes: out of memory");
     lj_lock();
@@ -132,7 +131,7 @@ int lj_user_palettes_record(int index, const char *name, int filter)
 static int apply(int index, int filter, int (*fn)(int, void *))
 {
     int n;
-    if (!up.win || !scene_now() || index < 0 || index >= up.list.n) return -1;
+    if (!up.win || !lj_ctx_scene() || index < 0 || index >= up.list.n) return -1;
     lj_lock();
     n = each_channel(filter, fn, &up.list.e[index]);
     lj_unlock();

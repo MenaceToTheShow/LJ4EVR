@@ -99,12 +99,11 @@ static struct {
 } s;
 
 /* ---------------------------------------------------------------- the list and its lines */
-static lj_ctx *ctx(void) { return lj_ctx_get(); }
-static int running(void) { return ctx()->cl && ctx()->cl->state != LJ_CL_IDLE; }
+static int running(void) { return lj_ctx_get()->cl && lj_ctx_get()->cl->state != LJ_CL_IDLE; }
 
 lj_cuelist *lj_cuelist_form_list(void)
 {
-    lj_show *sh = ctx()->show;
+    lj_show *sh = lj_ctx_get()->show;
     if (!sh) return NULL;
     if (!sh->current_cl) sh->current_cl = lj_cuelist_new_rec();   /* the show owns it (lj_show_free) */
     return sh->current_cl;
@@ -152,7 +151,7 @@ static void param_text(const lj_cl_line *l, char *dst, size_t cap)
 
 int lj_cuelist_form_row(uint32_t n, char *dst, size_t cap)
 {
-    lj_show *sh = ctx()->show;
+    lj_show *sh = lj_ctx_get()->show;
     const lj_cl_line *l = line_of(n);
     char par[96], ct[80];
     int k;
@@ -183,7 +182,7 @@ static uint32_t cell_rgb(const lj_cl_line *l, int col)
 static void lv_paint(lj_widget *w, lj_surface *sf)
 {
     lj_w_listview *v = (lj_w_listview *)w;
-    const lj_cl_status *st = ctx()->cl;
+    const lj_cl_status *st = lj_ctx_get()->cl;
     lj_cuelist *cl = lj_cuelist_form_list();
     int ax, ay, i, c, top, area_w, use_color;
     s.lv_orig->paint(w, sf);
@@ -335,7 +334,7 @@ static void recent_push(int cmd)
     for (i = 0; i < CL_RECENT; i++) if (s.recent[i] == cmd) { j = i; break; }
     for (; j > 0; j--) s.recent[j] = s.recent[j - 1];
     s.recent[0] = cmd;
-    if (ctx()->forms_ini) for (i = 0; i < CL_RECENT; i++) { char k[16]; snprintf(k, sizeof k, "Cmd%d", i + 1); lj_ini_sets(ctx()->forms_ini, CL_SEC, k, lj_cl_cmd_words[s.recent[i]]); }
+    if (lj_ctx_get()->forms_ini) for (i = 0; i < CL_RECENT; i++) { char k[16]; snprintf(k, sizeof k, "Cmd%d", i + 1); lj_ini_sets(lj_ctx_get()->forms_ini, CL_SEC, k, lj_cl_cmd_words[s.recent[i]]); }
 }
 static void recent_load(void)
 {
@@ -347,7 +346,7 @@ static void recent_load(void)
         char k[16];
         const char *v;
         snprintf(k, sizeof k, "Cmd%d", i + 1);
-        v = lj_ini_gets(ctx()->forms_ini, CL_SEC, k, NULL);
+        v = lj_ini_gets(lj_ctx_get()->forms_ini, CL_SEC, k, NULL);
         s.recent[i] = dflt[i];
         if (v) for (c = 0, s.recent[i] = 0; c < LJ_CL_CMD_COUNT; c++) if (!strcmp(v, lj_cl_cmd_words[c])) s.recent[i] = c;
         if (s.recent[i] == LJ_CL_SET_CUE_TRIG) s.recent[i] = 0;   /* a panel action, never a stored command */
@@ -358,13 +357,13 @@ int lj_cuelist_form_recent(int i) { return i >= 0 && i < CL_RECENT ? s.recent[i]
 void lj_cuelist_form_apply_cmd(int cmd)
 {
     lj_cl_line *l = sel();
-    lj_show *sh = ctx()->show;
+    lj_show *sh = lj_ctx_get()->show;
     if (cmd <= LJ_CL_NONE || cmd >= LJ_CL_CMD_COUNT || lj_cl_cmd_inert(cmd) || cmd >= LJ_CL_FLASH_SEQUENCE) return;   /* drag-only commands come by drop */
     if (cmd == LJ_CL_SET_CUE_TRIG) { if (l) lj_win_open(LJ_WIN_CL_SET_CUE_TRIG); return; }
     if (!l) return;
     recent_push(cmd);
     if (cmd == LJ_CL_SET_CURRENT_CUE) {   /* "Put the current cue number on the line" [03 s6.3] */
-        l->cue = sh && sh->current_cue ? sh->current_cue->number : ctx()->view.cue_number;
+        l->cue = sh && sh->current_cue ? sh->current_cue->number : lj_ctx_get()->view.cue_number;
         l->trig_mask = 0;
     } else {
         l->cmd = (uint8_t)cmd; l->param_ms = 0; l->param[0] = 0; l->ref = 0;
@@ -400,7 +399,7 @@ static void fill_rows(lj_cuelist *cl)
 
 void lj_cuelist_form_refresh(void)
 {
-    const lj_cl_status *st = ctx()->cl;
+    const lj_cl_status *st = lj_ctx_get()->cl;
     lj_cuelist *cl = lj_cuelist_form_list();
     lj_menu *m;
     char buf[128];
@@ -475,7 +474,7 @@ static void on_tc(lj_widget *w, void *ud)   /* sbTimeCodeMouseUp: the shown time
     (void)ud;
     for (i = 0; i < LJ_TC_CD; i++) if (w && w->name && !strcmp(w->name, cl_tc_btn[i])) {
         s.tc_src = i;
-        if (ctx()->forms_ini) lj_ini_seti(ctx()->forms_ini, CL_SEC, "TCSource", i);   /* ours, PROPOSAL key */
+        if (lj_ctx_get()->forms_ini) lj_ini_seti(lj_ctx_get()->forms_ini, CL_SEC, "TCSource", i);   /* ours, PROPOSAL key */
     }
     lj_w_speedbutton_set_down(lj_window_find(s.win, cl_tc_btn[s.tc_src]), 1);
     lj_cuelist_form_refresh();
@@ -531,12 +530,12 @@ static void lk_click(lj_widget *w, void *ud)   /* BClick: bLink / bImport */
     lj_cl_line *l = line_of(lk.row);
     (void)ud;
     if (cl && l && !running() && w && w->name && !strcmp(w->name, "bLink")) { l->cmd = LJ_CL_LINK_CUELIST; l->ref = lk.list; l->param_ms = 0; l->param[0] = 0; modified(); }
-    else if (cl && l && !running() && w && w->name && !strcmp(w->name, "bImport") && ctx()->lib) {
+    else if (cl && l && !running() && w && w->name && !strcmp(w->name, "bImport") && lj_ctx_get()->lib) {
         lj_cuelist in;
         char path[LJ_PATH_CAP], err[160];
         uint32_t i;
         memset(&in, 0, sizeof in);
-        if (lj_library_record_path(ctx()->lib, LJ_REC_CL, lk.list, path, sizeof path) == 0 && lj_cuelist_load(path, &in, err, sizeof err) == 0)
+        if (lj_library_record_path(lj_ctx_get()->lib, LJ_REC_CL, lk.list, path, sizeof path) == 0 && lj_cuelist_load(path, &in, err, sizeof err) == 0)
             for (i = 0; i < in.n; i++) lj_cuelist_insert(cl, lk.row - 1 + i, &in.lines[i]);
         else lj_log("cuelist: import %04u: %s", (unsigned)lk.list, err);
         free(in.lines);
@@ -622,7 +621,7 @@ static void on_action(lj_widget *w, void *ud)   /* ActionExecute: every TAction 
 static void sync_checks(void)
 {
     lj_menu *m = lj_window_menus(s.win);
-    lj_ini *fi = ctx()->forms_ini;
+    lj_ini *fi = lj_ctx_get()->forms_ini;
     int i, mtc = lj_ini_geti(lj_ctx_get()->main_ini, CL_SEC, "MTCTimeout", 0), sync = lj_ini_geti(lj_ctx_get()->main_ini, CL_SEC, "SyncFrames", 0);
     for (i = 0; i < LJ_COUNT_OF(cl_pref_items); i++) lj_menu_set_checked(m, cl_pref_items[i], lj_ini_geti(lj_ctx_get()->main_ini, CL_SEC, cl_pref_keys[i], 0));
     for (i = 0; i < LJ_COUNT_OF(cl_mtc_items); i++) lj_menu_set_checked(m, cl_mtc_items[i], i == mtc);
@@ -632,7 +631,7 @@ static void sync_checks(void)
 }
 static void apply_view(int relayout)
 {
-    lj_ini *fi = ctx()->forms_ini;
+    lj_ini *fi = lj_ctx_get()->forms_ini;
     int ed = lj_ini_geti(fi, CL_SEC, "ViewEditPanel", 1), cmd = lj_ini_geti(fi, CL_SEC, "ViewEditCommand", 1);
     lj_widget *w;
     if ((w = lj_window_find(s.win, "pEdit")) != NULL) w->visible = ed != 0;
@@ -646,7 +645,7 @@ static void apply_view(int relayout)
 static void on_pref(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(s.win);
-    lj_ini *mi = ctx()->main_ini;
+    lj_ini *mi = lj_ctx_get()->main_ini;
     int i;
     (void)w; (void)ud;
     if (!it || !it->name || !mi) return;
@@ -659,14 +658,14 @@ static void on_sync(lj_widget *w, void *ud)
     const lj_menu_item_desc *it = lj_window_menu_item(s.win);
     int i;
     (void)w; (void)ud;
-    for (i = 0; it && it->name && ctx()->main_ini && i < LJ_COUNT_OF(cl_sync_items); i++)
-        if (!strcmp(it->name, cl_sync_items[i])) lj_ini_seti(ctx()->main_ini, CL_SEC, "SyncFrames", cl_sync_frames[i]);
+    for (i = 0; it && it->name && lj_ctx_get()->main_ini && i < LJ_COUNT_OF(cl_sync_items); i++)
+        if (!strcmp(it->name, cl_sync_items[i])) lj_ini_seti(lj_ctx_get()->main_ini, CL_SEC, "SyncFrames", cl_sync_frames[i]);
     sync_checks();
 }
 static void on_view(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(s.win);
-    lj_ini *fi = ctx()->forms_ini;
+    lj_ini *fi = lj_ctx_get()->forms_ini;
     (void)w; (void)ud;
     if (!it || !it->name || !fi) return;
     if (!strcmp(it->name, "M_ViewEdit")) lj_ini_seti(fi, CL_SEC, "ViewEditPanel", !lj_ini_geti(fi, CL_SEC, "ViewEditPanel", 1));
@@ -686,6 +685,8 @@ static void on_popup(lj_widget *w, void *ud) { (void)w; (void)ud; lj_cuelist_for
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_cuelist_form_refresh(); }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_cuelist_form_close(); }
 
+static void open_lightcorder(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_LIGHTCORDER); }   /* W4 contract: Tools > Record to LightCorder file */
+
 static const lj_binding cl_bindings[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "FormDeactivate", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
@@ -699,7 +700,7 @@ static const lj_binding cl_bindings[] = {
     { "lv1Enter", lj_handler_noop, NULL }, { "lv1Exit", lj_handler_noop, NULL }, { "lv1DragDrop", on_lv_drop, NULL }, { "lv1DragOver", lj_handler_noop, NULL }, { "lv1MouseDown", lj_handler_noop, NULL },
     { "Files1Click", lj_handler_noop, NULL }, { "FileMenuClick", on_file_menu, NULL }, { "M_LoadAutosaveClick", on_autosave, NULL }, { "M_ImportOldCuelistClick", on_import_old, NULL },
     { "ViewClick", on_view, NULL }, { "PrefsClick", on_pref, NULL }, { "Pop_MTCSyncFramesClick", lj_handler_noop, NULL }, { "syncFramesClick", on_sync, NULL },
-    { "DigitalAudioTimecodeScaler1Click", lj_handler_noop, NULL } /* DA: greyed */, { "M_RecordtoLightCorderClick", lj_handler_noop, NULL } /* Visible = False in the DFM */,
+    { "DigitalAudioTimecodeScaler1Click", lj_handler_noop, NULL } /* DA: greyed */, { "M_RecordtoLightCorderClick", open_lightcorder, NULL } /* Visible = False in the DFM; W4: the lightcorder track settles visibility */,
     { "Help1Click", lj_handler_noop, NULL }, { "ListPopPopup", on_popup, NULL }, { "Pop_JumpToThisClick", on_jump, NULL }, { "M_RunClick", on_run_menu, NULL },
     { "Pop_SetCurrentCueClick", on_set_cue, NULL }, { "pop_SetCueTrigClick", on_set_trig, NULL }, { "P_SetMarkClick", on_set_mark, NULL },
     { "Timer1Timer", on_timer, NULL }, { "ActionExecute", on_action, NULL },
@@ -707,7 +708,7 @@ static const lj_binding cl_bindings[] = {
 
 void lj_cuelist_form_new(void)   /* the app replaces show->current_cl (the runner lets go of the old one first) and asks when it was modified */
 {
-    if (!ctx()->show) return;
+    if (!lj_ctx_get()->show) return;
     if (s.lv) ((lj_w_listview *)s.lv)->index = -1;
     lj_desktop_run_action(LJ_ACT_NEW_CUELIST, 0);
     lj_cuelist_form_refresh();
@@ -715,7 +716,7 @@ void lj_cuelist_form_new(void)   /* the app replaces show->current_cl (the runne
 
 static void restore_size(void)
 {
-    lj_ini *fi = ctx()->forms_ini;
+    lj_ini *fi = lj_ctx_get()->forms_ini;
     const lj_window_caption_state *c = lj_window_caption(s.win);
     int w = lj_ini_geti(fi, CL_SEC, "Width", 0), h = lj_ini_geti(fi, CL_SEC, "Height", 0);
     if (w > 0 && h > 0 && c) lj_window_resize(s.win, w - 2 * c->frame_w, h - 2 * c->frame_w - c->caption_h - c->menu_h);   /* Width / Height are outer sizes */
@@ -746,7 +747,7 @@ lj_window *lj_cuelist_form_open(void)
     }
     /* design 8.5: the CD / DA / MP time-code sources greyed with the hint */
     for (i = LJ_TC_CD; i < LJ_TC_COUNT; i++) if ((w = lj_window_find(s.win, cl_tc_btn[i])) != NULL) { w->enabled = 0; w->hint = LJ_CL_NOT_AVAILABLE; }
-    s.tc_src = lj_ini_geti(ctx()->forms_ini, CL_SEC, "TCSource", LJ_TC_PC_ELAPSED);
+    s.tc_src = lj_ini_geti(lj_ctx_get()->forms_ini, CL_SEC, "TCSource", LJ_TC_PC_ELAPSED);
     if (s.tc_src < 0 || s.tc_src >= LJ_TC_CD) s.tc_src = LJ_TC_PC_ELAPSED;
     lj_w_speedbutton_set_down(lj_window_find(s.win, cl_tc_btn[s.tc_src]), 1);
     recent_load();
@@ -776,7 +777,7 @@ static struct { lj_window *win, *as; } sv;
 
 int lj_cuelist_form_save(int mode, uint32_t number)
 {
-    lj_ctx *c = ctx();
+    lj_ctx *c = lj_ctx_get();
     lj_cuelist *cl = lj_cuelist_form_list();
     char path[LJ_PATH_CAP];
     const char *bad = NULL;
@@ -858,7 +859,7 @@ static void sv_save_as(lj_widget *w, void *ud)
 static void sv_prefs(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(sv.win);
-    lj_ini *fi = ctx()->forms_ini;
+    lj_ini *fi = lj_ctx_get()->forms_ini;
     (void)w; (void)ud;
     if (!it || !it->name || !fi) return;
     if (!strcmp(it->name, "M_AutoClose")) lj_ini_seti(fi, "SAVECUELIST2FORM", "AutoClose", !lj_ini_geti(lj_ctx_get()->forms_ini, "SAVECUELIST2FORM", "AutoClose", 1));
@@ -889,7 +890,7 @@ static struct { lj_window *win; uint32_t no[SL_MAX]; int n; char row[SL_MAX][80]
 static uint32_t sl_sel(void) { lj_widget *lv = sl.win ? lj_window_find(sl.win, "Lv1") : NULL; int i = lv ? lj_w_listview_index(lv) : -1; return i >= 0 && i < sl.n ? sl.no[i] : 0; }
 static void sl_fill(void)
 {
-    lj_ctx *c = ctx();
+    lj_ctx *c = lj_ctx_get();
     lj_cuelist tmp;
     char path[LJ_PATH_CAP], err[160];
     int i;
@@ -969,11 +970,11 @@ void lj_cl_set_cue_trig_refresh(void) { }
 
 /* ---------------------------------------------------------------- Log TimeCode (TLogTimeCodeForm) [03 s6.4] */
 static struct { lj_window *win; uint64_t t0; } lg;
-static int lg_count(void) { const lj_cl_status *st = ctx()->cl; return st && st->nlog > s.log_base ? st->nlog - s.log_base : 0; }
+static int lg_count(void) { const lj_cl_status *st = lj_ctx_get()->cl; return st && st->nlog > s.log_base ? st->nlog - s.log_base : 0; }
 /* the logs as wait lines of the shown source: PC elapsed = the time since the previous log, PC clock and MIDI = absolute */
 static void lg_line(lj_cl_line *l, int i)
 {
-    const lj_cl_status *st = ctx()->cl;
+    const lj_cl_status *st = lj_ctx_get()->cl;
     uint32_t ms = st->log_ms[s.log_base + i];
     memset(l, 0, sizeof *l);
     l->cmd = s.tc_src == LJ_TC_MIDI ? LJ_CL_WAIT_MTC : s.tc_src == LJ_TC_PC_CLOCK ? LJ_CL_WAIT_PC_CLOCK : LJ_CL_WAIT_ELAPSED;
@@ -993,20 +994,20 @@ static void lg_apply(lj_widget *w, void *ud)   /* bAddLogs (ud 0) / bInsertLogs 
         if (mode == 2) { lj_cl_line *t = line_of(at + (uint32_t)i); if (!t) break; t->cmd = l.cmd; t->param_ms = l.param_ms; lj_str_copy(t->param, sizeof t->param, l.param); }
         else lj_cuelist_insert(cl, mode == 1 && at ? at - 1 + (uint32_t)i : cl->n, &l);
     }
-    if (lj_ini_geti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoClear", 0)) s.log_base = ctx()->cl->nlog;
+    if (lj_ini_geti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoClear", 0)) s.log_base = lj_ctx_get()->cl->nlog;
     modified();
     lj_log_timecode_refresh();
 }
 static void lg_log(lj_widget *w, void *ud) { (void)w; (void)ud; op(LJ_CL_OP_LOG, 0); }
-static void lg_clear(lj_widget *w, void *ud) { (void)w; (void)ud; if (ctx()->cl) s.log_base = ctx()->cl->nlog; lj_log_timecode_refresh(); }
+static void lg_clear(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_ctx_get()->cl) s.log_base = lj_ctx_get()->cl->nlog; lj_log_timecode_refresh(); }
 static void lg_start(lj_widget *w, void *ud) { (void)w; (void)ud; lg.t0 = lj_clock_us(); }
 static void lg_prefs(lj_widget *w, void *ud)
 {
     const lj_menu_item_desc *it = lj_window_menu_item(lg.win);
     (void)w; (void)ud;
-    if (!it || !it->name || !ctx()->forms_ini) return;
-    if (!strcmp(it->name, "M_AutoInsert")) lj_ini_seti(ctx()->forms_ini, "LOGTIMECODE", "AutoInsert", !lj_ini_geti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoInsert", 0));   /* ponytail: kept, not acted on (03 s6.4 gives no rule) */
-    if (!strcmp(it->name, "M_AutoClear")) lj_ini_seti(ctx()->forms_ini, "LOGTIMECODE", "AutoClear", !lj_ini_geti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoClear", 0));
+    if (!it || !it->name || !lj_ctx_get()->forms_ini) return;
+    if (!strcmp(it->name, "M_AutoInsert")) lj_ini_seti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoInsert", !lj_ini_geti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoInsert", 0));   /* ponytail: kept, not acted on (03 s6.4 gives no rule) */
+    if (!strcmp(it->name, "M_AutoClear")) lj_ini_seti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoClear", !lj_ini_geti(lj_ctx_get()->forms_ini, "LOGTIMECODE", "AutoClear", 0));
     lj_log_timecode_refresh();
 }
 static void lg_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log_timecode_refresh(); }
@@ -1100,7 +1101,7 @@ static void fn_cl(enum lj_fn fn, int edge, uint32_t prog, void *ud)
     case LJ_FN_CUELIST_STOP_AND_CLEAR:   op(LJ_CL_OP_STOP_CLEAR, 0); break;
     case LJ_FN_LOG_TIMECODE:             op(LJ_CL_OP_LOG, 0); break;
     case LJ_FN_CUELIST_SELECT_PREVIOUS: case LJ_FN_CUELIST_SELECT_NEXT: {   /* PROPOSAL rig 03 s6.5: the neighbouring file of the library is loaded */
-        lj_ctx *c = ctx();
+        lj_ctx *c = lj_ctx_get();
         int i, n = c->lib ? lj_library_list_records(c->lib, LJ_REC_CL, sl.no, SL_MAX) : 0;
         for (i = 0; i < n; i++) if (cl && sl.no[i] == cl->number) break;
         i = fn == LJ_FN_CUELIST_SELECT_NEXT ? (i < n ? i + 1 : 0) : (i < n ? i - 1 : n - 1);

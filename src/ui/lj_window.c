@@ -316,6 +316,7 @@ void lj_window_destroy(lj_window *win)
 /* ---- accessors ---- */
 
 lj_widget *lj_window_find(lj_window *win, const char *dfm_name) { return win ? lj_widget_find(&win->root, dfm_name) : NULL; }
+int lj_window_set_text(lj_window *win, const char *dfm_name, const char *text) { return lj_w_set_caption(lj_window_find(win, dfm_name), text); }
 lj_surface *lj_window_surface(lj_window *win) { return win ? &win->surf : NULL; }
 const lj_form_desc *lj_window_desc(const lj_window *win) { return win ? win->desc : NULL; }
 lj_widget *lj_window_root(lj_window *win) { return win ? &win->root : NULL; }

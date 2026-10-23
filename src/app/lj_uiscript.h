@@ -49,4 +49,8 @@ void lj_uiscript_fail(const char *reason);   /* "SCRIPT FAIL line n: reason" and
  *   mm_set <fixture> <shape> <amp> <speed>   the current scene's movement macro of fixture 1..100: type = shape (0..6 or a Bezier slot), amp_pan = amp_tilt = amp,
  *                                   cycle_pan = cycle_tilt = speed, every fade state Snap; under lj_lock, then LJ_CMD_CURRENT_SEQ (what the Movement Macro window does) */
 
+/* ---- W4 verbs (docs/ui-script.md "W4 verbs") ----
+ *   dump_captions <path>            appends the runtime Caption / Text / Hint of every open window's widgets and menu items to path
+ *                                   ("Class<TAB>object<TAB>property<TAB>value"), for tools/caption_diff.py (W4 acceptance 1) */
+
 #endif /* LJ_APP_UISCRIPT_H */

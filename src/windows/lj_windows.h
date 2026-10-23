@@ -95,6 +95,110 @@ enum lj_win {
     LJ_WIN_CHANNEL_CONFIG,    /* TChannelDefForm */
     LJ_WIN_GS2_IMPORT,        /* TFixtureImportForm */
     LJ_WIN_GS2_EXPORT,        /* TExportFixtureForm */
+    /* ---- W4 (appended; family, behaviour file and track: docs/w4-contracts.md section 3; the rows below dispatch through
+     *      the family table of lj_windows.c, so no track edits lj_windows.c) ---- */
+    LJ_WIN_ADD_FIXTURES,           /* TAddFixForm2                     Fixture Configuration bAdd / Add Fixture(s) [02 s2.3] */
+    LJ_WIN_APPLY_DEFAULT_DMX,      /* TApplyDefaultDMXForm             progress box while Default DMX output is applied (Setup > Default Output) [02 s7] */
+    LJ_WIN_APPLY_MULTI,            /* TApplyMultiForm                  Fixture Configuration: apply a user profile to the selected fixtures [02 s2] */
+    LJ_WIN_AUTO_ADDRESS,           /* TAutoAddressForm2                Fixture Configuration Calculate addresses (Auto) [02 s2.6, F43] */
+    LJ_WIN_CLEANUP,                /* TCleanUpForm                     Fixture Configuration Clear Fixture Data [02 s2.10, F44] */
+    LJ_WIN_CLONE,                  /* TCloneForm                       Fixture Configuration Copy Fixture [02 s2.9, F44] */
+    LJ_WIN_COPY_FROM,              /* TCopyFromForm                    Fixture Configuration Copy From Fixture (F44 copy filter) [02 s2.9] */
+    LJ_WIN_CONFIG_WARN,            /* TConfigWarnForm                  Fixture Configuration Save with conflicts: Warnings / 'Save Ayway' [F41, 02 s2.8] */
+    LJ_WIN_EXPORT_WARNING,         /* TFixtureExportWarningDialog      Fixture Configuration Create Export File / Export All warning [02 s5] */
+    LJ_WIN_FILE_EXISTS,            /* TFileExistsForm                  Export when the target file exists [02 s5] */
+    LJ_WIN_FIND_PROFILE,           /* TFindProfileForm                 Fixture Configuration profile tree Find profile.. [02 s2] */
+    LJ_WIN_FIXTURE_INFO,           /* TFixtureInfoForm                 icon popup Fixture Info (LJ_ACT_FIXTURE_INFO, arg = fixture) [02 s2.13] */
+    LJ_WIN_FIXTURE_NOTES,          /* TFixtureNotesForm                icon popup Fixture Notes (LJ_ACT_FIXTURE_NOTES, arg = fixture) [02 s2.13] */
+    LJ_WIN_FIXTURE_SPECIAL,        /* TFixtureSpecialForm              Fixture Configuration Special [02 s2] */
+    LJ_WIN_HIDDEN_FIXTURE,         /* THiddenFixtureForm               Fixture Configuration hidden-fixture flag [02 s2] */
+    LJ_WIN_INTENSITY_PATCH,        /* TInternalIntensityPatchForm      Patch Sub Masters (Fixture Configuration / Master Intensity) [04 s11] */
+    LJ_WIN_SCANNER1_DEFS,          /* TScanner1DefsForm                icon popup Define Generic Scanner1 profile [02 s5.5] */
+    LJ_WIN_COLOR_SCROLLER_DEFS,    /* TColorScrolDefForm               icon popup Define Color Scroller profile [02 s5.6] */
+    LJ_WIN_RGBPACK_DEFS,           /* TRGBPackDefForm                  icon popup RGB pack configuration [02 s5.7] */
+    LJ_WIN_PALETTE_VALUE_TYPE,     /* TPaletteValueTypeForm            Customize Fixture palette value type [02 s4.3] */
+    LJ_WIN_PROFILE_NAME_OLDSTYLE,  /* TProfileNameOldStyleForm         Generic Fixture Profile on a format-0/1 .GS2 (ME-126) [16 s2] */
+    LJ_WIN_PROFILE_IMPORT_MODIFIED,/* TProfileImportModifiedFilesForm  Import Profile when a modified file exists [02 s5] */
+    LJ_WIN_BITMAP_PICKER,          /* TBitMapPickerForm2               palette editors Select Bitmap (31x30 library) [07 s12] */
+    LJ_WIN_GET_BITMAP,             /* TGetBitmapForm                   Generic Fixture Profile Icon Bitmap Set [16 s4] */
+    LJ_WIN_RGB_PALETTE,            /* TRGBPaletteForm                  RGB pack Colors > RGB Palette [04 s5.3] */
+    LJ_WIN_CUE_STACK,              /* TCueStackForm                    Cue control menu Cue Builder, hotkey Cue Builder [03 s5.8] */
+    LJ_WIN_MODAL_SELECT_CUE,       /* TModalSelectCueForm              Cuelist edit panel Set Current Cue / cue pick [03 s6] */
+    LJ_WIN_DELETE_SCENE,           /* TDeleteSceneForm                 Sequence window Delete (LJ_SB_DELETE) [03 s4.3] */
+    LJ_WIN_INSERT_SCENES,          /* TInsertScenesForm                Sequence window Insert [03 s4.3] */
+    LJ_WIN_SET_SEQUENCE,           /* TSetSequenceForm                 Sequence window Start Sequence at : [03 s4] */
+    LJ_WIN_SEQ_USED,               /* TSeqUsedForm                     Delete Sequences Check Used Sequences / Mark Unused [01 s8] */
+    LJ_WIN_SELECT_BGCUE_OLD,       /* TSelectBGCueForm                 BG slot Edit Sequence / cue-list Load BG Cue picker [03 s7] */
+    LJ_WIN_SAVE_STATIC,            /* TSaveStaticForm                  Statics Control Save [03 s8, 14 sB.2] */
+    LJ_WIN_STATICS_CONTROL,        /* TStaticsControlForm              View > Controls Statics Control [03 s8, 14 sB.2] */
+    LJ_WIN_STATIC_SLOT_NAME,       /* TStaticSlotNameForm              Statics 2 slot popup Name [14 sB.3] */
+    LJ_WIN_STATICS_REPLACE,        /* TStaticsReplaceForm              Statics 2 Replace matrix [14 sB.3] */
+    LJ_WIN_NAME_SLOTS,             /* TNameSlotsForm                   Cue control Sequence Slot Labels [03 s5] */
+    LJ_WIN_SELECT_CUELIST_MODAL,   /* TSelectCuelist2ModalForm         Startup Options Select Startup Cuelist [01 s6.2] */
+    LJ_WIN_SORT_TIMECODE,          /* TSortTimeCodeForm                Cuelist Tools Sort Waits (ME-120) [03 s6] */
+    LJ_WIN_TIMECODE_OFFSET,        /* TTimeCodeOffsetForm              Cuelist Tools Offset TimeCode (ME-120) [03 s6] */
+    LJ_WIN_MOVEMENT_OPTIONS,       /* TMovementOptionsForm             Movement window Options > Position Options [04 s4] */
+    LJ_WIN_BACKUP_PROGRESS,        /* TBackupForm                      Backup User Library progress 'Backing Up' [01 s8] */
+    LJ_WIN_RESTORE_LIB_PROGRESS,   /* TRestoreLibProgressForm          Restore User Library progress [01 s8] */
+    LJ_WIN_COPYING_FILES,          /* TCopyingFilesForm                User Libraries copy progress [01 s8] */
+    LJ_WIN_RENAME_FILE,            /* TRenameFileForm                  User Libraries Rename [01 s8] */
+    LJ_WIN_PROGRESS,               /* TProgressForm                    generic file progress [01 s8] */
+    LJ_WIN_PRINT_WAIT,             /* TPrintWaitForm                   print spool wait (Print stays greyed: fidelity row) [01 s8] */
+    LJ_WIN_RESTORE_DATA,           /* TRestoreDataForm                 System > Restore Program Data (LJ_ACT_RESTORE_DATA), System Preferences Data Restore tab [06 s4.2] */
+    LJ_WIN_CREATE_DATA,            /* TCreateDataForm                  Creating Auto Restore Data (System Preferences Data Restore) [06 s4.2] */
+    LJ_WIN_COMPRESS_RESTORE,       /* TCompressRestoreDataForm         Compressing Restore Data progress [06 s4.2] */
+    LJ_WIN_RESTORE_PROGRESS,       /* TRestoreProgressForm             Restoring Files progress [06 s4.2] */
+    LJ_WIN_NEW_PASSWORD,           /* TNewPasswordForm                 System Preferences Data Restore Enter New Password [06 s4.2] */
+    LJ_WIN_UPDATE,                 /* TUpdateForm                      first start on an older record format 'Dataformat has Changed' [F56, 12 Q9] */
+    LJ_WIN_UPDATE_FILE,            /* TUpdateFileForm                  format update progress 'Updating Files' [F56] */
+    LJ_WIN_UPDATE_PROGRAM,         /* TUpdateProgramForm               installation update progress [F56] */
+    LJ_WIN_UPDATE_BGCUES,          /* TUpdateBGCuesForm                older BG cue files 'File Format Update Needed' [F56] */
+    LJ_WIN_UPDATE_CL2,             /* TUpdateCl2Form                   older .Cl2 'Datafile format update required' [F56, 12 Q9] */
+    LJ_WIN_PATCH_UPDATE,           /* TPatchUpdateForm                 older patch 'Update to Patch Configuration' [F56, 12 Q9] */
+    LJ_WIN_REBUILD_SETUP,          /* TRebuildSetupForm                setup rebuild 'Please Wait...' [F56] */
+    LJ_WIN_INIT_FORM,              /* TInitForm1                       first-start splash TInitForm1 [F56] */
+    LJ_WIN_AUTO_ARRANGE,           /* TAutoArrangeForm                 desktop popup Auto-Arrange Icons (LJ_ACT_AUTO_ARRANGE) [01 s3.5] */
+    LJ_WIN_DESKTOP_GRID,           /* TGridForm                        desktop popup Desktop Grid (LJ_ACT_DESKTOP_GRID) [01 s3.5, F13] */
+    LJ_WIN_ICON_STYLE,             /* TIconStyleForm                   desktop popup Select Icon Style (LJ_ACT_ICON_STYLE) [01 s3.5] */
+    LJ_WIN_DESKTOP_IMAGE,          /* TImageSetupForm                  desktop popup Desktop Image (LJ_ACT_DESKTOP_IMAGE) [01 s3.5, F13] */
+    LJ_WIN_DESKTOP_TABS,           /* TLayerManagerForm                desktop popup Desktop tabs (LJ_ACT_DESKTOP_TABS) [01 s3.5] */
+    LJ_WIN_NEXTPREV_SELECTION,     /* TNextPrevSelectionForm           right-click prev/next (LJ_ACT_NEXTPREV_SETTINGS) [01 s3.3] */
+    LJ_WIN_CUSTOM_ORDER,           /* TCustomOrderForm                 Next/Previous Fixture Selection Custom order [01 s3.3] */
+    LJ_WIN_SAVE_SELECTION,         /* TSaveSelectionForm               Fan Out named orders / Custom order Save [01 s3.3, 17 s5.2] */
+    LJ_WIN_AUTO_LAUNCH,            /* TAutoLaunchForm                  Startup Options auto-launch programs, behind the Execute File rule (LORD_C-8) [01 s6.2] */
+    LJ_WIN_HOTKEY_WARNING,         /* TShowHotKeyWarningForm           Edit Hotkeys / Select Function 'Notification !' (Main.Ini [MISC] ShowHotkeyWarning) [01 s7] */
+    LJ_WIN_HARDWARE_WARNING,       /* TShowHardwareWarningForm         startup without transmitter hardware 'Notification !' [12 Q9] */
+    LJ_WIN_LASER_WARNING,          /* TLaserWarningForm                laser output active 'Warning!' Laser(s) emitting! [12 Q9] */
+    LJ_WIN_UNBLOCK_LASERS,         /* TUnblockLasersForm               'Enable laser output ?' before laser output opens [12 Q9] */
+    LJ_WIN_DMX_IN,                 /* TDmxInForm                       C-L toolbar DMX In (LJ_ACT_DMX_IN), Global Patch DMX-in source [04 s15, 05 s3] */
+    LJ_WIN_DMXIN_TRANSLATION,      /* TDMXInValueTranslationForm       Dmx In translation tables [05 s3] */
+    LJ_WIN_TRANSLATION_EDIT,       /* TTranslationEditForm             DMX-In translation Edit [05 s3] */
+    LJ_WIN_VALUE_TABLE_ERROR,      /* TValueTableImportErrorForm       DMX-In translation import error [05 s3] */
+    LJ_WIN_EXPORT_TABLE,           /* TExportTableForm                 DMX-In translation Export Value tables (.vtr) [05 s3] */
+    LJ_WIN_DA2532,                 /* TDa2532Form_3                    C-L toolbar 2532 (LJ_FN_2532_CONTROL) [05 s4, D16] */
+    LJ_WIN_DA2532_FUNCTIONS,       /* TButtonFunctions2532Form         2532 Direct Access key function list [05 s4] */
+    LJ_WIN_DA2532_COLORS,          /* TColorScheme2532Form             2532 Direct Access Color Scheme [05 s4] */
+    LJ_WIN_DA2532_TAB_COLORS,      /* TDA2532_TabColorsForm            2532 Direct Access Tab Colors [05 s4] */
+    LJ_WIN_DA2532_TAB_HEIGHT,      /* TDa2532TabHeight                 2532 Direct Access Set Tab Size [05 s4] */
+    LJ_WIN_DA2532_TEXT,            /* TEdit2532TextForm                2532 Direct Access Edit 2532 Text [05 s4] */
+    LJ_WIN_DA2532_PAGE_NAMES,      /* TName2532PagesForm               2532 Direct Access 2532 Page Names [05 s4] */
+    LJ_WIN_FINGERS,                /* TLJFingersMainForm               &Fingers > Virtual Fingers (LJ_FN_VIRTUAL_FINGERS) [04 s17, 05 s5, D16] */
+    LJ_WIN_FINGERS_SETUP,          /* TFingersSetupDialog              &Fingers > Fingers Setup (LJ_ACT_FINGERS_SETUP) [05 s5] */
+    LJ_WIN_FINGERS_STATUS,         /* TFingersStatus                   &Fingers > Fingers status panel (LJ_FN_FINGERS_STATUS_PANEL) [05 s5] */
+    LJ_WIN_FINGERS_ERROR,          /* TFingersErrorForm                Fingers error box [05 s5] */
+    LJ_WIN_FINGERS_SKIN,           /* TFingersSkinSelectForm           Virtual Fingers Select Skin [05 s5] */
+    LJ_WIN_FINGERS_FUNCTIONS,      /* TFingersFunctionListForm         Fingers Setup F1-F10 function list [05 s5] */
+    LJ_WIN_FINGERS_JOG_FUNCTIONS,  /* TFingersJogFunctionListForm      Fingers Setup Datawheel function list [05 s5] */
+    LJ_WIN_FINGERS_PAGE_FUNCTIONS, /* TFingersPageFunctionListForm     Fingers Setup fader page function list [05 s5] */
+    LJ_WIN_FINGERS_SLOT_FUNCTIONS, /* TFingersSlotFunctionListForm     Fingers Setup Cue Slot functions [05 s5] */
+    LJ_WIN_FINGERS_UD_FUNCTIONS,   /* TFingersUDFunctionListForm       Fingers Setup Scroll button function list [05 s5] */
+    LJ_WIN_LIGHTCORDER,            /* TLightCorderDialog               Cuelist > Tools Record to LightCorder file (M_RecordtoLightCorderClick) [13 s1.2] */
+    LJ_WIN_SAVE_LIGHTCORDER,       /* TSaveLightCorderFileDialog       Record to LightCorder file Save [13 s1.2] */
+    LJ_WIN_DEBUG,                  /* TDebugForm                       View > De&bugWindow, hidden (LJ_ACT_DEBUG_WINDOW; unhide method PROPOSAL) [13 s1.2, design 13 item 10] */
+    LJ_WIN_STATICS_DEBUG,          /* TStaticsDebugForm                Debug window Statics debug [13 s1.2] */
+    LJ_WIN_MSG_DEBUG,              /* TMsgDebugForm                    Debug window WM_CPOPYDATA DEBUG [13 s1.2] */
+    LJ_WIN_MEMORY_VIEW,            /* TMemoryViewForm                  View > System Memory (ViewControlClick Tag 7, LJ_ACT_WINDOWS_MEMORY) [01 s4] */
+    LJ_WIN_HELP,                   /* THelpViewer                      every Help leaf (LJ_ACT_HELP, F1): the bundled text viewer, code-built (design 13 item 12) */
     LJ_WIN_COUNT
 };
 

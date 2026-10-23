@@ -51,7 +51,6 @@ static struct {
     lj_bez_set *bez;          /* show->bez: the library's MacroShapes\*.bez, sampled; NULL = none */
 } lj_w3;
 
-static lj_library *lib(void) { return lj_ctx_get()->lib; }
 
 /* ---- the runner's host (lj_cuelist_run.h): every effect of a cue-list line ---- */
 
@@ -89,8 +88,8 @@ static int h_flash(void *ud, uint32_t seq, int on)   /* Flash Sequence: the tabl
 
 static int cl_path(uint32_t number, char *out, size_t cap)
 {
-    if (!lib()) return -1;
-    return number ? lj_library_record_path(lib(), LJ_REC_CL, number, out, cap) : lj_library_path(lib(), "CueLists/AutoSave.Cl2", out, cap);
+    if (!lj_ctx_get()->lib) return -1;
+    return number ? lj_library_record_path(lj_ctx_get()->lib, LJ_REC_CL, number, out, cap) : lj_library_path(lj_ctx_get()->lib, "CueLists/AutoSave.Cl2", out, cap);
 }
 
 static lj_cuelist *cl_read(const char *path, uint32_t number)
@@ -239,9 +238,9 @@ static int cl_save(void)   /* Quick Save CueList: the number is assigned on firs
     const char *why;
     char path[LJ_PATH_CAP];
     uint32_t n;
-    if (!cl || !lib()) return -1;
+    if (!cl || !lj_ctx_get()->lib) return -1;
     if ((why = lj_cuelist_validate(cl)) != NULL) { lj_log("save cue list: %s", why); return -1; }
-    if (!cl->number && (n = lj_library_next_number(lib(), LJ_REC_CL)) != 0) { lj_lock(); cl->number = n; lj_unlock(); }
+    if (!cl->number && (n = lj_library_next_number(lj_ctx_get()->lib, LJ_REC_CL)) != 0) { lj_lock(); cl->number = n; lj_unlock(); }
     if (!cl->number || cl_path(cl->number, path, sizeof path) != 0 || lj_cuelist_save(path, cl) != 0) { lj_log("save cue list: not written"); return -1; }
     lj_ctx_set_modified(LJ_MOD_CL, 0);
     return 0;
@@ -253,7 +252,7 @@ int lj_app_gs2_reload(void)
     lj_profile *np = NULL, *op;
     int nn = 0, on, i;
     unsigned reopen;
-    if (!c->show || !lib() || lj_show_gs2_load_all(lib(), &np, &nn) != 0) return -1;   /* parsed outside the lock */
+    if (!c->show || !lj_ctx_get()->lib || lj_show_gs2_load_all(lj_ctx_get()->lib, &np, &nn) != 0) return -1;   /* parsed outside the lock */
     lj_lock();
     op = c->show->gs2; on = c->show->ngs2;
     c->show->gs2 = np; c->show->ngs2 = nn;
@@ -275,9 +274,9 @@ int lj_app_gm_shapes_reload(void)   /* ME-34: <library>\Override\Macros.Mac (+ U
     lj_cmd cmd;
     FILE *f;
     int rc;
-    if (lib() && lj_library_path(lib(), LJ_GM_OVERRIDE_DIR "/Macros.Mac", mac, sizeof mac) == 0 && (f = fopen(mac, "rb")) != NULL) {
+    if (lj_ctx_get()->lib && lj_library_path(lj_ctx_get()->lib, LJ_GM_OVERRIDE_DIR "/Macros.Mac", mac, sizeof mac) == 0 && (f = fopen(mac, "rb")) != NULL) {
         fclose(f);
-        if (lj_library_path(lib(), LJ_GM_OVERRIDE_DIR "/UserMacros.Mac", user, sizeof user) != 0) user[0] = 0;
+        if (lj_library_path(lj_ctx_get()->lib, LJ_GM_OVERRIDE_DIR "/UserMacros.Mac", user, sizeof user) != 0) user[0] = 0;
         if ((sh = (lj_gm_shapes *)calloc(1, sizeof *sh)) != NULL && lj_gm_shapes_load(mac, user[0] ? user : NULL, sh, err, sizeof err) != 0) {
             lj_log("generic macro shapes: %s: %s, the built-ins are used", mac, err);
             free(sh); sh = NULL;
@@ -298,7 +297,7 @@ int lj_app_bez_reload(void)   /* MacroShapes\*.bez parsed outside the lock, show
     lj_ctx *c = lj_ctx_get();
     char dir[LJ_PATH_CAP];
     lj_bez_set *ns, *old;
-    if (!c->show || !lib() || lj_library_path(lib(), LJ_BEZ_DIR, dir, sizeof dir) != 0) return -1;
+    if (!c->show || !lj_ctx_get()->lib || lj_library_path(lj_ctx_get()->lib, LJ_BEZ_DIR, dir, sizeof dir) != 0) return -1;
     if (!(ns = (lj_bez_set *)calloc(1, sizeof *ns))) return -1;
     if (lj_bez_set_load(dir, ns) != 0) { free(ns); return -1; }
     lj_lock();
@@ -365,7 +364,7 @@ int lj_app_gs2_import(const char *path, char *err, size_t cap)
     FILE *f;
     int rc = -1, udf, i;
     if (err && cap) err[0] = 0;
-    if (!path || !c->show || !lib()) { snprintf(err, cap, "no library"); return -1; }
+    if (!path || !c->show || !lj_ctx_get()->lib) { snprintf(err, cap, "no library"); return -1; }
     base = path + strlen(path);
     while (base > path && base[-1] != '/' && base[-1] != '\\') base--;
     dot = strrchr(base, '.');
@@ -380,7 +379,7 @@ int lj_app_gs2_import(const char *path, char *err, size_t cap)
     free(buf);
     if (rc == 0) {
         snprintf(rel, sizeof rel, "UserFixtureDef/%s", name);
-        if (lj_library_path(lib(), rel, dst, sizeof dst) != 0 || lj_gs2_save(dst, p) != 0) { snprintf(err, cap, "cannot write %s", rel); rc = -1; }   /* PROPOSAL rig: LJ2's import error box text not captured (LORD_FIDELITY-14) */
+        if (lj_library_path(lj_ctx_get()->lib, rel, dst, sizeof dst) != 0 || lj_gs2_save(dst, p) != 0) { snprintf(err, cap, "cannot write %s", rel); rc = -1; }   /* PROPOSAL rig: LJ2's import error box text not captured (LORD_FIDELITY-14) */
     }
     if (p) { lj_gs2_free(p); free(p); }
     if (rc != 0) return -1;
@@ -413,7 +412,7 @@ static int gm_editor_load(uint32_t number)
 {
     char path[LJ_PATH_CAP], err[128];
     lj_genmacro *gm;
-    if (!number || !lib() || lj_library_record_path(lib(), LJ_REC_MACRO, number, path, sizeof path) != 0 || !(gm = lj_genmacro_new_rec())) return -1;
+    if (!number || !lj_ctx_get()->lib || lj_library_record_path(lj_ctx_get()->lib, LJ_REC_MACRO, number, path, sizeof path) != 0 || !(gm = lj_genmacro_new_rec())) return -1;
     if (lj_genmacro_load(path, gm, err, sizeof err) != 0) { lj_log("generic macro %04u: load error: %s", (unsigned)number, err); free(gm); return -1; }
     gm->number = number;
     return gm_editor_post(gm);
@@ -455,10 +454,10 @@ static void act(enum lj_desktop_action a, int arg, void *ud)
         lj_win_open(c->show && arg >= 0 && arg < LJ_FIXTURES && c->show->fixture[arg].kind == LJ_FX_GS2 ? LJ_WIN_PROFILE_EDITOR : LJ_WIN_CUSTOMIZE_FIXTURE);
         break;
     case LJ_ACT_FIXTURE_APPLY:                                        /* Customize Fixture / Channel Configuration Ok */
-        if (!c->show || !lib() || arg < 0 || arg >= LJ_FIXTURES) break;
-        if (lj_show_save_config(c->show, lib()) != 0) lj_log("app: Config.dat not saved");
+        if (!c->show || !lj_ctx_get()->lib || arg < 0 || arg >= LJ_FIXTURES) break;
+        if (lj_show_save_config(c->show, lj_ctx_get()->lib) != 0) lj_log("app: Config.dat not saved");
         snprintf(rel, sizeof rel, "UserFixtureDef/Setup.%d.pal", arg + 1);
-        if (lj_library_path(lib(), rel, path, sizeof path) != 0 || lj_fixture_custom_save(path, c->show->fixture[arg].custom) != 0) lj_log("app: %s not saved", rel);
+        if (lj_library_path(lj_ctx_get()->lib, rel, path, sizeof path) != 0 || lj_fixture_custom_save(path, c->show->fixture[arg].custom) != 0) lj_log("app: %s not saved", rel);
         lj_lock(); if (c->engine) lj_engine_rebind(c->engine); lj_unlock();
         break;
     default: break;
@@ -506,9 +505,9 @@ void lj_app_w3_start(void)
     c->gdc = &lj_w3.gdc;
     c->gm_shapes = &lj_gm_shapes_builtin;
     if (!c->gm_edit) c->gm_edit = lj_genmacro_new_rec();             /* the editor's blank record; posted on its first load / apply */
-    if (c->show && lib()) {
+    if (c->show && lj_ctx_get()->lib) {
         if (!c->show->current_cl) c->show->current_cl = lj_cuelist_new_rec();   /* the unsaved working list the Cuelist window edits */
-        if (lj_library_path(lib(), LJ_FOLLOWSPOT_FILE, path, sizeof path) == 0 && lj_followspot_load(path, c->show->followspot, err, sizeof err) != 0) lj_log("%s: %s", LJ_FOLLOWSPOT_FILE, err);
+        if (lj_library_path(lj_ctx_get()->lib, LJ_FOLLOWSPOT_FILE, path, sizeof path) == 0 && lj_followspot_load(path, c->show->followspot, err, sizeof err) != 0) lj_log("%s: %s", LJ_FOLLOWSPOT_FILE, err);
         lj_app_gs2_reload();
         lj_app_gm_shapes_reload();
         lj_app_bez_reload();
