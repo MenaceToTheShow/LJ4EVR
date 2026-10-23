@@ -22,7 +22,7 @@ Copy-Item $Installer (Join-Path $work 'setup.exe')
 $fail = 0
 
 function As-User([string]$exe, [string]$argline) {
-    $p = Start-Process -FilePath $exe -ArgumentList $argline -Credential $cred -LoadUserProfile -WorkingDirectory $work -Wait -PassThru -WindowStyle Hidden
+    $p = Start-Process -FilePath $exe -ArgumentList $argline -Credential $cred -LoadUserProfile -UseNewEnvironment -WorkingDirectory $work -Wait -PassThru -WindowStyle Hidden   # the account's own environment (LOCALAPPDATA), not the runner's
     return $p.ExitCode
 }
 
