@@ -10,5 +10,6 @@
 int lj_fs_mtime_text(const char *path, char *out, size_t cap);
 int lj_fs_mkdir(const char *path);   /* 0 when created or already there, -1 otherwise */
 int lj_fs_exists(const char *path);  /* 1 when the file opens for reading, else 0 (ME-101: was static in model/lj_show.c) */
+int lj_fs_replace(const char *tmp, const char *path);   /* ME-139: remove path, rename tmp over it; 0, or -1 with tmp KEPT and its name logged (never the only copy deleted) */
 
 #endif /* LJ_CORE_FSINFO_H */

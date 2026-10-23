@@ -239,11 +239,10 @@ void lj_runner_eval(lj_runner *r, const lj_scene *sc, uint64_t now, const lj_pai
         const lj_movemacro *m = &sc->macro[f];
         const lj_profile *p = c->profile_of[f];
         const lj_fixture *fx = &c->show->fixture[f];
-        int32_t dp, dt, base, pan, tilt;
+        int32_t dp, dt, pan, tilt;
         if (!lj_movemacro_active(m) || !p || !fx->link || !(p->pt16 || p->pt8)) continue;
-        base = lj_addr_code(fx->link, fx->address);
-        pan = base + p->pan_ofs; tilt = base + p->tilt_ofs;
-        if (pan + 1 >= LJ_CHANS || tilt + 1 >= LJ_CHANS) continue;
+        pan = lj_fx_code(fx, p->pan_ofs); tilt = lj_fx_code(fx, p->tilt_ofs);
+        if (pan < 0 || tilt < 0 || (p->pt16 && (lj_fx_code(fx, p->pan_ofs + 1) < 0 || lj_fx_code(fx, p->tilt_ofs + 1) < 0))) continue;   /* ME-132: no address, or the pair past the link end */
         lj_movemacro_offset_bez(&mm[f], m, c->show->bez, amp_pct, &dp, &dt);   /* W3: Bezier types read show->bez (seam 5) */
         if (p->pt16) {
             int32_t v;

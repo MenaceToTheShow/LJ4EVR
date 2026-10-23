@@ -1,0 +1,12 @@
+# w4_help_fades.lj4s - ME-141: Colors > Fades > Help opens the bundled help viewer (TDefault2Form help1 was lj_handler_noop).
+# Library W4Entry as tests/ui/scripts/w4_wire_record.lj4s:
+#   set LJ4EVR_USERDATA=<scratch>\ && build-w4\lj4evr.exe U:W4Entry --script tests\ui\scripts\w4_help_fades.lj4s
+wait 500
+click main.icon1
+click main.tb_fixture_3
+click colors.M_Fades
+assert_caption seq_fades "Set Fade Status"
+click TDefault2Form.help1
+assert_caption help "LJ4EVR Help"
+log "PASS Help viewer (THelpViewer) <- Colors > Fades > Help (ME-141)"
+quit

@@ -152,6 +152,12 @@ int lj_test_debug_form(int argc, char **argv)
         CHECK(lj_debug_form_misc_lines() == 2 && strncmp(l0, "1:001 ", 6) == 0 && l0[6] == '0' + r0 && l0[7] == '0' && strncmp(l1, "1:017 ", 6) == 0 && l1[7] == '0' + r17);
     }
 
+    /* ME-144: a late tick, counted by the engine thread beside lj_log_overrun, reads Overruns: 1 */
+    lj_lock(); lj_engine_note_overrun(c->engine); lj_unlock();
+    view_now();
+    lj_debug_form_refresh(LJ_WIN_DEBUG);
+    CHECK(strcmp(lj_debug_form_label("Label54"), "Overruns: 1") == 0);
+
     /* perf counters: off = blank, on = tenths with the host separator; n/a where the engine has no counter */
     CHECK(strcmp(lj_debug_form_label("lpfCounter1"), "") == 0);
     CHECK(lj_debug_form_load_tenths(1000, 25000) == 40 && lj_debug_form_load_tenths(25000, 25000) == 1000 && lj_debug_form_load_tenths(5, 0) == 0);

@@ -37,7 +37,7 @@ machine with the reference tree) any run of 8 words shared with Martin's help.
 
 C11, no C++. Every identifier `lj_`/`LJ_`; files `lj_<name>.c` with one `.h`
 each; include guard `LJ_<DIR>_<NAME>_H`; `int` functions return 0/-1, pointer
-functions NULL on failure; no globals except the log sink; strings are CP1252
+functions NULL on failure; no extern globals except the log sink (window state is file-static); strings are CP1252
 bytes. `<SDL3/...>` only under `src/platform/sdl` and `src/app`. No `float`,
 `double`, `<math.h>`, `<stdatomic.h>` or `volatile` outside `platform/`.
 `tools/test_layering.py` enforces the mechanical ones and runs under CTest.
@@ -49,10 +49,10 @@ piece of logic leaves a runnable check behind: a subcommand in
 ## Golden images
 
 `tests/ui/golden/*.bmp` are reviewed renders, one per form. CI fails on any
-pixel difference. Updating a golden is a reviewed commit of its own with the
-subject `golden: <form> <why>` (for example `golden: TSEQUENCEFORM arial14b
-glyph 'g' descender`), containing only the golden(s) and nothing else, so the
-diff is the picture.
+pixel difference. Every changed golden gets a row in `tests/ui/golden/REVIEWED.tsv`
+in the same commit: the pixels changed, their bounding box, the cause and what
+was viewed (old and new side by side). `ui_golden` fails a form that has no row.
+`LJ_GOLDEN_UPDATE=1` rewrites the goldens when you run the tests.
 
 ## Commits and pull requests
 

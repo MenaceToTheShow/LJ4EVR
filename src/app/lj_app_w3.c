@@ -118,7 +118,10 @@ static int h_link(void *ud, uint32_t number, const lj_cuelist **out)   /* Link C
 }
 
 /* Execute File: only with Main.Ini [CUELIST2] AllowExecute=1 (ours, default 0, docs/w3-contracts.md); started detached so
- * the UI loop never waits on it. A path carrying shell quoting characters is refused. */
+ * the UI loop never waits on it. The line goes through the shell (system()): a path with " $ or a backtick, and
+ * parameters with " or a backtick, are refused so the quoting holds, but the parameters still reach the shell, so
+ * & | ; > and $(...) in them run. That grants nothing AllowExecute=1 does not already grant (a cue list can name any
+ * program with any arguments); docs/running.md and SECURITY.md say so (ME-147). */
 static int h_exec(void *ud, const char *path, const char *args)
 {
     char line[2 * LJ_PATH_CAP];

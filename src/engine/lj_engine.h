@@ -249,6 +249,7 @@ void            lj_engine_set_tick_us(lj_engine *e, uint32_t tick_us);   /* clam
 int             lj_engine_is_offline(const lj_engine *e);            /* read after the tick under the lock: 1 = skip lj_sacn_set this tick (S9) */
 const void     *lj_engine_take_sacn_cfg(lj_engine *e);               /* the lj_sacn_cfg parked by LJ_CMD_SACN_CFG, handed out once (NULL = none); caller holds lj_lock and copies the record before lj_unlock() (ME-69: the UI rewrites it under the lock); the thread then does close-old / open-new on its copy outside it (ME-23) */
 void            lj_engine_set_sacn_stats(lj_engine *e, const uint32_t pps[LJ_LINKS], int last_err);   /* caller holds lj_lock; copied into the view */
+void            lj_engine_note_overrun(lj_engine *e);   /* caller holds lj_lock; the engine thread counts a late tick beside lj_log_overrun (ME-144) */
 
 /* Fade maths (design 3.3), shared with the replay harness and tests. */
 static inline uint32_t lj_fade_value(uint32_t from, uint32_t to, uint64_t now, uint64_t t0, uint64_t dur)

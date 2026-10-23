@@ -241,7 +241,7 @@ static void ex_save(lj_widget *w, void *ud)
 }
 static const lj_binding ex_b[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
-    { "bSaveClick", ex_save, NULL }, { "BitBtn1Click", lj_handler_noop, NULL } /* bkHelp */, { NULL, NULL, NULL } };
+    { "bSaveClick", ex_save, NULL }, { "BitBtn1Click", lj_help_viewer_click, "fixtures" } /* bkHelp, ME-141 */, { NULL, NULL, NULL } };
 
 lj_window *lj_gs2_export_open(void)
 {

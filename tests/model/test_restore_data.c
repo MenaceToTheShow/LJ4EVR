@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "app/lj_startup.h"
+#include "core/lj_fsinfo.h"
 #include "core/lj_ini.h"
 #include "core/lj_log.h"
 #include "miniz.h"
@@ -132,7 +133,7 @@ static void test_untrusted(void)
     size_t i;
     CHECK(lj_library_open(UD, "Club", &lib) == 0);
     lj_restore_data_path(UD, rd, sizeof rd);
-    snprintf(bad, sizeof bad, "%s", UD "bad.lj4r");
+    snprintf(bad, sizeof bad, "%s", UD "bad.lj4d");
     n = copy_cut(rd, bad, -1, -1);
     CHECK(n > 100);
     CHECK(copy_cut(rd, bad, n / 2, -1) > 0);                                                           /* truncated */
@@ -214,6 +215,24 @@ static void test_dir_list(void)
     CHECK(lj_library_dir_list(p, NULL, names, 8) == 8 && strcmp(names[0], "BGCues") == 0);              /* sorted, cut at max */
 }
 
+/* ME-139: the rename after the remove fails (a non-empty folder stands where the restore data goes, as a scanner
+ * holding the fresh file would on Windows): -1, and the new copy survives in <path>.tmp */
+static void test_me139(void)
+{
+    lj_library lib;
+    const char *d = UD "blocked.lj4d", *x = UD "blocked.lj4d/x";   /* in the userdir, where the restore data goes */
+    char t[LJ_PATH_CAP];
+    FILE *f = NULL;
+    CHECK(lj_library_open(UD, "Club", &lib) == 0);
+    CHECK(lj_fs_mkdir(d) == 0 && (f = fopen(x, "wb")) != NULL);
+    if (f) fclose(f);
+    snprintf(t, sizeof t, "%s.tmp", d);
+    CHECK(lj_restore_data_create(&lib, d) == -1);
+    CHECK(lj_fs_exists(t));                                    /* the only copy is kept */
+    printf("ME-139: forced rename failure -> -1, %s survives\n", lj_fs_exists(t) ? "the .tmp copy" : "NOTHING");
+    remove(t); remove(x);
+}
+
 int lj_test_restore_data(int argc, char **argv);
 int lj_test_restore_data(int argc, char **argv)
 {
@@ -226,6 +245,7 @@ int lj_test_restore_data(int argc, char **argv)
     test_me130();
     test_f56();
     test_dir_list();
+    test_me139();
     lj_log_set_sink(NULL, NULL);
     printf("restore_data: %d failure(s)\n", fails);
     return fails ? 1 : 0;

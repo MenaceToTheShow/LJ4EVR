@@ -379,7 +379,7 @@ static void cfm_ok(lj_widget *w, void *ud)
     lj_config_dlg_close(CF);
     lj_win_open(CL);
 }
-static const lj_binding cfm_b[] = { { "FormActivate", lj_handler_noop, NULL }, { "LV1Change", cfm_change, NULL }, { "bOkClick", cfm_ok, NULL }, { "Heklp1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+static const lj_binding cfm_b[] = { { "FormActivate", lj_handler_noop, NULL }, { "LV1Change", cfm_change, NULL }, { "bOkClick", cfm_ok, NULL }, { "Heklp1Click", lj_help_viewer_click, "fixtures" } /* ME-141 */, { NULL, NULL, NULL } };
 static void cfm_init(lj_window *win)
 {
     lj_show *sh = show();
@@ -853,7 +853,7 @@ void lj_config_dlg_oldstyle_name(const char *legacy, void (*done)(const char *ma
 static void im_answer(int v) { void (*done)(int, void *) = cd.im_done; void *dud = cd.im_ud; cd.im_done = NULL; lj_config_dlg_close(IM); if (done) done(v, dud); }
 static void im_import(lj_widget *w, void *ud) { (void)w; (void)ud; im_answer(1); }
 static void im_keep(lj_widget *w, void *ud) { (void)w; (void)ud; im_answer(0); }
-static const lj_binding im_b[] = { { "bUseImportClick", im_import, NULL }, { "bUseExistingClick", im_keep, NULL }, { "BitBtn4Click", lj_handler_noop, NULL } /* bkHelp */, { NULL, NULL, NULL } };
+static const lj_binding im_b[] = { { "bUseImportClick", im_import, NULL }, { "bUseExistingClick", im_keep, NULL }, { "BitBtn4Click", lj_help_viewer_click, "fixtures" } /* bkHelp, ME-141 */, { NULL, NULL, NULL } };
 static void im_init(lj_window *win)
 {
     char t[160];
@@ -868,7 +868,7 @@ static void fe_answer(int v) { void (*done)(int, void *) = cd.fe_done; void *dud
 static void fe_rename(lj_widget *w, void *ud) { (void)w; (void)ud; fe_answer(0); }
 static void fe_over(lj_widget *w, void *ud) { (void)w; (void)ud; fe_answer(1); }
 static void fe_skip(lj_widget *w, void *ud) { (void)w; (void)ud; fe_answer(2); }
-static const lj_binding fe_b[] = { { "bRenameClick", fe_rename, NULL }, { "bOverwriteClick", fe_over, NULL }, { "bSkipClick", fe_skip, NULL }, { "BitBtn1Click", lj_handler_noop, NULL } /* bkHelp */, { NULL, NULL, NULL } };
+static const lj_binding fe_b[] = { { "bRenameClick", fe_rename, NULL }, { "bOverwriteClick", fe_over, NULL }, { "bSkipClick", fe_skip, NULL }, { "BitBtn1Click", lj_help_viewer_click, "files" } /* bkHelp, ME-141 */, { NULL, NULL, NULL } };
 static void fe_init(lj_window *win)
 {
     char t[LJ_PATH_CAP + 32];

@@ -15,13 +15,17 @@ const lj_profile *lj_post_profile(const lj_post_ctx *c, int ch, int *ofs, const 
 {
     int f;
     const lj_fixture *fx;
+    const lj_profile *p;
     if (ch < 0 || ch >= LJ_CHANS || !c->show) return NULL;
     f = c->fixture_of[ch];
     if (f < 0) return NULL;
     fx = &c->show->fixture[f];
-    *ofs = ch - lj_addr_code(fx->link, fx->address);
+    p = c->profile_of[f];
+    if (!p || lj_fx_code(fx, 0) < 0) return NULL;
+    *ofs = ch - lj_fx_code(fx, 0);
+    if (*ofs < 0 || *ofs >= p->footprint || *ofs >= LJ_PROFILE_CH) return NULL;   /* ME-132 (c): a stale bind (fixture moved, no rebind yet) */
     if (fxp) *fxp = fx;
-    return c->profile_of[f];
+    return p;
 }
 
 int lj_post_class(const lj_post_ctx *c, int ch)
@@ -36,8 +40,8 @@ int lj_post_pair_lsb(const lj_post_ctx *c, int ch)
     int ofs;
     const lj_profile *p = lj_post_profile(c, ch, &ofs, NULL);
     if (!p) return -1;
-    if (p->pt16 && (ofs == p->pan_ofs || ofs == p->tilt_ofs)) return ch + 1 < LJ_CHANS ? ch + 1 : -1;   /* 16 s4.4: MSB at ofs, LSB at ofs+1 */
-    if (p->pair_lsb[ofs]) return ch - ofs + p->pair_lsb[ofs] - 1;                                     /* LJ_PAIR16_NON_PT_AS_ONE, rig M11 */
+    if (p->pt16 && (ofs == p->pan_ofs || ofs == p->tilt_ofs)) return (ch + 1) % LJ_LINK_CH ? ch + 1 : -1;   /* 16 s4.4: MSB at ofs, LSB at ofs+1, inside the link (ME-132) */
+    if (p->pair_lsb[ofs]) { int l = ch - ofs + p->pair_lsb[ofs] - 1; return l >= 0 && l / LJ_LINK_CH == ch / LJ_LINK_CH ? l : -1; }   /* LJ_PAIR16_NON_PT_AS_ONE, rig M11 */
     return -1;
 }
 
@@ -189,32 +193,31 @@ void lj_post_s7_pairs(const lj_post_ctx *c, uint8_t out[LJ_LINKS][LJ_LINK_CH])
     for (f = 0; f < LJ_FIXTURES; f++) {
         const lj_fixture *fx = &c->show->fixture[f];
         const lj_profile *p = c->profile_of[f];
-        int base, pan, tilt, t;
+        int pan, tilt, t;
         if (!fx->link || !p || !(p->pt16 || p->pt8)) continue;
-        base = lj_addr_code(fx->link, fx->address);
         if (p->pt16) {
-            if (base + p->pan_ofs + 1 >= LJ_CHANS || base + p->tilt_ofs + 1 >= LJ_CHANS) continue;
-            pan  = lj_post_get(out, base + p->pan_ofs)  * 256 + lj_post_get(out, base + p->pan_ofs + 1);
-            tilt = lj_post_get(out, base + p->tilt_ofs) * 256 + lj_post_get(out, base + p->tilt_ofs + 1);
+            if (lj_fx_code(fx, p->pan_ofs) < 0 || lj_fx_code(fx, p->pan_ofs + 1) < 0 || lj_fx_code(fx, p->tilt_ofs) < 0 || lj_fx_code(fx, p->tilt_ofs + 1) < 0) continue;   /* ME-132 */
+            pan  = lj_post_get(out, lj_fx_code(fx, p->pan_ofs))  * 256 + lj_post_get(out, lj_fx_code(fx, p->pan_ofs + 1));
+            tilt = lj_post_get(out, lj_fx_code(fx, p->tilt_ofs)) * 256 + lj_post_get(out, lj_fx_code(fx, p->tilt_ofs + 1));
             if (fx->invert_pan)  pan  = 65535 - pan;             /* 17 s4.2: invert on the whole pair, before swap */
             if (fx->invert_tilt) tilt = 65535 - tilt;
             if (fx->swap_pt) { t = pan; pan = tilt; tilt = t; }
             if (p->pt_patch_on) {                                /* 17 s4.3: pan MSB, pan LSB, tilt MSB, tilt LSB offsets */
-                lj_post_put(out, base + p->pt_patch[0], pan >> 8);  lj_post_put(out, base + p->pt_patch[1], pan & 255);
-                lj_post_put(out, base + p->pt_patch[2], tilt >> 8); lj_post_put(out, base + p->pt_patch[3], tilt & 255);
+                lj_post_put(out, lj_fx_code(fx, p->pt_patch[0]), pan >> 8);  lj_post_put(out, lj_fx_code(fx, p->pt_patch[1]), pan & 255);   /* -1 past the link end: lj_post_put drops it */
+                lj_post_put(out, lj_fx_code(fx, p->pt_patch[2]), tilt >> 8); lj_post_put(out, lj_fx_code(fx, p->pt_patch[3]), tilt & 255);
             } else {
-                lj_post_put(out, base + p->pan_ofs, pan >> 8);   lj_post_put(out, base + p->pan_ofs + 1, pan & 255);
-                lj_post_put(out, base + p->tilt_ofs, tilt >> 8); lj_post_put(out, base + p->tilt_ofs + 1, tilt & 255);
+                lj_post_put(out, lj_fx_code(fx, p->pan_ofs), pan >> 8);   lj_post_put(out, lj_fx_code(fx, p->pan_ofs + 1), pan & 255);
+                lj_post_put(out, lj_fx_code(fx, p->tilt_ofs), tilt >> 8); lj_post_put(out, lj_fx_code(fx, p->tilt_ofs + 1), tilt & 255);
             }
         } else {
-            if (base + p->pan_ofs >= LJ_CHANS || base + p->tilt_ofs >= LJ_CHANS) continue;
-            pan  = lj_post_get(out, base + p->pan_ofs);
-            tilt = lj_post_get(out, base + p->tilt_ofs);
+            if (lj_fx_code(fx, p->pan_ofs) < 0 || lj_fx_code(fx, p->tilt_ofs) < 0) continue;   /* ME-132 */
+            pan  = lj_post_get(out, lj_fx_code(fx, p->pan_ofs));
+            tilt = lj_post_get(out, lj_fx_code(fx, p->tilt_ofs));
             if (fx->invert_pan)  pan  = 255 - pan;
             if (fx->invert_tilt) tilt = 255 - tilt;
             if (fx->swap_pt) { t = pan; pan = tilt; tilt = t; }
-            lj_post_put(out, base + p->pan_ofs, pan);
-            lj_post_put(out, base + p->tilt_ofs, tilt);
+            lj_post_put(out, lj_fx_code(fx, p->pan_ofs), pan);
+            lj_post_put(out, lj_fx_code(fx, p->tilt_ofs), tilt);
         }
     }
 }

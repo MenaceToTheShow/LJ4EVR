@@ -269,6 +269,10 @@ int lj_test_uiscript_w3(int argc, char **argv)
     CHECK(run_text("assert_prompt \"Delete the profile ?\"\n") == -1 && lj_uiscript_line() == 1);
     lj_warnings_close_all();
     CHECK(run_text("assert_prompt \"x\"\n") == -1);           /* none open */
+    /* ME-142: Global Patch > Clear > Clear All Inverted asks before it clears, as its siblings do (exe 0x1BE380) */
+    CHECK(run_text("open global_patch\nclick TGlobalPatchForm.ClearAllInverted1\nassert_prompt \"Clear All Inverted Channels ?\"\nquit\n") == 0);
+    lj_warnings_close_all();
+    CHECK(run_text("close global_patch\nquit\n") == 0);
 
     /* ---- 8. gs2_import: the importer's message; a missing file fails the line ---- */
     {   static uint8_t ten[10];
@@ -334,7 +338,7 @@ int lj_test_uiscript_w3(int argc, char **argv)
         CHECK(lj_ctl_window_get(kk) != NULL && lj_sel_master_profile() >= show->gs2 && lj_sel_master_profile() < show->gs2 + show->ngs2);
         lj_ctl_refresh(); lj_genmacro_editor_refresh();                          /* both read the profile they hold */
         lj_ctl_close(kk); lj_genmacro_editor_close();
-        lj_sel_none(); memset(&show->fixture[2], 0, sizeof show->fixture[2]); }
+        lj_sel_none(); lj_lock(); memset(&show->fixture[2], 0, sizeof show->fixture[2]); lj_engine_rebind(e); lj_unlock(); }   /* ME-133: rebind under the lock */
 
     /* ---- 9. ME-102: a full command array; Clear Slot and a BG cue load keep what the engine still holds ---- */
     {   lj_scene sc2;

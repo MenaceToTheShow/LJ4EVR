@@ -14,7 +14,7 @@ the tool, its version and the SHA-256 of every input; nobody edits them by hand.
 | `tools/qxf2c_overflow.txt` | `tools/qxf2c.py` | same | diffed by `--check`; the wheels with more than 20 capabilities (ME-26), printed by `generate-check` |
 | `src/fixlib/lj_exe_profiles.c` | `tools/exe_profiles_check.py` | `reference/installer/exe_profile_table.txt` (never committed), `src/fixlib/hand/*.c`, `tools/qxf_map.tsv` | `--check` recomputes the `binding` column; runs in the `generate-check` loop of `ci.yml` and as the `exe_profiles_check` CTest row (ME-76; the regeneration diff runs only where `reference/` is present) |
 | `src/gfx/lj_fonts_gen.c` | `tools/fontpack.py` | `art/fonts/*.txt`, `tests/fonts/advances_*.tsv` | `fontpack.py --check` in `generate-check`; `font_cells`, `font_corpus` |
-| `src/gfx/lj_art_gen.c` | `tools/artpack.py` | `art/glyphs/*.txt`, `art/icons/*.txt` | `artpack.py --check` in `generate-check`; `art_table` |
+| `src/gfx/lj_art_gen.c` | `tools/artpack.py` | `art/glyphs/*.txt`, `art/icons/*.txt`, `art/gobos/*.txt`, `art/gels.txt`, `art/lj2names.tsv` | `artpack.py --check` in `generate-check`; `art_table` |
 | `tests/vectors.h` | `tools/gen_vectors.py` | `tools/ref/08-sacn_ref.py`, `14-macros_mac_decode.py`, `16-gs2_ref.py`, `17-position_ref.py` | `gen_vectors.py --check` in `generate-check` and the `gen_vectors_check` CTest row |
 | `src/engine/lj_trig_gen.c` | `tools/gen_vectors.py` | `tools/ref/17-position_ref.py` | same row |
 | `src/engine/lj_shapes_gen.c` | `tools/gen_vectors.py --shapes` (W3 genmacro) | the authored definitions in `gm_shapes()` of `tools/gen_vectors.py`; no reference data | `gen_vectors.py --shapes --check` (CTest `gen_vectors_shapes_check`) and `--shapes --check --mutate` (CTest `gen_vectors_shapes_mutated`, WILL_FAIL: one flipped sample of the committed file must be caught) |
@@ -65,10 +65,13 @@ What the tables hold, in one line each:
   (`form<TAB>object<TAB>name`, hand-maintained, append rows, never clobber) or
   `"missing"`; `dfm2c_blobs.txt` records `glyph:<name>` or
   `dropped:no-glyphmap-row`.
-- `Items.Data` (`TListItems` stream, text not art) is decoded to `items[]`
-  when the bytes are complete; the current `dfm_text` extraction kept only the
-  first 20 bytes of every blob, so the eight streams are recorded as
-  `dropped:truncated stream: 20 of N bytes, M items` rather than guessed.
+- `Items.Data` (`TListItems` stream, text not art) is decoded to `items[]`;
+  all eight streams are complete since ME-47 and recorded as `decoded`
+  (a truncated or malformed stream would be `dropped:<reason>`, never guessed).
+- List text that is not a caption is emitted empty and recorded as
+  `dropped:<reason>` (`ITEMS_EXCLUDED` in `dfm2c.py`): today one row, the About
+  box's `RichEdit1.Lines`, Martin's credits (ME-137, "D2: authored credits, not
+  a caption").
 
 ## Pre-commit hook
 

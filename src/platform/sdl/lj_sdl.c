@@ -529,8 +529,11 @@ int lj_platform_clipboard_set(const char *text)
 
 int lj_platform_pref_path(char *dst, size_t cap)
 {
-    char *p = SDL_GetPrefPath("LJ4EVR", "LJ4EVR");
+    const char *o = SDL_getenv("LJ4EVR_USERDATA");   /* ME-148: a neutral data folder for captures (docs/running.md); must end in a separator */
+    char *p;
     int rc;
+    if (o && *o && dst && cap) return lj_str_copy(dst, cap, o);
+    p = SDL_GetPrefPath("LJ4EVR", "LJ4EVR");
     if (!dst || cap == 0) { SDL_free(p); return -1; }
     if (!p) { dst[0] = 0; lj_log("SDL_GetPrefPath: %s", SDL_GetError()); return -1; }
     rc = lj_str_copy(dst, cap, p);        /* ME-65: UTF-8 bytes as SDL gave them; the app only concatenates and hands them to fopen (UTF-8 under the manifest), so a non-CP1252 user name still resolves */
@@ -568,7 +571,7 @@ static int SDLCALL lj_sdl_engine_main(void *ud)
             lj_lock(); lj_engine_set_sacn_stats(lj_sdl.engine, st.pps, st.last_err); lj_unlock();
         }
         next += lj_sdl.tick_us;                                             /* absolute timeline, never now + tick */
-        if (now > next + lj_sdl.tick_us) { lj_log_overrun(now - next); next = now + lj_sdl.tick_us; }
+        if (now > next + lj_sdl.tick_us) { lj_lock(); lj_engine_note_overrun(lj_sdl.engine); lj_unlock(); lj_log_overrun(now - next); next = now + lj_sdl.tick_us; }   /* ME-144: the Debug window's Overruns */
     }
     lj_sacn_close();                                                        /* 3 x Stream_Terminated per universe on the owning thread; the app's lj_sacn_close after the join is then a no-op */
     return 0;

@@ -1,0 +1,22 @@
+# w4_wire_record.lj4s - ME-152 (ME-24 HONOUR): LightCorder records 11 s while sACN sends on the wire. Library W4Entry
+# from tests/ui/scripts/w4_entry_prep.sh plus fixtures 1-2 (MAC 500 Mode 2/4 at 1:001, Generic DMX Dimmer at 1:017);
+#   set LJ4EVR_USERDATA=<scratch>\ && build-w4\lj4evr.exe U:W4Entry --script tests\ui\scripts\w4_wire_record.lj4s 2> wire.log
+# The per-second 'lightcorder:' lines of wire.log are the evidence (docs/w4-integration.md, Fix pass A r1).
+wait 500
+click main.icon1
+click main.tb_fixture_9
+mm_set 1 1 100 50
+wait 500
+click main.tb_cuelist_1
+click TCuelist2Form.M_RecordtoLightCorder
+assert_caption lightcorder "Record to LightCorder file"
+click TLightCorderDialog.bRecord
+wait 11000
+click TLightCorderDialog.bRecord
+wait 200
+assert_caption save_lightcorder "Save Lightcorder File"
+click TSaveLightCorderFileDialog.bSave
+wait 300
+assert_file LightCorderFiles/LC0001.LLF exists
+log "PASS ME-152 recording saved"
+quit

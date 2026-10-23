@@ -1,8 +1,9 @@
 name: CI
 
 # Design 9.3. Linux jobs run in the CI container on the self-hosted runners and
-# only for push/tag events (never pull_request: a fork PR must not reach
-# atlas-ci2, project.md security note). Windows and macOS build on GitHub-hosted
+# only for push/tag events: the if: keeps this repository's own PRs off them. It is
+# not the fork control (a fork PR brings its own workflow files); the approval
+# setting is (docs/ci.md rule 2, ME-149). Windows and macOS build on GitHub-hosted
 # runners for every event. determinism compares the three frame dumps byte for byte.
 
 on:
@@ -83,7 +84,7 @@ jobs:
         run: |
           # ponytail: the image has clang 19 without compiler-rt; installed per run until docker.yml bakes it in
           apt-get update -qq && apt-get install -y -qq --no-install-recommends libclang-rt-19-dev > /dev/null
-          cmake -S . -B build-fuzz -G Ninja -DLJ_SDL=OFF -DLJ_FUZZ=ON -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined"
+          cmake -S . -B build-fuzz -G Ninja -DLJ_SDL=OFF -DLJ_FUZZ=ON -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=all"
           cmake --build build-fuzz --target fuzz_gs2 fuzz_udf
           build-fuzz/fuzz_gs2 -max_total_time=60 -max_len=20851
           mkdir -p udf-corpus && cp build-linux-clang/lj_w3_synthetic.Udf udf-corpus/   # ME-114: an lj_udf_export seed (test_uiscript_w3)
@@ -133,6 +134,11 @@ jobs:
           findstr /c:"no binding for handler" selftest-debug.txt && exit /b 1
           findstr /c:"unknown event" selftest-debug.txt && exit /b 1
           cd build-release-win && cpack -G NSIS || exit /b 1
+      - name: Standard-user install (ME-157, ME-45; a fresh local account outside Administrators, on this throwaway runner)
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem build-release-win/LJ4EVR-*-win64-setup.exe | Select-Object -First 1
+          pwsh -NoProfile -File tools/standard_user_install.ps1 -Installer $setup.FullName -Version (Get-Content VERSION -Raw).Trim()
       - id: replay   # ME-78
         run: echo "sha=$(sha256sum build-release-win/replay-frames.bin | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4

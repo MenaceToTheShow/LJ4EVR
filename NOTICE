@@ -33,8 +33,9 @@ QLC+ fixture definitions (Martin/*.qxf), Apache License 2.0
   https://github.com/mcallegari/qlcplus  (third_party/qlcplus-fixtures/SOURCE records the commit)
   Copyright the QLC+ contributors. The definitions are converted offline to C
   tables (src/fixlib/lj_profiles_gen.c, each profile marked "modified:
-  converted"); the .qxf files are not read at run time. The QLC+ NOTICE and the
-  full Apache License 2.0 text follow below.
+  converted"); the .qxf files are not read at run time. LJ4EVR's attribution
+  and modification notice for them (upstream has no NOTICE file) and the full
+  Apache License 2.0 text follow below.
 
 Fonts, artwork and help text
   The bitmap fonts, glyphs, icons, swatches and tiles are original pixel art

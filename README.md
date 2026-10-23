@@ -11,17 +11,25 @@ Status: **W4 Fidelity sweep and release** (version 0.3.0 tagged, v1.0.0 at the e
 of W4). W3 show control underneath: cue lists, generic and movement macros,
 Generic DMX Control, follow spots, `.GS2` / `.Udf` profiles (`CHANGELOG.md`).
 
+![The LJ4EVR main desktop with the Sequence and Cue windows open](docs/screenshots/w4/entry/main-TLJMainForm.png)
+
 **Using it:** download the installer from the Releases page and read
 [`docs/user-guide.md`](docs/user-guide.md); the same help is inside the program
 under Help.
 
 ## Build
 
-Windows (MSVC 2022, CMake >= 3.24):
+Windows (MSVC 2022, CMake >= 3.25):
 
     cmake --preset dev-msvc
     cmake --build --preset dev-msvc
     ctest --preset dev-msvc
+
+macOS (Xcode command-line tools, Ninja, CMake >= 3.25):
+
+    cmake --preset dev-mac
+    cmake --build --preset dev-mac
+    ctest --preset dev-mac
 
 Without SDL (what the Linux CI container builds; tests and the headless renderer only):
 
@@ -29,8 +37,8 @@ Without SDL (what the Linux CI container builds; tests and the headless renderer
     cmake --build build-nosdl
     ctest --test-dir build-nosdl
 
-Presets: `dev-msvc`, `dev-ninja-msvc`, `dev-mac`, `ci-linux-asan`, `ci-linux-clang`,
-`release-win`, `release-mac` (`CMakePresets.json`). Build directories are `build-*/`
+Presets: `dev-msvc`, `dev-ninja-msvc`, `debug-win` (asserts on), `dev-mac`, `ci-linux-asan`,
+`ci-linux-clang`, `release-win`, `release-mac` (`CMakePresets.json`). Build directories are `build-*/`
 under the repo and are ignored by git.
 
 ## What v1.0.0 is not
@@ -49,6 +57,9 @@ that belongs to one of them is still present, greyed, with the hint
 may pull any of them forward before W3; the default is the list above.
 
 ## Docs
+
+Citations such as `design 7.4`, `note 13`, `[06 s4.2]` or `inventory §5` refer to the maintainer's design and
+research notes, which are not published; the facts they support are in the code and in `docs/`.
 
 For users:
 

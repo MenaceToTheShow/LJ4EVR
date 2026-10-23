@@ -1,7 +1,7 @@
 # Releasing
 
 Tag-driven, the Anubis `Build apps` pattern (design 9.4, 9.5). Semver `vX.Y.Z`;
-`v0.x` are pre-releases until wave 2 closes; `v1.0.0` at the public flip.
+`v0.x` are pre-releases; `v1.0.0` at the public flip.
 
 ## Cut a release
 
@@ -15,8 +15,10 @@ Tag-driven, the Anubis `Build apps` pattern (design 9.4, 9.5). Semver `vX.Y.Z`;
         git push origin main v$(cat VERSION)
 
 5. Watch `release.yml`. When it finishes, the Release page has three assets.
-6. Mac acceptance (ME-21, every wave tag): Joey runs the `.dmg` on his Mac and
-   screenshots the Sequence window and one menu. Attach both to the release.
+6. Mac acceptance (ME-21): the maintainer runs the `.dmg` on a Mac and
+   screenshots the Sequence window and one menu when he can (a W5 entry gate
+   since the W4 verdict, ME-158); until then `[CHROME] Native=1` is the
+   documented macOS default and the release notes say so.
 
 ## What `release.yml` does
 
@@ -25,7 +27,7 @@ Tag-driven, the Anubis `Build apps` pattern (design 9.4, 9.5). Semver `vX.Y.Z`;
 | `check` | `ubuntu-latest` | fails unless the tag equals `v$(cat VERSION)`; exports the version |
 | `windows` | `windows-latest` | preset `release-win`, `ctest`, `cpack -G NSIS` -> `LJ4EVR-<ver>-win64-setup.exe` (per-user, no admin); `dumpbin /dependents` must list no `vcruntime` / `msvcp` / `ucrtbase` (ME-19); a silent install (`/S /D=<temp>`) checked by `tools/help_check.py --install-tree` (ME-36, W4-HELP); the installer's VERSIONINFO equals `VERSION` |
 | `macos` | `macos-14` | preset `release-mac` (universal, macOS 12+), `ctest`, `strip -x`, `codesign --force --deep -s -` (ad-hoc), `codesign --verify --strict`; the log then shows `lipo -info` (arm64 and x86_64 required), `codesign -dv` (`Signature=adhoc` required), `plutil -p Info.plist` (`CFBundleShortVersionString` = `VERSION`, `LSMinimumSystemVersion` = 12.0) and the `LC_BUILD_VERSION` minos; `cpack -G DragNDrop -D CPACK_STRIP_FILES=OFF` -> `LJ4EVR-<ver>-macos.dmg`; the `.dmg` is mounted, listed, its `Applications` link and `LJ4EVR.app` checked with `help_check.py --install-tree` and `codesign --verify` (W4-MAC) |
-| `release` | `ubuntu-latest`, `contents: write` | downloads both, writes `SHA256SUMS`, `gh release create` with both installers + sums; `--prerelease` for `0.*`; notes carry the SmartScreen line, the drag-to-Applications and right-click-open / `xattr -d com.apple.quarantine /Applications/LJ4EVR.app` instruction (until an Apple Developer account exists, R6), the notices and trademark lines, the sacrifice list and the ME-21 acceptance line |
+| `release` | `ubuntu-latest`, `contents: write` | downloads both, writes `SHA256SUMS`, `gh release create` with both installers + sums; `--prerelease` for `0.*`; notes carry the SmartScreen line, the drag-to-Applications and right-click-open / `xattr -d com.apple.quarantine /Applications/LJ4EVR.app` instruction (until an Apple Developer account exists, R6), the notices and trademark lines and the sacrifice list |
 
 The two build jobs only upload artifacts; one final job creates the Release,
 so nothing races to create it. Everything runs on GitHub-hosted runners; a
@@ -57,4 +59,4 @@ integration log) when it exists; until then each slot stays open.
 | Licence ruling (design 13 item 1) | the maintainer picks the repository licence. MIT is the PROPOSAL; `LICENSE`, `NOTICE`, the About line (`LJ_ABOUT_LICENCE` in `src/windows/lj_about_form.c`, the one tagged constant), `MACOSX_BUNDLE_COPYRIGHT`, the NSIS `LegalCopyright` and the CPack licence page (`CPACK_RESOURCE_FILE_LICENSE` = `LICENSE`) all say MIT today and change together | ruling: _open_; `gh repo view --json licenseInfo`: _open_ |
 | ME-45 non-admin install | one install of the release-candidate NSIS installer on a standard-user account (not in Administrators): `whoami /groups` without `S-1-5-32-544`, the tree under `%LOCALAPPDATA%\Programs\LJ4EVR`, the HKCU uninstall key, About showing the version | `docs/screenshots/w4/install-nonadmin.png`: _open_ |
 | ME-21 Mac run | the maintainer runs the release-candidate `.dmg` on a Mac, screenshots the Sequence window and one menu, and latches a cue from a MIDI device | `docs/screenshots/w4/mac-*.png`: _open_ (until then `[CHROME] Native=1` is the documented macOS default) |
-| REL-FLIP | `gh repo edit UnbannableGT/LJ4EVR --visibility public` after REL-HISTORY, REL-PRIVATE, REL-CI, ME-36, ME-37, the licence ruling and ME-45 are ticked; before it, turn on private vulnerability reporting (`SECURITY.md` points at it) | the go: _open_; `gh repo view --json visibility`: _open_ |
+| REL-FLIP | `gh repo edit UnbannableGT/LJ4EVR --visibility public` after REL-HISTORY, REL-PRIVATE, REL-CI, ME-36, ME-37, the licence ruling and ME-45 are ticked. Right after it (a private repository cannot have it): `gh api -X PUT repos/UnbannableGT/LJ4EVR/private-vulnerability-reporting`, then read it back with `gh api repos/UnbannableGT/LJ4EVR/private-vulnerability-reporting` (`enabled: true`); `SECURITY.md` points at it and gives the fallback until then. Also right after it: fork pull-request approval `all_external_contributors` (`docs/ci.md` rule 2), read back | the go: _open_; `gh repo view --json visibility`: _open_ |

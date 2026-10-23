@@ -618,7 +618,7 @@ static void sf_toggle(lj_widget *w, void *ud)                                   
 static void sf_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_seq_fades_close(); }
 static const lj_binding lj_sf_bindings[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", sf_close, NULL }, { "bOkClick", sf_ok, NULL }, { "sbToggleClick", sf_toggle, NULL },
-    { "cbIntensityClick", lj_handler_noop, NULL }, { "help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "cbIntensityClick", lj_handler_noop, NULL }, { "help1Click", lj_help_viewer_click, "sequences" }, { NULL, NULL, NULL } };   /* ME-141 */
 
 lj_window *lj_seq_fades_open(void)
 {

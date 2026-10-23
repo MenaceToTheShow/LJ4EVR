@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "core/lj_fsinfo.h"
 #include "core/lj_ini.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
@@ -35,9 +36,7 @@ int lj_restore_data_create(const lj_library *lib, const char *path)
     if (!tm || !strftime(when, sizeof when, "%Y-%m-%dT%H:%M:%S", tm)) when[0] = 0;
     snprintf(manifest, sizeof manifest, "LJ4 restore %d\nlibrary=%s\ncreated=%s\n", LJ_RESTORE_FORMAT, name, when);
     if (lj_library_backup(lib, tmp, manifest) != 0) return -1;            /* removes tmp on failure */
-    remove(path);
-    if (rename(tmp, path) != 0) { remove(tmp); lj_log("restore data: cannot write %s", path); return -1; }
-    return 0;
+    return lj_fs_replace(tmp, path);                           /* ME-139: a failed rename keeps tmp, the only new copy */
 }
 
 int lj_restore_data_info(const char *path, char *library, size_t cap)

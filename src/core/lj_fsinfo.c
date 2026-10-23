@@ -1,6 +1,7 @@
 /* lj_fsinfo.c - lj_fsinfo.h: stat() and mkdir() behind two calls (the only sys/ headers outside lj_library.c). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* localtime / stat / mkdir are fine on the UI thread */
 #include "core/lj_fsinfo.h"
+#include "core/lj_log.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -32,3 +33,11 @@ int lj_fs_mkdir(const char *path)
 }
 
 int lj_fs_exists(const char *path) { FILE *f = path ? fopen(path, "rb") : NULL; if (!f) return 0; fclose(f); return 1; }
+
+int lj_fs_replace(const char *tmp, const char *path)
+{
+    remove(path);                                              /* Windows rename does not replace */
+    if (rename(tmp, path) == 0) return 0;
+    lj_log("file: cannot replace %s; the new copy is kept in %s", path, tmp);   /* a scanner holding the fresh file, a folder in the way */
+    return -1;
+}

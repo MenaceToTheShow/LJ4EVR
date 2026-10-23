@@ -597,7 +597,7 @@ item 10; `[DEBUG] MonitorLayer` is the DMX monitor's).
 
 ## W4 dlg-files (2026-10-22)
 
-### Restore data `<userdir>RestoreData.lj4r` (`model/lj_restore_data.h`, W4-DLG-2; ours, not LJ2's `LightJockey.Bin`)
+### Restore data `<userdir>RestoreData.lj4d` (`model/lj_restore_data.h`, W4-DLG-2; ours, not LJ2's `LightJockey.Bin`)
 
 The club "show-saver" snapshot of `[06 s4.2]`. One file per installation, beside `Hardware.Ini`. The container
 is a `.lj4b` (the zip of `lj_library_backup`, entries relative to the library root, `/` separators) whose
@@ -611,7 +611,7 @@ created=2026-10-22T21:04:40
 
 - `library=` is quoted like a record string and must be a valid folder name (no `\ / : * ? " < > |`, not `.` or
   `..`); `created=` is local time, information only. A manifest with a format above 1, or none, is not restore data.
-- Create (System Preferences, Data Restore tab, Create Restore Data, Continue) writes `RestoreData.lj4r.tmp` and
+- Create (System Preferences, Data Restore tab, Create Restore Data, Continue) writes `RestoreData.lj4d.tmp` and
   renames it over the old file, so a failed create keeps the previous data set.
 - Restore (System, Restore Program Data, `Restart & Restore`) sets `Startup.ini [RESTORELIB] RESTORE=1` (LJ2's key)
   and restarts. The next start (`lj_startup_library`, before `Main.Ini` is read) runs `lj_library_replace`: pass 1
@@ -661,3 +661,59 @@ format and the dialog is already wired. TUpdateProgramForm (installation self-up
 | `Startup.ini` (userdir) | `[RESTORELIB]` | `RESTORE` | `1` = restore the data set at the next start (LJ2's key) |
 | `Startup.ini` (userdir) | `[RESTORELIB]` | `Pass` | FNV-1a of the restore password, 8 hex digits; empty = none (ours) |
 | `Main.Ini` | `[UPDATE]` | `NoCl2Reminder` | `1` = `Don't update - don't remind me` was chosen (ours) |
+
+## W4 settings files (ME-151, WIZARD_STYLES-7)
+
+All four are ours (INI grammar of `core/lj_ini`, CP1252, CRLF) and live in the user library. LJ2 kept the same data
+in binary or undocumented files that LJ4EVR does not read. Each is untrusted on load: a bad value refuses the whole
+file (logged), and the program keeps its defaults, except `RGBPalette.Ini`, which skips a bad entry.
+
+### `Fingers.Ini` (`windows/lj_fingers.h`; LJ2's file name, our keys, PROPOSAL rig 05 s5)
+
+| Section | Key | Value | Range |
+|---|---|---|---|
+| `[SETUP]` | `Mode` | `0` disabled, `1` Virtual Fingers (the serial box is never selected) | 0..1 |
+| `[SETUP]` | `FlickerThreshold` | fader filter of Fingers Setup, default 4 | 2..4 |
+| `[FUNCTIONS]` | `S<s>F<k>` | F key `k` (1..10) on shift level `s` (0..3): `fn <function name>` (a hotkey function of `docs/hotkeys.md`, not a Programs row), or `seq` / `cue` / `cl` / `bg` with a record number; empty = unassigned | numbers 1..99999999 |
+| `[SLOTS]` | `Row1`..`Row3` | index into the slot-function list (`lj_fingers_slot_functions`, Slot On/Off = 0) | 0..19 |
+| `[FADERS]` | `PageA`..`PageD` | index into the page-function list (`lj_fingers_page_functions`) | 0..last |
+| `[JOGS]` | `Jog1`..`Jog5` | index into the jog-function list | 0..last |
+| `[SCROLL]` | `Set` | index into the up/down-function list | 0..last |
+| `[PREFS]` | the Fingers Setup check-box names (`cbShiftLatch` ...) | `0` / `1` | |
+| `[VIRTUAL]` | `OnTop`, `FaderHints`, `MouseWheel`, `WheelHints`, `HotZones` | `0` / `1` | |
+
+### `2532Setup.Ini` (`windows/lj_da2532.h`; ours, LJ2's `2532_2.Cfg` is binary and not read)
+
+| Section | Key | Value |
+|---|---|---|
+| `[SETUP]` | `Version` | `1` (any other value refuses the file) |
+| `[SETUP]` | `Page`, `Bank` | the page (1..18) and bank (1..7) shown at the next open |
+| `[PAGE1]`..`[PAGE18]` | `Name` | the page tab name, at most 20 characters |
+| `[PAGEn]` | `<bank><key>L` (`A1L`..`G8L`) | a latch key: `fn <function name>`, `cue <n>`, `cl <n>` or `bg <n>` |
+| `[PAGEn]` | `<bank><key>F` (`A1F`..`G8F`) | a flash key: `fn <function name>` or `seq <n>` |
+| `[PAGEn]` | the key name + `T` (`A1LT`) | the key's text, at most 20 characters |
+| `[USER]` | `U1`..`U18` | a user key: `fn <function name>` only; `U<n>T` its text |
+
+Record numbers are 1..99999999. Programs rows of the function table are refused in a `fn` value. The window's
+preferences (`TabWidth`, `TabHeight`, `AutoWidth`, `AutoHeight`, `M_ClickAutoFlash`, `M_TabColorEnable`) are in
+`Main.Ini [2532]`.
+
+### `RGBPalette.Ini` (`windows/lj_config_dialogs.c`, TRGBPaletteForm; PROPOSAL file, 04 s5.3)
+
+    [RGBPALETTE]
+    Entry0=GENERIC|Red|FF0000
+
+`Entry<i>` counts up from 0 and the first missing number ends the list (at most 192 entries). The value is
+`<type>|<name>|RRGGBB`: type and name at most 31 characters each, the colour exactly six hex digits. A malformed
+entry is skipped. With no file, or no valid entry, the palette starts from the built-in GENERIC colours and the
+first save writes the file.
+
+### `Main.Ini [CUSTOMSEL]` (`desktop/lj_selection.h`; Fan Out's saved custom selections)
+
+| Key | Value |
+|---|---|
+| `Count` | the number of saved selections, 0..99 (outside that range it is clamped) |
+| `Name<n>` | selection `n` (1..Count): its name, at most 25 characters |
+| `Fix<n>` | its fixture order, comma-separated fixture numbers 1..100 (`3,7,12`); anything else in the list is skipped |
+
+Clear All sets `Count=0`; the old `Name` / `Fix` keys stay and are overwritten by the next save.

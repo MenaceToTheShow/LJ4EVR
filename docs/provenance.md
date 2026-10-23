@@ -30,9 +30,10 @@ LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with
 | Golden images | `tests/ui/golden/*.bmp` | rendered by LJ4EVR's own renderer (`lj4evr_tests`, `lj4evr_render`) and reviewed (`REVIEWED.tsv`) | MIT, as the code | `ui_golden` and the per-track golden rows |
 | Screenshots | `docs/screenshots/**`, `spikes/*/*.png` | captures of LJ4EVR's own windows on the developer PC | MIT, as the code | review |
 | Test fixtures | `tests/ui/scripts/*.Cl2`, `*.Udf`, `*.lj4s`, `tests/engine/replay/*.lj4r` | written by hand for the tests (the `.Udf` and `.Cl2` files are synthetic, not from an installation) | MIT, as the code | the tests that read them |
+| Design spikes (W0) | `spikes/` | three throwaway prototypes written for LJ4EVR; their captures are our own renders. `spikes/c-engineering/font13.h` rasterises Aileron Regular, the face Pillow bundles (<https://dotcolon.net/fonts/aileron>, by Sora Sagano) | code MIT, as the code; Aileron CC0 1.0 | review (ME-150) |
 | Martin's installer, help, manuals, fixture files, bitmaps | **nowhere**: `reference/` is gitignored | the developer PC only | Martin Professional's copyright | `git ls-files reference` empty; the REL-HISTORY scan in the W4 integration log |
 
 The installers carry the binary, `THIRD_PARTY_NOTICES.txt` (this repository's
-`NOTICE` followed by the full miniz MIT text, the QLC+ NOTICE and the full Apache
+`NOTICE` followed by the full miniz MIT text, LJ4EVR's attribution and modification notice for the QLC+ files (upstream has no NOTICE file) and the full Apache
 License 2.0 text; SDL3's zlib text is inside `NOTICE`) and the help topics; nothing
 else.

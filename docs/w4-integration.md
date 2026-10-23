@@ -527,3 +527,153 @@ The two scratch libraries were deleted and `%APPDATA%\LJ4EVR` put back after the
 
 Pre-commit: 292 staged paths, none under `reference/`; sha1 of each against the 18,923 files under `reference/` (13,637
 distinct): 0 equal. The new binaries are our own renders (229 entry-point captures, 5 control goldens).
+
+## Fix pass A r1
+
+Session of 2026-10-22/23 on the work PC (MSVC 19.44, Ninja + cl). Input: `delegations/W4_CODE_MASTER_ELDER_VERDICT.md`
+(ruling HOLD) section 5 Part A, items 1-23, each run to its *Verify* line. Joey's rulings of 2026-10-22 (Q1 rewrite, Q2 MIT,
+Q3 the `LJ4EVR (User lib: %s)` fallback, Q4 hosted Linux runners, Q5 ship with `Native=1`) are Part B and not applied here:
+no tag, no `VERSION` bump, no visibility change. App runs used a neutral data folder, `LJ4EVR_USERDATA=C:\ProgramData\LJ4EVR\`
+(new, `docs/running.md`), so `%APPDATA%\LJ4EVR` was not touched.
+
+### Builds and tests
+
+    build-w4 (Release, SDL, Ninja + cl)            0 warnings, 0 errors   ctest 100% passed, 0 failed out of 119
+    build-w4-nosdl (Release, LJ_SDL=OFF)           0 warnings, 0 errors   ctest 100% passed, 0 failed out of 118
+    build-debug-win (Debug, SDL)                   0 warnings, 0 errors   ctest 100% passed, 0 failed out of 119
+    build-fixa-asan (Debug, LJ_SDL=OFF, MSVC /fsanitize=address)  0 warnings  ctest 100% passed, 0 failed out of 118
+    build-debug-win lj4evr --selftest              six OK lines; 0 "no binding" / "unknown event" / "has no behaviour file"
+    test_layering                                  428 file(s) checked, 205 header(s) compiled alone, noop handlers 0, ini ternaries 0,
+                                                   scene getters 0, set-text/lib/ctx copies 0, noop Help handlers 0, 0 finding(s)
+    replay_all                                     36 scenario(s), 0 failed
+    ui_golden                                      208 of 208 form(s) have a REVIEWED.tsv row; 208 form(s), 0 failure(s)
+    dfm2c --check                                  OK          gen_vectors --check / --shapes --check: up to date
+    fidelity_check (new CTest row)                 73 F/I id(s) with a row of 73, sacrifice paragraph equal, 0 finding(s)
+    caption_diff (w4_captions.lj4s, U:W4Captions)  rc 0, 0 ME-16 lines; 145 implemented form(s) of 207, 0 difference(s),
+                                                   139 excluded by a fidelity row, 84 absent at runtime
+    determinism (dump-frames, Release / Debug / no-SDL)  equal, 1,641,600 bytes, sha256 5b13f41930362b75a7aa6f9c53f77db2d315a4039ea5a18da664ea1263114b50
+                                                   (unchanged: the 400-tick stream has no generic macro)
+    replay-frames.bin (all four trees)             129,664,080 bytes, sha256 c46fee4ceff60245c9b504a6d7b2028fca0d0ba6008e1f541af7c8279545039d
+                                                   (re-recorded once for ME-128; with ME-132 alone it is still b14d4b29...86468d05c, measured)
+
+New CTest rows: `fidelity_check`, `fidelity_check_selftest`; new rows inside existing subcommands: `test_engine_w2`
+(address guards, four cases), `test_restore_data` (ME-139), `test_uiscript_w3` (ME-142 prompt), `test_da2532_fingers`
+(ME-143), `test_debug_form` (ME-144). New UI scripts (app runs, not CTest): `w4_wire_record.lj4s`, `w4_help_fades.lj4s`.
+
+### Part A, item by item
+
+| # | ME | Done | Verify (as run) |
+|---|---|---|---|
+| 1 | ME-132 | `lj_fx_code(fx, ofs)` in `model/lj_model.h`: the address code of an offset, or -1 for address < 1, a link outside 1..4 or an offset past channel 512 of the link. Used by the rebuild (stops at the link end), s7 (every pair read and write), the movement-macro overlay and `pan_winner`. `lj_post_profile` returns NULL for a missing profile, no address, or `ofs` outside `0..footprint-1`. `lj_post_pair_lsb` keeps the LSB inside the link. | `test_engine_w2` `lj_t_address_guards`: (1) 16-ch profile at 1:505, dimmer at 2:001 = 255 in the scene, GM 0: `out[1][0] == 0`; (2) address-0 pt16 head on link 2 with Invert Pan beside a dimmer at 1:512 = 10: `out[0][511] == 10`, `out[1][0] == 0`; (3) the same head on link 1 with movement macro 1 running; (4) a heap profile bound at 4:512, moved to 1:001 with no rebind. Green on build-w4 and on the MSVC ASan no-SDL tree; with the three engine files at HEAD the same binary stops with `AddressSanitizer: heap-buffer-overflow` (measured). Replay sha unchanged by ME-132 alone (above); determinism unchanged. |
+| 2 | ME-133 | `lj_lock` around every live write in Fixture Configuration: `lj_fixture_config_set_address` (eAdr, Lnk, up/down, Calculate addresses OK all route through it), `_add`, `_put`, remove, Clear settings and the six flag boxes. Copy From and Clear Fixture Data already locked. The rebind stays at Save; ME-132 (c) makes a stale bind safe. `test_uiscript_w3.c` rebinds under the lock after its memset. | `test_uiscript_w3` passes on the MSVC ASan tree (red at HEAD per the verdict). LORD_C's stale-bind row = case (4) of item 1: 4:512 and 1:001 both 0, ASan clean. |
+| 3 | ME-134 (ME-128) | `lj_genmacro_step` on a declared pair adds `round(s * amp * 256 / 32640)` (integer, half away from 0; `/* PROPOSAL rig 14 sA.6 */`) instead of the 8-bit delta x 256. 8 of the 11 `expect_pair` rows of `genmacro_sine_amp186` re-recorded from the formula computed independently in Python. | pair 1:111 = 40668 / 50856 / 58368 / 50884 at ticks 2 / 5 / 10 / 15 (`replay_all` green); `replay-frames.bin` re-recorded once (above); `determinism` locally equal; CI below. |
+| 4 | ME-135 | `lj_w_image.c` paints `desc->picture` through `lj_glyph_get` (Source-Images aware): Center, Stretch (integer nearest neighbour) and Transparent (bottom-left key). The runtime laser warning hides Image2 (Timer1's second frame at 0,-8, PROPOSAL rig). | Re-shot `E/laser-warning-TLaserWarningForm.png`: the art box at client (4,13)-(114,112), 111x100, 3,283 yellow sign pixels. `E/about-TAboutForm2.png`: 6,722 non-black pixels inside the logo rect (55,3) 250x113. `E/laser-unblock-TUnblockLasersForm.png` re-shot. REVIEWED rows for every changed golden (below). |
+| 5 | ME-136 | `lj_w_bitbtn_kind_glyph`: a TBitBtn with a Kind and no Glyph draws the kind's art stem (`ok`, `cancel`, `help`, `close`, `yes`, `no`, `retry`, `ignore`, `abort`, `all`) through `lj_w_glyph_caption`. | Goldens re-rendered: 159 BMPs changed in all (kind glyphs, plus items 4, 6 and 14); every one diffed against HEAD (old / new / mask contact sheets and old-new crop sheets, viewed). `ui_golden` green; one REVIEWED row per changed golden, 159 rows. Re-shot `E/startup-options-TStartupForm.png` (Setup > Preferences > Start Up ...): the check on `Ok` and the cross on `Cancel`; its golden `TSTARTUPFORM` changed 322 px, the two faces. |
+| 6 | ME-137 | `tools/dfm2c.py` `ITEMS_EXCLUDED`: `TABOUTFORM2.RichEdit1` Lines emitted empty, recorded `dropped:D2: authored credits, not a caption` in `dfm2c_blobs.txt`; `caption_diff_excl.tsv` row; `TABOUTFORM2.bmp` re-rendered once with item 4. | `git grep -i -l "<credit-name>\|<credit-word>\|<credit-signer>"` = 0 files (whole tree); `grep -c <credit-word> build-w4/lj4evr.exe build-debug-win/lj4evr.exe` = 0 / 0; `caption_diff` 0 differences. |
+| 7 | ME-138 | `docs/fidelity.md` section "Fix pass A r1": the sacrifice paragraph (byte-equal to README's), I1 and I6-I13, the rows the code promises (vsIcon, Fixture Special OK, Patch Sub Masters Source, Debug n/a, sampled loads, `CLUBLITE_EXTERNALMAP`, the by-id forms, TPrintWaitForm), the two Q9 literals, ME-145's other buttons, ME-163's Date column with F50 reworded, ME-160 with F17 corrected, the seven W4-FRAME details, and six superseding rows (`&Fingers`, P_Clone / P_Clear, Apply to all, `eChannelName` 6 bytes, Fan Out selections, BG Edit Sequence). `tools/fidelity_check.py` + CTest rows. | `fidelity_check`: 73 F/I id(s) with a row of 73, sacrifice paragraph equal, 0 finding(s); `--selftest` (a blank F17 cell, a changed paragraph, a missing capture) fails all three. Acceptance item 4 re-ticked with that output (`w4-gates.md`). |
+| 8 | ME-139 | `lj_fs_replace(tmp, path)` in `core/lj_fsinfo`: remove, rename, and on a failed rename keep `tmp` and log its name. `lj_library_update_file` (F56) and `lj_restore_data_create` both use it. | `test_restore_data`: `ME-139: forced rename failure -> -1, the .tmp copy survives` (a non-empty folder stands where the restore data goes). |
+| 9 | ME-140 | `-fno-sanitize-recover=all` beside `-fsanitize` (non-MSVC) and in the fuzz `CMAKE_C_FLAGS`. | linux-gcc-asan green with the flag: CI below. |
+| 10 | ME-141 | The five Help leaves bound to `lj_help_viewer_click` (`sequences`, `fixtures` x3, `files`). `test_layering.py` check 10: a `*elp*Click` / `Heklp1Click` handler, or the OnClick of a form's bkHelp TBitBtn, bound to `lj_handler_noop` is a finding. | On the HEAD copies of `lj_gdc_form.c` / `lj_config_dialogs.c` the check reports 4 findings (`cfm_b Heklp1Click`, `im_b BitBtn4Click`, `fe_b BitBtn1Click`, `lj_sf_bindings help1Click`); on the tree 0. `w4_help_fades.lj4s`: `PASS Help viewer (THelpViewer) <- Colors > Fades > Help (ME-141)`. |
+| 11 | ME-142 | `ask("Clear All Inverted Channels ?", 3)` (exe 0x1BE380). Fidelity rows for `Do you wish to restart LightJockey now ?` and `Sequence-file format changed`. | `test_uiscript_w3`: `open global_patch` / `click TGlobalPatchForm.ClearAllInverted1` / `assert_prompt "Clear All Inverted Channels ?"` passes. Q9 grep (every backticked literal of note 12 Q9 against `src/`): 58 literals, 48 verbatim; the 10 others are 7 INI keys or file names, `Close LightJockey ?` (the DFM's `Close Lightjockey ?` wins, D13) and the two with fidelity rows. |
+| 12 | ME-143 | `held_bump[LJ_FG_FADERS]`: a bump's release runs the function that fired. | `test_da2532_fingers`: press Bump 1 on page A, `lj_fingers_set_page(2)`, release: `BUMP_SUB_FLASH_1` edge 0. |
+| 13 | ME-144 | `lj_engine_note_overrun` (caller holds the lock), called by the engine thread beside `lj_log_overrun`. | `test_debug_form`: one late tick reads `Overruns: 1`. |
+| 14 | ME-145 | `tools/glyphmap.tsv` rows: Cue Builder `sbAuto` / `sbManual` / `sbMusic` = `autotrig` / `manualtrig` / `music`, Select Bitmap `bGobos` / `bColors` = `gobos` / `colors`; `dfm2c` regenerated. Fan Out `sbNew` / `sbDelete` / `sbSave` and User Libraries `bSelect`: fidelity rows. | Re-shot `E/cue-builder-TCueStackForm.png` (the three trig faces) and `E/bitmap-picker-TBitMapPickerForm2.png` (the gobo and colour faces) from their entry points: non-blank (viewed); goldens `TCUESTACKFORM` / `W4SD_CUE_STACK` 257 px, `TBITMAPPICKERFORM2` / `W4C_BITMAP_PICKER` 264 px. |
+| 15 | ME-146 | `RestoreData.lj4d` (constant, `file-formats.md`, the two tests, the dialog comment). | `git grep -c "RestoreData.lj4r"` = 0; `test_restore_data` green. |
+| 16 | ME-147 | The Execute File comment states what is filtered and what still reaches the shell. | "AllowExecute=1 lets a cue list start any program through the shell; enable it only for cue lists you wrote." is in `docs/running.md` and `SECURITY.md` (1 each). |
+| 17 | ME-148 | HEAD redaction (table below); the nine path-bearing User Libraries captures and the four others (W2 restore and export, W4 export and import) re-shot under `LJ4EVR_USERDATA`. | The verdict's four-pattern `git grep -c -E` (the LAN prefix, the runner login, the work-PC name prefix, the NIC name) = 0 at HEAD. Pixel scan (scratch `pixscan.py`: the rendered user name in the two faces, cut from two `9c21031` captures, matched in any colour pair over every tracked PNG / BMP / GIF): 862 images, 0 hits (it finds the user name in the HEAD versions of the re-shot captures, measured). |
+| 18 | ME-149 (1), (2) | `docs/ci.md` rule 1 rewritten (the `if:` keeps this repository's own PRs off the self-hosted runners; the approval setting is the fork control; the approver reads the workflow diff first), the `ci.yml` header comment the same. `runs-on` unchanged (Part B). | CI below. |
+| 19 | ME-150 | REL-HISTORY entry (below); `SOURCE:5`, `NOTICE:36`, `provenance.md` and the CPack part title say "attribution and modification notice" (upstream QLC+ has no NOTICE file); a `spikes/` provenance row (Aileron Regular, CC0 1.0, by Sora Sagano, as bundled in Pillow). | the three records present (this section, `third_party/qlcplus-fixtures/SOURCE`, `docs/provenance.md`). |
+| 20 | ME-151 | `file-formats.md`: `Fingers.Ini`, `2532Setup.Ini`, `RGBPalette.Ini`, `Main.Ini [CUSTOMSEL]`. README: CMake 3.25, `dev-mac` build lines, `debug-win` in the preset list, the main desktop capture, the citations sentence. CONTRIBUTING: the golden rule as practised, "no extern globals except the log sink". SECURITY: the fallback contact. `release.yml`: the ME-21 line dropped, "planned for a later version". `releasing.md`: the `v0.x` line, the reporting and fork-approval steps right after the flip. `building.md`: short clone path, python3 for ctest. `generated-files.md`: the art inputs, `Items.Data` decoded, `ITEMS_EXCLUDED`. `w4-gates.md`: the Status column. | Status column: 0 blank rows (92 filled); README says `CMake >= 3.25`; `grep -c ME-21 .github/workflows/release.yml` = 0. |
+| 21 | ME-152 | `w4_wire_record.lj4s`: MAC 500 at 1:001 runs movement macro 1, LightCorder records 11 s, sACN on the wire (default `Hardware.Ini`: multicast, universes 1-4). | per-second lines below; ME-24 ticked. |
+| 22 | ME-153 | design.md edited for the orchestrator (vault): revision line below. | `scaled in microseconds` 2, `UI-side pin` 2, `arialblack18` 3, `movementmacro.gif` 2, `532 bytes` 2 (each >= 1). |
+| 23 | ME-157 | `tools/standard_user_install.ps1`, a `ci.yml` windows-msvc step on the hosted runner. | the four records: CI below. |
+
+### ME-152: the recording wire run (ME-24 HONOUR)
+
+    lightcorder: recording link 1, 512 channels, 40 Hz, 4 MB card, compression on
+    lightcorder: 41 frames/s, tick 25000 us, sACN 40 1 1 1 packets/s
+    lightcorder: 41 frames/s, tick 25000 us, sACN 40 1 1 1 packets/s
+    lightcorder: 40 frames/s, tick 25000 us, sACN 40 1 1 1 packets/s
+    lightcorder: 40 frames/s, tick 25000 us, sACN 41 1 1 1 packets/s
+    lightcorder: 41 frames/s, tick 25000 us, sACN 40 1 1 1 packets/s
+    lightcorder: 40 frames/s, tick 25000 us, sACN 41 1 1 1 packets/s
+    lightcorder: 40 frames/s, tick 25000 us, sACN 40 1 1 1 packets/s
+    lightcorder: 41 frames/s, tick 25000 us, sACN 40 1 1 1 packets/s
+    lightcorder: 41 frames/s, tick 25000 us, sACN 40 2 2 2 packets/s
+    lightcorder: 41 frames/s, tick 25000 us, sACN 41 1 1 1 packets/s
+    lightcorder: stopped after 441 frames (226233 of 4194304 card bytes)
+    lightcorder: 441 frames saved to C:\ProgramData\LJ4EVR\User\W4Entry\LightCorderFiles\LC0001.LLF
+
+441 frames in 11 s = 40.1 frames/s at 40 Hz; `TickHz` unchanged (25,000 us every second); link 1, whose frame changes every
+tick, at the 40 packets/s cap (the 41s are the one-second window's edge), links 2-4 at the 1/s keep-alive. Without the
+movement macro the same run gives 40-41 frames/s and 1 packet/s per link (the frame never changes). ME-24 ticked.
+
+### ME-148: REL-PRIVATE disposition at HEAD
+
+| Item | Where | Disposition |
+|---|---|---|
+| the runner's login@host and its `.local` name | `docs/w1/w2/w3-integration.md`, `docs/w4-gates.md` | `<runner-host>` |
+| this PC's and atlas-ci2's LAN addresses | the same four files | `<lan-ip>` |
+| the work-PC name in the sACN source name | `docs/w1/w2/w3-integration.md` (capture lines) | `<dev-pc>` |
+| atlas-ci2's two NIC names | `docs/w1/w2/w3-integration.md`, `docs/fidelity.md` | `<nic>` (the second NIC "a second one") |
+| the Dropbox path | `spikes/c-engineering/README.md` | "the design vault (not published)" |
+| a host name in a gate's source cell | `docs/w4-gates.md` REL-PRIVATE row | reworded to "the maintainer's earlier repository redaction precedent" |
+| the Windows user name in pixels | 13 captures (`docs/screenshots/w4/entry/{user-libraries,user-lib-name,rename-file,backup,restore}-*`, `export-config-TExportConfigForm`, `import-profile-TFixtureImportForm`, `docs/screenshots/w2/{restore-TLibraryRestoreForm,export-config-TExportConfigForm}`) | re-shot under `LJ4EVR_USERDATA=C:\ProgramData\LJ4EVR\` (the same windows from the same entry points; the W2 restore shot is taken after picking the backup, before Restore); the pixel scan is part of the REL-PRIVATE scan from now on |
+| `atlas-ci2` as a word, the `lj4evr` runner label | `docs/ci.md`, `ci.yml` comments, older logs | kept: a retired host's name, no address or user; the label follows ME-159 (Part B) |
+| test IPs `192.168.10.5`, `192.168.1.x` | `tests/sacn/test_cfg.c`, `tests/ui/test_windows_c.c` | kept: synthetic |
+| history | every commit and tag | Part B step 1 (Joey's Q1 ruling: rewrite) |
+
+### ME-150: REL-HISTORY entry
+
+What was measured, by LORD_PROVENANCE and confirmed by the W4 verdict section 0 (scripts in the session scratchpad, nothing
+written to the repo):
+
+1. Objects: `git rev-list --objects --all` 3,721 objects, 3,020 blobs, 65 commits, 7 refs, no stash; 0 `reference/` paths.
+   772 binary blobs: 422 goldens and 338 captures (provenance rows), 6 `spikes/*.png` (our renders), 4 `packaging/icons/*`
+   (`make_icons.py`), the 214-byte synthetic `w3_synthetic.Udf`, and the repo-root `controls_a_intensity_comma.bmp`
+   (`d855140`, removed in `364812f`: LJ4EVR's own Intensity control render, viewed). One empty capture,
+   `docs/screenshots/w1/acceptance4-sequence-TSaveSeqForm.png` (blob `bb42eb5b`, a 65-byte 0x0 PNG, ME-68), is our own
+   output too. No `.GS2`, `.rtf`, `.chm`, `.gif` or `.Mac` file and no profile file in history; no DFM hex block.
+2. Hash match: the git blob sha1 of all 18,920 non-empty files under `reference/` (as-is and CRLF->LF, 16,111 distinct)
+   against every history blob: 22 equal, all the vendored QLC+ `.qxf` files (Apache-2.0, equal to upstream at the
+   recorded commit).
+3. Pixel match of our art against Martin's bitmaps: best same-size agreement 0.960, the LED sheets; named counterparts
+   at most 0.772; DFM-embedded bitmaps at most 0.758. Gobo near-matches Cross 0.962 and Pin 0.961 (LORD_FIDELITY) are
+   trivially simple shapes.
+4. Pixel match of committed images against the 210 Source-Images glyphs and the 101 DFM bitmaps: 83 hits, 77 of them
+   the 13-px OnLine LED disc of `lj_w_led.c` (129 of 129 opaque pixels of `LedOn.bmp`: a plain circle at a harvested
+   size, geometry; the three LED sheets match 128 of 129), 6 `H-Arrow` false positives; no capture ran with Martin's
+   images loaded.
+5. Text match: 10- and 12-word runs from 370-516 Martin prose sources against every non-`third_party` text blob: citations
+   of one or two sentences, function-name lists, DMX command strings; no paragraph of the help or the manuals. The one
+   authored text found is Martin's About credits array (`lj_forms_gen.c` since `d855140`, the `TABOUTFORM2` golden since
+   `893123d`, every installer since W0): **REL-HISTORY not met**. HEAD is clean after ME-137; history and the eight
+   prerelease installer assets follow Joey's ruling Q1 = (a) rewrite (Part B step 1).
+6. Secrets: 0 hits for 11 token and key patterns; every author and tagger e-mail is the GitHub noreply address.
+   Private details: the REL-PRIVATE table above.
+
+### ME-151: design 13 items 2, 6, 7, 11 and 13
+
+- Item 2 (Joey's answers to inventory section 7 Q1, Q2, Q4): not answered; v1.0.0 builds on tier 1 of note 15 as the
+  design says, and the `.LJB` importer stays W5.
+- Item 6 (`.bgc` extension, `Setup.<k>` palette layout): ours (PROPOSAL) in v1.0.0; a rig sample can change them.
+- Item 7 (Statics 2: 20 slots per page, Add / Replace / Solo scopes, LTP inside): PROPOSAL in v1.0.0; rig `[14 sB.8]`.
+- Item 11 (op-list goldens): not needed; BMP goldens with a REVIEWED row per change held through W4 (this pass changed
+  159 and reviewed each).
+- Item 13 (MediaPlayer): W5, the default; the rows stay greyed with the inert-row rule (fidelity I4).
+
+### ME-153: the design.md revision line (vault, design owner)
+
+> Fix-pass revision W4 r1 (2026-10-23, ME-153, per `delegations/W4_CODE_MASTER_ELDER_VERDICT.md` section 5 item 22, applied by the W4 fix-pass integrator for the orchestrator as design owner): landed the ME-124 / ME-50 sentences (2.0 OS-edge state and the six limits in `core/lj_types.h`; 2.3 rule 3 the Statics 2 link is a UI-side pin; 3.3 cue time scaled in microseconds; 3.5 the two-case unfreeze rule; 4 the six limits; 7.4 the clean-room sentence and `arialblack18`; 7.6 the four runtime typos; 7.7 which GIFs are 1:1, `movementmacro.gif` 447x243 among them; 10 W1 items 4-5), 10 W4 and 12 F8 (the DMX-in window opens in W4 with its input controls greyed; the sACN input path is W5), and the note 16 section 2 width (532 bytes per `.Udf` file-table entry), stated in 5.3 because only design.md is edited.
+
+The same revision replaces the three remaining `arialblack16` mentions (stack table, 2.6, 13 item 4) with `arialblack18`.
+Note 16 itself is not edited (only design.md is in this pass's scope); design 5.3 records the correction.
+
+### Not done here
+
+- Part B (history rewrite, PROPOSAL text, caption fallback, `VERSION`, tag, flip, runner switch): after this pass is
+  verified, per the verdict.
+- The W5 entry gates of verdict section 7 and the LOW rows of section 8: untouched, except LORD_FIDELITY-19, which now
+  has its fidelity row.
+- Captures of other windows that show the laser warning behind them (`lightcorder-*`, `save-lightcorder-*`,
+  `close-prompt-TLaserWarningForm.png`) still show it without the sign; only the warning's own capture was re-shot.

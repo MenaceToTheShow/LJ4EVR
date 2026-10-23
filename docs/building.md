@@ -4,6 +4,12 @@ C11, CMake >= 3.25, Ninja or Visual Studio. SDL3 (`release-3.4.18`) is fetched
 by CMake at configure time; nothing else is downloaded. Build directories are
 `build-*/` under the repo and are gitignored (design 9.1).
 
+- On Windows, clone to a short path (for example `C:\src\lj4evr`): under a long
+  one, SDL's configure-time try-compile passes CMake's object path limit and
+  prints `Detecting Target CPU Architecture - <ERROR>` (the build still works).
+- `ctest` needs `python3` (`python` on Windows) on PATH: `test_layering`,
+  `help_check`, `artpack_check` and the other tool rows run Python 3.
+
 ## Presets (`CMakePresets.json`)
 
 | Preset | Host | Generator | SDL | What it is for |
@@ -73,7 +79,7 @@ Check an installed tree (an NSIS install directory, a mounted `.dmg`, or
 
     python -I tools/help_check.py --install-tree <dir>
 
-It fails unless the notices file carries the Apache-2.0 terms, the QLC+ NOTICE,
+It fails unless the notices file carries the Apache-2.0 terms, the QLC+ attribution notice,
 the miniz MIT text and the SDL3 zlib text, and every topic matches `help/`.
 `release.yml` runs it on the silently installed NSIS tree and on the mounted
 `.dmg`.

@@ -362,6 +362,9 @@ COLOR = {"Color": "color", "Font.Color": "font_color", "Brush.Color": "brush_col
          "BaseColor": "base_color", "DipColor": "dip_color", "TextColor": "text_color"}
 ART = {"Glyph.Data": "glyph", "Picture.Data": "picture", "Icon.Data": "picture", "Bitmap": "picture"}
 ITEMS = {"Items.Strings", "Lines.Strings", "Tabs.Strings"}
+# ME-137: list text that is not a caption. D2 covers captions, geometry and behaviour; these are emitted empty and
+# listed in tools/dfm2c_blobs.txt with the reason.
+ITEMS_EXCLUDED = {("TABOUTFORM2", "RichEdit1"): "D2: authored credits, not a caption"}
 COLLS = {"Columns", "Sections", "Panels"}
 # Action -> control/menu-item slots the action's facts fill when the control did not say
 ACTION_SLOTS = (("Caption", "caption"), ("Hint", "hint"), ("ShortCut", "shortcut"), ("Enabled", "enabled"),
@@ -650,7 +653,10 @@ class Gen:
             elif key == "Alignment" and tag == "ident" and p in TALIGNS:
                 s["alignment"] = TALIGNS[p]
             elif key in ITEMS and tag == "list" and all(x[0] == "str" for x in p):
-                items.extend(x[1] for x in p)
+                if (form, obj.name) in ITEMS_EXCLUDED:
+                    self.blobs.append((form, obj.name, cls, key, "dropped:" + ITEMS_EXCLUDED[(form, obj.name)]))
+                else:
+                    items.extend(x[1] for x in p)
             elif key == "Items.Data" and tag == "blob":
                 try:
                     items.extend(decode_listitems(self.blob(form, key, v)[0]))

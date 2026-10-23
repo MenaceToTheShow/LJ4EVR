@@ -6,7 +6,7 @@
  *    anywhere in list to keep open)" as the last row; 10 refresh passes = 9 seconds; a click in the list keeps it
  *    open; untouched it closes itself after 10 s.
  *  - W4-DLG-2 from the entry points: System Preferences Data Restore tab ("(No File)", New Password greyed) ->
- *    Create Restore Data -> TCreateDataForm text -> Continue writes RestoreData.lj4r ("(File Exists)") -> a value
+ *    Create Restore Data -> TCreateDataForm text -> Continue writes RestoreData.lj4d ("(File Exists)") -> a value
  *    changed -> Restore Data (LJ_ACT_RESTORE_DATA) -> "Restart & Restore" sets RESTORE=1 and runs LJ_ACT_RESTART ->
  *    lj_startup_library brings the value back. New Password: OK only when both boxes match; the change prompt and
  *    "Incorrect Password" verbatim. A corrupt data set at start: the "Error" prompt verbatim, Yes deletes it.

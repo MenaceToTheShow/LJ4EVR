@@ -12,6 +12,7 @@
 #include "engine/lj_engine.h"
 #include "engine/lj_engine_rules.h"
 #include "engine/lj_movemacro.h"
+#include "model/lj_movemacro.h"
 
 static int fails;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
@@ -312,6 +313,59 @@ static void lj_t_movemacro_me83(void)
     CHECK(pa == pb && ta == tb);
 }
 
+/* ME-132 / ME-133 (LORD_ENGINE-1, -2, LORD_C-1): the F41 "Save Anyway" states and a stale bind, each on a fresh engine.
+ * (1) a 16-channel profile at 1:505 must not claim 2:001..2:008: the dimmer at 2:001 is 0 at GM 0;
+ * (2) an address-0 pt16 head on link 2 with Invert Pan leaves 1:512 = 10 and 2:001 = 0;
+ * (3) an address-0 pt16 head on link 1 with a movement macro reads and writes nothing (ASan: no out[0][-1], no st[-1]);
+ * (4) a heap profile bound at 4:512, moved to 1:001 with no rebind: no output on the stale channels (ASan clean). */
+static void lj_t_address_guards(void)
+{
+    static lj_show sh; static lj_sequence q; static lj_scene sc; static lj_cue cue;
+    static lj_profile dim, wide, head;
+    const lj_sequence *seqs[LJ_CUE_SLOTS] = { &q };
+    lj_profile *heap = (lj_profile *)calloc(1, sizeof *heap);
+    const lj_frame *fr = NULL;
+    int i, k;
+    if (!heap) { fails++; return; }
+    memset(&dim, 0, sizeof dim); dim.footprint = 1; dim.use_gm = 1; dim.intensity.enabled = 1; dim.intensity.max = 255; dim.channel_class[0] = LJ_CH_INTENSITY;
+    memset(&wide, 0, sizeof wide); wide.footprint = 16; for (i = 0; i < 16; i++) wide.channel_class[i] = LJ_CH_SPECIAL;
+    memset(&head, 0, sizeof head); head.footprint = 4; head.pt16 = 1; head.pan_ofs = 0; head.tilt_ofs = 2;
+    head.channel_class[0] = LJ_CH_PAN; head.channel_class[2] = LJ_CH_TILT;
+    *heap = dim;
+    for (k = 0; k < 4; k++) {
+        lj_engine *e = lj_engine_create();
+        if (!e) { fails++; break; }
+        memset(&sh, 0, sizeof sh);
+        lj_t_seq(&q, &sc, 1, 1, 0, 0, 100000);
+        memset(&cue, 0, sizeof cue); cue.number = 1; cue.slot[0].seq = 1; cue.slot[0].enabled = 1;
+        sh.fixture[0].kind = sh.fixture[1].kind = LJ_FX_GS2;     /* GS2: the engine keeps the bound profile */
+        if (k == 0) {
+            sh.fixture[0].link = 2; sh.fixture[0].address = 1; sh.fixture[1].link = 1; sh.fixture[1].address = 505;
+            sc.val[512] = 255; sc.state[512] = LJ_SNAP;
+        } else if (k == 1 || k == 2) {
+            sh.fixture[0].link = 1; sh.fixture[0].address = 512; sh.fixture[1].link = (uint8_t)(k == 1 ? 2 : 1); sh.fixture[1].address = 0;
+            sh.fixture[1].invert_pan = 1;
+            sc.val[511] = 10; sc.state[511] = LJ_SNAP;
+            if (k == 2) { sc.macro[1].type = LJ_MM_TYPE_ELLIPSE; sc.macro[1].step = 512; sc.macro[1].amp_pan = sc.macro[1].amp_tilt = 127; sc.macro[1].fstate[LJ_MMP_TYPE] = LJ_FADE; }
+        } else {
+            sh.fixture[0].link = 4; sh.fixture[0].address = 512;
+        }
+        lj_engine_bind(e, &sh);
+        lj_engine_bind_profile(e, 0, k == 3 ? heap : &dim);
+        if (k < 3) lj_engine_bind_profile(e, 1, k == 0 ? &wide : &head);
+        if (k == 3) { sh.fixture[0].link = 1; sh.fixture[0].address = 1; }   /* Fixture Configuration's live edit; the rebind waits for Save */
+        if (k == 0) lj_engine_cmd(e, lj_t_c(LJ_CMD_SET_MASTER, 0, 0, 0));
+        lj_t_load(e, &cue, seqs, 0);
+        for (i = 0; i < 4; i++) fr = lj_t_tick(e);
+        if (k == 0) CHECK(fr && fr->out[1][0] == 0);                                   /* 2:001 is the dimmer's, GM 0 */
+        if (k == 1) CHECK(fr && fr->out[0][511] == 10 && fr->out[1][0] == 0);
+        if (k == 2) CHECK(fr && fr->out[0][511] == 10);
+        if (k == 3) CHECK(fr && fr->out[3][511] == 0 && fr->out[0][0] == 0);
+        lj_engine_destroy(e);
+    }
+    free(heap);
+}
+
 int lj_test_engine_w2(int argc, char **argv);
 int lj_test_engine_w2(int argc, char **argv)
 {
@@ -336,6 +390,7 @@ int lj_test_engine_w2(int argc, char **argv)
     lj_t_cue_time_and_loops(e);
     lj_t_link_ownership(e);
     lj_t_movemacro_me83();
+    lj_t_address_guards();
     lj_engine_bind(e, NULL); lj_engine_destroy(e); free(show);
     printf("test_engine_w2: %d failure(s)\n", fails);
     return fails ? 1 : 0;

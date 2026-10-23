@@ -251,7 +251,7 @@ int lj_fixture_config_set_address(int fixture, int link, int address)
     if (!sh || fixture < 0 || fixture >= LJ_FIXTURES || link < 1 || link > LJ_LINKS || address < 0 || address > LJ_LINK_CH) return -1;
     f = &sh->fixture[fixture];
     if (!used(f)) return -1;
-    f->link = (uint8_t)link; f->address = (uint16_t)address;
+    lj_lock(); f->link = (uint8_t)link; f->address = (uint16_t)address; lj_unlock();   /* ME-133: the engine thread reads these under the lock; the rebind waits for Save (fc_write) */
     fc.modified = 1;
     if (fixture == fc.sel) panel_fill();
     list_build();
@@ -282,7 +282,7 @@ int lj_fixture_config_add(uint16_t profile_id, int link, int address)
     lj_str_copy(fx.user_name, sizeof fx.user_name, r->tag ? r->tag : "");    /* "user name (defaults to the profile tag)" [02 s9.2] */
     for (i = 0; i < LJ_FIXTURES && used(&sh->fixture[i]); i++) { }      /* first free row (lj_show_add_fixture does the same; kept local so the dialog works against the W1 model stub) */
     if (i >= LJ_FIXTURES) { lj_log("fixture config: no free fixture slot (%d)", LJ_FIXTURES); return -1; }
-    sh->fixture[i] = fx;
+    lj_lock(); sh->fixture[i] = fx; lj_unlock();               /* ME-133 */
     fc.modified = 1;
     fc.sel = i;
     list_build(); panel_fill();
@@ -293,7 +293,7 @@ static void remove_fixture(int i)
 {
     lj_show *sh = show();
     if (!sh || i < 0 || i >= LJ_FIXTURES) return;
-    lj_show_remove_fixture(sh, i);
+    lj_lock(); lj_show_remove_fixture(sh, i); lj_unlock();     /* ME-133 */
     fc.modified = 1;
     fc.sel = -1;
     list_build(); panel_fill();
@@ -387,8 +387,10 @@ static void clear_settings(int yes, void *ud)
     (void)ud;
     if (!yes || !sh || fc.sel < 0) return;
     f = &sh->fixture[fc.sel]; r = row_by_id(f->profile_id);
+    lj_lock();                                                 /* ME-133 */
     f->invert_pan = f->invert_tilt = f->swap_pt = f->ignore_bo = f->ignore_gm = f->link_strobe_gm = 0;
     lj_str_copy(f->user_name, sizeof f->user_name, r && r->tag ? r->tag : "");
+    lj_unlock();
     fc.modified = 1;
     list_build(); panel_fill();
 }
@@ -460,12 +462,14 @@ static void on_flag(lj_widget *w, void *ud)
     (void)ud;
     if (fc.loading || !sh || fc.sel < 0 || !w->name) return;
     f = &sh->fixture[fc.sel];
+    lj_lock();                                                 /* ME-133 */
     if (strcmp(w->name, "cbInvPan") == 0) f->invert_pan = (uint8_t)on;
     else if (strcmp(w->name, "cbInvTilt") == 0) f->invert_tilt = (uint8_t)on;
     else if (strcmp(w->name, "cbSwapPT") == 0) f->swap_pt = (uint8_t)on;
     else if (strcmp(w->name, "cbIgnoreBo") == 0) f->ignore_bo = (uint8_t)on;
     else if (strcmp(w->name, "cbIgnoreGM") == 0) f->ignore_gm = (uint8_t)on;
     else if (strcmp(w->name, "cbLinkSM") == 0) f->link_strobe_gm = (uint8_t)on;
+    lj_unlock();
     fc.modified = 1;
 }
 static void on_username(lj_widget *w, void *ud)
@@ -718,9 +722,11 @@ int lj_fixture_config_put(int f, uint16_t profile_id)
     lj_show *sh = show();
     const lj_exe_row *r = row_by_id(profile_id);
     if (!sh || !r || !lj_fixlib_by_id(profile_id) || f < 0 || f >= LJ_FIXTURES) return -1;
+    lj_lock();                                                 /* ME-133 */
     memset(&sh->fixture[f], 0, sizeof sh->fixture[f]);
     sh->fixture[f].kind = LJ_FX_BUILTIN; sh->fixture[f].profile_id = profile_id; sh->fixture[f].link = 1;   /* address 0: "has no DMX Address" until set */
     lj_str_copy(sh->fixture[f].user_name, sizeof sh->fixture[f].user_name, r->tag ? r->tag : "");
+    lj_unlock();
     fc.modified = 1;
     fc.sel = f;
     if (fc.win) { list_build(); panel_fill(); }

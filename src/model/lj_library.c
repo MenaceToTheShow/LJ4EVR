@@ -732,9 +732,8 @@ int lj_library_update_file(const lj_library *lib, const char *rel)
     ok = !ferror(in) && ok;
     fclose(in);
     ok = fclose(out) == 0 && ok;
-    if (ok) { remove(path); ok = rename(tmp, path) == 0; }   /* irreversible (F56): the old header is gone */
-    if (!ok) { remove(tmp); lj_log("library: cannot update %s", path); }
-    return ok ? 0 : -1;
+    if (!ok) { remove(tmp); lj_log("library: cannot update %s", path); return -1; }   /* the old record is untouched */
+    return lj_fs_replace(tmp, path);                           /* irreversible (F56); ME-139: a failed rename keeps tmp */
 }
 
 int lj_library_replace(const lj_library *lib, const char *zip_path)

@@ -124,5 +124,8 @@ typedef struct {
  * (lj_scene.h). */
 
 static inline int lj_addr_code(int link, int addr) { return (link - 1) * LJ_LINK_CH + (addr - 1); }   /* 1-4, 1-512 -> 0..2047 */
+/* ME-132: the address code of offset ofs of fixture fx, or -1 when fx has no address (F41 warning state) or ofs runs past
+ * channel 512 of its link (the clip of config_check, lj_show.c). Every engine per-fixture access goes through it. */
+static inline int lj_fx_code(const lj_fixture *fx, int ofs) { return fx->link < 1 || fx->link > LJ_LINKS || fx->address < 1 || ofs < 0 || fx->address + ofs > LJ_LINK_CH ? -1 : lj_addr_code(fx->link, fx->address + ofs); }
 
 #endif /* LJ_MODEL_MODEL_H */

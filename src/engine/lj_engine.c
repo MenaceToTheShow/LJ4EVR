@@ -92,17 +92,16 @@ static void lj_engine_rebuild(lj_engine *e)
     for (f = 0; f < LJ_FIXTURES; f++) {
         const lj_fixture *fx = &e->show->fixture[f];
         const lj_profile *p;
-        int base, ofs;
+        int ofs, code;
         if (!fx->link) { e->post.profile_of[f] = NULL; continue; }
-        if (fx->address < 1) continue;                             /* no DMX address yet (F41 warning state): unpatched */
+        if (fx->address < 1) continue;                             /* no DMX address yet (F41 warning state): unpatched; s7, the overlay and pan_winner skip it through lj_fx_code (ME-132) */
         if (fx->kind == LJ_FX_BUILTIN) { p = lj_fixlib_by_id(fx->profile_id); if (p) e->post.profile_of[f] = p; }   /* built-ins resolve here; a GS2 (or test) profile stays from lj_engine_bind_profile */
         p = e->post.profile_of[f];
         if (!p) continue;
-        base = lj_addr_code(fx->link, fx->address);
         for (ofs = 0; ofs < p->footprint && ofs < LJ_PROFILE_CH; ofs++) {
-            if (base + ofs >= LJ_CHANS) break;
+            if ((code = lj_fx_code(fx, ofs)) < 0) break;       /* ME-132: clipped at the link end, never into the next link */
             if (p->level_disabled[ofs]) continue;              /* LORD_FIXTURES-11: a disabled offset is unpatched, output = default_out */
-            e->post.fixture_of[base + ofs] = (int16_t)f;
+            e->post.fixture_of[code] = (int16_t)f;
         }
     }
     lj_runner_pairs_build(&e->post, &e->pairs);
@@ -507,8 +506,7 @@ static int lj_engine_pan_winner(const lj_engine *e, int f, int *is_cue)
     int ch, k;
     *is_cue = 0;
     if (!fx->link || !p || !(p->pt16 || p->pt8)) return -1;
-    ch = lj_addr_code(fx->link, fx->address) + p->pan_ofs;
-    if (ch >= LJ_CHANS) return -1;
+    if ((ch = lj_fx_code(fx, p->pan_ofs)) < 0) return -1;     /* ME-132 */
     switch (e->frame.layer_of[ch]) {
     case LJ_L_CUE:     *is_cue = 1; for (k = LJ_CUE_SLOTS - 1; k >= 0; k--) if (lj_runner_active(&e->run[k]) && e->run[k].st[ch] != LJ_OFF) return k; return -1;
     case LJ_L_FLASH:   return LJ_RUN_FLASH;
@@ -678,6 +676,8 @@ const void *lj_engine_take_sacn_cfg(lj_engine *e)
     e->sacn_cfg = NULL;
     return c;
 }
+
+void lj_engine_note_overrun(lj_engine *e) { e->st.overruns++; }
 
 void lj_engine_set_sacn_stats(lj_engine *e, const uint32_t pps[LJ_LINKS], int last_err)
 {

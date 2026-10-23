@@ -16,6 +16,7 @@ Three workflows under `.github/workflows/`, design 9.3 and 9.5.
 | `linux-gcc-asan` | same | preset `ci-linux-asan` (gcc, ASan+UBSan, `LJ_SDL=OFF`), `ctest`, `lj4evr_tests dump-frames` | `frames-linux` |
 | `linux-clang` | same | preset `ci-linux-clang`, `ctest` | - |
 | `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, the static-CRT check; then preset `debug-win`: the whole Debug tree, `ctest` (ME-70: `/RTC1` and the ME-16 asserts only live here) and the Debug `--selftest` (no `no binding for handler`, no `unknown event` line, ME-74); `cpack -G NSIS` | `frames-windows`, `installer-windows` |
+| `windows-msvc` (ME-157) | same job, after `cpack` | `tools/standard_user_install.ps1`: a fresh local account outside Administrators installs the NSIS installer silently; the step prints its `whoami /groups`, the install under its `%LOCALAPPDATA%\Programs\LJ4EVR`, the uninstall key in its HKCU hive and the `DisplayVersion`, and fails on any miss | - |
 | `macos-clang` | `macos-14` | preset `release-mac`, `ctest`, `--selftest`, `dump-frames`, `cpack -G DragNDrop` | `frames-macos`, `installer-macos` |
 | `determinism` | container, needs the three above | `cmp` the three `frames-*.bin`; one byte differs = red | - |
 
@@ -30,19 +31,27 @@ worse than a slow one).
 
 ## Runner security model (project.md, LORD_C-13)
 
-Four self-hosted runners (`lj4evr-ci2-1..4`) on **atlas-ci2**, Ubuntu 24.04,
-labels `[self-hosted, lj4evr]`, Docker 29 for the runner user, **no cmake on the
-host**: every Linux job runs inside `ghcr.io/unbannablegt/lj4evr-ci`.
+Self-hosted runners labelled `[self-hosted, lj4evr]` on a LAN host, **no cmake
+on the host**: every Linux job runs inside `ghcr.io/unbannablegt/lj4evr-ci`. They
+were `lj4evr-ci2-1..4` on atlas-ci2 (Ubuntu 24.04, Docker 29) until 2026-10-22,
+when that host went down; since then they run on another LAN host under rootless
+podman. At the public flip the Linux jobs move to GitHub-hosted `ubuntu-latest`
+with the same image digest and the self-hosted runners leave the repository
+(ME-159).
 
 Rules the workflows enforce, in this order of defence:
 
-1. Every self-hosted job carries `if: github.event_name != 'pull_request'`. A
-   pull request, from a fork or a branch, never schedules work on atlas-ci2;
-   only `push` to `main` and `v*` tags do. Installers and the two hosted
-   `--selftest` runs still cover PRs.
-2. Repo Actions setting: "Require approval for all outside collaborators"
-   before the public flip, so a fork PR does not even run the hosted jobs
-   until a maintainer looks at it.
+1. Every self-hosted job carries `if: github.event_name != 'pull_request'`. That
+   keeps the repository's own pull requests (branches pushed here) off the
+   self-hosted runners; only `push` to `main` and `v*` tags schedule them.
+   It is **not** a fork control: on `pull_request` the PR supplies its own
+   workflow files, so a fork can drop the `if:` and ask for the `lj4evr`
+   label. The fork control is rule 2 (ME-149).
+2. Repo Actions setting: fork pull request workflows need approval
+   (`all_external_contributors`), set right after the public flip and read
+   back. Whoever approves a fork PR's run reads its workflow diff
+   (`.github/workflows/**`) first and does not approve one that changes
+   `runs-on` or the `if:` lines.
 3. Workflow permissions default to read. `ci.yml` asks for `contents: read,
    packages: read` (pull the image); `docker.yml` for `packages: write`;
    only the `release` job in `release.yml` gets `contents: write`.

@@ -13,6 +13,8 @@ LJ4 replay 1
 #      half below the base (CHM 5819 "when the amplitudes are negative, the shape is mirrored").
 # NOTE ME-22: fixture 7 (MAC 500 Mode 2/4) pan 1:111/1:112 is a declared 16-bit pair: one value, base 128 = 32768,
 #      Amp 100 x LJ_GENMACRO_16BIT_SCALE (UNVERIFIED rig M14), MSB/LSB split bytewise (expect_pair).
+# NOTE ME-128 (PROPOSAL rig 14 sA.6): the wide delta is round(s * amp * 256 / 32640) from the sample, half away from 0,
+#      so the LSB moves on intermediate ticks (tick 2: 32768 + 7900 = 40668, LSB 220); the peaks (s = +-32640) are unchanged.
 tick_us=25000
 patch 1 profile=19 link=1 addr=1
 patch 2 profile=19 link=1 addr=2
@@ -37,23 +39,23 @@ at 0 load_genmacro 1 restart
 expect 0 1:1=128 1:2=128 1:3=128 1:4=128 1:5=128 1:6=128 layer=6   # index 0, Sine 0
 expect_pair 0 1:111=32768
 expect 2 1:1=185 1:2=185 1:3=128 1:4=185 1:5=147 1:6=109 layer=6   # index 409, Sine 10072
-expect_pair 2 1:111=40704
+expect_pair 2 1:111=40668
 expect 5 1:1=255 1:2=255 1:3=128 1:4=255 1:5=170 1:6=86 layer=6   # index 1023, Sine 23062
-expect_pair 5 1:111=50944
+expect_pair 5 1:111=50856
 expect 10 1:1=255 1:2=255 1:3=128 1:4=255 1:5=188 1:6=68 layer=6   # index 2047, Sine 32640
 expect_pair 10 1:111=58368
 expect 15 1:1=255 1:2=255 1:3=128 1:4=255 1:5=170 1:6=86 layer=6   # index 3071, Sine 23098
-expect_pair 15 1:111=50944
+expect_pair 15 1:111=50884
 expect 20 1:1=128 1:2=128 1:3=128 1:4=128 1:5=128 1:6=128 layer=6   # index 4095, Sine 25
-expect_pair 20 1:111=32768
+expect_pair 20 1:111=32788
 expect 25 1:1=0 1:2=128 1:3=0 1:4=0 1:5=114 1:6=128 layer=6   # index 5119, Sine -23062
-expect_pair 25 1:111=14592
+expect_pair 25 1:111=14680
 expect 30 1:1=0 1:2=128 1:3=0 1:4=0 1:5=108 1:6=128 layer=6   # index 6143, Sine -32640
 expect_pair 30 1:111=7168
 expect 35 1:1=0 1:2=128 1:3=0 1:4=0 1:5=114 1:6=128 layer=6   # index 7167, Sine -23098
-expect_pair 35 1:111=14592
+expect_pair 35 1:111=14652
 expect 39 1:1=99 1:2=128 1:3=99 1:4=99 1:5=125 1:6=128 layer=6   # index 7987, Sine -5111
-expect_pair 39 1:111=28672
+expect_pair 39 1:111=28759
 expect 40 1:1=128 1:2=128 1:3=128 1:4=128 1:5=128 1:6=128 layer=6   # index 8191, Sine -25
-expect_pair 40 1:111=32768
+expect_pair 40 1:111=32748
 expect_view 40 gm_engine=1 gm_slot=1 gm_cue=1 gm_editor=0

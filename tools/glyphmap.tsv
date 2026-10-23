@@ -203,3 +203,8 @@ TUSERLIBFORM	bClose	close
 TUSERLIBFORM	bRename	edit
 TUSERLIBFORM	bbackup	save-19x17
 TUSERLIBFORM	bRestore	load-19x17
+TCUESTACKFORM	sbAuto	autotrig
+TCUESTACKFORM	sbManual	manualtrig
+TCUESTACKFORM	sbMusic	music
+TBITMAPPICKERFORM2	bGobos	gobos
+TBITMAPPICKERFORM2	bColors	colors

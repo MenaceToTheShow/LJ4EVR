@@ -122,3 +122,4 @@ TRGBPACKDEFFORM	lDMXadr	Caption	F55 runtime fill: the DFM text is a design-time 
 TRGBPACKDEFFORM	lFixType	Caption	F55 runtime fill: the DFM text is a design-time placeholder that the behaviour file overwrites (exe format string or live value)
 TRGBPACKDEFFORM	lUsername	Caption	F55 runtime fill: the DFM text is a design-time placeholder that the behaviour file overwrites (exe format string or live value)
 TLASERWARNINGFORM	Label1	Caption	F55 runtime fill: one emitting laser is named by exe format %s emitting! (0x220708); the DFM text Laser(s) emitting! is shown for more than one (W4 integrator 2, entry-point run)
+TABOUTFORM2	RichEdit1	Lines	ME-137 D2: authored credits, not a caption (tools/dfm2c.py ITEMS_EXCLUDED emits the list empty)

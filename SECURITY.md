@@ -8,6 +8,10 @@ vulnerability reporting). Do not open a public issue for them. Include the
 version (`lj4evr --version` or Help > About), the operating system, and the
 smallest file or steps that show the problem.
 
+If the form is not offered yet (it is switched on when the repository becomes
+public), open an issue titled `security contact` with no details in it; the
+maintainer answers there with a private channel.
+
 You will get an answer within 14 days. A confirmed problem is fixed on `main`
 and shipped in the next tagged release, with credit in `CHANGELOG.md` unless
 you ask otherwise.
@@ -31,6 +35,9 @@ addresses you configure. It opens no listening socket for sACN. MIDI input is re
 from local devices.
 
 ## Out of scope
+
+- Cue-list Execute File lines. `Main.Ini [CUELIST2] AllowExecute` is 0 by
+  default. AllowExecute=1 lets a cue list start any program through the shell; enable it only for cue lists you wrote.
 
 - The Restore Program Data password. It guards against accidents, not
   attackers, and the archive is not encrypted (`docs/file-formats.md`).

@@ -1100,8 +1100,8 @@ const lj_form_desc lj_form_TBINARY2510FORM = {
 static const lj_ctl_desc tbitmappickerform2_panel1_panel2[] = {
     { LJ_K_SPEEDBUTTON, "sbAll", 4, 72, 75, 26, .allow_all_up = LJ_YES, .group_index = 1, .down = LJ_YES, .caption = "All", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "sbAllClick" } } },
     { LJ_K_LABEL, "lBitmaps", 7, 2, 39, 13, .caption = "lBitmaps", .font = LJ_FONT_SANS13, .font_inherited = 1 },
-    { LJ_K_BITBTN, "bGobos", 4, 19, 75, 26, .hint = "Get Gobos/Effects", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 0, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bGobosClick" } } },
-    { LJ_K_BITBTN, "bColors", 4, 46, 75, 26, .hint = "Get Colors", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 1, .num_glyphs = 2, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bColorsClick" } } },
+    { LJ_K_BITBTN, "bGobos", 4, 19, 75, 26, .hint = "Get Gobos/Effects", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 0, .num_glyphs = 2, .glyph = "gobos", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bGobosClick" } } },
+    { LJ_K_BITBTN, "bColors", 4, 46, 75, 26, .hint = "Get Colors", .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .tab_order = 1, .num_glyphs = 2, .glyph = "colors", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "bColorsClick" } } },
 };
 static const lj_column_desc tbitmappickerform2_panel1_lv2_cols[] = {
     { .caption = "Libraries", .width = -2, .image_index = -1 },
@@ -2960,9 +2960,9 @@ static const lj_ctl_desc tcuestackform_pcuepreset_odpanel22[] = {
 };
 static const lj_ctl_desc tcuestackform_pcuepreset_panel5[] = {
     { LJ_K_SPEEDBUTTON, "sbClearSeq", 3, 32, 94, 25, .caption = "Clear Seq", .glyph = "clearseq", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbClearSeqMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbAuto", 99, 4, 30, 25, .hint = "Set Auto Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbManual", 131, 4, 30, 25, .hint = "Set Manual Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
-    { LJ_K_SPEEDBUTTON, "sbMusic", 163, 4, 30, 25, .hint = "Set Audio Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbAuto", 99, 4, 30, 25, .hint = "Set Auto Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .glyph = "autotrig", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbManual", 131, 4, 30, 25, .hint = "Set Manual Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .glyph = "manualtrig", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
+    { LJ_K_SPEEDBUTTON, "sbMusic", 163, 4, 30, 25, .hint = "Set Audio Trig", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .glyph = "music", .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnMouseDown", "sbTrigMouseDown" } } },
     { LJ_K_SPEEDBUTTON, "sbGetCue", 3, 4, 94, 25, .hint = "Get Current Cue Contents", .caption = "Get Cue", .num_glyphs = 2, .parent_show_hint = LJ_NO, .show_hint = LJ_YES, .font = LJ_FONT_SANS13, .font_inherited = 1, .spacing = 4, .events = { { "OnClick", "sbGetCueClick" } } },
     { LJ_K_SPEEDBUTTON, "sbSeqGo", 195, 4, 49, 53, .caption = "GO", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4, .events = { { "OnClick", "sbSeqGoClick" } } },
     { LJ_K_SPEEDBUTTON, "sbClearCueSeq", 99, 32, 94, 25, .allow_all_up = LJ_YES, .group_index = 1, .caption = "Clear Cue on Go", .font = LJ_FONT_SANS13, .font_inherited = 1, .num_glyphs = 1, .spacing = 4 },

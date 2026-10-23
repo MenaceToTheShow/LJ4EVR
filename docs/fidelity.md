@@ -225,3 +225,81 @@ above stay; where a row here and a row above disagree, this one is newer.
 | 2532 / Virtual Fingers on keyboard and MIDI (D16) | hardware keys | the walkthrough opens both from their menu / toolbar entry points; the MIDI latch / flash rows are `w4_da2532_fingers.lj4s` and `test_da2532_fingers` (`test_midi_map`) | D16 | `E/da2532-TDa2532Form_3.png`, `E/fingers-TLJFingersMainForm.png` |
 | Cue control generic-macro group (`sbDeleteBGCue`, `sbDeleteMacro`, `sbDisableMacro`, `sbBGCue`, the `eMacro` / `eBGCue` drops) | clear / disable / drop the cue's BG cue and generic macro | log only (`lj_cue_form.c` `w2`) | open: not windows, outside this acceptance; W5 or a fix pass | `lj_cue_form.c` |
 | Master Intensity, Sync / Bump | sub-master Sync and Bump buttons | log only (`w2_event`) | open, as the row above | `lj_master_intensity.c` |
+
+## Fix pass A r1 (W4 council verdict ME-138, 2026-10-23)
+
+Append-only. The rows below complete the contract (I1 and I6-I13), carry the design 1 sacrifice list, add the rows the
+code promises, and supersede the stale rows above: a row marked **supersedes** replaces the row it names. `tools/fidelity_check.py`
+(CTest `fidelity_check`) fails on an F1-F60 or I1-I13 id without a non-empty pair cell, on a sacrifice paragraph that
+differs from `README.md`'s, and on a named capture that is missing.
+
+## What v1.0.0 is not
+
+Design section 1, verbatim:
+
+v1.0.0 tags at the end of W4 and ships without the Audio Analyzer and audio trig
+(inventory §5 "Keep, built in"), DMX-in over sACN input and the `.vtr` tables
+(inventory §5 "Keep over sACN/Art-Net input"), the RS-232/TCP remote protocol,
+External Application string output, the `.LJB` importer, the LJ MediaPlayer
+(inventory §5 "Keep (cross-platform player)"; section 8.5 states what its
+cue-list rows and transport buttons do until then) and Art-Net `[D14]`. All
+seven are W5 (section 10). Every menu item, cue-list command and toolbar button
+that belongs to one of them is still present, greyed, with the hint
+`Not available in LJ4EVR`, so the chrome matches and the gap is visible. Joey
+may pull any of them forward before W3; the default is the list above.
+
+### Fidelity contract I1-I13 (design 12; I2-I5 are in the W2 / W3 tables above)
+
+| I | Pair (LJ4EVR / LJ2) or deferral | Status |
+|---|---|---|
+| I1 | `E/edit-hotkeys-TFunctionsForm.png`, `E/hotkey-warning-TShowHotKeyWarningForm.png` / `hotkeys1.gif`, `hotkeys2.gif`; the function table verbatim in `io/lj_actions.h` (`test_hotkey_setups`) | done |
+| I6 | deferred: W5 (sacrifice list above); no window in v1.0.0: `&Audio` is never shown (second row of this file; `E/main-TLJMainForm.png`) | W5 |
+| I7 | `E/dmx-in-TDmxInForm.png`, `E/dmxin-translation-TDMXInValueTranslationForm.png`, `E/translation-edit-TTranslationEditForm.png` / `dmxindialog.gif`, `dmxintranslation.gif`, `dmxintranslationedit.gif` | windows done (W4); the sACN input path and `.vtr` are W5: input controls greyed with `Not available in LJ4EVR` |
+| I8 | `E/da2532-TDa2532Form_3.png`, `E/da2532-functions-TButtonFunctions2532Form.png`, `E/da2532-colors-TColorScheme2532Form.png` / `2532control_1.gif`, `2532matrixkeys.gif`, `2532colorscheme.gif`; keyboard and MIDI (D16): `test_da2532_fingers` | done on screen; the serial unit dropped (D16) |
+| I9 | `E/fingers-TLJFingersMainForm.png`, `E/fingers-setup-TFingersSetupDialog.png`, `E/fingers-status-TFingersStatus.png` / `fingers.gif`, `fingerssetupvirtual.gif`, `fingersstatuslarge.gif`; MIDI learn: `test_da2532_fingers` (a bump released after a page switch, ME-143) | done (Virtual Fingers; the serial box greyed, D16) |
+| I10 | deferred: W5 (sacrifice list above); no window in v1.0.0 (the RS-232/TCP remote has no form of its own) | W5 |
+| I11 | deferred: W5 (sacrifice list above); TExternalAppSetupForm is generated and never opened (row "Forms that never open" above) | W5 |
+| I12 | no window: sACN out replaces the Martin interfaces (D3); `test_sacn_packets`, W1 acceptance 6 (`docs/w1-integration.md`) | done |
+| I13 | `E/tb-cuelist-7-TLJMainForm.png` (MC-X, 2518, CD greyed), `E/main-TLJMainForm.png` (LJ-Manager and Download leaves greyed) / `cuelisttoolbar.gif`, `mainsetupmenu.gif` | done (D12) |
+
+### F rows superseded by this pass
+
+| F | Pair (LJ4EVR / LJ2) or deferral | Status |
+|---|---|---|
+| F17 | `E/ctl-colors-TColorControl.png` (31x30 tiles, our CC0 art) / `goboscroll.gif`; `E/bitmap-picker-TBitMapPickerForm2.png` shows names, not tiles (row above) | done for the palettes; Select Bitmap's tile view W5 (ME-160) |
+| F50 | `E/user-libraries-TUserLibForm.png` / `userlibdialog.gif`; `test_library` | done except the `Date` column (row above, ME-163) |
+
+### Rows the code promises, and the W4 verdict's rows
+
+| Where | LJ2 2.209 | LJ4EVR | Decision | Evidence |
+|---|---|---|---|---|
+| Select Bitmap (TBitMapPickerForm2) `LV1`, F17 **supersedes** the F17 pair above | a vsIcon view: 31x30 tiles with their names under them (`selectbitmapdialog2.gif`) | the names in one 270-px column; the tiles show in the palettes' own grids (F17 there) | ME-160, W5 entry gate (draw the vsIcon view) | `E/bitmap-picker-TBitMapPickerForm2.png`; `lj_config_dialogs.c` (LV1 column) |
+| Fixture Special (TFixtureSpecialForm) `bOK` | runs the chosen special function on the fixture | greyed: no engine path runs a special function from this window | ours; the function runs from the control windows | `lj_config_dialogs.c` (`grey(... "bOK")`), golden `W4C_FIXTURE_SPECIAL` |
+| Patch Sub Masters (TInternalIntensityPatchForm), `Source` column | the sub-master's input source | empty: the model and the engine have no sub-master source | ours; sub-masters are set from Master Intensity, MIDI and Fingers | `E/intensity-patch-TInternalIntensityPatchForm.png`, golden `W4C_INTENSITY_PATCH` |
+| Debug window, `Cue evaluation` / `Macro evaluation` | per-stage timing counters | `n/a`: the engine has no per-stage counter; Tick time and Overruns are real (ME-144) | ours (W4-DBG) | `E/debug-counters-TDebugForm.png`, `test_debug_form` |
+| Debug window, 1 sec / 5 sec loads | averages per tick | averages of the tick time sampled at each refresh (about 25 per second, a 128-entry ring), not per-tick sums | LORD_ENGINE-9 (LOW): a per-tick sum pair in the view is the fix | `lj_debug_form.c` (`debug_fill`) |
+| Debug window, `CLUBLITE_EXTERNALMAP` | a shared-memory link that external tools read | not reproduced; the WM_CPOPYDATA DEBUG monitor opens empty | design 13 item 10 | `E/msg-debug-TMsgDebugForm.png` |
+| TValueTableImportErrorForm | raised by a `.vtr` import error | opens by id only: the `.vtr` import is W5 | I7 (input W5) | `lj_dmx_in.c` header, golden `W4DMX_VALUE_TABLE_ERROR` |
+| TExportTableForm | (no menu item in any DFM names it) | opens by id only; it still paints two stub widgets (TDriveComboBox, TDirectoryListBox) | I7; the `.vtr` export is W5 | `lj_dmx_in.c` header, golden `W4DMX_EXPORT_TABLE` |
+| TPrintWaitForm | print spool wait | never opens: Print stays greyed | D12 (printing dropped) | `lj_file_dialogs.h` |
+| `Do you wish to restart LightJockey now ?` (Q9) | asked after a change that needs a restart, then LJ2 restarts itself | not raised: LJ4EVR applies its settings live or at the next start, and has no self-restart (re-exec) | design-verdict LORD_FIDELITY-19 (LOW, carried) | `grep -c` in `src/`: 0 |
+| `Sequence-file format changed` (Q9) | shown when an old sequence file is loaded | not raised as such: an old record format goes through the F56 update dialogs (`Update Sequences` family) | F56; one update path for every kind | `E/update-dialogs-TUpdateForm.png`, `w4_entry_update.lj4s` |
+| Caption-less buttons whose glyph LJ2 assigns at runtime (ME-145) | Cue Builder `sbAuto` / `sbManual` / `sbMusic`, Select Bitmap `bGobos` / `bColors` carry pictures | these five now draw our art (`autotrig`, `manualtrig`, `music`, `gobos`, `colors`; `tools/glyphmap.tsv`) | ME-145 | `E/cue-builder-TCueStackForm.png`, goldens `TCUESTACKFORM`, `TBITMAPPICKERFORM2` |
+| Fan Out `sbNew` / `sbDelete` / `sbSave`, User Libraries `bSelect` | runtime glyphs (Fan Out) and a glyph beside the caption (`bSelect`) | Fan Out's three are blank faces; `sbNew` and `sbDelete` carry their hints (`Clear Custom Selection`, `Delete Custom Selection`); `bSelect` shows its caption only | ME-145: their hints and captions say what they do; the art can follow | `E/fan-out-TFanOutForm.png`, `E/user-libraries-TUserLibForm.png` |
+| TBitBtn `Kind` glyphs (ME-136) | the stock check / cross / question mark / door ... of every classic dialog | our CC0 drawings of the ten kinds (`art/glyphs/{ok,cancel,help,close,yes,no,retry,ignore,abort,all}.txt`), drawn when the DFM gives no Glyph | D2 (the stock glyphs are Borland's); ME-136 | goldens (REVIEWED rows of fix pass A r1) |
+| TImage pictures (ME-135) | the laser hazard sign, the About and start-up logos | our art painted through `lj_glyph_get`: Center, Stretch (nearest neighbour) and Transparent (bottom-left key) as the VCL does; the laser warning's second image (Image2, Timer1's frame at 0,-8) is hidden, PROPOSAL rig | ME-135 | `E/laser-warning-TLaserWarningForm.png` (sign at client 4,13), `E/about-TAboutForm2.png` |
+| About box, `RichEdit1` (ME-137) | Martin's credits (17 names, "<credit-signer> / Martin R&D") | not carried: `tools/dfm2c.py` emits the list empty (`ITEMS_EXCLUDED`); the runtime About shows our text | D2: authored credits, not a caption | `tools/dfm2c_blobs.txt`, golden `TABOUTFORM2` |
+| User Libraries, `Date` column (F50) | the library's last-use date (`userlibdialog.gif`) | blank | ME-163, W5 entry gate (fill it from the folder time) | `E/user-libraries-TUserLibForm.png` |
+| Classic frame: latched TSpeedButton checkerboard | the dithered face of a down speed button (`toolandstatusbars.gif`, `cuelisttoolbar.gif`) | drawn by `lj_draw.c`, not yet compared pixel for pixel with the 1:1 GIFs | W4-FRAME re-tagged W5 (ME-161) | W5 REVIEWED row |
+| Classic frame: popup item height and gutter | the VCL menu metrics | as measured in W1 (`test_menu`), not re-compared | ME-161 (W5) | W5 REVIEWED row |
+| Classic frame: caption button glyphs | the Windows 98 close / minimise / maximise glyphs | our drawings, not compared | ME-161 (W5) | W5 REVIEWED row |
+| Classic frame: focus-rectangle pattern | the dotted focus rectangle | `lj_focus_rect`, not compared | ME-161 (W5) | W5 REVIEWED row |
+| Classic frame: start on a secondary monitor | a window remembered on another monitor opens there | positions restore from `forms.ini` (F4); a monitor that is gone is not handled specially | ME-161 (W5), design-verdict LORD_FIDELITY-21 | W5 REVIEWED row |
+| Classic frame: `poDesigned` first open | the DFM position at the first open | the DFM position, as measured; not compared on a second monitor layout | ME-161 (W5) | W5 REVIEWED row |
+| Classic frame: comctl32 minimum tab width | tabs never narrower than the comctl32 minimum | not applied (TIntensityGroupForm excluded from the ME-43 probe for it) | ME-161 (W5) | W5 REVIEWED row |
+| Main window, menu bar: `&Fingers` **supersedes** the `&Fingers` part of the second row of this file | (as there) | `&Fingers` > Virtual Fingers, Setup and Status open (W4, I9); `LJ-Manager` and `&Download` stay greyed | I9, D16 | `E/fingers-TLJFingersMainForm.png`; `w4_entry_points.lj4s` PASS lines |
+| Fixture Configuration, `Copy From Fixture` / `Clear Fixture Data` **supersedes** the W2 row | (as there) | wired in W4: TCopyFromForm and TCleanUpForm open from the list popup (F44) | F44 | `E/copy-from-TCopyFromForm.png`, `E/cleanup-TCleanUpForm.png` |
+| Generic Fixture Profile, `Apply to all Selected Fixtures` **supersedes** the W3 "ponytail, W4" row | (as there) | TApplyMultiForm opens and applies the profile to the checked user-definable fixtures (`Identical Id Only` as in the CHM) | W4 (dlg-config) | `pe_on_apply_all`, golden `W4C_APPLY_MULTI` |
+| Channel Configuration, `eChannelName` **supersedes** the W3 row | `MaxLength = 6` | 6 bytes (`max_length = 6` over `ch_caption[..][7]`, ME-118); the W3 row's "5 bytes" was wrong | ME-118 | `lj_profile_editor_form.c`, golden `W3PE_CHANNELCONFIG` |
+| Fan Out, saved custom selections **supersedes** the W3 row | (as there) | `sbSave` saves the order to `Main.Ini [CUSTOMSEL]` (`docs/file-formats.md`), `cb1` lists and loads them (W4 integration 1, row 12) | W4 (dlg-desktop) | `E/fan-out-TFanOutForm.png` |
+| Background Cue slot popup, `Edit Sequence` **supersedes** the ME-112 row | (as there) | loads the slot's sequence into the Sequence window (`lj_bgcue_form.c` `edit_seq`) | W4 | `lj_bgcue_form.c` |

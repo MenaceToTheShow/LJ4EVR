@@ -175,9 +175,7 @@ jobs:
 
           Third-party licences: \`THIRD_PARTY_NOTICES.txt\` beside lj4evr.exe and in LJ4EVR.app/Contents/Resources. LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN.
 
-          **Not in this version** (planned for W5; their menu items, cue-list commands and toolbar buttons are present, greyed, with the hint "Not available in LJ4EVR"): the Audio Analyzer and audio trig, DMX-in over sACN input and the \`.vtr\` tables, the RS-232/TCP remote protocol, External Application string output, the \`.LJB\` importer, the LJ MediaPlayer, and Art-Net.
-
-          Mac acceptance (ME-21): Joey runs the .dmg on his Mac and screenshots the Sequence window and one menu.
+          **Not in this version** (planned for a later version; their menu items, cue-list commands and toolbar buttons are present, greyed, with the hint "Not available in LJ4EVR"): the Audio Analyzer and audio trig, DMX-in over sACN input and the \`.vtr\` tables, the RS-232/TCP remote protocol, External Application string output, the \`.LJB\` importer, the LJ MediaPlayer, and Art-Net.
           EOF
       - name: Create GitHub Release
         run: |

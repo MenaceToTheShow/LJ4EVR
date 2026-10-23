@@ -143,7 +143,7 @@ static void on_restore_ok(lj_widget *w, int ev, void *ud)
 }
 static void on_cancel(lj_widget *w, int ev, void *ud) { (void)w; if (ev == LJ_WEV_CLICK) close_later((enum lj_win)(intptr_t)ud); }   /* the bkCancel buttons: ud = the id */
 
-static int create_restore_data(void)   /* Continue: <userdir>RestoreData.lj4r from the open library */
+static int create_restore_data(void)   /* Continue: <userdir>RestoreData.lj4d from the open library */
 {
     lj_ctx *c = lj_ctx_get();
     char path[LJ_PATH_CAP];

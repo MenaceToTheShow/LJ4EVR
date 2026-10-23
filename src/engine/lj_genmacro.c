@@ -19,19 +19,21 @@ int16_t lj_genmacro_shape_in(const lj_gm_shapes *sh, int shape, int k)
     return sh->s[(size_t)shape * LJ_GM_N + (size_t)(k & LJ_GM_MASK)];
 }
 
-int32_t lj_genmacro_delta(const lj_gm_shapes *sh, const lj_gm_param *p, uint32_t idx)
+static int32_t lj_gm_delta_x(const lj_gm_shapes *sh, const lj_gm_param *p, uint32_t idx, int mul)
 {
     int delay = p->dir == LJ_DIR_BOUNCE ? 0 : p->delay;        /* CHM 5835 (LJ_GENMACRO_BOUNCE_NO_DELAY) */
     int32_t s = lj_genmacro_shape_in(sh, p->shape, (int)(idx >> 16) - delay);
-    int64_t q = (int64_t)s * (s >= 0 ? p->amp_pos : p->amp_neg);   /* Amp+ on the positive half, Amp- on the negative one; a negative amplitude mirrors its half */
+    int64_t q = (int64_t)s * (s >= 0 ? p->amp_pos : p->amp_neg) * mul;   /* Amp+ on the positive half, Amp- on the negative one; a negative amplitude mirrors its half */
     return (int32_t)((q >= 0 ? q + LJ_GENMACRO_FULL / 2 : q - LJ_GENMACRO_FULL / 2) / LJ_GENMACRO_FULL);   /* nearest, half away from 0 (C division truncates) */
 }
 
+int32_t lj_genmacro_delta(const lj_gm_shapes *sh, const lj_gm_param *p, uint32_t idx) { return lj_gm_delta_x(sh, p, idx, 1); }
+
 int32_t lj_genmacro_step(const lj_gm_shapes *sh, const lj_gm_param *p, uint32_t idx, int32_t ref, int wide)
 {
-    int32_t delta = lj_genmacro_delta(sh, p, idx), out;
+    int32_t out;
     if (p->base_on) ref = wide ? p->base * 256 : p->base;
-    out = ref + (wide ? delta * LJ_GENMACRO_16BIT_SCALE : delta);
+    out = ref + lj_gm_delta_x(sh, p, idx, wide ? LJ_GENMACRO_16BIT_SCALE : 1);   /* ME-128: a declared pair takes round(s * amp * 256 / 32640) from the sample, so the LSB moves (PROPOSAL rig 14 sA.6) */
     if (out < 0) out = 0;
     if (out > (wide ? 65535 : 255)) out = wide ? 65535 : 255;   /* "limited to 0 to 255" (CHM 5493) */
     return out;

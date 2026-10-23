@@ -274,7 +274,7 @@ int lj_global_patch_menu(const char *item)
     }
     else if (strcmp(item, "ClearallDMXOut1") == 0) ask("Clear All DMX Out Patches ?", 1);     /* exe 0x1BE568 */
     else if (strcmp(item, "ClearallDMXin1") == 0) ask("Clear All DMX In Patches ?", 2);       /* exe 0x1BE5F4 */
-    else if (strcmp(item, "ClearAllInverted1") == 0) clear_rows(3, -1);
+    else if (strcmp(item, "ClearAllInverted1") == 0) ask("Clear All Inverted Channels ?", 3);   /* exe 0x1BE380 (ME-142) */
     else if (strcmp(item, "ClearAllMin1") == 0) clear_rows(4, -1);
     else if (strcmp(item, "ClearAllMax1") == 0) clear_rows(5, -1);
     else if (strcmp(item, "ClearAll1") == 0) ask("Clear All Patch Information ?", 0);         /* exe 0x1BE4D8 */

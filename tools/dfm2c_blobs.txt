@@ -1,6 +1,7 @@
 # dfm2c.py: every binary blob in the DFMs and what became of it.
 # form	object	class	property	disposition (glyph:<name> | decoded | dropped:<reason>)
 TABOUTFORM2	Image1	TImage	Picture.Data	glyph:about-logo
+TABOUTFORM2	RichEdit1	TRichEdit	Lines.Strings	dropped:D2: authored credits, not a caption
 TAUTOADDRESSFORM2	bOk	TBitBtn	Glyph.Data	glyph:ok
 TAUTODELAYFORM	bOk	TBitBtn	Glyph.Data	glyph:ok
 TBGCUEFORM	LV1	TListView	Items.Data	decoded
@@ -8,6 +9,8 @@ TBGCUEFORM	sbSave	TSpeedButton	Glyph.Data	glyph:save (row listed, blob absent)
 TBGCUEFORM	sbNew	TSpeedButton	Glyph.Data	glyph:new (row listed, blob absent)
 TBGCUEFORM	sbDelete	TSpeedButton	Glyph.Data	glyph:delete (row listed, blob absent)
 TBGCUEFORM	sbLoad	TSpeedButton	Glyph.Data	glyph:load (row listed, blob absent)
+TBITMAPPICKERFORM2	bGobos	TBitBtn	Glyph.Data	glyph:gobos (row listed, blob absent)
+TBITMAPPICKERFORM2	bColors	TBitBtn	Glyph.Data	glyph:colors (row listed, blob absent)
 TCLEDITPANELS	bBrowseDAPlay	TBitBtn	Glyph.Data	glyph:folder-browse
 TCLEDITPANELS	bBrowseDACue	TBitBtn	Glyph.Data	glyph:folder-browse
 TCLEDITPANELS	bOpenExe	TBitBtn	Glyph.Data	glyph:folder-browse
@@ -34,6 +37,9 @@ TCUEMACROCONTROLFORM	sbLoad	TSpeedButton	Glyph.Data	glyph:load-19x17
 TCUEMACROCONTROLFORM	sbNewMacro	TSpeedButton	Glyph.Data	glyph:new
 TCUESTACKFORM	sbClearStack	TSpeedButton	Glyph.Data	glyph:clearall
 TCUESTACKFORM	sbClearSeq	TSpeedButton	Glyph.Data	glyph:clearseq
+TCUESTACKFORM	sbAuto	TSpeedButton	Glyph.Data	glyph:autotrig (row listed, blob absent)
+TCUESTACKFORM	sbManual	TSpeedButton	Glyph.Data	glyph:manualtrig (row listed, blob absent)
+TCUESTACKFORM	sbMusic	TSpeedButton	Glyph.Data	glyph:music (row listed, blob absent)
 TCURRENTCUE	sbTrigRev	TSpeedButton	Glyph.Data	glyph:previous (row listed, blob absent)
 TCURRENTCUE	sbTrigFwd	TSpeedButton	Glyph.Data	glyph:next (row listed, blob absent)
 TCURRENTCUE	sbTrigRnd	TSpeedButton	Glyph.Data	glyph:random (row listed, blob absent)

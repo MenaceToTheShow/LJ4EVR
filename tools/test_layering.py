@@ -16,6 +16,8 @@ Checks, over src/:
   8. ME-44: every .c has its .h (same stem), unless a blessed group header declares it (GROUP_HEADERS) or it is
      on PAIR_EXEMPT; every identifier a header declares at file scope (macros, enum constants, tags, typedefs,
      functions, variables) starts with lj_ / LJ_; every OS_ALLOW row names a file that has that include.
+ 10. ME-141 count, must stay 0: a Help handler (any *elp*Click / Heklp1Click name) or the OnClick of a bkHelp
+     TBitBtn of the form a binding table serves, bound to lj_handler_noop (W4-HELP, design 13 item 12).
 
 usage: test_layering.py --src <repo>/src --cc <compiler> [--gen <dir with version.h>]
 exit 0 = clean, 1 = findings printed one per line.
@@ -225,6 +227,39 @@ def compile_alone(cc, src_dir, gen_dir, header, tmp):
     return ""
 
 
+HELP_NAME_RE = re.compile(r'(?i)h\w?lp\w*click|he?k?lp\w*click')
+BINDING_TABLE_RE = re.compile(r'static\s+const\s+lj_binding\s+(\w+)\s*\[\s*\]\s*=\s*\{(.*?)\};', re.S)
+NOOP_BIND_RE = re.compile(r'\{\s*"(\w+)"\s*,\s*lj_handler_noop\b')
+
+
+def help_noops(src):
+    """ME-141: [(file, table, handler)] for every Help handler bound to lj_handler_noop."""
+    gen = os.path.join(src, "ui", "forms", "lj_forms_gen.c")
+    bk = {}                                     # form stem (lower case) -> OnClick handlers of its bkHelp buttons
+    if os.path.exists(gen):
+        arr = ""
+        for line in open(gen, encoding="latin-1"):
+            m = re.match(r'static const lj_ctl_desc (\w+)\[\]', line)
+            if m:
+                arr = m.group(1).split("_")[0]
+            m = re.search(r'kind_str = "bkHelp".*?"OnClick", "(\w+)"', line)
+            if m and arr:
+                bk.setdefault(arr, set()).add(m.group(1))
+    out = []
+    for dirpath, _, files in os.walk(src):
+        for fn in sorted(files):
+            if not fn.endswith(".c") or fn == "lj_forms_gen.c":
+                continue
+            text = open(os.path.join(dirpath, fn), encoding="latin-1").read()
+            rel = os.path.relpath(os.path.join(dirpath, fn), src).replace("\\", "/")
+            for t in BINDING_TABLE_RE.finditer(text):
+                forms = [f.lower() for f in re.findall(r'&lj_form_(\w+)\s*,\s*%s\b' % re.escape(t.group(1)), text)]
+                for h in NOOP_BIND_RE.findall(t.group(2)):
+                    if HELP_NAME_RE.search(h) or any(h in bk.get(f, ()) for f in forms):
+                        out.append((rel, t.group(1), h))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True)
@@ -326,6 +361,10 @@ def main():
             for m in COPY_RE.finditer(code):
                 helper_copies += 1
                 findings.append("%s: %s copies lj_window_set_text / lj_ctx_get (ME-129)" % (rel, m.group(1) or m.group(2) or m.group(3)))
+    # 10. ME-141
+    hn = help_noops(src)
+    for rel, table, h in hn:
+        findings.append("%s: %s binds the Help handler %s to lj_handler_noop (ME-141: lj_help_viewer_click with a topic)" % (rel, table, h))
     # 6. headers alone
     with tempfile.TemporaryDirectory() as tmp:
         for h in headers:
@@ -335,8 +374,8 @@ def main():
     for f in findings:
         print(f)
     print("test_layering: %d file(s) checked, %d header(s) compiled alone, noop handlers %d, ini ternaries %d, "
-          "scene getters %d, set-text/lib/ctx copies %d, %d finding(s)"
-          % (nfiles, len(headers), noops, ternaries, scene_getters, helper_copies, len(findings)))
+          "scene getters %d, set-text/lib/ctx copies %d, noop Help handlers %d, %d finding(s)"
+          % (nfiles, len(headers), noops, ternaries, scene_getters, helper_copies, len(hn), len(findings)))
     return 1 if findings else 0
 
 

@@ -62,6 +62,7 @@ static struct {
     int jog_last[LJ_FG_JOGS];                         /* the last absolute value a level row brought (-1 none) */
     lj_da_val held_f[LJ_FG_FKEYS];
     enum lj_fn held_slot[LJ_FG_ROWS][LJ_FG_SLOTS];
+    enum lj_fn held_bump[LJ_FG_FADERS];                        /* ME-143: the function a bump fired, released by its note-off whatever the page is then */
     int loaded;
 } fg = { .row_fn = { 0, 8, 9 }, .page_fn = { PF_INTENSITY, PF_STATICS1, PF_STATICS13, PF_HTP1 }, .jog_fn = { 5, 1, 16, 0, 17 }, .ud_fn = UF_CL_MANUAL,
          .jog_last = { -1, -1, -1, -1, -1 }, .fader = { 100 } };   /* defaults from fingersstatuslarge.gif (reduced) where it shows them, PROPOSAL rig 05 s5 */
@@ -188,14 +189,18 @@ int lj_fingers_fader(int fader, int pct)
 int lj_fingers_bump(int fader, int down)
 {
     int f;
+    enum lj_fn fn;
     ensure_loaded();
     if (!in(fader, 1, LJ_FG_FADERS)) return -1;
+    if (!down) { fn = fg.held_bump[fader - 1]; fg.held_bump[fader - 1] = LJ_FN_NONE; if (fn) lj_fn_run(fn, 0); return fn ? 0 : -1; }   /* ME-143, as held_slot */
     f = fg.page_fn[fg.page];
-    if (f == PF_INTENSITY && fader <= 8) lj_fn_run((enum lj_fn)(LJ_FN_BUMP_SUB_FLASH_1 + fader - 1), down);   /* "follows fader function" (05 s5.2) */
-    else if (f == PF_HTP1) lj_fn_run((enum lj_fn)(LJ_FN_HTP_BUMP_FLASH_1 + fader - 1), down);
-    else if (f == PF_STATICS1) lj_fn_run((enum lj_fn)static_fn(fader), down);
-    else if (f == PF_STATICS13 && fader <= 8) lj_fn_run((enum lj_fn)static_fn(12 + fader), down);
+    if (f == PF_INTENSITY && fader <= 8) fn = (enum lj_fn)(LJ_FN_BUMP_SUB_FLASH_1 + fader - 1);   /* "follows fader function" (05 s5.2) */
+    else if (f == PF_HTP1) fn = (enum lj_fn)(LJ_FN_HTP_BUMP_FLASH_1 + fader - 1);
+    else if (f == PF_STATICS1) fn = (enum lj_fn)static_fn(fader);
+    else if (f == PF_STATICS13 && fader <= 8) fn = (enum lj_fn)static_fn(12 + fader);
     else return -1;
+    fg.held_bump[fader - 1] = fn;
+    lj_fn_run(fn, 1);
     return 0;
 }
 int lj_fingers_gm(int pct)

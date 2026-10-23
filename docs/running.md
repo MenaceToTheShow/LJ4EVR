@@ -75,6 +75,12 @@ Minimising the main window hides the controls, as LJ2's `TApplication` does.
 `tools/taskbar-count.ps1` counts the LJ4EVR taskbar buttons through UI Automation
 (ME-7 / ME-59 evidence: one).
 
+`LJ4EVR_USERDATA=<folder ending in \ or />` replaces the per-user data folder (`%APPDATA%\LJ4EVR\LJ4EVR\`, macOS
+`~/Library/Application Support/LJ4EVR/LJ4EVR/`) for that run: libraries, `Main.Ini`, `Hardware.Ini`. The W4 captures
+of User Libraries use it so no account path shows (ME-148).
+
+Cue lists, Execute File: the line runs only with `Main.Ini [CUELIST2] AllowExecute=1` (default 0). AllowExecute=1 lets a cue list start any program through the shell; enable it only for cue lists you wrote.
+
 ## lj4evr_render (headless, no SDL)
 
 ```

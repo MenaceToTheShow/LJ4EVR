@@ -259,6 +259,11 @@ static void test_fingers(lj_library *lib)
     memset(&hit, 0, sizeof hit);
     inject(0x90, 40, 100); CHECK(hit.fn == LJ_FN_BUMP_SUB_FLASH_1 && hit.edge == 1);
     inject(0x80, 40, 0);   CHECK(hit.fn == LJ_FN_BUMP_SUB_FLASH_1 && hit.edge == 0);
+    /* ME-143: press on page A (Intensity), switch to page B (Statics), release: the flash that fired is released */
+    inject(0x90, 40, 100); CHECK(hit.fn == LJ_FN_BUMP_SUB_FLASH_1 && hit.edge == 1);
+    CHECK(lj_fingers_set_page(2) == 0);
+    inject(0x80, 40, 0);   CHECK(hit.fn == LJ_FN_BUMP_SUB_FLASH_1 && hit.edge == 0);
+    CHECK(lj_fingers_set_page(1) == 0);
     e.kind = LJ_MIDI_CC; e.note = 7; e.fn = LJ_FN_FINGERS_GM;
     CHECK(lj_midi_assign(m, &e) == 0);
     inject(0xB0, 7, 0);

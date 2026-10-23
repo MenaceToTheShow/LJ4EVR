@@ -273,6 +273,7 @@ static lj_window *laser_open(const char *name)
     char text[64];
     if (!lj_laser_win) {
         if (!(lj_laser_win = lj_window_create(&lj_form_TLASERWARNINGFORM, b))) { lj_log("warnings: cannot create TLaserWarningForm"); return NULL; }
+        { lj_widget *i2 = lj_window_find(lj_laser_win, "Image2"); if (i2) i2->visible = 0; }   /* PROPOSAL rig: Image2 (0,-8) holds Timer1's second frame, hidden at FormCreate; the sign shows at Image1 (4,13) (ME-135) */
         show_centered(lj_laser_win, LJ_WIN_STAY_ON_TOP);
     }
     if (name) { snprintf(text, sizeof text, "%s emitting!", name); lj_w_set_caption(lj_window_find(lj_laser_win, "Label1"), text); }   /* exe 0x220708 '%s emitting!'; more than one: the DFM 'Laser(s) emitting!' */
