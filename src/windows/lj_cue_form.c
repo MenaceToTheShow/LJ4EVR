@@ -25,6 +25,7 @@
 #include "windows/lj_seq_form.h"       /* W4 dlg-show */
 #include "windows/lj_show_dialogs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_CUE_COLS   9
 #define LJ_CUE_BTN_W  30     /* measured from cuecontrol.gif, reduced, rig item: the numbered enable button left of the list */
@@ -583,6 +584,9 @@ static void sb_up(lj_widget *w, void *ud)
     else if (!strcmp(n, "sbLoop")) lj_win_toggle(LJ_WIN_LOOP_OPTIONS);      /* W2 windows-a: Cue Loop Control [03 s5.5] */
     else if (!strcmp(n, "sbCueTime")) lj_win_toggle(LJ_WIN_CUE_TIME);       /* W2 windows-a: Cue Time Control [03 s5.6] */
     else if (!strcmp(n, "sbLoadBGCue")) lj_show_dlg_select_bgcue(bg_picked, NULL);   /* W4 dlg-show */
+    else if (!strcmp(n, "sbCueMacroScale")) lj_win_toggle(LJ_WIN_CUE_MACRO_CONTROL);   /* W4 acceptance: Cue Macro Scale [03 s5.11] */
+    else if (!strcmp(n, "sbCueMacroControl")) lj_win_toggle(LJ_WIN_GENMACRO_EDITOR);   /* W4 acceptance: Macro Editor [14 sA.7] */
+    else if (!strcmp(n, "sbLoadMacro")) lj_win_toggle(LJ_WIN_SELECT_GENMACRO);         /* W4 acceptance: Macro List [14 sA.8] */
     else lj_log("lj_cue_form: %s is W2", n);                      /* BGCue / generic macro group [03 s5.4] */
 }
 
@@ -709,7 +713,7 @@ static const lj_binding lj_cue_bindings[] = {
     { "eMacroChange", lj_handler_noop, NULL }, { "eMacroDblClick", w2, NULL }, { "eMacroDragDrop", w2, NULL }, { "eMacroDragOver", lj_handler_noop, NULL },
     { "MenuOptions", menu_options, NULL }, { "DefaultView1Click", default_view, NULL }, { "DefaultVisibleColumns1Click", default_columns, NULL },
     { "ShowClick", show_click, NULL }, { "PrefsClick", prefs_click, NULL }, { "SlotsNames1Click", open_name_slots, NULL }, { "M_ShowasBPMClick", bpm_click, NULL },
-    { "Preferences1Click", prefs_open, NULL }, { "CueBuilder1Click", open_cue_builder, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "Preferences1Click", prefs_open, NULL }, { "CueBuilder1Click", open_cue_builder, NULL }, { "Help1Click", lj_help_viewer_click, "cues" },
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "FormHide", lj_handler_noop, NULL }, { "FormResize", on_resize, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
@@ -744,6 +748,7 @@ void lj_cue_form_close(void)
     host_show(s.win, 0);
     lj_window_destroy(s.win);
     s.win = NULL; s.grid = NULL; s.sel = 0;
+    s.caption[0] = 0;   /* W4 acceptance: a reopened window starts at the DFM's "Cue"; the refresh must set the runtime caption again */
 }
 
 void lj_cue_form_refresh(void)
@@ -892,7 +897,7 @@ static void sv_close(lj_widget *w, void *ud)
 }
 
 static const lj_binding sv_bindings[] = {
-    { "cbTransparentClick", sv_check_click, NULL }, { "BsaveClick", sv_save_click, NULL }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "cbTransparentClick", sv_check_click, NULL }, { "BsaveClick", sv_save_click, NULL }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_help_viewer_click, "cues" },
     { "FormClose", sv_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL },
     { "FormKeyDown", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 
@@ -1046,7 +1051,7 @@ static const lj_binding lc_bindings[] = {
     { "sbNextMouseDown", lj_cue_pages_on_button, NULL }, { "sbNextPageMouseDown", lj_cue_pages_on_button, NULL }, { "sbPageGoMouseDown", lj_cue_pages_on_button, NULL },
     { "sbPrevMouseDown", lj_cue_pages_on_button, NULL }, { "sbPrevPageMouseDown", lj_cue_pages_on_button, NULL },
     { "sbPageButtonsMouseUp", lj_handler_noop, NULL }, { "Splitter1Moved", lj_handler_noop, NULL }, { "GlobalPopClick", lc_pop_click, NULL }, { "PagesPopClick", lj_cue_pages_on_menu, NULL },
-    { "GlobalColumnClick", w2, NULL }, { "GlobalSortClick", w2, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "LoadPages1Click", w2, NULL },
+    { "GlobalColumnClick", w2, NULL }, { "GlobalSortClick", w2, NULL }, { "Help1Click", lj_help_viewer_click, "cues" }, { "LoadPages1Click", w2, NULL },
     { "M_GlobalColumnsClick", lj_handler_noop, NULL }, { "M_GlobalColumnsDefaultClick", w2, NULL }, { "M_PagesClick", lj_handler_noop, NULL }, { "PageMenuClick", lj_cue_pages_on_menu, NULL },
     { "PrefsClick", lj_cue_pages_on_prefs, NULL }, { "SavePages1Click", w2, NULL }, { "Sort1Click", lj_handler_noop, NULL },
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL },

@@ -11,6 +11,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "windows/lj_file_dialogs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 enum { LJ_UL_MAX = 64 };   /* ponytail: libraries listed; raise when someone keeps more */
 
@@ -98,7 +99,7 @@ static void on_backup(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(L
 static void on_restore(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_RESTORE); }
 static void on_change(lj_widget *w, void *ud) { (void)ud; lj_user_libraries_select(lj_w_listview_index(w)); }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; ul.close_pending = 1; }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("user libraries: Help is W4"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"files"); }   /* W4 acceptance: the bundled viewer */
 static void close_event(lj_widget *w, int ev, void *ud) { if (ev == LJ_WEV_CLICK) on_close(w, ud); }
 
 static const lj_binding lj_ul_bindings[] = {

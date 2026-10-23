@@ -16,6 +16,7 @@
 #include "windows/lj_cue_form.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_CP_FILE        "Cues\\CuePageInfo.Dat"
 #define LJ_CP_FIRST_PAGE  "Page 1"      /* TC1 Tabs.Strings and exe 0x161014: the page a library without CuePageInfo.Dat shows */
@@ -355,7 +356,7 @@ static void ro_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (e
 static void ro_show(lj_widget *w, void *ud) { (void)w; (void)ud; ro_fill(); }
 lj_window *lj_cue_pages_reorder_open(void)
 {
-    static const lj_binding b[] = { { "lvPagesDragDrop", ro_drop, NULL }, { "lvPagesDragOver", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    static const lj_binding b[] = { { "lvPagesDragDrop", ro_drop, NULL }, { "lvPagesDragOver", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "cues" },
                                     { "FormActivate", ro_show, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
     lj_widget *w;
     if (ro.win) return ro.win;

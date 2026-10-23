@@ -164,6 +164,7 @@ persistence pair `w3_positions_1.lj4s` / `w3_positions_2.lj4s` run like the W2 p
 
 | Line | Effect |
 |---|---|
+| `close main` | W4 integrator 2: opens `Close Lightjockey ?` as a user's close of the main window does (`LJ_ACT_CLOSE` itself never prompts under a script); `click TCloseOrSaveForm.BitBtn2` stays, `BitBtn1` quits |
 | `dump_captions <path>` | appends one `Class<TAB>object<TAB>property<TAB>value` line (CP1252) per runtime Caption / Text / Hint of every widget, per Caption / Hint of every menu item and per form caption, for every open `lj_win` window, to `path` (relative to the working directory). `tools/caption_diff.py --dump <path>` compares the file with `13-dfm-captions.tsv` (W4 acceptance 1, F55) |
 
 `tests/ui/scripts/w4_captions.lj4s` opens every window id that opens without a selection (all but `warnings`,

@@ -17,6 +17,7 @@
 #include "ui/widgets/lj_w_checkbox.h"
 #include "ui/widgets/lj_w_edit.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 static const char *const lj_snap_rates[LJ_SNAPSHOT_RATE_MAX_HZ] = {
     "1 Scenes/sec", "2 Scenes/sec", "3 Scenes/sec", "4 Scenes/sec", "5 Scenes/sec", "6 Scenes/sec", "7 Scenes/sec", "8 Scenes/sec", "9 Scenes/sec", "10 Scenes/sec",
@@ -200,7 +201,7 @@ static void on_static(lj_widget *w, void *ud)
 static void on_realtime(lj_widget *w, void *ud) { (void)ud; if (w == find("pRecordRealTime")) lj_snapshot_realtime(); }
 static void on_params(lj_widget *w, void *ud) { (void)w; (void)ud; if (!sn.rec) total_label(); save_settings(); }
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_snapshot_close(); }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("snapshot: Help: no help file is shipped (D2)"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"sequences"); }   /* W4 acceptance: the bundled viewer */
 
 static const lj_binding lj_sn_bindings[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },

@@ -34,6 +34,7 @@
 #include "windows/lj_config_dialogs.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_PE_CAPTION "Generic Fixture Profile"
 #define LJ_PE_NA      "Not available in LJ4EVR"
@@ -621,7 +622,7 @@ static const lj_binding lj_pe_bindings[] = {
     { "lvLevelsClick", pe_on_levels_click, NULL }, { "bLevelStatusClick", pe_on_level_status, NULL }, { "eLevelNameChange", pe_on_level_name, NULL }, { "eLevelNameKeyDown", lj_handler_noop, NULL },
     { "lvDefsChange", lj_handler_noop, NULL }, { "lvDefsResize", lj_handler_noop, NULL }, { "lvDefsSelectItem", lj_handler_noop, NULL }, { "Button1Click", pe_on_ov_clear, NULL },
     { "M_FilesClick", pe_on_files, NULL }, { "M_LoadClick", pe_on_load, NULL }, { "M_SaveClick", pe_on_save, NULL }, { "M_SaveAsClick", pe_on_save_as, NULL },
-    { "ClearProfile1Click", pe_on_clear_profile, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "ClearProfile1Click", pe_on_clear_profile, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" },
     { "lv_PopUp", lj_handler_noop, NULL }, { "P_lvClick", pe_on_lv_popup, NULL },
     { NULL, NULL, NULL } };
 
@@ -797,7 +798,7 @@ static void cp_select(lj_widget *w, void *ud)
 static void cp_change(lj_widget *w, void *ud) { (void)ud; if (cpfind("bOk")) { cpfind("bOk")->enabled = row_of(w) >= 0; lj_widget_invalidate(cpfind("bOk")); } }
 static void cp_same(lj_widget *w, void *ud) { (void)w; (void)ud; cp_fill(); }
 static const lj_binding lj_cp_bindings[] = {
-    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" },
     { "bSelectAllClick", cp_select, NULL }, { "bSelectNoneClick", cp_select, NULL }, { "cb1Click", cp_same, NULL }, { "cbGobo1Click", lj_handler_noop, NULL },
     { "lv1Change", cp_change, NULL }, { NULL, NULL, NULL } };
 static void cf_on_copy(lj_widget *w, void *ud)
@@ -811,7 +812,7 @@ static void cf_on_copy(lj_widget *w, void *ud)
 }
 
 static const lj_binding lj_cf_bindings[] = {
-    { "FormClose", cf_on_cancel, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormClose", cf_on_cancel, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" },
     { "pc1Change", lj_handler_noop, NULL }, { "tc1Change", cf_on_tab, NULL }, { "LV1Change", lj_handler_noop, NULL }, { "LV1DragDrop", lj_handler_noop, NULL }, { "LV1DragOver", lj_handler_noop, NULL },
     { "lvDefsChange", lj_handler_noop, NULL }, { "lvDefsSelectItem", lj_handler_noop, NULL }, { "bClearOVClick", lj_handler_noop, NULL }, { "DefaultOVLink1Click", lj_handler_noop, NULL },   /* the O/V tab: present, inert (D12) */
     { "bApplyClick", cf_on_apply, NULL }, { "bCancelClick", cf_on_cancel, NULL },
@@ -929,7 +930,7 @@ static void cc_ok(lj_widget *w, int ev, void *ud)
 }
 static void cc_cancel(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev == LJ_WEV_CLICK) lj_channel_config_close(); }
 static const lj_binding lj_cc_bindings[] = {
-    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" },
     { "chListChange", cc_on_list, NULL }, { "eChannelNameChange", cc_on_name, NULL }, { "bEnableGMClick", cc_on_gm, NULL }, { "bDisableGMClick", cc_on_gm, NULL },
     { NULL, NULL, NULL } };
 

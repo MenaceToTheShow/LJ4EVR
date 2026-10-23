@@ -12,6 +12,7 @@
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_w_edit.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 static const char *const lj_ig_modes[] = { "Master Proportional", "Master LoTP", "Master HTP", "Master no Effect" };   /* exe 0x23BCBC.., the Master Intensity combo's items = enum lj_master_mode */
 
@@ -168,7 +169,7 @@ static void default_answer(int yes, void *ud)   /* PROPOSAL rig: "Default Setup"
     lj_intensity_groups_refresh();
 }
 static void on_default(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_confirm("Please Confirm..", "Default Setup, are you sure ?", NULL, default_answer, NULL); }  /* exe 0x1BC07C */
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("intensity groups: Help: no help file is shipped (D2)"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"controls"); }   /* W4 acceptance: the bundled viewer */
 static void close_answer(int yes, void *ud) { (void)ud; if (yes) lj_intensity_groups_save(); ig.modified = 0; lj_intensity_groups_close(); }
 static void on_close(lj_widget *w, void *ud)
 {

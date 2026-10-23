@@ -11,6 +11,7 @@
 #include "ui/widgets/lj_w_fader.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_SMOKE_STAY_ON_TOP 2u   /* = LJ_WF_STAY_ON_TOP (platform/lj_platform.h, not includable here) */
 #define LJ_SMOKE_DURATION_S  (LJ_SMOKE_DURATION_MAX_MS / 1000)   /* the Duration fader in whole seconds ("10s" in smokecontrol.gif); PROPOSAL rig 04 s12 */
@@ -161,7 +162,7 @@ static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_smoke_contr
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_smoke_control_refresh(); }
 
 static const lj_binding lj_smoke_bindings[] = {
-    { "SmokePrefsClick", prefs_click, NULL }, { "M_Toggle2Click", toggle_click, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "SmokePrefsClick", prefs_click, NULL }, { "M_Toggle2Click", toggle_click, NULL }, { "Help1Click", lj_help_viewer_click, "controls" },
     { "Timer1Timer", on_timer, NULL }, { "Timer2Timer", on_timer, NULL },
     { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };

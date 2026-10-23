@@ -15,6 +15,7 @@
 #include "ui/widgets/lj_w_checkbox.h"
 #include "ui/widgets/lj_w_edit.h"
 #include "windows/lj_global_patch.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 /* ---- the code-built form (PROPOSAL rig: no DFM, no GIF; sizes follow the Fixture Groups window) ---- */
 static const lj_column_desc lj_hg_cols[] = { { .caption = "No", .width = 30, .image_index = -1 }, { .caption = "Name", .width = 150, .image_index = -1 }, { .caption = "Channels", .width = 60, .image_index = -1 } };
@@ -148,7 +149,7 @@ static void on_masters(lj_widget *w, void *ud)
 }
 static const lj_binding lj_hg_bindings[] = {
     { "FormClose", on_close, NULL }, { "bRenameClick", on_rename, NULL }, { "bAddClick", on_add, NULL }, { "bRemoveClick", on_remove, NULL },
-    { "bClearClick", on_clear, NULL }, { "cbMastersClick", on_masters, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "bClearClick", on_clear, NULL }, { "cbMastersClick", on_masters, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { NULL, NULL, NULL } };
 
 lj_window *lj_htp_groups_open(void)
 {

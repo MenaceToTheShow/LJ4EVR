@@ -16,6 +16,7 @@
 #include "windows/lj_delete_files.h"
 #include "windows/lj_seq_form.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 /* ---- the hand-built form (no DFM: LJ2 created this list at runtime) ---- */
 
@@ -235,7 +236,7 @@ static void lj_sl_on_delete(lj_widget *w, void *ud) { (void)w; (void)ud; lj_sl_d
 static const lj_binding lj_sl_bindings[] = {
     { "FormClose", lj_sl_on_close, NULL }, { "FormShow", lj_sl_on_show, NULL },
     { "LV1Click", lj_sl_on_click, NULL }, { "LV1DblClick", lj_sl_on_dblclick, NULL }, { "LV1ColumnClick", lj_sl_on_column, NULL }, { "LV1SelectItem", lj_sl_on_select, NULL },
-    { "M_ModeClick", lj_sl_on_mode, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "M_ModeClick", lj_sl_on_mode, NULL }, { "Help1Click", lj_help_viewer_click, "sequences" },
     { "P_EditClick", lj_sl_on_edit, NULL }, { "P_AddCueClick", lj_sl_on_addcue, NULL }, { "P_AddBGClick", lj_sl_on_addbg, NULL },
     { "P_Add2510Click", lj_handler_noop, NULL }, { "P_DeleteClick", lj_sl_on_delete, NULL },
     { NULL, NULL, NULL }

@@ -42,11 +42,12 @@
 #include "windows/lj_desktop_dialogs.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_WIN_STAY_ON_TOP 2u   /* = LJ_WF_STAY_ON_TOP of platform/lj_platform.h (not includable from windows/) */
 #define LJ_MM_CAPTION "Movement Macro"   /* exe 0x26AE24 */
 
-static void help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("movement: Help: no help file is shipped (D2)"); }
+static void help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"macros"); }   /* W4 acceptance: the bundled viewer */
 
 /* ---------------------------------------------------------------------------------------------------------------
  * shared: the current scene, the selected fixtures that have pan / tilt, their position in readout units (17 s1)

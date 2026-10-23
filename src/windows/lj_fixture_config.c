@@ -23,6 +23,7 @@
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_config_dialogs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_FC_TREE_MAX  640                 /* 201 leaves + at most 201 name folders + manufacturers */
 #define LJ_FC_TEXT      112                 /* tabs + manufacturer 31 / name 61 + ", " + mode 31 */
@@ -650,8 +651,8 @@ static const lj_binding lj_fc_bindings[] = {
     { "bSaveClick", on_save, NULL }, { "bRemoveClick", on_remove, NULL }, { "bRemoveDragDrop", lj_handler_noop, NULL }, { "bRemoveDragOver", lj_handler_noop, NULL }, { "bClearClick", on_clear, NULL },
     { "LinkMouseDown", on_link, NULL }, { "eAdrExit", on_addr_exit, NULL }, { "eAdrKeyUp", on_addr_key, NULL }, { "UdButton1Change", on_ud, NULL }, { "bAutoAddressClick", on_auto, NULL },
     { "cbInvPanClick", on_flag, NULL }, { "cbIntensitySpecialClick", on_flag, NULL }, { "EUserNameKeyUp", on_username, NULL },
-    { "M_PrintClick", on_print, NULL }, { "M_ImportProfileClick", on_gs2, NULL }, { "LocalHelpClick", lj_handler_noop, NULL }, { "M_ExportAllClick", on_gs2, NULL },
-    { "WarningsClick", on_warnings, NULL }, { "PrefsClick", on_warnings, NULL }, { "Help2Click", lj_handler_noop, NULL },
+    { "M_PrintClick", on_print, NULL }, { "M_ImportProfileClick", on_gs2, NULL }, { "LocalHelpClick", lj_help_viewer_click, "fixtures" }, { "M_ExportAllClick", on_gs2, NULL },
+    { "WarningsClick", on_warnings, NULL }, { "PrefsClick", on_warnings, NULL }, { "Help2Click", lj_help_viewer_click, "fixtures" },
     { "popAvailablePopup", lj_handler_noop, NULL }, { "M_CreateExportFileClick", on_gs2, NULL }, { "M_CreateOVExportClick", na, NULL }, { "M_DeleteProfileClick", na, NULL },
     { "ConfiguredPopPopup", on_popup, NULL }, { "P_FixtureNotesClick", on_notes, NULL }, { "P_CloneClick", on_clone, NULL }, { "P_ClearClick", on_clone, NULL }, { "P_ReloadProfileDataClick", on_gs2, NULL },
     { NULL, NULL, NULL }

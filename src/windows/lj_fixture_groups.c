@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_w_edit.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 /* ---- the code-built form: 220x250 outer (forms.ini [GROUPS] default, 01 s3.4) = 212x204 client under a sizeable frame + menu ---- */
 static const lj_ctl_desc lj_fg_panel[] = {
@@ -277,7 +278,7 @@ static void on_pop(lj_widget *w, void *ud)
     (void)w; (void)ud;
     if (it && i >= 0 && i < fg.n && fg.grp[i] > 0) lj_fixture_groups_popup(it->name, fg.grp[i]);
 }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("fixture groups: Help: no help file is shipped (D2)"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"controls"); }   /* W4 acceptance: the bundled viewer */
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_fixture_groups_close(); }
 static const lj_binding lj_fg_bindings[] = {
     { "FormClose", on_close, NULL }, { "tvGroupsChange", on_change, NULL }, { "bDeselectAllClick", on_deselect, NULL }, { "bSelectAllClick", on_select_all, NULL },

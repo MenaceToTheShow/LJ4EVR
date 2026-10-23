@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "controls/lj_ctl_common.h"
 #include "core/lj_log.h"
 #include "gfx/lj_draw.h"
 #include "gfx/lj_glyphs.h"
@@ -547,6 +548,12 @@ static void toggle(lj_ctl_c *c, const char *item, int which)
 static void show_palette_click(lj_widget *w, void *ud) { (void)w; toggle((lj_ctl_c *)ud, "M_ShowPalette", 0); }
 static void show_special_click(lj_widget *w, void *ud) { (void)w; toggle((lj_ctl_c *)ud, "M_ShowSpecial", 1); }
 
+static void std_click(lj_widget *w, void *ud)   /* W4 acceptance: UserPalette / Fades / Help (lj_ctl_menu_run) */
+{
+    const lj_menu_item_desc *it = lj_window_menu_item(lj_window_of(w));
+    lj_ctl_menu_run(((lj_ctl_c *)ud)->kind, it && it->name ? it->name : "");
+}
+
 static void menu_build(lj_ctl_c *c)
 {
     static const char *const menu_std[] = { "UserPalette", "Preferences", "Fades", "Help", NULL };
@@ -556,8 +563,8 @@ static void menu_build(lj_ctl_c *c)
         lj_menu_item_desc *it = &c->items[n];
         memset(it, 0, sizeof *it);
         if (strcmp(names[n], "UserPalette") == 0) {
-            it->name = "M_UserPalette"; it->caption = "&UserPalette"; it->on_click = "UserPaletteClick"; it->enabled = LJ_NO;
-            c->binds[nb].event = "UserPaletteClick"; c->binds[nb].fn = lj_handler_noop; c->binds[nb++].ud = c;
+            it->name = "M_UserPalette"; it->caption = "&UserPalette"; it->on_click = "UserPaletteClick";
+            c->binds[nb].event = "UserPaletteClick"; c->binds[nb].fn = std_click; c->binds[nb++].ud = c;
         } else if (strcmp(names[n], "Preferences") == 0) {
             it->name = "M_Preferences"; it->caption = "&Preferences"; it->children = c->prefs; it->nchildren = 2;
             c->prefs[0].name = "M_ShowPalette"; c->prefs[0].caption = "Show &Palette"; c->prefs[0].on_click = "ShowPaletteClick"; c->prefs[0].checked = LJ_YES;
@@ -565,11 +572,11 @@ static void menu_build(lj_ctl_c *c)
             c->binds[nb].event = "ShowPaletteClick"; c->binds[nb].fn = show_palette_click; c->binds[nb++].ud = c;
             c->binds[nb].event = "ShowSpecialClick"; c->binds[nb].fn = show_special_click; c->binds[nb++].ud = c;
         } else if (strcmp(names[n], "Fades") == 0) {
-            it->name = "M_Fades"; it->caption = "&Fades"; it->on_click = "FadesClick"; it->enabled = LJ_NO;
-            c->binds[nb].event = "FadesClick"; c->binds[nb].fn = lj_handler_noop; c->binds[nb++].ud = c;
+            it->name = "M_Fades"; it->caption = "&Fades"; it->on_click = "FadesClick";
+            c->binds[nb].event = "FadesClick"; c->binds[nb].fn = std_click; c->binds[nb++].ud = c;
         } else if (strcmp(names[n], "Help") == 0) {
-            it->name = "M_Help"; it->caption = "&Help"; it->on_click = "HelpClick"; it->enabled = LJ_NO;
-            c->binds[nb].event = "HelpClick"; c->binds[nb].fn = lj_handler_noop; c->binds[nb++].ud = c;
+            it->name = "M_Help"; it->caption = "&Help"; it->on_click = "HelpClick";
+            c->binds[nb].event = "HelpClick"; c->binds[nb].fn = std_click; c->binds[nb++].ud = c;
         } else { it->name = names[n]; it->caption = names[n]; it->enabled = LJ_NO; }
     }
     c->menu.name = "MainMenu1"; c->menu.is_main = 1; c->menu.items = c->items; c->menu.n = n;

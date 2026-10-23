@@ -1,0 +1,25 @@
+# w4_entry_update.lj4s - W4 acceptance 2, the automatic format-update dialogs (F56): the library W4Update that
+# tests/ui/scripts/w4_entry_prep.sh writes holds one format-0 record of each kind (cl, bgc, patch, seq), so the four
+# dialogs open at startup (lj_file_dlg_startup). Each is asserted, shot and answered with its update button; the
+# records are then format 1 on disk. W4 integrator 2, 2026-10-22.
+#   build-w4\lj4evr.exe U:W4Update --script tests\ui\scripts\w4_entry_update.lj4s
+assert_caption update_cl2 "Datafile format update required"
+log "PASS Datafile format update required (TUpdateCl2Form) <- automatic: an older .Cl2 in the library"
+assert_caption update_bgcues "File Format Update Needed"
+log "PASS File Format Update Needed (TUpdateBGCuesForm) <- automatic: an older BG cue file"
+assert_caption patch_update "Update to Patch Configuration"
+log "PASS Update to Patch Configuration (TPatchUpdateForm) <- automatic: an older patch file"
+assert_caption update "Dataformat has Changed"
+log "PASS Dataformat has Changed (TUpdateForm) <- automatic: any other older record"
+shot docs/screenshots/w4/entry/update-dialogs.png
+click TUpdateCl2Form.bUpdate                      # Ok, do the update now
+wait 300
+click TUpdateBGCuesForm.BitBtn1                   # Continue Update
+wait 300
+click TPatchUpdateForm.bOk                        # Update Now
+wait 300
+assert_file_line Cuelists/0099.Cl2 "LJ4 cl 1"
+assert_file_line BGCues/0099.bgc "LJ4 bgc 1"
+assert_file_line Old.GPA "LJ4 patch 1"
+log "PASS the three updated records carry format 1"
+quit

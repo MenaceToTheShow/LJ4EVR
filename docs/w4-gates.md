@@ -146,7 +146,7 @@ with no evidence is not ticked. The Status column is left blank for the W4 docs 
 
 | # | Item | Status |
 |---|---|---|
-| 1 | prompt and caption diff against `13-dfm-captions.tsv` = 0 differences for every implemented form | |
-| 2 | every window in inventory section 2 opens from its documented entry point | |
-| 3 | all 208 goldens reviewed | |
-| 4 | `docs/fidelity.md` complete | |
+| 1 | prompt and caption diff against `13-dfm-captions.tsv` = 0 differences for every implemented form | done 2026-10-22: 154 forms, 0 differences (w4-integration Acceptance item 1) |
+| 2 | every window in inventory section 2 opens from its documented entry point | done 2026-10-22: `w4_entry_points.lj4s` 155 PASS + `w4_entry_update.lj4s` 5 PASS; 12 app fixes (Acceptance item 2, Fixes) |
+| 3 | all 208 goldens reviewed | done: 208 of 208 forms, 359 BMPs, 0 without a row |
+| 4 | `docs/fidelity.md` complete | done for F1-F60 (pair or deferred: needs rig per row); track return rows: fidelity-docs owner |

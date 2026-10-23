@@ -18,6 +18,7 @@
 #include "ui/widgets/lj_w_radiobutton.h"
 #include "windows/lj_show_dialogs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_GP_ROW 192
 
@@ -296,7 +297,7 @@ static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; lj_global_patch_a
 static void on_set(lj_widget *w, void *ud) { (void)w; (void)ud; lj_global_patch_set_values(); }
 static void on_clear(lj_widget *w, void *ud) { (void)w; (void)ud; if (gp && gp->sel >= 0) clear_rows(0, gp->sel); }
 static void on_timer(lj_widget *w, void *ud) { (void)w; (void)ud; lj_global_patch_refresh(); }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("global patch: Help: no help file is shipped (D2)"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"output"); }   /* W4 acceptance: the bundled viewer */
 static void on_mode(lj_widget *w, void *ud)
 {
     static const char *const rb[5] = { "rbAbs", "rbLTP", "rbHTP", "rb0", "rb255" };

@@ -253,6 +253,7 @@ void lj_debug_form_close(enum lj_win id)
     lj_win_hide(*s);
     lj_window_destroy(*s);
     *s = NULL;
+    if (id == LJ_WIN_STATICS_DEBUG || id == LJ_WIN_MSG_DEBUG) memset(&lj_dbg_wrap[id == LJ_WIN_MSG_DEBUG], 0, sizeof lj_dbg_wrap[0]);   /* W4 acceptance: a stale root could alias the next window allocated at its address (wrap_event then called the freed bindings: crash in the entry-point run) */
     dbg.pending &= ~(1 << (id - LJ_WIN_DEBUG));
 }
 

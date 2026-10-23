@@ -24,6 +24,7 @@
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_config_dialogs.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define GS2_IMPORT_DIR "Import"   /* PROPOSAL folder: LJ2 asks with a TOpenDialog */
 #define GS2_EXPORT_DIR "Export"   /* PROPOSAL folder: LJ2 asks with a TSaveDialog / folder box */
@@ -144,7 +145,7 @@ static void im_sel(lj_widget *w, void *ud) { (void)w; (void)ud; lj_gs2_import_fo
 static void im_ov(lj_widget *w, void *ud) { (void)ud; if (w) { w->enabled = 0; w->hint = "Not available in LJ4EVR"; } }   /* Offline Visualizer files: design 8.5 */
 static const lj_binding im_b[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bImportAllClick", im_all, NULL },
-    { "bImportSelClick", im_sel, NULL }, { "cbImportOVFilesClick", im_ov, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "bImportSelClick", im_sel, NULL }, { "cbImportOVFilesClick", im_ov, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 
 lj_window *lj_gs2_import_open(void)
 {

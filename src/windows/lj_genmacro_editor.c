@@ -32,6 +32,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define GM_STAY_ON_TOP 2u               /* = LJ_WF_STAY_ON_TOP (platform/lj_platform.h, not includable here) */
 /* Preview colours from the CHM display rules [CHM l.5703-5755]: raw shape grey, scaled white, 0 line cyan, base orange,
@@ -471,7 +472,7 @@ static const lj_binding gm_bindings[] = {
     { "bApplyDelayClick", on_apply_delay, NULL }, { "bRestartClick", on_restart, NULL }, { "cbAutoDelayClick", lj_handler_noop, NULL }, { "cbDelayClick", on_full_delay, NULL },
     { "cbSymClick", on_sym, NULL }, { "chSelectClick", on_select_all, NULL }, { "eBaseChange", on_base_change, NULL }, { "eCountChange", lj_handler_noop, NULL },
     { "eDelayChange", on_delay_change, NULL }, { "eDelayValueChange", lj_handler_noop, NULL }, { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL },
-    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "macros" },
     { "lvChannelsDblClick", lj_handler_noop, NULL }, { "lvChannelsSelectItem", on_channel_select, NULL }, { "lvMacrosDblClick", on_shape_select, NULL },
     { "lvMacroSelectItem", on_shape_select, NULL }, { "lvpopClick", on_lv_pop, NULL }, { "M_RandomByClick", on_random_by, NULL },
     { "MenuToggleClick", on_menu_toggle, NULL }, { "PB1Paint", on_pb1_paint, NULL }, { "pbBarMouseDown", on_bar_down, NULL },
@@ -582,7 +583,7 @@ static void sv_prefs(lj_widget *w, void *ud)
     sv_fill();
 }
 static void sv_close_ev(lj_widget *w, void *ud) { (void)w; (void)ud; lj_save_genmacro_close(); }
-static const lj_binding sv_bindings[] = { { "BSaveClick", sv_click, NULL }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_handler_noop, NULL },
+static const lj_binding sv_bindings[] = { { "BSaveClick", sv_click, NULL }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_help_viewer_click, "macros" },
                                           { "FormActivate", lj_handler_noop, NULL }, { "FormClose", sv_close_ev, NULL }, { "FormCreate", lj_handler_noop, NULL },
                                           { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
 lj_window *lj_save_genmacro_open(void)
@@ -651,7 +652,7 @@ static void sl_prefs(lj_widget *w, void *ud)
 static void sl_close_ev(lj_widget *w, void *ud) { (void)w; (void)ud; lj_select_genmacro_close(); }
 static const lj_binding sl_bindings[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", sl_close_ev, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL },
-    { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "lvMacrosChange", sl_change, NULL },
+    { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "macros" }, { "lvMacrosChange", sl_change, NULL },
     { "lvMacrosColumnClick", lj_handler_noop, NULL } /* ponytail: rows stay in number order */, { "lvMacrosCompare", lj_handler_noop, NULL }, { "lvMacrosDblClick", sl_dbl, NULL },
     { "M_PrefsClick", sl_prefs, NULL }, { "popLVMacrosPopup", lj_handler_noop, NULL }, { "popMacroClick", sl_pop, NULL },
     { NULL, NULL, NULL } };

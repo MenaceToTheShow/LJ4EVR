@@ -678,9 +678,13 @@ static void lj_app_fn(enum lj_fn fn, int edge, uint32_t prog_num, void *ud)
     case LJ_FN_QUICK_SAVE_CUE:      if (edge) lj_app_save_cue(0); break;
     case LJ_FN_PROG_CUELIST:        if (edge) lj_app_cuelist_prog(prog_num); break;   /* W3: load + Top (lj_app.h) */
     /* integrator: the toolbar / hotkey rows no window file owns */
-    case LJ_FN_CTL_INTENSITY: case LJ_FN_CTL_MOVEMENT: case LJ_FN_CTL_COLOR: case LJ_FN_CTL_GOBO: case LJ_FN_CTL_BEAM: case LJ_FN_CTL_EFFECT: case LJ_FN_CTL_LAMP:
-        if (edge) lj_ctl_toggle(fn == LJ_FN_CTL_LAMP ? LJ_CTL_LAMP : (enum lj_ctl_kind)(LJ_CTL_INTENSITY + (fn - LJ_FN_CTL_INTENSITY)));
+    case LJ_FN_CTL_INTENSITY: case LJ_FN_CTL_MOVEMENT: case LJ_FN_CTL_COLOR: case LJ_FN_CTL_GOBO: case LJ_FN_CTL_BEAM: case LJ_FN_CTL_EFFECT: case LJ_FN_CTL_LAMP: {
+        enum lj_ctl_kind k = fn == LJ_FN_CTL_LAMP ? LJ_CTL_LAMP : (enum lj_ctl_kind)(LJ_CTL_INTENSITY + (fn - LJ_FN_CTL_INTENSITY));
+        const lj_profile *p = lj_sel_master_profile();
+        if (k == LJ_CTL_COLORS && p && !lj_profile_window(p, LJ_CTL_COLORS) && lj_profile_window(p, LJ_CTL_RGBPACK)) k = LJ_CTL_RGBPACK;   /* RGB packs: Colors is the RGB pack window [04 s5.3] (W4 acceptance) */
+        if (edge) lj_ctl_toggle(k);
         break;
+    }
     case LJ_FN_CTL_LEVEL_SPECIAL: {                                   /* button 7: Levels, or Extended for a profile without a Levels grid (MAC 500/918, 15/01 s3) */
         const lj_profile *p = lj_sel_master_profile();
         if (edge && p) lj_ctl_toggle(lj_profile_window(p, LJ_CTL_LEVELS) ? LJ_CTL_LEVELS : LJ_CTL_EXTENDED);

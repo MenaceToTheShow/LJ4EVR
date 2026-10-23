@@ -75,6 +75,7 @@ typedef struct lj_ctl_win {
 void lj_ctl_set_host(const lj_win_host *host);                                         /* the same open/close/show hook windows/ takes; open flags = 2u (LJ_WF_STAY_ON_TOP of platform/lj_platform.h, not includable here) */
 void lj_ctl_set_confirm(int (*fn)(const char *caption, const char *text, void *ud), void *ud);   /* Yes/No box: "Confirm" / "Lamp Power Off\n(Warning : ...)" [13 s2.2]; returns 1 = yes */
 int  lj_ctl_confirm(const char *caption, const char *text);
+int  lj_ctl_menu_run(enum lj_ctl_kind kind, const char *item);   /* W4: the UserPalette / Fades / Help bar items of a control window [04 s1.6]; 0 handled, -1 not one of them */
 
 /* the builder (lj_ctl_open resolves table/profile from the master; tests pass their own) */
 lj_window  *lj_ctl_open_table(enum lj_ctl_kind kind, const lj_ctl_window *table, const lj_profile *p);

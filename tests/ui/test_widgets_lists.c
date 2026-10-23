@@ -173,6 +173,7 @@ int lj_test_widgets_lists(int argc, char **argv)
     CHECK(count_not(&s, 12 + 42, 12 + 17, 40, 14, LJ_CLR_BTNHIGHLIGHT) > 5);                     /* "Alpha" in column 1 */
     click(w, 50, 2 + 17 + 14 + 5);
     CHECK(((lj_w_listview *)w)->index == 1 && w->focused && ev_count[LJ_WEV_SELECT_ITEM] == 1);
+    CHECK(ev_count[LJ_WEV_CHANGE] >= 1);   /* W4 acceptance: OnChange on a selection change (Fixture Configuration lvConfigChange, User Libraries LV1Change) */
     repaint(&root, &s);
     CHECK(px(&s, 100, 12 + 17 + 14 + 5) == LJ_CLR_HIGHLIGHT && px(&s, 12 + 120 + 5, 12 + 17 + 14 + 5) == LJ_CLR_HIGHLIGHT);   /* whole row navy (RowSelect), probes clear of the text */
     w->focused = 0; repaint(&root, &s);

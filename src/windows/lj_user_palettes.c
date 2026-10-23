@@ -17,6 +17,7 @@
 #include "ui/widgets/lj_w_edit.h"
 #include "ui/widgets/lj_w_radiogroup.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 static const char *lj_up_title(enum lj_ctl_kind k)   /* "User Color Palette" (usercolorpalette.gif); the other five follow it, PROPOSAL rig */
 {
@@ -163,7 +164,7 @@ static void save_click(lj_widget *w, void *ud)
 static void save_form_close(lj_widget *w, void *ud) { (void)w; (void)ud; save_close(); }
 static const lj_binding lj_up_save_bindings[] = {
     { "FormClose", save_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL },
-    { "FormShow", lj_handler_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "FormShow", lj_handler_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { NULL, NULL, NULL } };
 static void save_dialog(void)
 {
     int i = selected_row();
@@ -185,7 +186,7 @@ static void on_clear(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palett
 static void on_delete_yes(int yes, void *ud) { if (yes) lj_user_palettes_delete((int)(intptr_t)ud); }
 static void on_delete(lj_widget *w, void *ud) { (void)w; (void)ud; if (selected_row() >= 0) lj_win_confirm("Please Confirm..", "Delete Selected Presets?", NULL, on_delete_yes, (void *)(intptr_t)selected_row()); }   /* exe 0x346794 (ME-97); ponytail: the highlighted entry (single-select list) */
 static void on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_user_palettes_close(); }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("user palettes: Help: no help file is shipped (D2)"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"controls"); }   /* W4 acceptance: the bundled viewer */
 static const lj_binding lj_up_bindings[] = {
     { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { "lvChange", lj_handler_noop, NULL }, { "lvDblClick", on_assign, NULL }, { "bSaveClick", on_save, NULL }, { "bAssignClick", on_assign, NULL },

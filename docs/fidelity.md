@@ -138,3 +138,90 @@ layout, words and colours, not sizes.
 | F46 | Generic Fixture Profile, 11 tabs; `.GS2` byte-exact | `profile-editor-prompt-TScanner2DefsForm.png` / `userdeffixtureinfotab.gif`; `W3PE_PROFILE_EDITOR`; `gs2_check` 48 shipped + 212 more, 0 differences | done |
 | F55 | Prompt texts of 12 Q9 verbatim | the three W3 prompt shots; 66 of 86 Q9 literals in `src/` (w3-integration section 9 item 7 lists the other waves' 20) | W3 prompts done; the rest W4 |
 | I3 | MTC: Keep | `cuelist-run-TCuelist2Form.png` (the time-code source row: MIDI enabled; CD / DA / MP greyed, hint `Not available in LJ4EVR`); `test_midi_map` quarter-frame sequence, replay `cuelist_run` line 13 (Wait MTC holds without a source) | deferred: needs rig (a MIDI time-code source on a real port) |
+
+## Fidelity contract F1-F60, complete (W4 acceptance item 4, W4 integrator 2, 2026-10-22)
+
+One row per requirement of `feature-inventory.md` section 6. "Pair" = an LJ4EVR capture of our own window (committed under
+`docs/screenshots/`) beside the LJ2 reference it was compared with (a CHM GIF under `reference/screenshots/lj-Help_chm_images/`,
+gitignored, named only). `E/` = `docs/screenshots/w4/entry/` (the W4 entry-point walkthrough, `tests/ui/scripts/w4_entry_points.lj4s`).
+A requirement with no window, or whose numbers only the reference rig can settle, reads "deferred: needs rig" with the rig item
+(design 13 item 3, `[11 s6]`, `[12 s3]`, `[17 s8]`); its software side is pinned by the test named. The earlier W2 / W3 tables
+above stay; where a row here and a row above disagree, this one is newer.
+
+| F | Pair (LJ4EVR / LJ2) or deferral | Status |
+|---|---|---|
+| F1 | `E/main-TLJMainForm.png` (`Martin LightJockey (User lib: W4Entry)`) / `maincaption.gif` | done |
+| F2 | `docs/screenshots/w1/acceptance1-main-TLJMainForm.png` (799x606 design, Arial 8, clBtnFace) / `toolandstatusbars.gif`, `desktop.gif` | done; maximise-on-start follows the System Preferences switch |
+| F3 | `E/fingers-TLJFingersMainForm.png` (Arial Black), `E/system-prefs-TSystemPrefsForm.png` (MS Sans Serif) / `fingers.gif`, `systempreferencesdialog.gif`; `test_corpus` 826 rows 0 mismatches | done |
+| F4 | `w4_positions_1/2.lj4s`: 21 W4 windows reopen at their saved place (Acceptance item 5); `w1_positions`, `w2_positions_*`, `w3_positions_*` / `seq and cue window.gif` (independent stay-on-top controls) | done |
+| F5 | `E/main-TLJMainForm.png` (System Setup View Fingers LJ-Manager Download Help) / `mainsystemmenu.gif`, `mainsetupmenu.gif`, `mainviewmenu.gif` | done; 3D Visualizer / Capture / SandNet never shown (D12, inventory s5), Audio W5: rows above |
+| F6 | `E/main-TLJMainForm.png` (three rows + status bar) / `toolandstatusbars.gif` | done; the O/V row removed (D12, row above) |
+| F7 | `E/main-TLJMainForm.png` (`1:1`, grey empty fields) / `sequencetoolbar.gif`, `cuetoolbar.gif` | done |
+| F8 | `E/tb-cuelist-7-TLJMainForm.png` (CD / MC-X / 2518 greyed, DMX-in / MIDI / 2532 live) / `cuelisttoolbar.gif` | done |
+| F9 | `docs/screenshots/w1/acceptance3-toolbar-TLJMainForm.png` / `fixturetoolbar.gif` | done; button 9 Reset PROPOSAL (row above) |
+| F10 | `E/main-TLJMainForm.png` status bar / `statusbar.gif`, `statusbarmaster.gif` | done; panel widths scaled from a reduced capture (ME-87 row above) |
+| F11 | `docs/screenshots/w1/acceptance2-desktop-TLJMainForm.png` (blue caption, red master) / `masterfixture.gif`, `slavefixture.gif`, `unselectedfixture.gif` | done |
+| F12 | `E/fixture-info-TFixtureInfoForm.png` (icon popup reached), `E/desktop-tabs-TLayerManagerForm.png` (desktop popup) / `fixturepopup.gif`, `mainpopdesktop.gif`, `mainpopicons.gif` | done |
+| F13 | `E/desktop-tabs-TLayerManagerForm.png`, `E/desktop-grid-TGridForm.png`, `E/desktop-image-TImageSetupForm.png`, `E/unassigned-TUnassignedForm.png` / `desktopgrid.gif`, `desktopwithimage.gif`, `unassignedfixtureslist.gif` | done |
+| F14 | `E/warn-blackout-TStatusWarningForm.png`, `E/warn-frozen-TFreezeWarnForm.png`, `E/warn-offline-TOfflineWarningForm.png`, `E/close-prompt-TCloseOrSaveForm.png` / `blackoutwarning.gif`, `frozenwarning.gif`, `offlinewarning.gif` | done (the BLACKOUT ACTIVE box was destroyed every pass until this acceptance, Acceptance fix 9) |
+| F15 | `E/ctl-intensity-TIntensity.png` / `off.gif`, `snap.gif`, `fade.gif`, `fadestatebuttons.gif` | captions and colours done; right-click order deferred: needs rig (Q2) |
+| F16 | `E/ctl-intensity-TIntensity.png` (`Intensity 100,0%` style, host separator) / `intensitycontrol.gif` | done; decimal separator = host locale (D6) |
+| F17 | `E/ctl-colors-TColorControl.png`, `E/bitmap-picker-TBitMapPickerForm2.png` (31x30 tiles, our CC0 art) / `goboscroll.gif`, `selectbitmapdialog2.gif` | done (art ours, D2) |
+| F18 | `E/cuelist-form-TCuelist2Form.png` (#6B8DCB), `E/update-dialogs-TUpdateCl2Form.png` (yellow), `E/genmacro-editor-TCueMacroControlForm.png` / `cuelist1.gif`, `genericmacroeditor.gif` | done; Statics Control #004080: D11 (TStatics2Form replaces it) |
+| F19 | `E/seq-form-TSequenceForm.png`, `E/cue-form-TCurrentCue.png`, `E/cuelist-form-TCuelist2Form.png`, `E/genmacro-editor-TCueMacroControlForm.png` / `sequencecontrol.gif`, `cuecontrol.gif`, `cuelist1.gif` | done (the reopened Cue window kept `Cue` until this acceptance, Acceptance fix 1); `EDIT CUE` prefix condition deferred: needs rig |
+| F20 | `E/statics-led-TStatics2Form.png`, `E/lightcorder-TLightCorderDialog.png`, `E/debug-TDebugForm.png`, `E/laser-warning-TLaserWarningForm.png`, `E/laser-unblock-TUnblockLasersForm.png` / no CHM capture exists (undocumented, 13 s1.2) | done; paged-Statics semantics deferred: needs rig (14 sB.8); primary/secondary instance inert (row above) |
+| F21 | `E/cue-form-TCurrentCue.png` (12 slots), `E/bgcue-form-TBGCueForm.png` (5 slots), `E/master-TMasterIntensityForm.png` (8 sub-masters) / `cuecontrol.gif`, `bgcuecontrol.gif`, `masterintensity.gif`; limits in `model/lj_model.h`, `test_model_records` | done |
+| F22 | `E/seq-form-TSequenceForm.png` (1.00 / 0.05 defaults) / `sequencecontrol.gif`; replay `snap_050ms`, `fade_060ms` | done |
+| F23 | `docs/screenshots/w1/acceptance5-cue-running-TCurrentCue.png` / `cuecontrol.gif`; replay `cue_priority_slot12`, `off_is_transparent` | done |
+| F24 | deferred: needs rig (M12-M15); `LJ_LAYER_ORDER`, replays `layer_flash_current_statics`, `bgcue_over_statics`, `genmacro_vs_bgcue` | PROPOSAL until the rig |
+| F25 | `docs/screenshots/w2/statics-TStatics2Form.png` / `staticcontrol.gif`; replay `statics_ltp_reorder` | done; layer order deferred: needs rig (R2, 11 C5) |
+| F26 | `docs/screenshots/w2/bgcue-TBGCueForm.png` / `bgcuecontrol.gif`; replay `bgcue_over_statics` | done |
+| F27 | `E/save-cue-TSaveCueForm.png` (Transparent box) / `savecuetransparent.gif`; replay `transparent_cue_load` | done |
+| F28 | `E/save-seq-TSaveSeqForm.png` / `saveseqdialog.gif`; `test_model_records` (number immutable, 4-digit) | done |
+| F29 | `E/seq-form-TSequenceForm.png` / `insertdialog.gif`, `deletescenesdialog.gif`; `test_show_dialogs` (insert before current, delete-all leaves one scene) | done |
+| F30 | `E/loop-options-TLoopToolsForm.png` / `loopcontrol.gif`; replays `loop_bounce_random_limits`, `chase_030ms`, `link_to_cue` | done |
+| F31 | `docs/screenshots/w3/cuelist-20-lines-TCuelist2Form.png` / `cuelist1.gif`, `cuelistactive.gif`; replay `cuelist_run` | done |
+| F32 | `E/master-TMasterIntensityForm.png` / `masterintensity.gif`; replay `gm_examples_1_to_6` | done; range-relative scaling and rounding deferred: needs rig (M21-M22) |
+| F33 | `E/warn-blackout-TStatusWarningForm.png` / `blackoutwarning.gif`; replay `blackout_after_masters` | done |
+| F34 | `E/warn-frozen-TFreezeWarnForm.png`, `E/warn-offline-TOfflineWarningForm.png` / `frozenwarning.gif`, `offlinewarning.gif`; replay `freeze_pauses_clock` | done |
+| F35 | `E/gdc-TGenericMegaForm.png` / `genericcontrol.gif`; `test_gdc_grammar`, replay `gdc_followspot` | done |
+| F36 | `E/position-presets-TPresetForm.png`, `E/user-palette-TPresetForm.png` / `presetlist.gif`, `userpalettedialog.gif` | done (User palette and Fades menus wired from the control windows by this acceptance, fix 3) |
+| F37 | `E/ctl-movement-TMovement.png` / `movement2.gif` (1:1) | done; HALF and the readout scale deferred: needs rig (17 s8) |
+| F38 | `E/movemacro-TMovementMacroForm.png`, `E/bezier-TMovementMacroForm.png`, `E/cue-macro-TCueMacroForm.png` / `movementmacro.gif`, `beziershapeeditor.gif`, `cuemacrocontrol.gif` | done; drop-down order and table length deferred: needs rig (17 s8) |
+| F39 | `E/genmacro-editor-TCueMacroControlForm.png` / `genericmacroeditor.gif`, `builtinmacrolist.gif` | done (66 shapes ours, ME-34) |
+| F40 | `E/seq-fades-TDefault2Form.png` / `sequencefadecontrol.gif` | done |
+| F41 | `E/config-warn-TConfigWarnForm.png` (`Save  Ayway` kept) / `configurationwarnings.gif` | done (Save Anyway now keeps the warning states, integration 1 row 3) |
+| F42 | `E/fixture-config-TLinkConfigForm3.png` / `fixtureconfiguration.jpg` | done; Martin locate button captioned (D2, row above) |
+| F43 | `E/auto-address-TAutoAddressForm2.png` / `autoaddressing.gif`; `test_config_dialogs` (Scanner 1 reserves 8, global patch ignored) | done |
+| F44 | `E/copy-from-TCopyFromForm.png`, `E/cleanup-TCleanUpForm.png` / `copyfixture.gif`, `clearfixturedata.gif` | done |
+| F45 | `E/customize-TFixtureSetupForm.png`, `E/find-profile-TFindProfileForm.png` / `customizepop.gif`, `findprofiledialog.gif` | captions done; Customize layout deferred: needs rig (no capture of the window) |
+| F46 | `E/profile-editor-TScanner2DefsForm.png` / `userfixturedefdialog.gif`, `userdeffixtureinfotab.gif`; `gs2_check` 0 differences | done |
+| F47 | `E/ctl-intensity-TIntensity.png`, `E/ctl-extended-TExtended.png`, `E/ctl-lamp-TLamp.png` / `intensitycontrol.gif`, `extended.gif`, `lampcontrol.gif` | captions done; DMX value per button deferred: needs rig |
+| F48 | `E/global-patch-TGlobalPatchForm.png` / `globalpatch.gif` | done; DMX-in sources greyed until W5 |
+| F49 | `E/dmx-monitor-TDMXOutForm.png` / `dmxout.gif`, `dmxoutoverwrite.gif` | done |
+| F50 | `E/user-libraries-TUserLibForm.png` / `userlibdialog.gif`; `test_library` (the folder layout) | done |
+| F51 | `E/backup-TLibraryBackupForm.png`, `E/restore-TLibraryRestoreForm.png` / `userlibbackup.gif`, `userlibrestore.gif` | deviation by design: `.lj4b` (row above); `.LJB` import W5 |
+| F52 | `E/system-prefs-TSystemPrefsForm.png`, `E/create-data-TCreateDataForm.png`, `E/new-password-TNewPasswordForm.png` / `systempreferencesdialog.gif`, `backupdatadialog.gif` | done |
+| F53 | `E/startup-options-TStartupForm.png` / `startup.gif` | done; Auto Launch behind the Execute File rule (LORD_C-8, row above) |
+| F54 | `E/edit-hotkeys-TFunctionsForm.png`, `E/hotkey-warning-TShowHotKeyWarningForm.png` / `hotkeys1.gif`, `hotkeys2.gif` | done |
+| F55 | `caption_diff --check` 154 forms 0 differences (Acceptance item 1); `E/close-prompt-TCloseOrSaveForm.png`, `E/laser-unblock-TUnblockLasersForm.png` / Q9 texts (no GIF) | done; typos kept (D13) |
+| F56 | `E/update-dialogs-TUpdateCl2Form.png`, `-TUpdateBGCuesForm.png`, `-TPatchUpdateForm.png`, `-TUpdateForm.png` (`w4_entry_update.lj4s`) / no CHM capture (Q9 texts) | done (format 0 -> 1 rewrite asserted on disk) |
+| F57 | deferred: needs rig (M1); `test_rate`, replay `drift_600s_two_slots` | PROPOSAL until the rig |
+| F58 | deferred: needs rig (M2-M6); replays `fade_linear_40hz`, `interrupted_fade_restart`, `snap_050ms` | rules done |
+| F59 | deferred: needs rig (M16-M20); `LJ_POST_ORDER`, `test_post` | PROPOSAL until the rig |
+| F60 | no window: `test_sacn_packets` (E1.31-2018 tables byte for byte), W1 acceptance 6 (sACNView capture, `docs/w1-integration.md`) | done against the standard |
+
+### Rows added by the W4 acceptance (W4 integrator 2)
+
+| Where | LJ2 2.209 | LJ4EVR | Decision | Evidence |
+|---|---|---|---|---|
+| Forms that never open (ME-131 census) | TConfigPrintPreviewForm, TPrint2532Form, TBinary2510Form, TCreate2510Form, TD2510Form, TDownload2510Form, TMemoryTest2510Form, TCreate2518MemStatusForm, TD2518Form, TForm2518_2, TSetup2518Form, TMCXSetupForm, TMCICDForm2, TSandNetStatusForm, TCaptureForm, TLJManagerPrefsForm, TDATCScaleForm, TExternalAppSetupForm, TUSBWarningForm | generated (`lj_forms_gen.c`, a golden each), never opened: their entry points are greyed with the hint `Not available in LJ4EVR` (printing, 2510 / 2518 / MC-X / CD hardware, SandNet, Capture, LJ-Manager, DA time-code scaling, External Application output, the USB interface) | D12 / inventory s5 dropped back-ends; TExternalAppSetupForm W5 (I11) | `E/tb-cuelist-7-TLJMainForm.png`; `test_golden` rows |
+| TSavePresetForm | Position Presets save through a name box | not used; its id is deleted | `lj_preset` has no name (row above) | `test_desktop_dialogs` (no `save_preset` id) |
+| TStaticsControlForm, TSaveStaticForm, TStaticsReplaceForm (D11) | the older 20-entry Statics Control, its save box and the replace matrix | View > Controls > Statics Control and the C-L Statics LED open Statics 2 (TStatics2Form); the three forms are generated and never opened | D11 | `E/statics-view-TStatics2Form.png`, `E/statics-led-TStatics2Form.png` |
+| Statics debug / WM_CPOPYDATA DEBUG | no entry point in any DFM, exe string or help text (13 s1.2) | opened by id only (`open statics_debug`, `open msg_debug`) | no source names one; the walkthrough says so in its PASS line | `E/statics-debug-TStaticsDebugForm.png`, `E/msg-debug-TMsgDebugForm.png` |
+| Fixture Configuration popup, `Fixture Notes` (P_FixtureNotes) | (unverified which window) | shows the profile notes in the notes pane; TFixtureNotesForm opens from the icon popup | PROPOSAL rig | `E/fixture-notes-TFixtureNotesForm.png` |
+| Help viewer position | (no LJ2 window: CHM) | THelpViewer is poScreenCenter, centred at every open, not in `forms.ini` | PROPOSAL (ours) | `w4_positions_1.lj4s` header |
+| Hardware warning `No Transmitterhardware configured.` | shown at start without a transmitter | raised at start when no link is mapped to a universe; this PC's Hardware.Ini maps link 1, so the walkthrough does not see it; `w4_desktop_dialogs.lj4s` and `test_desktop_dialogs` drive it | rig-free, environment | `test_desktop_dialogs` |
+| 2532 / Virtual Fingers on keyboard and MIDI (D16) | hardware keys | the walkthrough opens both from their menu / toolbar entry points; the MIDI latch / flash rows are `w4_da2532_fingers.lj4s` and `test_da2532_fingers` (`test_midi_map`) | D16 | `E/da2532-TDa2532Form_3.png`, `E/fingers-TLJFingersMainForm.png` |
+| Cue control generic-macro group (`sbDeleteBGCue`, `sbDeleteMacro`, `sbDisableMacro`, `sbBGCue`, the `eMacro` / `eBGCue` drops) | clear / disable / drop the cue's BG cue and generic macro | log only (`lj_cue_form.c` `w2`) | open: not windows, outside this acceptance; W5 or a fix pass | `lj_cue_form.c` |
+| Master Intensity, Sync / Bump | sub-master Sync and Bump buttons | log only (`w2_event`) | open, as the row above | `lj_master_intensity.c` |

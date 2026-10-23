@@ -93,7 +93,7 @@ static int lj_app_host_open(void *ud, lj_window *w, unsigned flags)
     int x, y, mx, my;
     (void)ud;
     if (lj_a.explode) lj_app_explode(w);
-    if (lj_platform_open_window(w, flags) != 0) return -1;
+    if (lj_platform_open_window(w, flags | LJ_WF_HIDDEN) != 0) return -1;   /* W4 acceptance: placed while hidden, then shown; a visible create kept its default spot at random (forms.ini restore lost) */
     if (lj_prefs_window_pos(c->forms_ini, c->main_ini, w, &x, &y) != 0) {   /* never persisted or first open: centre on the main window (7.10) */
         const lj_form_desc *d = lj_window_desc(w);
         const lj_surface *ms = lj_window_surface(lj_a.main), *ws = lj_window_surface(w);
@@ -101,6 +101,7 @@ static int lj_app_host_open(void *ud, lj_window *w, unsigned flags)
         if (lj_a.main && lj_platform_window_pos(lj_a.main, &mx, &my) == 0) lj_formsini_center(mx, my, ms->w, ms->h, ws->w, ws->h, &x, &y);
     }
     lj_platform_move_window(w, x, y);
+    if (!(flags & LJ_WF_HIDDEN)) lj_platform_show_window(w, 1);
     return 0;
 }
 
@@ -220,10 +221,11 @@ void lj_app_refresh(void)
     lj_desktop_status_flag(LJ_SB_CUE_MOD, c->modified[LJ_MOD_CUE]);
     lj_desktop_status_flag(LJ_SB_CL_MOD, c->modified[LJ_MOD_CL]);
     {   const lj_sysprefs *p = c->prefs;                          /* System Preferences > Warnings gates the red boxes */
-        lj_win_warning(LJ_WARN_BLACKOUT, c->view.blackout && (!p || p->warn_blackout));
+        /* BLACKOUT / FADE_OUT / FADE_IN share one TStatusWarningForm: one call per pass (W4 acceptance: the fade calls used to
+         * destroy the BLACKOUT ACTIVE box right after it was created, every pass) */
+        enum lj_warning sw = c->view.gm_fade == 1 ? LJ_WARN_FADE_OUT : c->view.gm_fade == 2 ? LJ_WARN_FADE_IN : LJ_WARN_BLACKOUT;
+        lj_win_warning(sw, sw != LJ_WARN_BLACKOUT || (c->view.blackout && (!p || p->warn_blackout)));
         lj_win_warning(LJ_WARN_FROZEN, c->view.freeze && (!p || p->warn_freeze));
-        lj_win_warning(LJ_WARN_FADE_OUT, c->view.gm_fade == 1);
-        lj_win_warning(LJ_WARN_FADE_IN, c->view.gm_fade == 2);
         lj_win_warning(LJ_WARN_OFFLINE, c->view.offline && (!p || p->warn_offline)); }
     if (lj_clock_us() - lj_a.last_mem >= 1000000u) {               /* ME-87: the OS figure once a second, the desktop paints it */
         uint64_t avail, total;

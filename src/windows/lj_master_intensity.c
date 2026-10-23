@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_cue_form.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_MI_COLS      (1 + LJ_SUBMASTERS)
 #define LJ_MI_FADER_H   135    /* measured from masterintensity.gif, rig item (~132); 135 keeps the 103-px track's half exact */
@@ -156,13 +157,13 @@ static void prefs_click(lj_widget *w, void *ud)
     else if (!strcmp(it->name, "M_SynchronizeBump")) main_seti("SyncBump", !lj_ini_geti(lj_ctx_get()->main_ini, "GLOBALINTENSITY", "SyncBump", 0));
     sync_checks();
 }
-static void w2(lj_widget *w, void *ud) { (void)ud; lj_log("lj_master_intensity: %s: W2", w->name ? w->name : "?"); }
 static void internal_patch(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_INTENSITY_PATCH); }   /* Patch Sub Masters [04 s11] */
+static void int_groups(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_INTENSITY_GROUPS); }   /* W4 acceptance: Preferences > Groups [04 s11] */
 
 static const lj_binding lj_mi_bindings[] = {
     { "bAll100Click", b_all100, NULL }, { "bAll0Click", b_all0, NULL }, { "bFadeOutClick", b_fade_out, NULL }, { "bFadeInClick", b_fade_in, NULL },
     { "bBlackOutClick", b_blackout, NULL }, { "bRestoreClick", b_restore, NULL }, { "InternalPatch1Click", internal_patch, NULL }, { "PrefsClick", prefs_click, NULL },
-    { "M_IntGroupsClick", w2, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "M_IntGroupsClick", int_groups, NULL }, { "Help1Click", lj_help_viewer_click, "controls" },
     { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 

@@ -43,6 +43,7 @@
 #include "ui/widgets/lj_w_udbutton.h"
 #include "windows/lj_fixture_config.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define CD_FIRST LJ_WIN_ADD_FIXTURES
 #define CD_N     ((int)LJ_WIN_RGB_PALETTE - (int)LJ_WIN_ADD_FIXTURES + 1)
@@ -406,7 +407,7 @@ static void cl_run(int yes, void *ud)
 }
 static void cl_ok(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_confirm("Please Confirm..", "Copy fixture, are you sure?", NULL, cl_run, NULL); }   /* exe 0x1A429C */
 static void cl_box_click(lj_widget *w, void *ud) { int i, any = 0; (void)w; (void)ud; for (i = 0; i < 5; i++) any |= lj_w_checkbox_checked(cw(CL, cl_box[i])); set_en(cw(CL, "bOk"), any); }
-static const lj_binding cl_b[] = { { "FormShow", lj_handler_noop, NULL }, { "bOkClick", cl_ok, NULL }, { "cbSeqClick", cl_box_click, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+static const lj_binding cl_b[] = { { "FormShow", lj_handler_noop, NULL }, { "bOkClick", cl_ok, NULL }, { "cbSeqClick", cl_box_click, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void cl_init(lj_window *win)
 {
     lj_show *sh = show();
@@ -437,7 +438,7 @@ static void cu_run(int yes, void *ud)
 }
 static void cu_ok(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_confirm("Please Confirm..", "Clear selected fixtures, are you sure?", NULL, cu_run, NULL); }   /* exe 0x1A3C54 */
 static void cu_box_click(lj_widget *w, void *ud) { int i, any = 0; (void)w; (void)ud; for (i = 0; i < 4; i++) any |= lj_w_checkbox_checked(cw(CU, cu_box[i])); set_en(cw(CU, "bOk"), any); }
-static const lj_binding cu_b[] = { { "FormCreate", lj_handler_noop, NULL }, { "bOkClick", cu_ok, NULL }, { "cbClearSeqClick", cu_box_click, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+static const lj_binding cu_b[] = { { "FormCreate", lj_handler_noop, NULL }, { "bOkClick", cu_ok, NULL }, { "cbClearSeqClick", cu_box_click, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void cu_init(lj_window *win)
 {
     char t[40];
@@ -455,7 +456,7 @@ static void cu_init(lj_window *win)
 #define CW LJ_WIN_CONFIG_WARN
 static const char *cw_rows[LJ_FIXTURES + LJ_CHANS];
 static void cw_save(lj_widget *w, int ev, void *ud) { (void)w; (void)ud; if (ev != LJ_WEV_CLICK) return; lj_config_dlg_close(CW); lj_fixture_config_save_anyway(); }
-static const lj_binding cw_b[] = { { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+static const lj_binding cw_b[] = { { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void cw_init(lj_window *win)
 {
     int n = lj_config_dlg_warnings(cw_rows, (int)LJ_COUNT_OF(cw_rows));
@@ -530,7 +531,7 @@ static void fs_close_on_ok(lj_widget *w, void *ud)
     lj_ini_seti(lj_ctx_get()->forms_ini, "FIXTURESPECIAL", "CloseOnOK", rt->checked);   /* PROPOSAL key (forms.ini section = class name rule, design 7.10) */
 }
 static const lj_binding fs_b[] = { { "FormClose", fs_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "LV1Change", lj_handler_noop, NULL },
-    { "LV1DblClick", lj_handler_noop, NULL }, { "bOKClick", lj_handler_noop, NULL }, { "M_CloseOnOKClick", fs_close_on_ok, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "LV1DblClick", lj_handler_noop, NULL }, { "bOKClick", lj_handler_noop, NULL }, { "M_CloseOnOKClick", fs_close_on_ok, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void fs_init(lj_window *win)
 {
     const lj_profile *p = show() ? lj_show_profile(show(), cd_target) : NULL;
@@ -579,7 +580,7 @@ static const lj_binding s1_b[] = { { "FormActivate", lj_handler_noop, NULL }, { 
     { "bSetGoboValueClick", lj_handler_noop, NULL }, { "eGoboValKeyDown", lj_handler_noop, NULL }, { "lvLevelsClick", lj_handler_noop, NULL }, { "eSelectionIdChange", lj_handler_noop, NULL },
     { "bVisibleClick", lj_handler_noop, NULL }, { "bEnableClick", lj_handler_noop, NULL }, { "bInvisibleClick", lj_handler_noop, NULL }, { "bDisableClick", lj_handler_noop, NULL },
     { "eLevelNameChange", lj_handler_noop, NULL }, { "bOkClick", def_ok, NULL }, { "ImportProfile1Click", lj_handler_noop, NULL }, { "ExportProfile1Click", lj_handler_noop, NULL },
-    { "NewProfile1Click", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "NewProfile1Click", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void def_menu_grey(lj_window *win, const char *const *items, int n) { int i; for (i = 0; i < n; i++) lj_menu_set_enabled(lj_window_menus(win), items[i], 0); }
 static void s1_init(lj_window *win)
 {
@@ -600,7 +601,7 @@ static void s1_init(lj_window *win)
 static const lj_binding cs_b[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "lvPaletteChange", lj_handler_noop, NULL }, { "eValExit", lj_handler_noop, NULL },
     { "eValKeyDown", lj_handler_noop, NULL }, { "bSetValueClick", lj_handler_noop, NULL }, { "bClearClick", lj_handler_noop, NULL }, { "bGetColorClick", lj_handler_noop, NULL },
     { "bOkClick", def_ok, NULL }, { "ImportSetup1Click", lj_handler_noop, NULL }, { "ExportSetupFile1Click", lj_handler_noop, NULL }, { "ClearProfile1Click", lj_handler_noop, NULL },
-    { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void cs_init(lj_window *win)
 {
     static const char *const m[] = { "ImportSetup1", "ExportSetupFile1", "ClearProfile1" };
@@ -648,7 +649,7 @@ static void rp_ok(lj_widget *w, int ev, void *ud)
     lj_config_dlg_close(RP);
 }
 static const lj_binding rp_b[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "sg1SelectCell", rp_cell, NULL },
-    { "Edit1Exit", rp_edit, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "Edit1Exit", rp_edit, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void rp_init(lj_window *win)
 {
     lj_show *sh = show();
@@ -729,7 +730,7 @@ static void bp_filter(lj_widget *w, void *ud) { (void)ud; bp_fill(!strcmp(w->nam
 static void bp_menu(lj_widget *w, void *ud) { (void)w; (void)ud; bp_fill(cd.pick_colors); }   /* Refresh [02 s9.4] */
 static const lj_binding bp_b[] = { { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "sbAllClick", bp_filter, NULL },
     { "bGobosClick", bp_filter, NULL }, { "bColorsClick", bp_filter, NULL }, { "LV2Click", lj_handler_noop, NULL }, { "LV1DblClick", bp_pick, NULL }, { "LV1Deletion", lj_handler_noop, NULL },
-    { "LV1MouseMove", lj_handler_noop, NULL }, { "MenuClick", bp_menu, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "LV1MouseMove", lj_handler_noop, NULL }, { "MenuClick", bp_menu, NULL }, { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void bp_init(lj_window *win)
 {
     static const char *const libs[1] = { "SYSTEM BITMAPS" };    /* selectbitmapdialog2.gif: the library list; ours is one */
@@ -796,7 +797,7 @@ static void am_ok(lj_widget *w, int ev, void *ud)
     for (i = 0; apply && i < n; i++) apply(list[i], aud);
 }
 static const lj_binding am_b[] = { { "FormActivate", lj_handler_noop, NULL }, { "LV1Click", lj_handler_noop, NULL }, { "bIdOnlyClick", am_filter, NULL }, { "Button2Click", am_filter, NULL },
-    { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void am_init(lj_window *win)
 {
     const lj_profile *p = show() ? lj_show_profile(show(), cd.am_master) : NULL;
@@ -990,7 +991,7 @@ static void rg_add(lj_widget *w, void *ud)   /* bOk adds, BitBtn2 drops the add 
 static void rg_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_config_dlg_close(RG); }
 static const lj_binding rg_b[] = { { "FormClose", rg_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "tv1Change", lj_handler_noop, NULL },
     { "tv1CustomDrawItem", lj_handler_noop, NULL }, { "tv1DblClick", lj_handler_noop, NULL }, { "AddBtnClick", rg_add, NULL }, { "PopClick", rg_pop, NULL }, { "MenuClick", lj_handler_noop, NULL },
-    { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "Help1Click", lj_help_viewer_click, "fixtures" }, { NULL, NULL, NULL } };
 static void rg_init(lj_window *win)
 {
     lj_widget *p = cw(RG, "pAdd");

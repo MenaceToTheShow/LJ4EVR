@@ -23,6 +23,8 @@
 #include "gfx/lj_draw.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
+#include "desktop/lj_desktop.h"
+#include "io/lj_fn.h"
 #include "windows/lj_windows.h"
 
 static lj_ctl_win lj_ctls[LJ_CTL_COUNT];
@@ -53,6 +55,18 @@ static const struct { const char *name, *cls; lj_border_style border; int cw, ch
 
 void lj_ctl_set_host(const lj_win_host *host) { lj_ctl_host = host; }
 void lj_ctl_set_confirm(int (*fn)(const char *, const char *, void *), void *ud) { lj_ctl_confirm_fn = fn; lj_ctl_confirm_ud = ud; }
+
+int lj_ctl_menu_run(enum lj_ctl_kind kind, const char *item)
+{
+    static const enum lj_fn pal[LJ_CTL_COUNT] = { [LJ_CTL_INTENSITY] = LJ_FN_TOGGLE_INTENSITY_PALETTE, [LJ_CTL_COLORS] = LJ_FN_TOGGLE_COLOR_PALETTE,
+        [LJ_CTL_GOBOS] = LJ_FN_TOGGLE_GOBO_PALETTE, [LJ_CTL_BEAM] = LJ_FN_TOGGLE_BEAM_PALETTE, [LJ_CTL_EFFECTS] = LJ_FN_TOGGLE_EFFECT_PALETTE,
+        [LJ_CTL_LEVELS] = LJ_FN_TOGGLE_LEVELS_PALETTE, [LJ_CTL_EXTENDED] = LJ_FN_TOGGLE_LEVELS_PALETTE };
+    if (!item || (unsigned)kind >= LJ_CTL_COUNT) return -1;
+    if (!strcmp(item, "UserPalette") || !strcmp(item, "M_UserPalette")) { if (!pal[kind]) return -1; lj_fn_run(pal[kind], 1); return 0; }   /* the User Palette window of this kind */
+    if (!strcmp(item, "Fades") || !strcmp(item, "M_Fades")) { lj_win_open(LJ_WIN_SEQ_FADES); return 0; }   /* Sequence Fades [04 s1.4] */
+    if (!strcmp(item, "Help") || !strcmp(item, "M_Help")) { lj_desktop_run_action(LJ_ACT_HELP, 0); return 0; }   /* the bundled viewer (design 13 item 12) */
+    return -1;
+}
 
 int lj_ctl_confirm(const char *caption, const char *text)
 {
@@ -469,7 +483,8 @@ static void menu_click(lj_widget *root, void *ud)
     (void)root;
     if (strcmp(name, "Preferences") == 0 && c->kind == LJ_CTL_INTENSITY) { lj_ctl_intensity_prefs(c); return; }
     if (strcmp(name, "Palette") == 0 && c->kind == LJ_CTL_RGBPACK) { lj_win_open(LJ_WIN_RGB_PALETTE); return; }   /* W4: RGB Palette [04 s5.3] */
-    lj_log("lj_ctl: %s menu %s: not in W1 (UserPalette, Fades = W2; Help = W5)", lj_ctl_chrome[c->kind].name, name);   /* PROPOSAL: a childless bar item fires like a button */
+    if (lj_ctl_menu_run(c->kind, name) == 0) return;   /* W4 acceptance: UserPalette / Fades / Help */
+    lj_log("lj_ctl: %s menu %s: no action", lj_ctl_chrome[c->kind].name, name);   /* PROPOSAL: a childless bar item fires like a button */
 }
 
 static void form_close(lj_widget *root, void *ud) { (void)root; lj_ctl_close(((lj_ctl_win *)ud)->kind); }

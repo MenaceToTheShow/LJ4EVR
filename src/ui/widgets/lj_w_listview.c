@@ -86,6 +86,7 @@ static void select_row(lj_w_listview *v, int row)
     FIT(v); lj_w_sbar_reveal(&v->sb, v->index, visible_rows(v));
     lj_widget_invalidate(&v->base);
     lj_w_emit(&v->base, LJ_WEV_SELECT_ITEM);
+    lj_w_emit(&v->base, LJ_WEV_CHANGE);   /* W4 acceptance: TListView.OnChange fires on a selection change (ctState); Fixture Configuration's lvConfigChange never ran */
     lj_w_emit(&v->base, LJ_WEV_CLICK);
 }
 

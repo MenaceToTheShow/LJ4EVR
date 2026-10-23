@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_w_udbutton.h"
 #include "windows/lj_cue_form.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_WIN_STAY_ON_TOP 2u   /* = LJ_WF_STAY_ON_TOP of platform/lj_platform.h (not includable from windows/) */
 
@@ -187,7 +188,7 @@ static void on_show(lj_widget *w, void *ud) { (void)w; (void)ud; fill(); }
 static const lj_binding lj_lo_bindings[] = {
     { "bDefaultLoopClick", on_default, NULL }, { "REndLoopClick", on_end, NULL }, { "RDirectionClick", on_dir, NULL },
     { "UdButtonsChange", on_ud, NULL }, { "EValidateKeyPress", lj_handler_noop, NULL } /* digits only: the edits are LJ_W_EDIT_NUM */, { "EKeyUp", on_edit_keyup, NULL },
-    { "bSelectCueClick", on_select_cue, NULL }, { "cbTrigLoadClick", on_trig_load, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "bSelectCueClick", on_select_cue, NULL }, { "cbTrigLoadClick", on_trig_load, NULL }, { "Help1Click", lj_help_viewer_click, "cues" },
     { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormHide", lj_handler_noop, NULL }, { "FormShow", on_show, NULL },
     { NULL, NULL, NULL } };
 

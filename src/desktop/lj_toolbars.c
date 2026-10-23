@@ -278,7 +278,7 @@ void lj_desktop_toolbar_update(void)
     if (!lj_tb_row[2]) return;
     set_enabled(B_FX_INTENSITY, p && lj_profile_window(p, LJ_CTL_INTENSITY));
     set_enabled(B_FX_MOVEMENT,  p && lj_profile_window(p, LJ_CTL_MOVEMENT));
-    set_enabled(B_FX_COLORS,    p && lj_profile_window(p, LJ_CTL_COLORS));
+    set_enabled(B_FX_COLORS,    p && (lj_profile_window(p, LJ_CTL_COLORS) || lj_profile_window(p, LJ_CTL_RGBPACK)));   /* RGB packs: the RGB pack Colors window [04 s5.3] (W4 acceptance) */
     set_enabled(B_FX_GOBOS,     p && lj_profile_window(p, LJ_CTL_GOBOS));
     set_enabled(B_FX_BEAM,      p && lj_profile_window(p, LJ_CTL_BEAM));
     set_enabled(B_FX_EFFECTS,   p && lj_profile_window(p, LJ_CTL_EFFECTS));

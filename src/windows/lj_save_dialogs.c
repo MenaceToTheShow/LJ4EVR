@@ -16,6 +16,7 @@
 #include "windows/lj_lists.h"
 #include "windows/lj_seq_form.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_SS_SEC "SAVESEQFORM"            /* PROPOSAL: our Main.Ini section for this dialog's options */
 
@@ -230,7 +231,7 @@ static const lj_binding lj_ss_bindings[] = {
     { "FormKeyDown", lj_handler_noop, NULL }, { "FormShow", lj_ss_on_update, NULL },
     { "cbOptionsClick", lj_ss_on_options, NULL }, { "BsaveClick", lj_ss_on_save, NULL }, { "BSaveNewClick", lj_ss_on_save, (void *)1 },
     { "PrefsClick", lj_ss_on_prefs, NULL }, { "M_QuickSaveOptionsClick", lj_ss_on_quick_options, NULL }, { "M_SavetoSlotClick", lj_ss_on_show_slot, NULL },
-    { "Preferences1Click", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "Preferences1Click", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "files" },
     { NULL, NULL, NULL }
 };
 

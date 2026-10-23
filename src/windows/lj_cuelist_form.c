@@ -31,6 +31,7 @@
 #include "windows/lj_cue_form.h"
 #include "windows/lj_windows.h"
 #include "windows/lj_show_dialogs.h"   /* W4 dlg-show: Offset / Sort (ME-120), the cue picker */
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 #include "core/lj_lock.h"
 
 #define CL_SEC         "CUELIST2"   /* forms.ini / Main.Ini section [01 s4 table: forms.ini [CUELIST2] 545x350, ViewEditPanel ViewEditCommand] */
@@ -716,7 +717,7 @@ static const lj_binding cl_bindings[] = {
     { "Files1Click", lj_handler_noop, NULL }, { "FileMenuClick", on_file_menu, NULL }, { "M_LoadAutosaveClick", on_autosave, NULL }, { "M_ImportOldCuelistClick", on_import_old, NULL },
     { "ViewClick", on_view, NULL }, { "PrefsClick", on_pref, NULL }, { "Pop_MTCSyncFramesClick", lj_handler_noop, NULL }, { "syncFramesClick", on_sync, NULL },
     { "DigitalAudioTimecodeScaler1Click", lj_handler_noop, NULL } /* DA: greyed */, { "M_RecordtoLightCorderClick", open_lightcorder, NULL } /* Visible = False in the DFM; W4: the lightcorder track settles visibility */,
-    { "Help1Click", lj_handler_noop, NULL }, { "ListPopPopup", on_popup, NULL }, { "Pop_JumpToThisClick", on_jump, NULL }, { "M_RunClick", on_run_menu, NULL },
+    { "Help1Click", lj_help_viewer_click, "cuelists" }, { "ListPopPopup", on_popup, NULL }, { "Pop_JumpToThisClick", on_jump, NULL }, { "M_RunClick", on_run_menu, NULL },
     { "Pop_SetCurrentCueClick", on_set_cue, NULL }, { "pop_SetCueTrigClick", on_set_trig, NULL }, { "P_SetMarkClick", on_set_mark, NULL },
     { "Timer1Timer", on_timer, NULL }, { "ActionExecute", on_action, NULL },
     { NULL, NULL, NULL } };
@@ -887,7 +888,7 @@ static void sv_prefs(lj_widget *w, void *ud)
 /* sv_key = lj_handler_noop: ponytail: Save on [Enter] needs the key of FormKeyDown, which lj_window does not hand to form handlers */
 static void sv_on_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_save_cuelist_close(); }
 static const lj_binding sv_bindings[] = {
-    { "bSaveClick", sv_save, NULL }, { "bSaveAsClick", sv_save_as, NULL }, { "M_EnterSaveClick", sv_prefs, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "bSaveClick", sv_save, NULL }, { "bSaveAsClick", sv_save_as, NULL }, { "M_EnterSaveClick", sv_prefs, NULL }, { "Help1Click", lj_help_viewer_click, "cuelists" },
     { "FormClose", sv_on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 lj_window *lj_save_cuelist_open(void)
@@ -932,7 +933,7 @@ static void sl_activate(lj_widget *w, void *ud) { (void)w; (void)ud; sl_fill(); 
 static const lj_binding sl_bindings[] = {
     { "FormActivate", sl_activate, NULL }, { "FormClose", sl_close_ev, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "Lv1ColumnClick", lj_handler_noop, NULL } /* ponytail: sorting by column, W4 */, { "Lv1Compare", lj_handler_noop, NULL }, { "Lv1DblClick", sl_load, NULL },
-    { "Help1Click", lj_handler_noop, NULL }, { "Cl2PpopupPopup", lj_handler_noop, NULL }, { "pop_LoadCuelistClick", sl_load, NULL }, { "pop_DeleteCuelistClick", sl_delete, NULL },
+    { "Help1Click", lj_help_viewer_click, "cuelists" }, { "Cl2PpopupPopup", lj_handler_noop, NULL }, { "pop_LoadCuelistClick", sl_load, NULL }, { "pop_DeleteCuelistClick", sl_delete, NULL },
     { NULL, NULL, NULL } };
 lj_window *lj_select_cuelist_open(void)
 {
@@ -1035,7 +1036,7 @@ static const lj_binding lg_bindings[] = {
     { "FormDeactivate", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL } /* [CTRL] logs: the hotkey Log Timecode does the same */,
     { "bLogMouseDown", lg_log, NULL }, { "bStartElapsedClick", lg_start, NULL }, { "bAddLogsClick", lg_apply, (void *)0 },
     { "bClearLogsClick", lg_clear, NULL }, { "bInsertLogsClick", lg_apply, (void *)1 }, { "bApplyLogsClick", lg_apply, (void *)2 },
-    { "M_AutoClearClick", lg_prefs, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "Timer1Timer", lg_timer, NULL },
+    { "M_AutoClearClick", lg_prefs, NULL }, { "Help1Click", lj_help_viewer_click, "cuelists" }, { "Timer1Timer", lg_timer, NULL },
     { NULL, NULL, NULL } };
 lj_window *lj_log_timecode_open(void)
 {

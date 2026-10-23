@@ -1,0 +1,922 @@
+# w4_entry_points.lj4s - W4 acceptance 2 (design 10 W4): every window of feature-inventory section 2 opened from its
+# documented entry point (menu path, toolbar button, form button, popup item or hotkey), never by `open <id>` unless
+# the row says so (automatic windows). One `log "PASS ..."` line and one shot per window. W4 integrator 2, 2026-10-22.
+# Run from the repo root in a scratch library prepared by tests/ui/scripts/w4_entry_prep.sh (Main.Ini [DEBUG]
+# DebugWindow=1 so View > De&bugWindow shows; Fingers.Ini [SETUP] Mode=1 so Virtual Fingers opens without its prompt):
+#   build-w4\lj4evr.exe U:W4Entry --script tests\ui\scripts\w4_entry_points.lj4s 2> entry.log
+# Evidence: docs/w4-integration.md "Acceptance", item 2. Shots: docs/screenshots/w4/entry/.
+
+# ---- setup: MAC 500 Mode 2/4 at 1:001, Generic DMX Dimmer at 1:017 (the W1 walkthrough's patch) ----
+assert_caption main "Martin LightJockey (User lib: W4Entry)"
+log "PASS Main desktop (TLJMainForm) <- startup"
+assert_caption please_wait "Startup Status"
+log "PASS Startup Status (TStartupStatusWindow) <- startup (selfdestruct in 10 s)"
+shot docs/screenshots/w4/entry/main.png
+click main.Config21                               # Setup > Fixture Configuration
+assert_caption fixture_config "Fixture Configuration"
+log "PASS Fixture Configuration (TLinkConfigForm3) <- Setup > Fixture Configuration"
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbMartin
+key Right
+key Down 60
+key Right
+key Right
+click TLinkConfigForm3.bAdd                       # Add Fixture (s)
+assert_caption add_fixtures "Add Fixture (s)"
+log "PASS Add Fixture(s) (TAddFixForm2) <- Fixture Configuration > Add Fixture (s)"
+shot docs/screenshots/w4/entry/add-fixtures.png
+click TAddFixForm2.bOk
+click TLinkConfigForm3.eAdr
+type "1"
+key Enter
+click TLinkConfigForm3.tvAvailable 100 8
+click TLinkConfigForm3.sbGeneric
+key Right
+key Right
+key Right
+click TLinkConfigForm3.bAdd
+click TAddFixForm2.bOk
+click TLinkConfigForm3.eAdr
+type "17"
+key Enter
+assert_text TLinkConfigForm3.LFixtures "7 Fixtures configured"       # fixtures 3-7 from w4_entry_prep.sh
+shot docs/screenshots/w4/entry/fixture-config.png
+click TLinkConfigForm3.bSave
+assert_prompt "Clear data for new fixtures ?"
+log "PASS Prompt Please Confirm.. (TConfirmForm) <- Fixture Configuration > Save"
+click confirm.BOk
+close fixture_config
+wait 300
+close cue_form
+close seq_form
+assert_caption TUnassignedForm "Unassigned Fixtures"
+log "PASS Unassigned Fixtures (TUnassignedForm) <- automatic after Fixture Configuration"
+shot docs/screenshots/w4/entry/unassigned.png
+drag TUnassignedForm.LV_Unassigned main.desktop 40 26 -300 -120
+wait 300
+click TUnassignedForm.BitBtn1                     # Auto Place All
+assert_prompt "Place all Fixtures on this tab ?"
+log "PASS Prompt Place all Fixtures on this tab ? <- Unassigned Fixtures > Auto Place All"
+click confirm.BOk
+wait 300
+assert_text main.icon1 "(1) MAC500"
+assert_text main.icon2 "(2) DMX1"
+# ---- inventory section 2, top to bottom ----
+close seq_form
+close cue_form
+click main.tb_seqcue_1                            # Seq toolbar: View Sequence Control
+assert_caption seq_form "SEQUENCE [0000 No Name]"
+log "PASS Sequence control (TSequenceForm) <- Seq toolbar Seq button"
+shot docs/screenshots/w4/entry/seq-form.png
+close seq_form
+click main.M_ViewSequenceControl                  # View > Controls > Sequence Control
+assert_caption seq_form "SEQUENCE [0000 No Name]"
+log "PASS Sequence control (TSequenceForm) <- View > Controls > Sequence Control"
+shot docs/screenshots/w4/entry/seq-form-view.png
+close seq_form
+click main.tb_seqcue_5                            # Cue toolbar: View Cue Control
+assert_caption cue_form "CUE [0000 No Name]"
+log "PASS Cue control (TCurrentCue) <- Cue toolbar Cue button"
+shot docs/screenshots/w4/entry/cue-form.png
+close cue_form
+click main.tb_cuelist_1                           # C-L toolbar: Toggle Cue List control
+assert_caption cuelist_form "Cuelist [0000 No Name]"
+log "PASS Cue list control (TCuelist2Form) <- C-L toolbar CueList button"
+shot docs/screenshots/w4/entry/cuelist-form.png
+close cuelist_form
+click main.tb_cuelist_5                           # C-L toolbar: Background Cue LED button
+assert_caption bgcue_form "Background Cue"
+log "PASS Background Cue (TBGCueForm) <- C-L toolbar Background Cue LED"
+shot docs/screenshots/w4/entry/bgcue-form.png
+close bgcue_form
+click main.tb_cuelist_6                           # C-L toolbar: Statics LED button (D11: Statics 2)
+assert_caption statics2_form "Statics"
+log "PASS Statics Control / Statics paged (TStatics2Form, D11) <- C-L toolbar Statics LED"
+shot docs/screenshots/w4/entry/statics-led.png
+close statics2_form
+click main.M_ViewStatics                          # View > Controls > Statics Control (D11)
+assert_caption statics2_form "Statics"
+log "PASS Statics Control (TStatics2Form, D11) <- View > Controls > Statics Control"
+shot docs/screenshots/w4/entry/statics-view.png
+close statics2_form
+click main.tb_seqcue_4                            # Seq toolbar: List of Sequences
+assert_caption list_seq "Select Sequence (Drag To Target)"
+log "PASS List of sequences (TSeqListForm) <- Seq toolbar List of Sequences"
+shot docs/screenshots/w4/entry/list-seq.png
+close list_seq
+click main.tb_seqcue_8                            # Cue toolbar: List of Cues
+assert_caption list_cue "Select Cue"
+log "PASS List of cues (TAdvancedCueForm) <- Cue toolbar List of Cues"
+shot docs/screenshots/w4/entry/list-cue.png
+close list_cue
+click main.tb_cuelist_4                           # C-L toolbar: List of Cue Lists
+assert_caption select_cuelist "Select Cuelist"
+log "PASS Select Cuelist (TSelectCuelist2Form) <- C-L toolbar List of Cue Lists"
+shot docs/screenshots/w4/entry/select-cuelist.png
+close select_cuelist
+click main.tb_cuelist_5
+click TBGCueForm.sbLoad                           # Background Cue: Load
+assert_caption select_bgcue "Select Background Cue"
+log "PASS Select Background Cue (TSelectBGCueForm2) <- Background Cue > Load"
+shot docs/screenshots/w4/entry/select-bgcue.png
+close select_bgcue
+click TBGCueForm.sbSave                           # Background Cue: Save
+assert_caption save_bgcue "Save Background Cue"
+log "PASS Save BG Cue (TSaveBGForm) <- Background Cue > Save"
+shot docs/screenshots/w4/entry/save-bgcue.png
+close save_bgcue
+close bgcue_form
+click main.tb_seqcue_3                            # Seq toolbar: Save Sequence
+assert_caption save_seq "Save Sequence"
+log "PASS Save Sequence (TSaveSeqForm) <- Seq toolbar Save"
+shot docs/screenshots/w4/entry/save-seq.png
+close save_seq
+click main.tb_seqcue_7                            # Cue toolbar: Save Cue
+assert_caption save_cue "Save Cue"
+log "PASS Save Cue (TSaveCueForm) <- Cue toolbar Save"
+shot docs/screenshots/w4/entry/save-cue.png
+close save_cue
+click main.tb_cuelist_3                           # C-L toolbar: Save Cue List
+assert_caption save_cuelist "Save Cuelist"
+log "PASS Save Cuelist (TSaveCuelist2Form) <- C-L toolbar Save"
+shot docs/screenshots/w4/entry/save-cuelist.png
+close save_cuelist
+click main.tb_seqcue_5
+click TCurrentCue.CueBuilder1                     # Cue control: Options > Cue-Builder
+assert_caption cue_stack "Cue Builder"
+log "PASS Cue Builder (TCueStackForm) <- Cue control Options > Cue-Builder"
+shot docs/screenshots/w4/entry/cue-builder.png
+close cue_stack
+click TCurrentCue.sbCueTime                       # Cue control advanced panel: Cue Time Control
+assert_caption cue_time "[0000 No name]"
+log "PASS Cue Time Control (TCueTimeForm) <- Cue control Cue Time Control button"
+shot docs/screenshots/w4/entry/cue-time.png
+close cue_time
+click TCurrentCue.sbLoop                          # Cue control: Cue Loop Control
+assert_caption loop_options "Loop Options"
+log "PASS Sequence slot loop options (TLoopToolsForm) <- Cue control Cue Loop Control button"
+shot docs/screenshots/w4/entry/loop-options.png
+close loop_options
+click TCurrentCue.sbCueMacroScale                 # Cue control: Cue Macro Scale
+assert_caption cue_macro_control "Cue Macro Control"
+log "PASS Cue macro control (TCueMacroForm) <- Cue control Cue Macro Scale button"
+shot docs/screenshots/w4/entry/cue-macro.png
+close cue_macro_control
+click TCurrentCue.sbLoadMacro                     # Cue control: Macro List
+assert_caption select_genmacro "Select Macro"
+log "PASS Select Macro (TLoadMacroList) <- Cue control Macro List button"
+shot docs/screenshots/w4/entry/select-macro.png
+close select_genmacro
+click TCurrentCue.sbLoadBGCue                     # Cue control: Select BG Cue
+assert_caption select_bgcue_old "Select Background Cue"
+log "PASS Select Background Cue (TSelectBGCueForm) <- Cue control Select BG Cue button"
+shot docs/screenshots/w4/entry/select-bgcue-cue.png
+close select_bgcue_old
+click TCurrentCue.SlotsNames1                     # Cue control: Preferences > Sequence Slot Labels...
+assert_caption name_slots "Sequence Slot Labels"
+log "PASS Sequence Slot Labels (TNameSlotsForm) <- Cue control Preferences > Sequence Slot Labels..."
+shot docs/screenshots/w4/entry/name-slots.png
+close name_slots
+click TCurrentCue.sbCueMacroControl               # Cue control: Macro Editor
+assert_caption genmacro_editor "Generic Macro Editor []"
+log "PASS Generic Macro Editor (TCueMacroControlForm) <- Cue control Macro Editor button"
+shot docs/screenshots/w4/entry/genmacro-editor.png
+click TCueMacroControlForm.sbSaveMacro            # Generic Macro Editor: Save Macro
+assert_caption save_genmacro "Save Macro"
+log "PASS Save Macro (TSaveMacroDialog) <- Generic Macro Editor Save Macro"
+shot docs/screenshots/w4/entry/save-macro.png
+close save_genmacro
+click TCueMacroControlForm.sbLoad                 # Generic Macro Editor: Load Macro
+assert_caption select_genmacro "Select Macro"
+log "PASS Select Macro (TLoadMacroList) <- Generic Macro Editor Load Macro"
+shot docs/screenshots/w4/entry/select-macro-ed.png
+close select_genmacro
+close genmacro_editor
+close cue_form
+click main.icon1                                  # MAC 500 as master
+click main.tb_fixture_1
+assert_caption intensity "Intensity"
+log "PASS Intensity control <- Fixture toolbar button 1"
+shot docs/screenshots/w4/entry/ctl-intensity.png
+close intensity
+click main.tb_fixture_2
+assert_caption movement "Movement 16 Bit"
+log "PASS Movement 16 Bit control <- Fixture toolbar button 2"
+shot docs/screenshots/w4/entry/ctl-movement.png
+close movement
+click main.tb_fixture_3
+assert_caption colors "Colors"
+log "PASS Colors control <- Fixture toolbar button 3"
+shot docs/screenshots/w4/entry/ctl-colors.png
+close colors
+click main.tb_fixture_4
+assert_caption gobos "Gobos"
+log "PASS Gobos control <- Fixture toolbar button 4"
+shot docs/screenshots/w4/entry/ctl-gobos.png
+close gobos
+click main.tb_fixture_5
+assert_caption beam "Beam"
+log "PASS Beam control <- Fixture toolbar button 5"
+shot docs/screenshots/w4/entry/ctl-beam.png
+close beam
+click main.tb_fixture_6
+assert_caption effects "Effects"
+log "PASS Effects control <- Fixture toolbar button 6"
+shot docs/screenshots/w4/entry/ctl-effects.png
+close effects
+click main.tb_fixture_7
+assert_caption extended "Extended"
+log "PASS Extended control <- Fixture toolbar button 7"
+shot docs/screenshots/w4/entry/ctl-extended.png
+close extended
+click main.tb_fixture_8
+assert_caption lamp "Lamp Control"
+log "PASS Lamp Control control <- Fixture toolbar button 8"
+shot docs/screenshots/w4/entry/ctl-lamp.png
+close lamp
+click main.tb_fixture_2
+click movement.M_Presets                          # Movement: Presets
+assert_caption position_presets "Position Presets"
+log "PASS Position Presets (TPresetForm) <- Movement > Presets"
+shot docs/screenshots/w4/entry/position-presets.png
+close position_presets
+click movement.M_FanOut                           # Movement: Options > Fan Out
+assert_caption fan_out "Fan Out"
+log "PASS Fan Out (TFanOutForm) <- Movement > Options > Fan Out"
+shot docs/screenshots/w4/entry/fan-out.png
+close fan_out
+click movement.M_PosOptions                       # Movement: Options > Position Options
+assert_caption movement_options "Position Options"
+log "PASS Position Options (TMovementOptionsForm) <- Movement > Options > Position Options"
+shot docs/screenshots/w4/entry/position-options.png
+close movement_options
+click movement.M_Fades                            # Movement: Fades
+assert_caption seq_fades "Set Fade Status"
+log "PASS Sequence Fades (TDefault2Form) <- Movement > Fades"
+shot docs/screenshots/w4/entry/seq-fades-movement.png
+close seq_fades
+click movement.M_Macro                            # Movement: Macro
+assert_caption movemacro_editor "Movement Macro"
+log "PASS Movement Macro (TMovementMacroForm) <- Movement > Macro"
+shot docs/screenshots/w4/entry/movemacro.png
+click TMovementMacroForm.M_AutoDelay              # Movement Macro: Auto delay
+assert_caption auto_delay "Pan/Tilt Macro Auto Delay"
+log "PASS Pan/Tilt Macro Auto Delay (TAutoDelayForm) <- Movement Macro > Auto delay"
+shot docs/screenshots/w4/entry/auto-delay.png
+close auto_delay
+click TMovementMacroForm.M_NewShape               # Movement Macro: Bezier Shapes > New Shape (the editor panel)
+assert_caption movemacro_editor "Movement Macro"
+log "PASS Bezier editor (in TMovementMacroForm) <- Movement Macro > Bezier Shapes > New Shape"
+shot docs/screenshots/w4/entry/bezier.png
+click TMovementMacroForm.M_DeleteShapes           # Movement Macro: Bezier Shapes > Delete Shapes
+assert_caption delete_movemacro "Delete Macros"
+log "PASS Delete Macros (TDeleteMacrosForm) <- Movement Macro > Bezier Shapes > Delete Shapes"
+shot docs/screenshots/w4/entry/delete-shapes.png
+close delete_movemacro
+close movemacro_editor
+close movement
+click main.tb_fixture_3
+click colors.M_UserPalette                        # Colors: UserPalette
+assert_caption user_palettes "User Color Palette"
+log "PASS User Color Palette (TUserPaletteForm) <- Colors > UserPalette"
+shot docs/screenshots/w4/entry/user-palette.png
+close user_palettes
+click colors.M_Fades                              # Colors: Fades
+assert_caption seq_fades "Set Fade Status"
+log "PASS Sequence Fades (TDefault2Form) <- Colors > Fades"
+shot docs/screenshots/w4/entry/seq-fades.png
+close seq_fades
+close colors
+click main.tb_fixture_1
+click intensity.UserPalette                       # Intensity: UserPalette
+assert_caption user_palettes "User Intensity Palette"
+log "PASS User palette (TUserPaletteForm) <- Intensity > UserPalette"
+shot docs/screenshots/w4/entry/user-palette-int.png
+close user_palettes
+close intensity
+click main.tb_seqcue_1
+click TSequenceForm.M_Snapshot                    # Sequence: Snapshot
+assert_caption snapshot "Snapshot from DMX Out"
+log "PASS Snapshot from DMX Out (TSnapshotSceneForm) <- Sequence > Snapshot"
+shot docs/screenshots/w4/entry/snapshot.png
+close snapshot
+close seq_form
+click main.M_Generic                              # Generics (a generic fixture is patched)
+assert_caption gdc_form "Generic DMX Control"
+log "PASS Generic DMX Control (TGenericMegaForm) <- main menu Generics"
+shot docs/screenshots/w4/entry/gdc.png
+close gdc_form
+click main.tb_fixture_23                          # Fixture toolbar: Master Intensity
+assert_caption master_intensity "Master Intensity"
+log "PASS Master Intensity (TMasterIntensityForm) <- Fixture toolbar Master Intensity"
+shot docs/screenshots/w4/entry/master.png
+click TMasterIntensityForm.M_IntGroups            # Master Intensity: Preferences > Groups
+assert_caption intensity_groups "Intensity Groups"
+log "PASS Intensity Groups (TIntensityGroupForm) <- Master Intensity > Preferences > Groups"
+shot docs/screenshots/w4/entry/intensity-groups.png
+close intensity_groups
+click TMasterIntensityForm.InternalPatch1         # Master Intensity: Options > Patch Submasters
+assert_caption intensity_patch "Patch Sub Masters"
+log "PASS Patch Sub Masters (TInternalIntensityPatchForm) <- Master Intensity > Options > Patch Submasters"
+shot docs/screenshots/w4/entry/intensity-patch.png
+close intensity_patch
+close master_intensity
+click main.tb_fixture_21                          # Fixture toolbar: Smoke Control
+assert_caption smoke_control "Smoke Control"
+log "PASS Smoke Control (TSmokeForm) <- Fixture toolbar Smoke Control"
+shot docs/screenshots/w4/entry/smoke.png
+close smoke_control
+click main.tb_fixture_11                          # Fixture toolbar: Fixture Groups
+assert_caption fixture_groups "Fixture Groups"
+log "PASS Fixture Groups (TGroupForm) <- Fixture toolbar Fixture Groups"
+shot docs/screenshots/w4/entry/fixture-groups.png
+close fixture_groups
+rclick main.tb_fixture_15                         # right-click Previous Fixture
+assert_caption nextprev_selection "Next/Previous Fixture Selection"
+log "PASS Next/Previous Fixture Selection (TNextPrevSelectionForm) <- right-click Previous Fixture"
+shot docs/screenshots/w4/entry/nextprev.png
+click TNextPrevSelectionForm.SetCustomOrder1      # Next/Previous: Set Custom Order
+assert_caption custom_order "Custom Fixture Selection Order"
+log "PASS Custom Fixture Selection Order (TCustomOrderForm) <- Next/Previous > Set Custom Order"
+shot docs/screenshots/w4/entry/custom-order.png
+close custom_order
+close nextprev_selection
+click main.M_FollowSpot                           # Setup > Preferences > Edit Followspot settings
+assert_caption followspot_form "Edit FollowSpot Settings"
+log "PASS Edit FollowSpot Settings (TFollowSpotForm) <- Setup > Preferences > Edit Followspot settings"
+shot docs/screenshots/w4/entry/followspot-settings.png
+close followspot_form
+click main.tb_fixture_18                          # Fixture toolbar: Follow Spot
+assert_caption followspot_list "Select Followspot Setting"
+log "PASS Select Followspot Setting (TFollowListForm) <- Fixture toolbar Follow Spot"
+shot docs/screenshots/w4/entry/followspot-list.png
+close followspot_list
+click main.Config21
+click TLinkConfigForm3.sbFind                     # Fixture Configuration: Find
+assert_caption find_profile "Find profile.."
+log "PASS Find profile.. (TFindProfileForm) <- Fixture Configuration > Find"
+shot docs/screenshots/w4/entry/find-profile.png
+close find_profile
+click TLinkConfigForm3.lvConfig 40 37                # row 2 (the dimmer) selected
+click TLinkConfigForm3.bAutoAddress               # Fixture Configuration: Calculate Address
+assert_caption auto_address "Calculate addresses"
+log "PASS Calculate addresses (TAutoAddressForm2) <- Fixture Configuration > Calculate Address"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/auto-address.png
+close auto_address
+click TLinkConfigForm3.P_Clone                    # Fixture list popup: Copy From Fixture
+assert_caption copy_from "Select source fixture"
+log "PASS Copy From Fixture (TCopyFromForm) <- Fixture Configuration popup > Copy From Fixture"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/copy-from.png
+close copy_from
+click TLinkConfigForm3.P_Clear                    # Fixture list popup: Clear Fixture Data
+assert_caption cleanup "Clear Fixture Data"
+log "PASS Clear Fixture Data (TCleanUpForm) <- Fixture Configuration popup > Clear Fixture Data"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/cleanup.png
+close cleanup
+click TLinkConfigForm3.M_ImportProfile            # Import > Import Profile
+assert_caption gs2_import "Import Fixture Profile"
+log "PASS Import Profile (TFixtureImportForm) <- Fixture Configuration > Import > Import Profile"
+shot docs/screenshots/w4/entry/import-profile.png
+close gs2_import
+click TLinkConfigForm3.M_ExportConfig             # Print > Export to text file
+assert_caption TExportConfigForm "Configuration Export"
+log "PASS Export (TExportConfigForm) <- Fixture Configuration > Print > Export to text file"
+shot docs/screenshots/w4/entry/export-config.png
+click TExportConfigForm.BitBtn2
+click TLinkConfigForm3.eAdr
+key End
+key BS 3
+type "1"
+key Enter                                         # fixture 2 onto 1:001: a shared channel (F41)
+assert_prompt "Do you wish to change the fixtures DMX address ?"
+log "PASS Prompt Please Confirm.. (change the DMX address of a saved fixture) <- Fixture Configuration address edit"
+click confirm.BOk
+click TLinkConfigForm3.bSave
+wait 100
+assert_caption config_warn "Warnings"
+log "PASS Configuration Warnings (TConfigWarnForm) <- Fixture Configuration > Save with a conflict"
+shot docs/screenshots/w4/entry/config-warn.png
+click TConfigWarnForm.bCancel
+click TLinkConfigForm3.eAdr
+key End
+key BS 3
+type "17"
+key Enter
+click TLinkConfigForm3.bSave
+close fixture_config
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_Info
+assert_caption fixture_info "Fixture Info"
+log "PASS Fixture Info (TFixtureInfoForm) <- icon popup > Fixture Info"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/fixture-info.png
+close fixture_info
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_Notes
+assert_caption fixture_notes "Fixture Profile Notes"
+log "PASS Fixture Notes (TFixtureNotesForm) <- icon popup > Fixture Notes"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/fixture-notes.png
+close fixture_notes
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_DmxOutput
+assert_caption dmx_monitor "DMX Output Monitor"
+log "PASS DMX Output Monitor (TDMXOutForm) <- icon popup > DMX Output"
+shot docs/screenshots/w4/entry/dmx-monitor-icon.png
+close dmx_monitor
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_FixtureConfig
+assert_caption fixture_config "Fixture Configuration"
+log "PASS Fixture Configuration (TLinkConfigForm3) <- icon popup > Fixture Configuration"
+shot docs/screenshots/w4/entry/fixture-config-icon.png
+close fixture_config
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_GlobalPatch
+assert_caption global_patch "Global Patch"
+log "PASS Global Patch (TGlobalPatchForm) <- icon popup > Global Patch"
+shot docs/screenshots/w4/entry/global-patch-icon.png
+close global_patch
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_Customize
+assert_caption customize_fixture "Customize Fixture"
+log "PASS Customize Fixture (TFixtureSetupForm) <- icon popup (MAC 500) > Customize Fixture"
+shot docs/screenshots/w4/entry/customize.png
+close customize_fixture
+click main.tb_fixture_13
+click main.icon2
+rclick main.icon2
+click main.PI_Customize
+assert_caption channel_config "Channel Configuration"
+log "PASS Channel Configuration (TChannelDefForm) <- icon popup (DMX Dimmer) > Define Fixture Profile"
+shot docs/screenshots/w4/entry/channel-config.png
+close channel_config
+click main.tb_fixture_13
+click main.icon3
+rclick main.icon3
+click main.PI_Customize
+assert_caption rgbpack_defs "RGBPack configuration"
+log "PASS RGB pack configuration (TRGBPackDefForm) <- icon popup (RGB Pack) > Define Fixture Profile"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/rgbpack-defs.png
+close rgbpack_defs
+click main.tb_fixture_13
+click main.icon4
+rclick main.icon4
+click main.PI_Customize
+assert_caption scanner1_defs "Define Generic Scanner1 profile"
+log "PASS Define Generic Scanner1 profile (TScanner1DefsForm) <- icon popup (Generic Scanner 1) > Define Fixture Profile"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/scanner1-defs.png
+close scanner1_defs
+click main.tb_fixture_13
+click main.icon5
+rclick main.icon5
+click main.PI_Customize
+assert_caption color_scroller_defs "Define Color Scroller profile"
+log "PASS Define Color Scroller profile (TColorScrolDefForm) <- icon popup (Color Scroller 1) > Define Fixture Profile"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/scroller-defs.png
+close color_scroller_defs
+click main.tb_fixture_13
+click main.icon6
+rclick main.icon6
+click main.PI_Customize
+assert_caption profile_editor "Generic Fixture Profile"
+log "PASS Generic Fixture Profile (TScanner2DefsForm) <- icon popup (Generic Fixture 2) > Define Fixture Profile"
+shot docs/screenshots/w4/entry/profile-editor.png
+close profile_editor
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_Customize
+click TFixtureSetupForm.LV1 40 26
+click TFixtureSetupForm.bGetGoboBmp               # Customize Fixture: Gobo/Effects Bitmaps
+assert_caption bitmap_picker "Get Gobo/Effects Bitmap"
+log "PASS Select Bitmap (TBitMapPickerForm2) <- Customize Fixture > Gobo/Effects Bitmaps"
+shot docs/screenshots/w4/entry/bitmap-picker.png
+close bitmap_picker
+close customize_fixture
+click main.tb_fixture_13
+click main.icon3
+click main.tb_fixture_3                           # Fixture toolbar: Colors on an RGB pack
+assert_caption rgbpack "Colors"
+log "PASS RGB pack Colors (TRgb) <- Fixture toolbar Colors (RGB pack master)"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/rgbpack-colors.png
+click rgbpack.Palette                             # RGB pack Colors: Palette
+assert_caption rgb_palette "RGB Palette"
+log "PASS RGB Palette (TRGBPaletteForm) <- RGB pack Colors > Palette"
+shot docs/screenshots/w4/entry/rgb-palette.png
+close rgb_palette
+close rgbpack
+click main.tb_fixture_13
+click main.icon1
+click main.M_UnassignedFixtures                   # View > Unassigned Fixtures
+assert_caption TUnassignedForm "Unassigned Fixtures"
+log "PASS Unassigned Fixtures (TUnassignedForm) <- View > Unassigned Fixtures"
+shot docs/screenshots/w4/entry/unassigned-view.png
+click main.M_ViewNotes                            # View > Notes
+assert_caption notes "Notes"
+log "PASS Notes (TNoteForm) <- View > Notes"
+shot docs/screenshots/w4/entry/notes.png
+close notes
+click main.M_ViewDmxOutput                        # View > Dmx Output
+assert_caption dmx_monitor "DMX Output Monitor"
+log "PASS DMX Output Monitor (TDMXOutForm) <- View > Dmx Output"
+shot docs/screenshots/w4/entry/dmx-monitor.png
+close dmx_monitor
+click main.M_ViewMemory                           # View > Windows System Memory
+assert_caption memory_view "System Memory"
+log "PASS System Memory (TMemoryViewForm) <- View > Windows System Memory"
+shot docs/screenshots/w4/entry/memory.png
+close memory_view
+click main.M_ViewCueControl                       # View > Controls > Cue Control
+assert_caption cue_form "CUE [0000 No Name]"
+log "PASS Cue control (TCurrentCue) <- View > Controls > Cue Control"
+shot docs/screenshots/w4/entry/cue-form-view.png
+close cue_form
+click main.M_CuelistControl                       # View > Controls > Cuelist Control
+assert_caption cuelist_form "Cuelist [0000 No Name]"
+log "PASS Cue list control (TCuelist2Form) <- View > Controls > Cuelist Control"
+shot docs/screenshots/w4/entry/cuelist-form-view.png
+close cuelist_form
+click main.M_ViewBackgroundCue                    # View > Controls > Background Cue
+assert_caption bgcue_form "Background Cue"
+log "PASS Background Cue (TBGCueForm) <- View > Controls > Background Cue"
+shot docs/screenshots/w4/entry/bgcue-form-view.png
+close bgcue_form
+click main.M_ViewDebug                            # View > De&bugWindow (shown by Main.Ini [DEBUG] DebugWindow=1)
+assert_caption debug "DebugForm"
+log "PASS Debug (TDebugForm) <- View > De&bugWindow"
+shot docs/screenshots/w4/entry/debug.png
+click TDebugForm.sbEnablePerformanceCounters      # Debug: Enable Performance Counters
+assert_caption debug "DebugForm"
+log "PASS Debug counters enabled <- Debug > Enable Performance Counters"
+shot docs/screenshots/w4/entry/debug-counters.png
+wait 1500
+wait 10
+assert_caption debug "DebugForm"
+log "PASS Debug counters after 1.5 s <- Debug window"
+shot docs/screenshots/w4/entry/debug-counters-later.png
+close debug
+click main.Hardware2                              # Setup > Hardware Setup ...
+assert_caption hardware_setup "Hardware Setup"
+log "PASS Hardware Setup (THardwareSetupForm2) <- Setup > Hardware Setup ..."
+shot docs/screenshots/w4/entry/hardware-setup.png
+close hardware_setup
+click main.GlobalPatch1                           # Setup > Global Patch ...
+assert_caption global_patch "Global Patch"
+log "PASS Global Patch (TGlobalPatchForm) <- Setup > Global Patch ..."
+shot docs/screenshots/w4/entry/global-patch.png
+close global_patch
+click main.SystemPrefs                            # Setup > Preferences > System ...
+assert_caption system_prefs "System Preferences"
+log "PASS System Preferences (TSystemPrefsForm) <- Setup > Preferences > System ..."
+shot docs/screenshots/w4/entry/system-prefs.png
+click TSystemPrefsForm.PC1 310 9                # the Data Restore tab
+click TSystemPrefsForm.bCreate                    # System Preferences, Data Restore: Create Restore Data
+assert_caption create_data "Creating Auto Restore Data"
+log "PASS Creating Auto Restore Data (TCreateDataForm) <- System Preferences > Data Restore > Create Restore Data"
+shot docs/screenshots/w4/entry/create-data.png
+click TCreateDataForm.BitBtn1                  # Continue: the restore archive is written
+wait 1000
+click TSystemPrefsForm.bNewPassword               # System Preferences, Data Restore: New Password
+assert_caption new_password "Enter New Password"
+log "PASS Enter New Password (TNewPasswordForm) <- System Preferences > Data Restore > New Password"
+shot docs/screenshots/w4/entry/new-password.png
+close new_password
+close system_prefs
+click main.StartUp1                               # Setup > Preferences > Start Up ...
+assert_caption startup_options "Startup Options"
+log "PASS Startup Options (TStartupForm) <- Setup > Preferences > Start Up ..."
+shot docs/screenshots/w4/entry/startup-options.png
+click TStartupForm.ClSelect                       # Startup Options: cue list Select
+assert_caption select_cuelist_modal "Select Startup Cuelist"
+log "PASS Select Startup Cuelist (TSelectCuelist2ModalForm) <- Startup Options > Select"
+shot docs/screenshots/w4/entry/select-startup-cl.png
+close select_cuelist_modal
+close startup_options
+click main.M_EditHotkeys                          # Setup > Hotkeys > Edit Hotkeys
+assert_caption edit_hotkeys "Edit Hotkeys"
+log "PASS Edit Hotkeys (TFunctionsForm) <- Setup > Hotkeys > Edit Hotkeys"
+shot docs/screenshots/w4/entry/edit-hotkeys.png
+wait 400
+assert_prompt "Normal keyboard operation is "
+log "PASS Notification ! (TShowHotKeyWarningForm) <- automatic when Edit Hotkeys opens (Main.Ini [MISC] ShowHotkeyWarning)"
+shot docs/screenshots/w4/entry/hotkey-warning.png
+click hotkey_warning.BitBtn1
+close edit_hotkeys
+click main.NextPreviousFixtureSelection1          # Setup > Preferences > Previous/Next Fixture Selection ...
+assert_caption nextprev_selection "Next/Previous Fixture Selection"
+log "PASS Next/Previous Fixture Selection (TNextPrevSelectionForm) <- Setup > Preferences > Previous/Next Fixture Selection"
+shot docs/screenshots/w4/entry/nextprev-setup.png
+close nextprev_selection
+rclick main.desktop 700 400
+click main.PD_Tabs
+assert_caption desktop_tabs "Desktop tabs"
+log "PASS Desktop tabs (TLayerManagerForm) <- desktop popup > Desktop > Tabs.."
+shot docs/screenshots/w4/entry/desktop-tabs.png
+close desktop_tabs
+rclick main.desktop 700 400
+click main.PD_Grid
+assert_caption desktop_grid "Desktop Grid"
+log "PASS Desktop Grid (TGridForm) <- desktop popup > Desktop > Grid.."
+shot docs/screenshots/w4/entry/desktop-grid.png
+close desktop_grid
+rclick main.desktop 700 400
+click main.PD_Image
+assert_caption desktop_image "Desktop Image"
+log "PASS Desktop Image (TImageSetupForm) <- desktop popup > Desktop > Image.."
+shot docs/screenshots/w4/entry/desktop-image.png
+close desktop_image
+rclick main.desktop 700 400
+click main.PD_Style
+assert_caption icon_style "Select Icon Style"
+log "PASS Select Icon Style (TIconStyleForm) <- desktop popup > Icons > Style.."
+shot docs/screenshots/w4/entry/icon-style.png
+close icon_style
+rclick main.desktop 700 400
+click main.PD_AutoArrange
+assert_caption auto_arrange "Auto-Arrange Icons"
+log "PASS Auto-Arrange Icons (TAutoArrangeForm) <- desktop popup > Icons > Auto Arrange.."
+shot docs/screenshots/w4/entry/auto-arrange.png
+close auto_arrange
+rclick main.desktop 700 400
+click main.PD_FixtureGroups
+assert_caption fixture_groups "Fixture Groups"
+log "PASS Fixture Groups (TGroupForm) <- desktop popup > Fixture Groups"
+shot docs/screenshots/w4/entry/fixture-groups-pop.png
+close fixture_groups
+click main.M_UserLibraries                        # System > User Libraries...
+assert_caption user_libraries "User Libraries"
+log "PASS User Libraries (TUserLibForm) <- System > User Libraries..."
+shot docs/screenshots/w4/entry/user-libraries.png
+click TUserLibForm.bCreate                        # User Libraries: Create New Library
+assert_caption user_lib_name "Enter User Library Name"
+log "PASS Enter User Library Name (TGetUserLibNameForm) <- User Libraries > Create New Library"
+shot docs/screenshots/w4/entry/user-lib-name.png
+close user_lib_name
+click TUserLibForm.LV1 40 40                    # row 2 (W4Captions, not Default and not the current library: bbackup / bRename are greyed until a row is picked)
+click TUserLibForm.bRename                        # User Libraries: Rename Library
+assert_caption rename_file "Rename File"
+log "PASS Rename File (TRenameFileForm) <- User Libraries > Rename Library"
+shot docs/screenshots/w4/entry/rename-file.png
+close rename_file
+click TUserLibForm.bbackup                        # User Libraries: Backup Library
+assert_caption backup "Backup User Library"
+log "PASS Backup User Library (TLibraryBackupForm) <- User Libraries > Backup Library"
+shot docs/screenshots/w4/entry/backup.png
+close backup
+click TUserLibForm.bRestore                       # User Libraries: Restore Library
+assert_caption restore "Restore User Library"
+log "PASS Restore User Library (TLibraryRestoreForm) <- User Libraries > Restore Library"
+shot docs/screenshots/w4/entry/restore.png
+close restore
+close user_libraries
+click main.M_DeleteSequences
+assert_caption delete_seq "Delete Sequences"
+log "PASS Delete Sequences (TDeleteSequencesForm) <- System > Delete Files > Sequences"
+shot docs/screenshots/w4/entry/delete-seq.png
+close delete_seq
+click main.M_DeleteCues
+assert_caption delete_cue "Delete Cues"
+log "PASS Delete Cues (TDeleteCuesForm) <- System > Delete Files > Cues"
+shot docs/screenshots/w4/entry/delete-cue.png
+close delete_cue
+click main.M_DeleteCuelists
+assert_caption delete_cl "Delete Cuelists"
+log "PASS Delete Cuelists (TDeleteCuelistsForm) <- System > Delete Files > Cuelists"
+shot docs/screenshots/w4/entry/delete-cl.png
+close delete_cl
+click main.M_DeleteBGCues
+assert_caption delete_bg "Delete Background Cues"
+log "PASS Delete Background Cues (TDeleteBGCuesForm) <- System > Delete Files > Background Cues"
+shot docs/screenshots/w4/entry/delete-bg.png
+close delete_bg
+click main.M_DeleteGenericMacros
+assert_caption delete_macro "Delete Generic Macros"
+log "PASS Delete Generic Macros (TDeleteGenericMacrosForm) <- System > Delete Files > Generic Macros"
+shot docs/screenshots/w4/entry/delete-macro.png
+close delete_macro
+click main.M_RestoreProgramData                   # System > Restore Program Data
+assert_caption restore_data "Restore Data"
+log "PASS Restore Data (TRestoreDataForm) <- System > Restore Program Data"
+shot docs/screenshots/w4/entry/restore-data.png
+close restore_data
+click main.AutoStrikeLamps1                       # System > Auto Strike Lamps
+assert_caption striking_lamps "Striking Lamps"
+log "PASS Striking Lamps (TAutoLampForm) <- System > Auto Strike Lamps"
+shot docs/screenshots/w4/entry/striking-lamps.png
+close striking_lamps
+click main.tb_cuelist_10                          # C-L toolbar: DMX In
+assert_caption dmx_in "Dmx In"
+assert_enabled TDmxInForm.bAssign 0
+log "PASS Dmx In (TDmxInForm) <- C-L toolbar DMX In, input greyed"
+shot docs/screenshots/w4/entry/dmx-in.png
+click TDmxInForm.M_ValueTranslations              # Dmx In: Preferences > Value-translations
+assert_caption dmxin_translation "DMX-In translation"
+log "PASS DMX-In translation (TDMXInValueTranslationForm) <- Dmx In > Preferences > Value-translations"
+shot docs/screenshots/w4/entry/dmxin-translation.png
+click TDMXInValueTranslationForm.pop_NewTable     # DMX-In translation: repository popup > Create new table
+assert_caption translation_edit "Edit tranlation table"
+log "PASS Translation editor (TTranslationEditForm) <- DMX-In translation > Create new table"
+shot docs/screenshots/w4/entry/translation-edit.png
+close translation_edit
+close dmxin_translation
+close dmx_in
+click main.tb_cuelist_11                          # C-L toolbar: MIDI In
+assert_caption midi_in "LightJockey MIDI-IN"
+log "PASS LightJockey MIDI-IN (TMidiInForm) <- C-L toolbar MIDI In"
+shot docs/screenshots/w4/entry/midi-in.png
+close midi_in
+click main.tb_cuelist_12                          # C-L toolbar: 2532 Direct Access
+assert_caption da2532 "2532 Direct Access"
+log "PASS 2532 Direct Access (TDa2532Form_3) <- C-L toolbar 2532"
+shot docs/screenshots/w4/entry/da2532.png
+click TDa2532Form_3.FunctionsList1
+assert_caption da2532_functions "2532 Function List"
+log "PASS 2532 Function List (TButtonFunctions2532Form) <- 2532 > Options > Function-List"
+shot docs/screenshots/w4/entry/da2532-functions.png
+close da2532_functions
+click TDa2532Form_3.M_ColorScheme
+assert_caption da2532_colors "2532 Color Scheme"
+log "PASS 2532 Color Scheme (TColorScheme2532Form) <- 2532 > Font Properties > Color Scheme"
+shot docs/screenshots/w4/entry/da2532-colors.png
+close da2532_colors
+click TDa2532Form_3.Set1
+assert_caption da2532_tab_colors "2532 Tab Colors"
+log "PASS 2532 Tab Colors (TDA2532_TabColorsForm) <- 2532 > Tab Options > Tab Colors > Set colors..."
+shot docs/screenshots/w4/entry/da2532-tab-colors.png
+close da2532_tab_colors
+click TDa2532Form_3.M_SetTabSize
+assert_caption da2532_tab_height "Set Tab Size"
+log "PASS Set Tab Size (TDa2532TabHeight) <- 2532 > Tab Options > Set Tab Size..."
+shot docs/screenshots/w4/entry/da2532-tab-height.png
+close da2532_tab_height
+click TDa2532Form_3.M_NamePageTabs
+assert_caption da2532_page_names "2532 Page Names"
+log "PASS 2532 Page Names (TName2532PagesForm) <- 2532 > Tab Options > Name Page Tabs..."
+shot docs/screenshots/w4/entry/da2532-page-names.png
+close da2532_page_names
+close da2532
+wait 10
+assert_enabled main.tb_cuelist_7 0
+log "PASS C-L toolbar button 7 (CD / MC-X / 2518) greyed, hint Not available in LJ4EVR (dropped hardware)"
+shot docs/screenshots/w4/entry/tb-cuelist-7.png
+wait 10
+assert_enabled main.tb_cuelist_8 0
+log "PASS C-L toolbar button 8 (CD / MC-X / 2518) greyed, hint Not available in LJ4EVR (dropped hardware)"
+shot docs/screenshots/w4/entry/tb-cuelist-8.png
+wait 10
+assert_enabled main.tb_cuelist_9 0
+log "PASS C-L toolbar button 9 (CD / MC-X / 2518) greyed, hint Not available in LJ4EVR (dropped hardware)"
+shot docs/screenshots/w4/entry/tb-cuelist-9.png
+click main.M_FingersStatus                        # Fingers > Status panel
+assert_caption fingers_status "Fingers"
+log "PASS Fingers status panel (TFingersStatus) <- Fingers > Status panel"
+shot docs/screenshots/w4/entry/fingers-status.png
+close fingers_status
+click main.M_VirtualFingers                       # Fingers > Virtual Fingers
+assert_caption fingers ""
+log "PASS Virtual Fingers (TLJFingersMainForm) <- Fingers > Virtual Fingers"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/fingers.png
+close fingers
+click main.M_FingersSetup                         # Fingers > Setup
+assert_caption fingers_setup "Fingers Setup"
+log "PASS Fingers Setup (TFingersSetupDialog) <- Fingers > Setup"
+shot docs/screenshots/w4/entry/fingers-setup.png
+close fingers_setup
+click main.M_About                                # Help > About
+assert_caption about "About LightJockey"
+log "PASS About (TAboutForm2) <- Help > About"
+shot docs/screenshots/w4/entry/about.png
+close about
+click main.M_Help                                 # Help > Help
+assert_caption help "LJ4EVR Help"
+log "PASS Help viewer (THelpViewer) <- Help > Help"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/help.png
+close help
+click main.tb_seqcue_5
+click TCurrentCue.Help1                           # Cue control: Help
+assert_caption help "LJ4EVR Help"
+log "PASS Help viewer at the Cues topic <- Cue control > Help"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/help-cues.png
+close help
+close cue_form
+click main.tb_fixture_1
+click intensity.Help                              # Intensity: Help
+assert_caption help "LJ4EVR Help"
+log "PASS Help viewer <- Intensity > Help"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/help-intensity.png
+close help
+close intensity
+open statics_debug                                # no LJ2 entry point (13 s1.2): by id
+assert_caption statics_debug "StaticsDebugForm"
+log "PASS Statics debug (TStaticsDebugForm) <- by id (no LJ2 entry point, 13 s1.2)"
+shot docs/screenshots/w4/entry/statics-debug.png
+close statics_debug
+open msg_debug                                    # no LJ2 entry point (13 s1.2): by id
+assert_caption msg_debug "WM_CPOPYDATA DEBUG"
+log "PASS WM_CPOPYDATA DEBUG (TMsgDebugForm) <- by id (no LJ2 entry point, 13 s1.2)"
+shot docs/screenshots/w4/entry/msg-debug.png
+close msg_debug
+click main.M_FingersSetup
+assert_caption fingers_setup "Fingers Setup"
+log "PASS Fingers Setup (TFingersSetupDialog) <- Fingers > Setup (again, for its helpers)"
+shot docs/screenshots/w4/entry/fingers-setup-2.png
+click TFingersSetupDialog.PC1 195 9              # the Virtual Fingers tab
+click TFingersSetupDialog.sbFolder                # Fingers Setup, Virtual Fingers tab: skin folder
+assert_caption fingers_skin "Select Skin"
+log "PASS Select Skin (TFingersSkinSelectForm) <- Fingers Setup > skin folder button"
+shot docs/screenshots/w4/entry/fingers-skin.png
+close fingers_skin
+close fingers_setup
+click main.tb_fixture_22                          # Blackout
+wait 600
+assert_caption warnings "WARNING"
+log "PASS Warning BLACKOUT ACTIVE (TStatusWarningForm) <- automatic on Blackout"
+shot docs/screenshots/w4/entry/warn-blackout.png
+click main.tb_fixture_22
+wait 300
+click main.tb_fixture_20                          # Freeze Output
+wait 600
+assert_caption warnings "Warning"
+log "PASS Warning Frozen ! (TFreezeWarnForm) <- automatic on Freeze"
+shot docs/screenshots/w4/entry/warn-frozen.png
+click main.tb_fixture_20
+wait 300
+click main.tb_fixture_19                          # DMX OnLine/OffLine
+wait 600
+assert_caption warnings "Warning"
+log "PASS Warning DMX Output is Offline (TOfflineWarningForm) <- automatic on Offline"
+shot docs/screenshots/w4/entry/warn-offline.png
+click main.tb_fixture_19
+wait 300
+click main.tb_fixture_13
+click main.icon7
+click main.tb_fixture_7                           # Levels of the laser
+click levels.row1_bar 14 30                         # channel 1 up: the laser asks for output
+wait 400
+assert_prompt "Enable laser output ?"
+log "PASS Enable laser output ? (TUnblockLasersForm) <- automatic when a laser channel goes non-zero"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/laser-unblock.png
+click unblock_lasers.BitBtn1                      # Yes
+wait 400
+assert_caption laser_warning "Warning!"
+log "PASS Warning! Laser(s) emitting! (TLaserWarningForm) <- automatic while the laser emits"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/laser-warning.png
+close levels                                     # the laser keeps emitting: the take below carries 1:121 too
+click main.tb_fixture_13
+click main.icon2
+click main.tb_fixture_7                           # Levels of the dimmer
+click levels.row1_bar 14 30                         # dimmer 1:017 up, so the take carries it
+wait 300
+assert_frame 1:17=200 55
+close levels
+click main.tb_cuelist_1
+click TCuelist2Form.M_RecordtoLightCorder         # Cuelist: Tools > Record to LightCorder file
+assert_caption lightcorder "Record to LightCorder file"
+log "PASS Record to LightCorder file (TLightCorderDialog) <- Cuelist > Tools > Record to LightCorder file"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/lightcorder.png
+click TLightCorderDialog.bRecord                    # Start Recording
+wait 1500
+click TLightCorderDialog.bRecord                    # Cancel Recording: the take ends, Save Lightcorder File opens
+wait 200
+assert_caption save_lightcorder "Save Lightcorder File"
+log "PASS Save Lightcorder File (TSaveLightCorderFileDialog) <- Record to LightCorder file > Cancel Recording"
+dump_captions caption_dump_entry.tsv
+shot docs/screenshots/w4/entry/save-lightcorder.png
+click TSaveLightCorderFileDialog.bSave             # Save File: <library>\LightCorderFiles\LC0001.LLF
+wait 300
+assert_file LightCorderFiles/LC0001.LLF exists
+log "PASS LightCorder wrote LightCorderFiles/LC0001.LLF"
+close lightcorder
+close cuelist_form
+close main
+assert_caption close_prompt "Close Lightjockey ?"
+log "PASS Close Lightjockey ? (TCloseOrSaveForm) <- main window close"
+shot docs/screenshots/w4/entry/close-prompt.png
+click TCloseOrSaveForm.BitBtn2                     # No: stay
+quit

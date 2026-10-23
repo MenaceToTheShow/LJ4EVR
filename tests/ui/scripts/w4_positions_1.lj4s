@@ -1,0 +1,117 @@
+# w4_positions_1.lj4s - W4 acceptance, restart persistence (docs/w4-integration.md, Acceptance): opens every W4 window that
+# persists (DFM Position poDesigned / poDefaultPosOnly, lj_formsini_section; the code-built help viewer is poScreenCenter, centred each time), moves it,
+# closes it; quit writes forms.ini. Run w4_positions_2.lj4s after it, in the same library (U:W4Entry after
+# w4_entry_points.lj4s: fixtures 1-7 patched). Positions on the acceptance PC's second display (y >= 1440), as W2 / W3.
+
+open cue_stack
+wait 200
+move cue_stack 100 1600
+wait 200
+close cue_stack
+open da2532
+wait 200
+move da2532 140 1620
+wait 200
+close da2532
+open dmx_in
+wait 200
+move dmx_in 180 1640
+wait 200
+close dmx_in
+open dmxin_translation
+wait 200
+move dmxin_translation 220 1660
+wait 200
+close dmxin_translation
+open find_profile
+wait 200
+move find_profile 260 1680
+wait 200
+close find_profile
+open fingers
+wait 200
+move fingers 300 1700
+wait 200
+close fingers
+open fingers_status
+wait 200
+move fingers_status 340 1720
+wait 200
+close fingers_status
+open fingers_functions
+wait 200
+move fingers_functions 380 1740
+wait 200
+close fingers_functions
+open fingers_jog_functions
+wait 200
+move fingers_jog_functions 420 1760
+wait 200
+close fingers_jog_functions
+open fingers_page_functions
+wait 200
+move fingers_page_functions 460 1780
+wait 200
+close fingers_page_functions
+open fingers_slot_functions
+wait 200
+move fingers_slot_functions 500 1800
+wait 200
+close fingers_slot_functions
+open fingers_ud_functions
+wait 200
+move fingers_ud_functions 540 1820
+wait 200
+close fingers_ud_functions
+open hidden_fixture
+wait 200
+move hidden_fixture 100 1840
+wait 200
+close hidden_fixture
+open movement_options
+wait 200
+move movement_options 140 1860
+wait 200
+close movement_options
+open rgb_palette
+wait 200
+move rgb_palette 180 1880
+wait 200
+close rgb_palette
+open select_cuelist_modal
+wait 200
+move select_cuelist_modal 220 1900
+wait 200
+close select_cuelist_modal
+open debug
+wait 200
+move debug 260 1920
+wait 200
+close debug
+open statics_debug
+wait 200
+move statics_debug 300 1940
+wait 200
+close statics_debug
+open msg_debug
+wait 200
+move msg_debug 340 1960
+wait 200
+close msg_debug
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_Info
+wait 200
+move fixture_info 380 1980
+wait 200
+close fixture_info
+click main.tb_fixture_13
+click main.icon3
+rclick main.icon3
+click main.PI_Customize
+wait 200
+move rgbpack_defs 420 2000
+wait 200
+close rgbpack_defs
+quit

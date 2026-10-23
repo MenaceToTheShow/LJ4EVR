@@ -151,6 +151,10 @@ int lj_test_uiscript_w3(int argc, char **argv)
     {   char p[512];                          /* the W3 walkthrough parses (every line checked at load) */
         snprintf(p, sizeof p, "%s/tests/ui/scripts/w3_acceptance.lj4s", LJ_SOURCE_DIR);
         CHECK(lj_uiscript_load(p) == 0); }
+    {   static const char *const w4[] = { "w4_entry_points", "w4_entry_update", "w4_positions_1", "w4_positions_2" };   /* W4 integrator 2: the acceptance walkthroughs parse */
+        char p[512];
+        size_t k;
+        for (k = 0; k < sizeof w4 / sizeof w4[0]; k++) { snprintf(p, sizeof p, "%s/tests/ui/scripts/%s.lj4s", LJ_SOURCE_DIR, w4[k]); CHECK(lj_uiscript_load(p) == 0); } }
 #endif
 
     /* ---- 2. the app context headless: library, show (MAC 500 at 1:001, a dimmer at 1:100), engine, desktop, seam + W3 start ---- */

@@ -213,3 +213,317 @@ SDL-free `.c` file is clean.
     https://github.com/UnbannableGT/LJ4EVR/actions/runs/39887131384 (7d0b9c4): all six jobs green: windows-msvc,
     linux-clang (with the 60 s fuzz_gs2 / fuzz_udf step), linux-gcc-asan, macos-clang, generate-check, determinism (the three
     frame dumps byte-equal)
+
+## Acceptance (W4 integrator 2, acceptance walkthrough)
+
+Session of 2026-10-22 on the work PC (MSVC 19.44, four monitors: DISPLAY1 0,0 2560x1440 primary, DISPLAY2 0,1440
+2560x1440, two 1080x1920 portrait screens). Design 10 W4 acceptance, item by item, plus the brief's five checks. Every app
+run used `build-w4\lj4evr.exe` (Release, Ninja + cl) in scratch libraries under `%APPDATA%\LJ4EVR` (backed up first and put
+back afterwards). Where the walkthrough found a window that did not open from its entry point, the app was fixed, never
+the script (section "Fixes" below).
+
+| # | Item | Result |
+|---|---|---|
+| 1 | Prompt and caption diff against `13-dfm-captions.tsv` = 0 for every implemented form | tick: 154 implemented forms, 0 differences |
+| 2 | Every window of inventory section 2 opens from its documented entry point | tick: 155 PASS lines + 5 (update dialogs); the exceptions are named below |
+| 3 | All 208 goldens reviewed | tick: 208 of 208 forms, 359 BMPs, 0 without a row |
+| 4 | `docs/fidelity.md` complete | tick: F1-F60 all present, each a pair or "deferred: needs rig" |
+| 5 | Restart persistence for every W4 window | tick: 21 of 21 |
+| 6 | Help viewer opens topics | tick |
+| 7 | LightCorder writes an `.LLF` of our frames and plays it back | tick |
+| 8 | DMX-in windows open with input greyed | tick |
+| 9 | Debug window counters move | tick |
+
+### Item 1: captions (F55)
+
+    lj4evr U:W4Captions --script tests/ui/scripts/w4_captions.lj4s          rc 0, 0 ME-16 lines
+    caption_diff.py --dump caption_dump.tsv --check
+        caption_diff: 145 implemented form(s) of 207, 0 difference(s), 139 excluded by a fidelity row, 84 absent at runtime
+    w4_entry_points.lj4s also dumps the 15 windows that need a context (a selected fixture, a running take, a laser asking)
+    into caption_dump_entry.tsv; both dumps together:
+    caption_diff.py --dump caption_dump.tsv+caption_dump_entry.tsv --check
+        caption_diff: 154 implemented form(s) of 207, 0 difference(s), 147 excluded by a fidelity row, 91 absent at runtime
+
+The entry run found 9 new differences, all F55 runtime fills of DFM placeholders, now rows of `tools/caption_diff_excl.tsv`:
+TCleanUpForm `lAction` (`Clearing Fixture #2`), TFixtureInfoForm `LDmxAdr` / `LFixtureType` / `LLink` / `lIntG`, TRGBPackDefForm
+`lDMXadr` / `lFixType` / `lUsername`, and TLaserWarningForm `Label1` (exe `%s emitting!`, one laser named; the DFM text is the
+several-lasers case). Measured once on integrator 1's run and again here: the captions script alone gives 144 or 145 forms
+because TLaserWarningForm closes itself at the next 100 ms poll when no laser is patched (it dumps only if the dump wins the
+race); the entry run opens it from a real laser, so the combined count does not depend on that race.
+
+### Item 2: entry points (`tests/ui/scripts/w4_entry_points.lj4s`, `w4_entry_update.lj4s`)
+
+Prepared by `tests/ui/scripts/w4_entry_prep.sh <userdir>` (our own text: Main.Ini `[DEBUG] DebugWindow=1`, Fingers.Ini
+`[SETUP] Mode=1`, fixtures 3-7 RGB Pack x4 / Generic Scanner 1 / Color Scroller 1 / Generic Fixture 2 / Mac 250 Laser, a spare
+library W4Aux, and for W4Update one format-0 record of each kind the update dialogs name). The walkthrough patches fixtures
+1-2 itself (MAC 500 at 1:001, DMX Dimmer at 1:017), then opens every section-2 window by its menu path, toolbar button, form
+button, popup item or the automatic condition; one PASS line and one shot (`docs/screenshots/w4/entry/<name>-<Class>.png`,
+229 files; the context windows of each shot were pruned to the target) per window. Both scripts parse in CTest
+(`test_uiscript_w3`, appended).
+
+    lj4evr U:W4Entry --script tests/ui/scripts/w4_entry_points.lj4s     rc 0, 155 PASS lines, 0 SCRIPT FAIL (six runs in a row)
+    lj4evr U:W4Update --script tests/ui/scripts/w4_entry_update.lj4s    rc 0, 5 PASS lines
+
+Per-window PASS lines (w4_entry_points.lj4s, in run order):
+
+    PASS Main desktop (TLJMainForm) <- startup
+    PASS Startup Status (TStartupStatusWindow) <- startup (selfdestruct in 10 s)
+    PASS Fixture Configuration (TLinkConfigForm3) <- Setup > Fixture Configuration
+    PASS Add Fixture(s) (TAddFixForm2) <- Fixture Configuration > Add Fixture (s)
+    PASS Prompt Please Confirm.. (TConfirmForm) <- Fixture Configuration > Save
+    PASS Unassigned Fixtures (TUnassignedForm) <- automatic after Fixture Configuration
+    PASS Prompt Place all Fixtures on this tab ? <- Unassigned Fixtures > Auto Place All
+    PASS Sequence control (TSequenceForm) <- Seq toolbar Seq button
+    PASS Sequence control (TSequenceForm) <- View > Controls > Sequence Control
+    PASS Cue control (TCurrentCue) <- Cue toolbar Cue button
+    PASS Cue list control (TCuelist2Form) <- C-L toolbar CueList button
+    PASS Background Cue (TBGCueForm) <- C-L toolbar Background Cue LED
+    PASS Statics Control / Statics paged (TStatics2Form, D11) <- C-L toolbar Statics LED
+    PASS Statics Control (TStatics2Form, D11) <- View > Controls > Statics Control
+    PASS List of sequences (TSeqListForm) <- Seq toolbar List of Sequences
+    PASS List of cues (TAdvancedCueForm) <- Cue toolbar List of Cues
+    PASS Select Cuelist (TSelectCuelist2Form) <- C-L toolbar List of Cue Lists
+    PASS Select Background Cue (TSelectBGCueForm2) <- Background Cue > Load
+    PASS Save BG Cue (TSaveBGForm) <- Background Cue > Save
+    PASS Save Sequence (TSaveSeqForm) <- Seq toolbar Save
+    PASS Save Cue (TSaveCueForm) <- Cue toolbar Save
+    PASS Save Cuelist (TSaveCuelist2Form) <- C-L toolbar Save
+    PASS Cue Builder (TCueStackForm) <- Cue control Options > Cue-Builder
+    PASS Cue Time Control (TCueTimeForm) <- Cue control Cue Time Control button
+    PASS Sequence slot loop options (TLoopToolsForm) <- Cue control Cue Loop Control button
+    PASS Cue macro control (TCueMacroForm) <- Cue control Cue Macro Scale button
+    PASS Select Macro (TLoadMacroList) <- Cue control Macro List button
+    PASS Select Background Cue (TSelectBGCueForm) <- Cue control Select BG Cue button
+    PASS Sequence Slot Labels (TNameSlotsForm) <- Cue control Preferences > Sequence Slot Labels...
+    PASS Generic Macro Editor (TCueMacroControlForm) <- Cue control Macro Editor button
+    PASS Save Macro (TSaveMacroDialog) <- Generic Macro Editor Save Macro
+    PASS Select Macro (TLoadMacroList) <- Generic Macro Editor Load Macro
+    PASS Intensity control <- Fixture toolbar button 1
+    PASS Movement 16 Bit control <- Fixture toolbar button 2
+    PASS Colors control <- Fixture toolbar button 3
+    PASS Gobos control <- Fixture toolbar button 4
+    PASS Beam control <- Fixture toolbar button 5
+    PASS Effects control <- Fixture toolbar button 6
+    PASS Extended control <- Fixture toolbar button 7
+    PASS Lamp Control control <- Fixture toolbar button 8
+    PASS Position Presets (TPresetForm) <- Movement > Presets
+    PASS Fan Out (TFanOutForm) <- Movement > Options > Fan Out
+    PASS Position Options (TMovementOptionsForm) <- Movement > Options > Position Options
+    PASS Sequence Fades (TDefault2Form) <- Movement > Fades
+    PASS Movement Macro (TMovementMacroForm) <- Movement > Macro
+    PASS Pan/Tilt Macro Auto Delay (TAutoDelayForm) <- Movement Macro > Auto delay
+    PASS Bezier editor (in TMovementMacroForm) <- Movement Macro > Bezier Shapes > New Shape
+    PASS Delete Macros (TDeleteMacrosForm) <- Movement Macro > Bezier Shapes > Delete Shapes
+    PASS User Color Palette (TUserPaletteForm) <- Colors > UserPalette
+    PASS Sequence Fades (TDefault2Form) <- Colors > Fades
+    PASS User palette (TUserPaletteForm) <- Intensity > UserPalette
+    PASS Snapshot from DMX Out (TSnapshotSceneForm) <- Sequence > Snapshot
+    PASS Generic DMX Control (TGenericMegaForm) <- main menu Generics
+    PASS Master Intensity (TMasterIntensityForm) <- Fixture toolbar Master Intensity
+    PASS Intensity Groups (TIntensityGroupForm) <- Master Intensity > Preferences > Groups
+    PASS Patch Sub Masters (TInternalIntensityPatchForm) <- Master Intensity > Options > Patch Submasters
+    PASS Smoke Control (TSmokeForm) <- Fixture toolbar Smoke Control
+    PASS Fixture Groups (TGroupForm) <- Fixture toolbar Fixture Groups
+    PASS Next/Previous Fixture Selection (TNextPrevSelectionForm) <- right-click Previous Fixture
+    PASS Custom Fixture Selection Order (TCustomOrderForm) <- Next/Previous > Set Custom Order
+    PASS Edit FollowSpot Settings (TFollowSpotForm) <- Setup > Preferences > Edit Followspot settings
+    PASS Select Followspot Setting (TFollowListForm) <- Fixture toolbar Follow Spot
+    PASS Find profile.. (TFindProfileForm) <- Fixture Configuration > Find
+    PASS Calculate addresses (TAutoAddressForm2) <- Fixture Configuration > Calculate Address
+    PASS Copy From Fixture (TCopyFromForm) <- Fixture Configuration popup > Copy From Fixture
+    PASS Clear Fixture Data (TCleanUpForm) <- Fixture Configuration popup > Clear Fixture Data
+    PASS Import Profile (TFixtureImportForm) <- Fixture Configuration > Import > Import Profile
+    PASS Export (TExportConfigForm) <- Fixture Configuration > Print > Export to text file
+    PASS Prompt Please Confirm.. (change the DMX address of a saved fixture) <- Fixture Configuration address edit
+    PASS Configuration Warnings (TConfigWarnForm) <- Fixture Configuration > Save with a conflict
+    PASS Fixture Info (TFixtureInfoForm) <- icon popup > Fixture Info
+    PASS Fixture Notes (TFixtureNotesForm) <- icon popup > Fixture Notes
+    PASS DMX Output Monitor (TDMXOutForm) <- icon popup > DMX Output
+    PASS Fixture Configuration (TLinkConfigForm3) <- icon popup > Fixture Configuration
+    PASS Global Patch (TGlobalPatchForm) <- icon popup > Global Patch
+    PASS Customize Fixture (TFixtureSetupForm) <- icon popup (MAC 500) > Customize Fixture
+    PASS Channel Configuration (TChannelDefForm) <- icon popup (DMX Dimmer) > Define Fixture Profile
+    PASS RGB pack configuration (TRGBPackDefForm) <- icon popup (RGB Pack) > Define Fixture Profile
+    PASS Define Generic Scanner1 profile (TScanner1DefsForm) <- icon popup (Generic Scanner 1) > Define Fixture Profile
+    PASS Define Color Scroller profile (TColorScrolDefForm) <- icon popup (Color Scroller 1) > Define Fixture Profile
+    PASS Generic Fixture Profile (TScanner2DefsForm) <- icon popup (Generic Fixture 2) > Define Fixture Profile
+    PASS Select Bitmap (TBitMapPickerForm2) <- Customize Fixture > Gobo/Effects Bitmaps
+    PASS RGB pack Colors (TRgb) <- Fixture toolbar Colors (RGB pack master)
+    PASS RGB Palette (TRGBPaletteForm) <- RGB pack Colors > Palette
+    PASS Unassigned Fixtures (TUnassignedForm) <- View > Unassigned Fixtures
+    PASS Notes (TNoteForm) <- View > Notes
+    PASS DMX Output Monitor (TDMXOutForm) <- View > Dmx Output
+    PASS System Memory (TMemoryViewForm) <- View > Windows System Memory
+    PASS Cue control (TCurrentCue) <- View > Controls > Cue Control
+    PASS Cue list control (TCuelist2Form) <- View > Controls > Cuelist Control
+    PASS Background Cue (TBGCueForm) <- View > Controls > Background Cue
+    PASS Debug (TDebugForm) <- View > De&bugWindow
+    PASS Debug counters enabled <- Debug > Enable Performance Counters
+    PASS Debug counters after 1.5 s <- Debug window
+    PASS Hardware Setup (THardwareSetupForm2) <- Setup > Hardware Setup ...
+    PASS Global Patch (TGlobalPatchForm) <- Setup > Global Patch ...
+    PASS System Preferences (TSystemPrefsForm) <- Setup > Preferences > System ...
+    PASS Creating Auto Restore Data (TCreateDataForm) <- System Preferences > Data Restore > Create Restore Data
+    PASS Enter New Password (TNewPasswordForm) <- System Preferences > Data Restore > New Password
+    PASS Startup Options (TStartupForm) <- Setup > Preferences > Start Up ...
+    PASS Select Startup Cuelist (TSelectCuelist2ModalForm) <- Startup Options > Select
+    PASS Edit Hotkeys (TFunctionsForm) <- Setup > Hotkeys > Edit Hotkeys
+    PASS Notification ! (TShowHotKeyWarningForm) <- automatic when Edit Hotkeys opens (Main.Ini [MISC] ShowHotkeyWarning)
+    PASS Next/Previous Fixture Selection (TNextPrevSelectionForm) <- Setup > Preferences > Previous/Next Fixture Selection
+    PASS Desktop tabs (TLayerManagerForm) <- desktop popup > Desktop > Tabs..
+    PASS Desktop Grid (TGridForm) <- desktop popup > Desktop > Grid..
+    PASS Desktop Image (TImageSetupForm) <- desktop popup > Desktop > Image..
+    PASS Select Icon Style (TIconStyleForm) <- desktop popup > Icons > Style..
+    PASS Auto-Arrange Icons (TAutoArrangeForm) <- desktop popup > Icons > Auto Arrange..
+    PASS Fixture Groups (TGroupForm) <- desktop popup > Fixture Groups
+    PASS User Libraries (TUserLibForm) <- System > User Libraries...
+    PASS Enter User Library Name (TGetUserLibNameForm) <- User Libraries > Create New Library
+    PASS Rename File (TRenameFileForm) <- User Libraries > Rename Library
+    PASS Backup User Library (TLibraryBackupForm) <- User Libraries > Backup Library
+    PASS Restore User Library (TLibraryRestoreForm) <- User Libraries > Restore Library
+    PASS Delete Sequences (TDeleteSequencesForm) <- System > Delete Files > Sequences
+    PASS Delete Cues (TDeleteCuesForm) <- System > Delete Files > Cues
+    PASS Delete Cuelists (TDeleteCuelistsForm) <- System > Delete Files > Cuelists
+    PASS Delete Background Cues (TDeleteBGCuesForm) <- System > Delete Files > Background Cues
+    PASS Delete Generic Macros (TDeleteGenericMacrosForm) <- System > Delete Files > Generic Macros
+    PASS Restore Data (TRestoreDataForm) <- System > Restore Program Data
+    PASS Striking Lamps (TAutoLampForm) <- System > Auto Strike Lamps
+    PASS Dmx In (TDmxInForm) <- C-L toolbar DMX In, input greyed
+    PASS DMX-In translation (TDMXInValueTranslationForm) <- Dmx In > Preferences > Value-translations
+    PASS Translation editor (TTranslationEditForm) <- DMX-In translation > Create new table
+    PASS LightJockey MIDI-IN (TMidiInForm) <- C-L toolbar MIDI In
+    PASS 2532 Direct Access (TDa2532Form_3) <- C-L toolbar 2532
+    PASS 2532 Function List (TButtonFunctions2532Form) <- 2532 > Options > Function-List
+    PASS 2532 Color Scheme (TColorScheme2532Form) <- 2532 > Font Properties > Color Scheme
+    PASS 2532 Tab Colors (TDA2532_TabColorsForm) <- 2532 > Tab Options > Tab Colors > Set colors...
+    PASS Set Tab Size (TDa2532TabHeight) <- 2532 > Tab Options > Set Tab Size...
+    PASS 2532 Page Names (TName2532PagesForm) <- 2532 > Tab Options > Name Page Tabs...
+    PASS C-L toolbar button 7 (CD / MC-X / 2518) greyed, hint Not available in LJ4EVR (dropped hardware)
+    PASS C-L toolbar button 8 (CD / MC-X / 2518) greyed, hint Not available in LJ4EVR (dropped hardware)
+    PASS C-L toolbar button 9 (CD / MC-X / 2518) greyed, hint Not available in LJ4EVR (dropped hardware)
+    PASS Fingers status panel (TFingersStatus) <- Fingers > Status panel
+    PASS Virtual Fingers (TLJFingersMainForm) <- Fingers > Virtual Fingers
+    PASS Fingers Setup (TFingersSetupDialog) <- Fingers > Setup
+    PASS About (TAboutForm2) <- Help > About
+    PASS Help viewer (THelpViewer) <- Help > Help
+    PASS Help viewer at the Cues topic <- Cue control > Help
+    PASS Help viewer <- Intensity > Help
+    PASS Statics debug (TStaticsDebugForm) <- by id (no LJ2 entry point, 13 s1.2)
+    PASS WM_CPOPYDATA DEBUG (TMsgDebugForm) <- by id (no LJ2 entry point, 13 s1.2)
+    PASS Fingers Setup (TFingersSetupDialog) <- Fingers > Setup (again, for its helpers)
+    PASS Select Skin (TFingersSkinSelectForm) <- Fingers Setup > skin folder button
+    PASS Warning BLACKOUT ACTIVE (TStatusWarningForm) <- automatic on Blackout
+    PASS Warning Frozen ! (TFreezeWarnForm) <- automatic on Freeze
+    PASS Warning DMX Output is Offline (TOfflineWarningForm) <- automatic on Offline
+    PASS Enable laser output ? (TUnblockLasersForm) <- automatic when a laser channel goes non-zero
+    PASS Warning! Laser(s) emitting! (TLaserWarningForm) <- automatic while the laser emits
+    PASS Record to LightCorder file (TLightCorderDialog) <- Cuelist > Tools > Record to LightCorder file
+    PASS Save Lightcorder File (TSaveLightCorderFileDialog) <- Record to LightCorder file > Cancel Recording
+    PASS LightCorder wrote LightCorderFiles/LC0001.LLF
+    PASS Close Lightjockey ? (TCloseOrSaveForm) <- main window close
+
+w4_entry_update.lj4s:
+
+    PASS Datafile format update required (TUpdateCl2Form) <- automatic: an older .Cl2 in the library
+    PASS File Format Update Needed (TUpdateBGCuesForm) <- automatic: an older BG cue file
+    PASS Update to Patch Configuration (TPatchUpdateForm) <- automatic: an older patch file
+    PASS Dataformat has Changed (TUpdateForm) <- automatic: any other older record
+    PASS the three updated records carry format 1
+
+Section-2 rows with no PASS line of their own, and why:
+- Martin Audio Analyzer (`LJSound.exe`): W5 (`&Audio` never shown, row of fidelity.md).
+- MC-X Setup, 2518-RS232, CD-ROM (Audio), LJ MediaPlayer: their C-L buttons are greyed with the hint (PASS lines for 7-9);
+  Capture Status, SandNet status, LJ-Manager preferences, 3D Visualizer menu: never shown or every leaf greyed (D12,
+  inventory s5). The forms are in the fidelity.md "never open" row.
+- `WARNING !` USB Interface Disconnected: no USB interface exists (TUSBWarningForm, same row).
+- `Notification !` no transmitter hardware: raised at start only when no link is mapped to a universe; this PC maps link 1.
+  Driven by `w4_desktop_dialogs.lj4s` and `test_desktop_dialogs` (fidelity.md row).
+- Statics debug / WM_CPOPYDATA DEBUG: no entry point exists in any LJ2 source (13 s1.2); opened by id, said in the PASS line.
+- 2532 and Virtual Fingers on keyboard / MIDI (D16): opened here from their menu and toolbar; the MIDI rows are
+  `w4_da2532_fingers.lj4s` and `test_da2532_fingers`.
+
+### Item 3: goldens
+
+    lj4evr_tests ui_golden        208 of 208 form(s) have a REVIEWED.tsv row; 208 form(s), 0 failure(s)
+    tests/ui/golden               359 BMPs, 432 REVIEWED rows (359 distinct), 0 BMP without a row
+    lj4evr_tests ui_golden_ctl    0 failure(s) after five re-renders (fix 3): CTL_MAC500_MOVEMENT 157 px (bbox 125,26-153,37),
+                                  COLORS / GOBOS / BEAM 598 px (9,26-207,37), EFFECTS 598 px (9,26-138,37): the menu-bar text
+                                  only (UserPalette / Fades / Help no longer greyed), old | new viewed at 2x, one row each
+
+### Item 4: docs/fidelity.md
+
+New section "Fidelity contract F1-F60, complete": 60 rows, each an LJ4EVR capture beside the CHM reference it was compared
+with, or "deferred: needs rig" with the rig item (F15 Q2, F19 EDIT CUE, F20 14 sB.8, F24 M12-M15, F25 R2, F32 M21-M22, F37 /
+F38 17 s8, F45, F47, F57 M1, F58 M2-M6, F59 M16-M20). Every capture it names exists (checked by script). Plus the rows
+integrator 1 left open: the 19 forms that never open, TSavePresetForm, the three D11 forms, and the rows this pass found.
+Not done here: the track return texts' own rows (they are not in the repo; the fidelity-docs owner holds them).
+
+### Item 5: restart persistence (`w4_positions_1.lj4s`, `w4_positions_2.lj4s`)
+
+Every W4 window whose DFM Position is poDesigned / poDefaultPosOnly (lj_formsini_section persists exactly those): cue_stack,
+da2532, dmx_in, dmxin_translation, find_profile, fingers, fingers_status, the five Fingers function lists, hidden_fixture,
+movement_options, rgb_palette, select_cuelist_modal, debug, statics_debug, msg_debug, fixture_info, rgbpack_defs. Part 1
+opens, moves (DISPLAY2) and closes each; part 2, after a restart, asserts the position.
+
+    lj4evr U:W4Entry --script tests/ui/scripts/w4_positions_1.lj4s     rc 0
+    lj4evr U:W4Entry --script tests/ui/scripts/w4_positions_2.lj4s     rc 0, 21 PASS lines (three runs in a row; before fix 11,
+                                                                        one window per run came back centred, at random)
+
+The help viewer is poScreenCenter (ours) and is not persisted; the prompt boxes (laser pair, update dialogs) are centred.
+
+### Items 6-9
+
+    Help      Help > Help opens THelpViewer at the index; Cue control > Help opens it at "Cues" (help-cues-THelpViewer.png);
+              Intensity > Help at the index. 59 Help items now reach the viewer (fix 6); test_help_viewer unchanged
+    LightCorder  dimmer 1:017 up (assert_frame 1:17=200 +-55) and the laser emitting, Cuelist > Tools > Record to LightCorder
+              file, Start, 1.5 s, Cancel Recording, Save File:
+              lightcorder: stopped after 61 frames (573 of 4194304 card bytes)
+              lightcorder: 61 frames saved to ...\User\W4Entry\LightCorderFiles\LC0001.LLF
+              lj4evr_tests test_llf <that file>  (new playback mode of test_llf: decode and print every frame)
+              llf ...LC0001.LLF: link 1, 512 channels, 40 Hz, 61 frame(s), card 4194304 bytes, compress 1
+              frame 0: 17:227 121:227   ...   frame 60: 17:227 121:227
+              61 of 61 frame(s) carry a non-zero slot                                        rc 0
+    DMX-in    Dmx In from the C-L button: assert_enabled TDmxInForm.bAssign 0; Clear Assigned / Assign Function / Save greyed,
+              the grid's input columns empty (dmx-in-TDmxInForm.png); translation window and editor open, inputs greyed
+    Debug     View > De&bugWindow (Main.Ini [DEBUG] DebugWindow=1), Enable Performance Counters, two shots 1.5 s apart:
+              Tick 323 -> 381 (58 ticks = 40 Hz), tick time 30 -> 31 us (max 105), process time 0.030 -> 0.031 ms,
+              Link 1-4 1 packets/s (idle keep-alive)
+
+### Fixes (the walkthrough's real bugs; each now has a PASS line or a check)
+
+| # | Found | Fix |
+|---|---|---|
+| 1 | Cue control reopened from its toolbar button kept the DFM caption `Cue` (F19): the refresh compared against a caption cached from the closed window | `lj_cue_form.c` close clears the cache |
+| 2 | Cue control Cue Macro Scale, Macro Editor and Macro List buttons only logged "is W2" | `lj_cue_form.c` `sb_up`: open Cue Macro Control, the Generic Macro Editor, Select Macro |
+| 3 | Every control window's UserPalette / Fades / Help were greyed or a no-op ("not in W1") and Movement's Fades greyed: User palettes and Sequence Fades had no entry point from the controls (inventory s2) | `lj_ctl_menu_run` in `lj_ctl_common.c` (palette fn of the kind, Sequence Fades, Help viewer) used by the common, colour-family and Movement windows; 5 goldens re-rendered; `test_controls_c` expects UserPalette enabled |
+| 4 | Master Intensity Preferences > Groups logged "W2" | `lj_master_intensity.c`: opens Intensity Groups |
+| 5 | Sequence > Snapshot was a stub ("Snapshot is W2") | `lj_seq_form.c`: opens Snapshot from DMX Out |
+| 6 | 46 `Help1Click` / `Help2Click` / `LocalHelpClick` bindings were `lj_handler_noop` and 12 more logged "Help is W4" or "no help file"; `lj_help_viewer_click` existed and was used nowhere (design 13 item 12) | 21 + 11 window files bind it with a topic (`cues`, `fixtures`, `controls` ...); the controls through fix 3 |
+| 7 | TListView never fired OnChange, so every `lv*Change` handler was dead: a click in Fixture Configuration's list selected nothing (Calculate Address, Copy From, Clear Fixture Data, Remove stayed unreachable), User Libraries rows likewise | `lj_w_listview.c` `select_row` emits `LJ_WEV_CHANGE` (VCL ctState); `widgets_lists` asserts it |
+| 8 | An RGB pack master greyed the Colors button and the function toggled the absent Colors kind: RGB pack Colors had no entry point | `lj_toolbars.c` enables it for `LJ_CTL_RGBPACK`; `lj_app_seam.c` routes Colors to the RGB pack window |
+| 9 | BLACKOUT ACTIVE (F14) never stayed up: the GM fade-out / fade-in calls of the same pass share its box and destroyed it right after it was made (W1's acceptance7-blackout shot has no box) | `lj_app.c` `lj_app_refresh`: one call per pass for the shared box |
+| 10 | Crash (access violation in `bound_dispatch`, 2 of 3 runs, found with lldb on a /Z7 Release build): the Debug family kept the wrapped root of a closed Statics debug window; WM_CPOPYDATA DEBUG allocated at the same address matched it and dispatched into freed bindings | `lj_debug_form.c` close clears the wrap entry; 6 clean runs after |
+| 11 | forms.ini positions lost at random (one window per run came back centred on the main window): windows were created visible at SDL's default spot and moved after | `lj_app.c` `lj_app_host_open`: create hidden, place, then show; 3 clean persistence runs after |
+| 12 | Script driver: firing a popup item left the popup open, and it ate the next click on that window (fire() closes it) | `lj_uiscript.c` closes the menu first; `close main` raises `Close Lightjockey ?` (docs/ui-script.md W4 verbs) |
+
+Left as found (not windows, outside this acceptance, fidelity.md rows): the Cue control's BG-cue / generic-macro clear,
+disable and drop buttons, Master Intensity Sync / Bump (both log only). The Fixture Configuration popup's Fixture Notes shows
+the profile notes in the pane (PROPOSAL row).
+
+### Builds and tests after the fixes
+
+    cmake --build build-w4 / build-w4-nosdl / build-debug-win, build-msvc --config Release / Debug    0 warnings, 0 errors
+    ctest build-w4 (Release, SDL)            100% tests passed, 0 tests failed out of 117
+    ctest build-w4-nosdl                     100% tests passed, 0 tests failed out of 116
+    ctest build-debug-win (Debug, SDL)       100% tests passed, 0 tests failed out of 117
+    ctest build-msvc -C Release / -C Debug   100% tests passed, 0 tests failed out of 117 (each)
+    test_layering                            428 file(s) checked, 205 header(s) compiled alone, noop handlers 0, ini ternaries 0,
+                                             scene getters 0, set-text/lib/ctx copies 0, 0 finding(s)
+    lj4evr --selftest (Debug and Release)    rc 0, six OK lines, 0 "no binding" / "unknown event" / "has no behaviour file"
+    gcc 14.2 (w64devkit) and clang 23 (llvm-mingw), CI flags, -fsyntax-only over the 42 changed SDL-free .c files: clean
+    No engine, model or generator input changed: the frame dumps and replay-frames.bin of integrator 1 stand.
+
+The two scratch libraries were deleted and `%APPDATA%\LJ4EVR` put back after the runs.
+
+Pre-commit: 292 staged paths, none under `reference/`; sha1 of each against the 18,923 files under `reference/` (13,637
+distinct): 0 equal. The new binaries are our own renders (229 entry-point captures, 5 control goldens).

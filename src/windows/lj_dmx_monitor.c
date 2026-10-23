@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_DM_COLS 10
 #define LJ_DM_ROWS ((LJ_CHANS + LJ_DM_COLS - 1) / LJ_DM_COLS)   /* 205 data rows: 1, 11, 21 ... 2041 */
@@ -307,7 +308,7 @@ static void on_find_start(lj_widget *w, void *ud)
 }
 static void on_find_channel(lj_widget *w, void *ud)
 {
-    static const lj_binding b[] = { { "FormClose", find_noop_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bStartClick", on_find_start, NULL }, { "bCancelClick", find_noop_close, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    static const lj_binding b[] = { { "FormClose", find_noop_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "bStartClick", on_find_start, NULL }, { "bCancelClick", find_noop_close, NULL }, { "Help1Click", lj_help_viewer_click, "output" }, { NULL, NULL, NULL } };
     (void)w; (void)ud;
     if (dm.find_win) return;
     dm.find_win = lj_window_create(&lj_form_TFINDCHANNELFORM, b);
@@ -320,7 +321,7 @@ static const lj_binding lj_dm_bindings[] = {
     { "sg1MouseWheelDown", lj_handler_noop, NULL }, { "sg1MouseWheelUp", lj_handler_noop, NULL }, { "sg1SelectCell", on_select_cell, NULL },
     { "pbValueMouseDown", on_fader_down, NULL }, { "pbValueMouseMove", on_fader_move, NULL }, { "pbValueMouseUp", on_fader_up, NULL }, { "pbValuePaint", on_fader_paint, NULL },
     { "sevalueChange", on_value_change, NULL }, { "sbClearClick", on_clear, NULL },
-    { "MPrefsClick", on_prefs, NULL }, { "FindChannel1Click", on_find_channel, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "Timer1Timer", on_timer, NULL },
+    { "MPrefsClick", on_prefs, NULL }, { "FindChannel1Click", on_find_channel, NULL }, { "Help1Click", lj_help_viewer_click, "output" }, { "Timer1Timer", on_timer, NULL },
     { NULL, NULL, NULL }
 };
 

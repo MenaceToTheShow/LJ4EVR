@@ -196,7 +196,7 @@ int lj_test_controls_c(int argc, char **argv)
     CHECK(strcmp(lj_window_caption(colors)->text, "Colors") == 0);
     CHECK(lj_window_caption(colors)->icons == LJ_BI_SYSMENU && lj_window_caption(colors)->border == LJ_BS_SINGLE);
     CHECK(lj_window_menu(colors) && lj_window_menu(colors)->n == 4 && strcmp(lj_window_menu(colors)->items[0].caption, "&UserPalette") == 0);
-    CHECK(lj_menu_rt_named(lj_window_menus(colors), "M_UserPalette") && lj_menu_rt_named(lj_window_menus(colors), "M_UserPalette")->enabled == 0);
+    CHECK(lj_menu_rt_named(lj_window_menus(colors), "M_UserPalette") && lj_menu_rt_named(lj_window_menus(colors), "M_UserPalette")->enabled == 1);   /* W4 acceptance: UserPalette opens the palette window (lj_ctl_menu_run) */
     CHECK(lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette") && lj_menu_rt_named(lj_window_menus(colors), "M_ShowPalette")->checked == 1);
     CHECK(lj_menu_rt_named(lj_window_menus(colors), "M_Fades") && strcmp(lj_menu_rt_named(lj_window_menus(colors), "M_Fades")->item->caption, "&Fades") == 0);
     printf("controls_c: Colors client %dx%d, %d bound widgets\n", root->w, root->h, c->nb);

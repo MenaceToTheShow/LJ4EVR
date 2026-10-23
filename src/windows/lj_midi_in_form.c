@@ -11,6 +11,7 @@
 #include "ui/lj_menu.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "windows/lj_delete_files.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 enum { LJ_MI_KINDS = 5, LJ_MI_NOTES = 128, LJ_MI_LOG = 64, LJ_MI_DEVS = 16 };
 
@@ -258,7 +259,7 @@ static void on_option(lj_widget *w, void *ud)
     lj_menu_set_checked(lj_window_menus(mi.win), it->name, *f);
     changed();
 }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("midi in: Help is W4"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"hotkeys-midi"); }   /* W4 acceptance: the bundled viewer */
 
 static const lj_binding lj_mi_bindings[] = {
     { "FormClose", on_close, NULL }, { "TC1Change", on_tab, NULL }, { "cbDeviceChange", on_device, NULL }, { "cbSetupClick", on_setup_box, NULL },

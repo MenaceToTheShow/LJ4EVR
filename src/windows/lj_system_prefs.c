@@ -8,6 +8,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "model/lj_restore_data.h"
 #include "windows/lj_file_dialogs.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 typedef struct { const char *box; size_t off; const char *sec, *key; } lj_sp_box;
 #define LJ_BOX(b, f, s, k) { b, offsetof(lj_sysprefs, f), s, k }
@@ -107,7 +108,7 @@ static void on_new_password(lj_widget *w, void *ud) { (void)w; (void)ud; lj_file
 static void on_validate(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_file_dlg_unlock(lj_w_edit_text(find("ePassword"))) == 0) lj_system_prefs_restore_state(); }
 static void on_ok(lj_widget *w, void *ud) { (void)w; (void)ud; if (lj_system_prefs_apply() == 0) sp.close_pending = 1; }
 static void on_cancel(lj_widget *w, void *ud) { (void)w; (void)ud; sp.close_pending = 1; }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("system prefs: Help is W4"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"files"); }   /* W4 acceptance: the bundled viewer */
 
 static const lj_binding lj_sp_bindings[] = {
     { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { "PC1Change", lj_handler_noop, NULL },

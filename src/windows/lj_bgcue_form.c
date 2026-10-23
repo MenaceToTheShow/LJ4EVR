@@ -17,6 +17,7 @@
 #include "windows/lj_lists.h"
 #include "windows/lj_seq_form.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_BG_STAY_ON_TOP 2u            /* = LJ_WF_STAY_ON_TOP (platform/lj_platform.h, not includable here) */
 #define LJ_BG_ON_RGB      0x00FF00u     /* bgcuecontrol.gif: the numbered buttons green when the slot runs */
@@ -263,7 +264,7 @@ static const lj_binding lj_bg_bindings[] = {
     { "LV1DblClick", lj_handler_noop, NULL }, { "LV1DragDrop", lv_drop, NULL }, { "LV1DragOver", lj_handler_noop, NULL },
     { "BGCueTimerTimer", on_timer, NULL }, { "PopupMenu1Popup", lj_handler_noop, NULL },
     { "P_SequenceModeClick", seq_mode, NULL }, { "P_EditSequenceClick", edit_seq, NULL }, { "P_ClearSlotClick", clear_slot, NULL },
-    { "PrefClicks", pref_click, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "PrefClicks", pref_click, NULL }, { "Help1Click", lj_help_viewer_click, "statics-bgcues" },
     { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
@@ -350,7 +351,7 @@ static void sv_prefs(lj_widget *w, void *ud)
     sv_fill();
 }
 static const lj_binding sv_bindings[] = {
-    { "BsaveClick", sv_save, NULL }, { "BSaveNewClick", sv_save, (void *)1 }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "BsaveClick", sv_save, NULL }, { "BSaveNewClick", sv_save, (void *)1 }, { "PrefsClick", sv_prefs, NULL }, { "Help1Click", lj_help_viewer_click, "statics-bgcues" },
     { "FormClose", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },
     { NULL, NULL, NULL } };
 
@@ -444,7 +445,7 @@ static void sl_pref(lj_widget *w, void *ud)
 }
 static const lj_binding sl_bindings[] = {
     { "lv1DblClick", sl_load, NULL }, { "lv1CustomDrawItem", lj_handler_noop, NULL }, { "lv1DrawItem", lj_handler_noop, NULL },
-    { "lv1EnterExit", lj_handler_noop, NULL }, { "lv1KeyDown", lj_handler_noop, NULL }, { "PrefsClick", sl_pref, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "lv1EnterExit", lj_handler_noop, NULL }, { "lv1KeyDown", lj_handler_noop, NULL }, { "PrefsClick", sl_pref, NULL }, { "Help1Click", lj_help_viewer_click, "statics-bgcues" },
     { "Pop1Popup", lj_handler_noop, NULL }, { "Pop_DeleteClick", sl_delete, NULL },
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", sl_close_ev, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
     { "FormDeactivate", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL }, { NULL, NULL, NULL } };

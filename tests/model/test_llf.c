@@ -293,13 +293,36 @@ static void test_window(lj_library *lib)
     (void)lib; (void)c;
 }
 
+/* test_llf <file.LLF>: the playback half of the W4 acceptance (docs/w4-integration.md): decode a take the app recorded and
+ * print, per frame, the slots that are not zero (address:value), so the frames can be read back against what was played. */
+static int llf_play(const char *path)
+{
+    lj_llf_file f;
+    char err[128];
+    uint32_t i, nz = 0;
+    if (lj_llf_read(path, &f, err, sizeof err) != 0) { printf("FAIL %s: %s\n", path, err); return 1; }
+    printf("llf %s: link %u, %u channels, %u Hz, %u frame(s), card %u bytes, compress %u\n", path, (unsigned)f.link, (unsigned)f.channels, (unsigned)f.hz, (unsigned)f.frames, (unsigned)f.card_bytes, (unsigned)f.compress);
+    for (i = 0; i < f.frames; i++) {
+        int k, n = 0;
+        printf("frame %u:", (unsigned)i);
+        for (k = 0; k < f.channels; k++) if (f.frame[(size_t)i * f.channels + (size_t)k]) { if (n++ < 12) printf(" %d:%u", k + 1, (unsigned)f.frame[(size_t)i * f.channels + (size_t)k]); }
+        if (n > 12) printf(" (+%d more)", n - 12);
+        printf("\n");
+        nz += n != 0;
+    }
+    printf("%u of %u frame(s) carry a non-zero slot\n", nz, f.frames);
+    i = f.frames;
+    lj_llf_file_free(&f);
+    return i && nz ? 0 : 1;
+}
+
 int lj_test_llf(int argc, char **argv);
 int lj_test_llf(int argc, char **argv)
 {
     static lj_library lib;
     lj_ctx *c = lj_ctx_get();
     lj_scene *sc;
-    (void)argc; (void)argv;
+    if (argc > 1) return llf_play(argv[1]);
     lj_library_delete(TMP, "Lib");
     if (lj_library_create(TMP, "Lib", &lib) != 0) { printf("FAIL cannot create " TMP "User/Lib\n"); return 1; }
     test_round_trip(1);

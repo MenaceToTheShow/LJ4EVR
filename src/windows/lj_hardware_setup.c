@@ -16,6 +16,7 @@
 #include "ui/widgets/lj_widgets_lj.h"
 #include "windows/lj_dmx_in.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_HS_NICS 16
 #define LJ_HS_X    150                    /* control column; labels at x 4 */
@@ -202,7 +203,7 @@ static const lj_binding lj_hs_bindings[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormDeactivate", lj_handler_noop, NULL }, { "PC1Change", lj_handler_noop, NULL },
     { "bOkClick", on_ok, NULL }, { "bdetectHardwareClick", na, NULL }, { "bClearhardwareClick", na, NULL }, { "cbUseDMXinClick", na, NULL },
     { "RGrefreshClick", lj_handler_noop, NULL }, { "lvUSBDblClick", lj_handler_noop, NULL }, { "lvUSBSelectItem", lj_handler_noop, NULL }, { "sbID1MouseDown", lj_handler_noop, NULL }, { "sbID1MouseUp", lj_handler_noop, NULL },
-    { "sbWinampClick", na, NULL }, { "bMTCSeelctClick", na, NULL }, { "RG2532EnableClick", lj_handler_noop, NULL }, { "rg2518EnableClick", lj_handler_noop, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "sbWinampClick", na, NULL }, { "bMTCSeelctClick", na, NULL }, { "RG2532EnableClick", lj_handler_noop, NULL }, { "rg2518EnableClick", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "output" },
     { NULL, NULL, NULL }
 };
 

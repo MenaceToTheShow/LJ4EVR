@@ -27,6 +27,7 @@
 #include "windows/lj_save_dialogs.h"
 #include "windows/lj_show_dialogs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 static lj_window *lj_sf_win;
 static lj_widget *lj_sf_bar_w;                 /* the code-built W_PROGRESS2 widget inside the Elapsed bevel */
@@ -556,7 +557,7 @@ static void lj_sf_on_keep_blind(lj_widget *w, void *ud)
     lj_sf_update();
 }
 
-static void lj_sf_on_snapshot(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("seq_form: Snapshot is W2 [03 s4.7]"); }   /* stub: the snapshot / real-time recording dialog */
+static void lj_sf_on_snapshot(lj_widget *w, void *ud) { (void)w; (void)ud; lj_win_open(LJ_WIN_SNAPSHOT); }   /* W4 acceptance: Snapshot from DMX Out [03 s4.7] */
 
 static const lj_binding lj_sf_bindings[] = {
     { "FormActivate", lj_sf_on_update, NULL }, { "FormClose", lj_sf_on_close, NULL }, { "FormCreate", lj_handler_noop, NULL },
@@ -565,7 +566,7 @@ static const lj_binding lj_sf_bindings[] = {
     { "cbGlobalFadeClick", lj_sf_on_global_fade, NULL }, { "cbGlobalSceneClick", lj_sf_on_global_scene, NULL },
     { "UdSceneChange", lj_sf_on_ud, (void *)1 }, { "UdFadeChange", lj_sf_on_ud, NULL },
     { "DisableFade1Click", lj_sf_on_disable_fade, NULL }, { "Preferences1Click", lj_handler_noop, NULL },
-    { "M_KeepBlindClick", lj_sf_on_keep_blind, NULL }, { "M_SnapShotClick", lj_sf_on_snapshot, NULL }, { "Help1Click", lj_handler_noop, NULL },
+    { "M_KeepBlindClick", lj_sf_on_keep_blind, NULL }, { "M_SnapShotClick", lj_sf_on_snapshot, NULL }, { "Help1Click", lj_help_viewer_click, "sequences" },
     { NULL, NULL, NULL }
 };
 

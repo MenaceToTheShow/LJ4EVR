@@ -1,0 +1,114 @@
+# w4_positions_2.lj4s - after w4_positions_1.lj4s and a restart: every W4 window reopens where it was moved (forms.ini).
+
+open cue_stack
+wait 200
+assert_pos cue_stack 100 1600
+log "PASS restart position cue_stack 100,1600"
+close cue_stack
+open da2532
+wait 200
+assert_pos da2532 140 1620
+log "PASS restart position da2532 140,1620"
+close da2532
+open dmx_in
+wait 200
+assert_pos dmx_in 180 1640
+log "PASS restart position dmx_in 180,1640"
+close dmx_in
+open dmxin_translation
+wait 200
+assert_pos dmxin_translation 220 1660
+log "PASS restart position dmxin_translation 220,1660"
+close dmxin_translation
+open find_profile
+wait 200
+assert_pos find_profile 260 1680
+log "PASS restart position find_profile 260,1680"
+close find_profile
+open fingers
+wait 200
+assert_pos fingers 300 1700
+log "PASS restart position fingers 300,1700"
+close fingers
+open fingers_status
+wait 200
+assert_pos fingers_status 340 1720
+log "PASS restart position fingers_status 340,1720"
+close fingers_status
+open fingers_functions
+wait 200
+assert_pos fingers_functions 380 1740
+log "PASS restart position fingers_functions 380,1740"
+close fingers_functions
+open fingers_jog_functions
+wait 200
+assert_pos fingers_jog_functions 420 1760
+log "PASS restart position fingers_jog_functions 420,1760"
+close fingers_jog_functions
+open fingers_page_functions
+wait 200
+assert_pos fingers_page_functions 460 1780
+log "PASS restart position fingers_page_functions 460,1780"
+close fingers_page_functions
+open fingers_slot_functions
+wait 200
+assert_pos fingers_slot_functions 500 1800
+log "PASS restart position fingers_slot_functions 500,1800"
+close fingers_slot_functions
+open fingers_ud_functions
+wait 200
+assert_pos fingers_ud_functions 540 1820
+log "PASS restart position fingers_ud_functions 540,1820"
+close fingers_ud_functions
+open hidden_fixture
+wait 200
+assert_pos hidden_fixture 100 1840
+log "PASS restart position hidden_fixture 100,1840"
+close hidden_fixture
+open movement_options
+wait 200
+assert_pos movement_options 140 1860
+log "PASS restart position movement_options 140,1860"
+close movement_options
+open rgb_palette
+wait 200
+assert_pos rgb_palette 180 1880
+log "PASS restart position rgb_palette 180,1880"
+close rgb_palette
+open select_cuelist_modal
+wait 200
+assert_pos select_cuelist_modal 220 1900
+log "PASS restart position select_cuelist_modal 220,1900"
+close select_cuelist_modal
+open debug
+wait 200
+assert_pos debug 260 1920
+log "PASS restart position debug 260,1920"
+close debug
+open statics_debug
+wait 200
+assert_pos statics_debug 300 1940
+log "PASS restart position statics_debug 300,1940"
+close statics_debug
+open msg_debug
+wait 200
+assert_pos msg_debug 340 1960
+log "PASS restart position msg_debug 340,1960"
+close msg_debug
+click main.tb_fixture_13
+click main.icon1
+rclick main.icon1
+click main.PI_Info
+wait 200
+assert_pos fixture_info 380 1980
+log "PASS restart position fixture_info 380,1980"
+close fixture_info
+click main.tb_fixture_13
+click main.icon3
+rclick main.icon3
+click main.PI_Customize
+wait 200
+assert_pos rgbpack_defs 420 2000
+log "PASS restart position rgbpack_defs 420,2000"
+close rgbpack_defs
+quit

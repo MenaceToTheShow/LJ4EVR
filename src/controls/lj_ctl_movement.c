@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "controls/lj_ctl_common.h"
 #include "core/lj_ini.h"
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
@@ -412,7 +413,7 @@ static void on_menu(lj_widget *w, void *ud)
     const lj_menu_item_desc *it = lj_window_menu_item(lj_window_of(w));
     const char *n = it && it->name ? it->name : "";
     if (strcmp(n, "M_Presets") == 0) lj_ctl_movement_presets_open(mv->win);
-    else if (strcmp(n, "M_Help") == 0) lj_log("movement: Help: no help file is shipped (D2)");
+    else if (strcmp(n, "M_Help") == 0 || strcmp(n, "M_Fades") == 0) lj_ctl_menu_run(LJ_CTL_MOVEMENT, n);   /* W4 acceptance: the bundled Help viewer, Sequence Fades */
     else if (strcmp(n, "M_Macro") == 0) lj_win_open(LJ_WIN_MOVEMACRO_EDITOR);   /* W3 movement [04 s4.4] */
     else if (strcmp(n, "M_FanOut") == 0) lj_win_open(LJ_WIN_FAN_OUT);          /* W3 movement [04 s4.2] */
     else if (strcmp(n, "M_PosOptions") == 0) lj_win_open(LJ_WIN_MOVEMENT_OPTIONS);   /* W4 [04 s4] */
@@ -430,7 +431,7 @@ static const lj_menu_item_desc mv_options_items[] = {
 static const lj_menu_item_desc mv_menu_items[] = {
     { "M_Presets", "&Presets", .on_click = "MenuClick" },
     { "M_Preferences", "P&references", .children = mv_pref_items, .nchildren = 2 },
-    { "M_Fades", "&Fades", .on_click = "MenuClick", .enabled = LJ_NO, .hint = LJ_MV_NOT_AVAIL },   /* W2: the sequence fades control [04 s1.4] */
+    { "M_Fades", "&Fades", .on_click = "MenuClick" },                                             /* the sequence fades control [04 s1.4] (W4 acceptance) */
     { "M_Macro", "&Macro", .on_click = "MenuClick" },                                             /* W3 movement: the Movement Macro window */
     { "M_Options", "&Options", .children = mv_options_items, .nchildren = 2 },
     { "M_Help", "&Help", .on_click = "MenuClick" },
@@ -739,7 +740,7 @@ static void presets_delete(lj_widget *w, void *ud)
     presets_del.mv = mv;
     lj_win_confirm("Please Confirm..", "Delete Selected Presets?", NULL, presets_delete_yes, NULL);   /* exe 0x346794 (ME-97) */
 }
-static void presets_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("presets: Help: no help file is shipped (D2)"); }
+static void presets_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_ctl_menu_run(LJ_CTL_MOVEMENT, "Help"); }   /* W4 acceptance: the bundled viewer */
 
 static void presets_save(lj_widget *w, void *ud)
 {

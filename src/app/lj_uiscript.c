@@ -456,6 +456,8 @@ static int lj_us_screen(lj_window *win, int *x, int *y)
     return (m && m->host && m->host->screen_pos) ? m->host->screen_pos(m->host->ud, win, x, y) : -1;
 }
 
+static void lj_us_close_result(int yes, void *ud) { (void)ud; if (yes) lj_desktop_run_action(LJ_ACT_CLOSE, 0); }   /* close main: Yes = the script's quit path */
+
 /* <Form>.<item> names a menu item (TDMXOutForm.M_EnableOverwrite): fired as lj_menu's fire() does, without the bar. */
 static int lj_us_menu_click(char *spec)
 {
@@ -468,6 +470,7 @@ static int lj_us_menu_click(char *spec)
     rt = m ? lj_menu_rt_named(m, dot + 1) : NULL;
     if (!rt || !rt->fn || !rt->enabled) return -1;
     if (lj_desc_bool(rt->item->auto_check, 0)) rt->checked = rt->checked ? 0u : 1u;
+    lj_menu_close(m);   /* as fire() does: an open popup (rclick) would otherwise eat the next click on the window (W4 acceptance) */
     m->firing = rt->item;
     rt->fn(lj_window_root(win), rt->ud);
     m->firing = NULL;
@@ -905,7 +908,8 @@ static int lj_us_exec(lj_us_stmt *st)
         lj_us.cur = win;
         return 0;
     case LJ_US_CLOSE:
-        if ((k = lj_us_ctl_kind(st->arg[0])) >= 0) lj_ctl_close((enum lj_ctl_kind)k);
+        if (strcmp(st->arg[0], "main") == 0) lj_win_close_prompt(lj_us_close_result, NULL);   /* W4: "Close Lightjockey ?" as a user's close raises it (LJ_ACT_CLOSE skips it under a script); Yes quits */
+        else if ((k = lj_us_ctl_kind(st->arg[0])) >= 0) lj_ctl_close((enum lj_ctl_kind)k);
         else if ((id = lj_us_win_id(st->arg[0])) >= 0) lj_win_close((enum lj_win)id);
         else { lj_us_failf(lj_us.line, "unknown window %s", st->arg[0]); return -1; }
         lj_us.cur = NULL;

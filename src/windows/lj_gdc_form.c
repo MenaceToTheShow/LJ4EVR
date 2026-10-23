@@ -30,6 +30,7 @@
 #include "windows/lj_seq_form.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 #define LJ_WIN_STAY_ON_TOP 2u   /* = LJ_WF_STAY_ON_TOP of platform/lj_platform.h (not includable from windows/) */
 #define GDC_CAPTION "Generic DMX Control"
@@ -532,7 +533,7 @@ static const lj_binding lj_gdc_bindings[] = {
     { "DG1DrawCell", on_draw_cell, NULL }, { "DG1MouseDown", on_grid_down, NULL }, { "DG1MouseMove", on_grid_move, NULL }, { "DG1MouseUp", on_grid_up, NULL },
     { "DeleteAllGroups1Click", on_delete_all, NULL }, { "ClearallGroups1Click", on_clear_all, NULL }, { "HideSelectedChannels1Click", on_hide, NULL },
     { "ShowAllChannels1Click", on_show_all, NULL }, { "PrefsClick", on_prefs, NULL }, { "GridSize1Click", on_grid_size, NULL }, { "GridFont1Click", on_grid_font, NULL },
-    { "GridColors1Click", on_grid_colors, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "Timer1Timer", on_timer, NULL }, { "FontDialog1Apply", lj_handler_noop, NULL },
+    { "GridColors1Click", on_grid_colors, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { "Timer1Timer", on_timer, NULL }, { "FontDialog1Apply", lj_handler_noop, NULL },
     { "GridPopPopup", lj_handler_noop, NULL }, { "PopClick", on_pop_click, NULL }, { "GroupPopPopup", on_group_pop, NULL },
     { "P_CreateGroupClick", on_create_group, NULL }, { "P_RenameGroupClick", on_rename_group, NULL }, { "P_DeleteGroupClick", on_delete_group, NULL },
     { "P_AddSelectedtoGroupClick", on_add_sel, NULL }, { "P_RemoveSelectedFromGroupClick", on_rem_sel, NULL }, { "P_SetGroupClick", on_set_group, NULL },
@@ -746,7 +747,7 @@ static const lj_binding lj_fs_bindings[] = {
     { "FormClose", fs_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormResize", fs_resize, NULL },
     { "bSaveClick", fs_save_click, NULL }, { "bApplySceneClick", fs_apply, NULL }, { "bClearClick", fs_clear, NULL },
     { "sg1GetEditMask", lj_handler_noop, NULL }, { "sg1MouseDown", lj_handler_noop, NULL }, { "sg1SelectCell", fs_select, NULL },
-    { "ClearAllFollowspotSettings1Click", fs_clear_all, NULL }, { "Help1Click", lj_handler_noop, NULL }, { "popPopup", fs_pop, NULL },
+    { "ClearAllFollowspotSettings1Click", fs_clear_all, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { "popPopup", fs_pop, NULL },
     { "M_ApplyCurrentSceneClick", fs_apply, NULL }, { "ClearEntry1Click", fs_clear, NULL }, { "M_RemoveStaticClick", fs_static_clear, NULL },
     { "M_AutoClearStaticClick", fs_static_autoclr, NULL }, { NULL, NULL, NULL } };
 
@@ -785,7 +786,7 @@ static void fl_close(lj_widget *w, void *ud) { (void)w; (void)ud; lj_followspot_
 static const lj_binding lj_fl_bindings[] = {
     { "FormClose", fl_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "bOkClick", fl_ok, NULL }, { "bClearClick", fl_clear, NULL },
     { "lv1Change", fl_change, NULL }, { "lv1DblClick", fl_ok, NULL }, { "FollowspotSetttings1Click", fl_edit, NULL },
-    { "Preferences1Click", lj_handler_noop, NULL }, { "M_PreselClick", fl_presel, NULL }, { "Help1Click", lj_handler_noop, NULL }, { NULL, NULL, NULL } };
+    { "Preferences1Click", lj_handler_noop, NULL }, { "M_PreselClick", fl_presel, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { NULL, NULL, NULL } };
 
 lj_window *lj_followspot_list_open(void)
 {

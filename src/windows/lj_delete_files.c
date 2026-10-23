@@ -21,6 +21,7 @@
 #include "ui/widgets/lj_widgets_basic.h"
 #include "windows/lj_show_dialogs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 enum { LJ_DF_MAX = 9999 };                                     /* the 4-digit record space [F28] */
 #define LJ_DF_CONFIRM "Please Confirm.."                       /* TCONFIRMFORM caption */
@@ -317,7 +318,7 @@ static void on_column(lj_widget *w, void *ud)
     if (df[k].n > 1) qsort(df[k].rows, (size_t)df[k].n, sizeof *df[k].rows, row_cmp);
     show_rows((enum lj_rec_kind)k);
 }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("delete files: Help is W4"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"files"); }   /* W4 acceptance: the bundled viewer */
 
 static const lj_binding lj_df_seq_b[] = {
     { "FormActivate", lj_handler_noop, NULL }, { "FormClose", on_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormResize", lj_handler_noop, NULL }, { "FormShow", lj_handler_noop, NULL },

@@ -12,6 +12,7 @@
 #include "windows/lj_delete_files.h"
 #include "windows/lj_prefs.h"
 #include "windows/lj_warnings.h"
+#include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
 enum { LJ_EH_ROWS = LJ_FN_COUNT + LJ_FNG_COUNT, LJ_EH_PROGS = 999 /* ponytail: records listed per tab */ };
 
@@ -296,7 +297,7 @@ static void on_cancel(lj_widget *w, void *ud)
     if (eh.modified) lj_win_confirm("Please Confirm..", LJ_HOTKEY_CHANGED, NULL, on_discard, NULL);
     else eh.close_pending = 1;
 }
-static void on_help(lj_widget *w, void *ud) { (void)w; (void)ud; lj_log("edit hotkeys: Help is W4"); }
+static void on_help(lj_widget *w, void *ud) { (void)ud; lj_help_viewer_click(w, (void *)"hotkeys-midi"); }   /* W4 acceptance: the bundled viewer */
 
 static const lj_binding lj_eh_bindings[] = {
     { "_h", lj_handler_noop, NULL }, { "FormClose", on_cancel, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
