@@ -222,7 +222,7 @@ def prep(ud):
         "ch 1:3 src=in sl=1 sc=3 mode=abs inv=0 min=0 max=255 htp=0\n")
     put(os.path.join(ud, "extapp.ini"), "[IDENTIFIERS]\nNAME=W5 walk receiver\nCOMMANDINTERFACE=ZSTRING\n[LJ4EVR]\nTRANSPORT=TCP\n"
         "HOST=127.0.0.1\nPORT=7000\n")
-    with wave.open(os.path.join(ud, "tone.wav"), "wb") as w:     # 4 s of a 440 Hz-ish integer triangle, 44.1 kHz mono 16-bit
+    with wave.open(os.path.join(lib, "tone.wav"), "wb") as w:     # in the library folder (ME-169: a relative MP path resolves there); 4 s of a 440 Hz-ish integer triangle, 44.1 kHz mono 16-bit
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(44100)
         w.writeframes(b"".join(struct.pack("<h", ((i * 1280) % 40000) - 20000 >> 3) for i in range(4 * 44100)))
     print("prep: W5Acc library, Hardware.Ini, extapp.ini, tone.wav under", "<userdir>")

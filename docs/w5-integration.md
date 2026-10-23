@@ -440,3 +440,68 @@ all `5b13f419...63114b50` (unchanged); `replay-frames.bin` all `9da72c3f...560ad
 local trees). ME-186, the fuzz step's INITED lines now start from the seeds: `fuzz_sacn_rx corp: 1/638b`,
 `fuzz_artnet corp: 3/791b`, `fuzz_remote corp: 1/6b`, `fuzz_vtr corp: 1/148b`, `fuzz_ljb corp: 1/265b` (each was
 `corp: 1/1b`); `fuzz_udf` keeps its `udf-corpus` (`1/222b`). The SDL steps fetched commit `829a65d7...` (ME-171 (e)).
+
+## Release
+
+### v1.1.0 (ME-188)
+
+`Release 1.1.0` (`0f6e97f`: `VERSION` 1.1.0, `CHANGELOG [1.1.0]`, the README status line), CI run 40017600733: six of six
+green. `git tag -a v1.1.0 -m "LJ4EVR 1.1.0"` on `0f6e97f`, pushed 2026-10-23. `release.yml` run 40018750013: check,
+windows, macos, release all success.
+
+    gh release view v1.1.0      "LJ4EVR 1.1.0", isPrerelease false, isDraft false, published 2026-10-23T20:25:58Z;
+                                repos/.../releases/latest = v1.1.0
+    assets                      LJ4EVR-1.1.0-win64-setup.exe   1,939,248 bytes
+                                LJ4EVR-1.1.0-macos.dmg         5,138,245 bytes
+                                SHA256SUMS                       184 bytes
+    SHA256SUMS                  fb4caa2088e87853096f1ef5c82f0bb3df87b2ceb660e75be9b8a35e44d74e11  LJ4EVR-1.1.0-win64-setup.exe
+                                12be5df5c42315b1cf37c11f817d4e1189ec80112d7c1554feeefd8f1c2aaea4  LJ4EVR-1.1.0-macos.dmg
+                                (downloaded, sha256sum -c: both OK)
+    notes                       the install / notices / trademark header, then CHANGELOG [1.1.0] up to "Developer detail:"
+                                (the seven features, the review fixes, what 1.1.0 is not, the known gaps incl. the
+                                macOS microphone-prompt line of ME-189)
+
+Windows installed tree (the downloaded release asset, work PC, silent per-user install into a scratch folder:
+`LJ4EVR-1.1.0-win64-setup.exe /S /D=<scratch>\inst`, exit 0):
+
+    lj4evr.exe                12,057,088
+    THIRD_PARTY_NOTICES.txt       15,645
+    Uninstall.exe                111,892
+    help\  audio-media controls cuelists cues desktop files fixtures getting-started hotkeys-midi import index input
+           macros not-available notices output sequences statics-bgcues  (.txt, 18 topics)
+    HKCU ...\Uninstall\LJ4EVR   DisplayVersion=1.1.0, UninstallString = <scratch>\inst\Uninstall.exe; no HKLM key
+    help_check.py --install-tree         install_check: ...\THIRD_PARTY_NOTICES.txt ok (rc 0)
+    lj4evr.exe --version                 LJ4EVR 1.1.0 (rc 0)
+    w4_entry_points.lj4s against the installed exe (scratch LJ4EVR_USERDATA prepared by w4_entry_prep.sh plus a
+      W4Captions row; shots to a scratch folder)   rc 0, 155 PASS lines, 0 SCRIPT FAIL
+    w5_acc_media.lj4s against the installed exe (scratch LJ4EVR_USERDATA from `w5_wire.py prep`, U:W5Acc)
+                                         rc 0, 0 SCRIPT FAIL; `media: ...\User\W5Acc\tone.wav loaded, 44100 Hz, 1 ch,
+                                         176400 frames`; clip.mp3 / clip.avi: `not a local .wav file, kept and skipped`
+    Uninstall.exe /S                     exit 0; the folder, lj4evr.exe and the HKCU key gone
+
+Two walkthrough inputs were stale against the 1.1.0 behaviour and are corrected in this record's commit (no product code
+changed):
+
+- `w4_entry_points.lj4s` line 728 asserted the Dmx In window's `bAssign` greyed (the 1.0.0 state); W5 made the DMX-in
+  inputs live, so the row now asserts `1`. The first run against the installed copy failed there (122 PASS, `SCRIPT FAIL
+  line 728: TDmxInForm.bAssign is "1", expected "0"`). The script is not a CTest row; `w5_entry_points.lj4s` (CTest)
+  already asserts the live DMX-in entries.
+- `tools/ref/w5_wire.py prep` wrote `tone.wav` to the userdir root; since ME-169 a relative MP Load File name resolves
+  against the library folder, so `w5_acc_media.lj4s` saw `tone.wav: file not found`. prep now writes it into
+  `User\W5Acc`.
+
+macOS (from the `release.yml` macos job log; no hand run, ME-189):
+
+    lipo        Architectures in the fat file: ... lj4evr are: x86_64 arm64
+    codesign    Format=app bundle with Mach-O universal (x86_64 arm64), Signature=adhoc; --verify --strict:
+                valid on disk, satisfies its Designated Requirement
+    Info.plist  CFBundleShortVersionString 1.1.0, LSMinimumSystemVersion 12.0; minos 12.0
+    .dmg        5,138,245 bytes, UDIF trailer at size - 512 = `koly` (6b 6f 6c 79); hdiutil verify: every partition
+                verified; mounted: Applications -> /Applications, LJ4EVR.app; install_check:
+                .../LJ4EVR.app/Contents/Resources/THIRD_PARTY_NOTICES.txt ok
+
+Windows release job: `dumpbin /dependents` with no vcruntime / msvcp / ucrtbase; installer VERSIONINFO ProductName=LJ4EVR
+ProductVersion=1.1.0 FileVersion=1.1.0; install_check on the silent CI install ok.
+
+ME-188 ticked by this record. Open after the tag: ME-187 (design.md v1.1.0 paragraph, orchestrator) and the section 6
+carries (the reference rig, the Mac hand run, the OemCode).

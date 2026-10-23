@@ -725,8 +725,8 @@ shot docs/screenshots/w4/entry/striking-lamps.png
 close striking_lamps
 click main.tb_cuelist_10                          # C-L toolbar: DMX In
 assert_caption dmx_in "Dmx In"
-assert_enabled TDmxInForm.bAssign 0
-log "PASS Dmx In (TDmxInForm) <- C-L toolbar DMX In, input greyed"
+assert_enabled TDmxInForm.bAssign 1                # live since 1.1.0 (W5 DMX-in; was greyed in 1.0.0)
+log "PASS Dmx In (TDmxInForm) <- C-L toolbar DMX In, input live (1.1.0)"
 shot docs/screenshots/w4/entry/dmx-in.png
 click TDmxInForm.M_ValueTranslations              # Dmx In: Preferences > Value-translations
 assert_caption dmxin_translation "DMX-In translation"
