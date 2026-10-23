@@ -90,3 +90,22 @@ Local clang check, a stand-in for the two clang jobs: zig cc 0.16.0 (clang) in t
 files, 0 failures beyond the three that need their platform (`lj_midi_coremidi.c`, `lj_midi_winmm.c`) or a CMake
 define (`test_corpus.c`); `src/io`, `src/model`, `tests/io`, `src/app` and `src/platform/sdl` (SDL3 headers) for
 `aarch64-macos`: 0 failures. MSVC trees and ctest unchanged after the fixes (153 / 151 / 153 passed).
+
+### CI round 2 (`2feb44b`) and the fixes
+
+windows-msvc, generate-check and linux-clang green: `test_serial_pty` passed on Linux, and the fuzz step printed an
+`INITED` / `DONE` pair for each of the seven targets (`fuzz_gs2`, `fuzz_udf` and the five W5 parsers, 60 s each).
+Red:
+
+- linux-gcc-asan `-Wmisleading-indentation`: the round-1 idiom left `if (...) d[0] = 0; next;` on one line in
+  `windows/lj_dmx_in.c:243` and nine rows of `tests/io/test_dmxin.c`; each is now braced. A scan of every `.c` for an
+  unbraced `if` / `for` / `else` body followed by more code on the same line: only the `else do { } while` of
+  `tests/ui/test_windows_c.c:378`, which gcc has always accepted.
+- macos-clang `test_remote`: the listener's backlog was `LJ_REMOTE_CONNS` (4), so macOS dropped one of five
+  simultaneous SYNs. The fifth client was then never accepted and refused, and the dropped one was `cl[0]`, whose close
+  the test waits for. The backlog is now `4 * LJ_REMOTE_CONNS`; the cap of 4 open connections is unchanged.
+- macos-clang `test_extapp`: the test sent `GO` microseconds after closing the peer, before the loopback FIN arrived,
+  so the bytes went into the dead socket (normal TCP). The test now waits 100 ms after the close, as a real peer loss
+  does. The extapp code is unchanged.
+
+MSVC trees after these fixes: ctest 153 / 151 / 153 passed (including `test_layering`).

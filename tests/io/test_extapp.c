@@ -203,6 +203,7 @@ static void loopback(void)
     lj_extapp_stats_get(&st);
     CHECK(st.sent == 2 && st.refused == 1 && st.failed == 0 && st.connected[0] == 1);
     lj_socket_close(a);                                             /* the peer dies */
+    { uint64_t t = lj_clock_us(); while (lj_clock_us() - t < 100000u) {} }   /* let the FIN arrive (macOS loopback lags; a send before it is lost, as on any TCP) */
     strcpy(ext[0], "GO");
     { int i; for (i = 0; i < 200; i++) lj_extapp_step(fx, &ext[0][0], now += 1000); }
     lj_extapp_stats_get(&st);

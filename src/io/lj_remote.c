@@ -242,7 +242,7 @@ int lj_remote_open(const lj_remote_cfg *c)
     if (c->tcp_on) {
         lj_rem_ip_fmt(ip, sizeof ip, c->tcp_ip);
         if (!lj_rem_ip_allowed(c->tcp_ip)) { lj_log("remote: %s is not 127.0.0.1 or a local interface: TCP not listening", ip); rc = -1; }
-        else if ((lj_rem.lsn = lj_socket_listen(c->tcp_ip, c->tcp_port, LJ_REMOTE_CONNS)) == LJ_SOCKET_BAD) rc = -1;
+        else if ((lj_rem.lsn = lj_socket_listen(c->tcp_ip, c->tcp_port, 4 * LJ_REMOTE_CONNS)) == LJ_SOCKET_BAD) rc = -1;   /* backlog past the cap: an extra client is accepted and refused, never dropped at SYN (macOS) */
         else {
             lj_rem.st.tcp_open = 1; lj_rem.st.tcp_port = lj_socket_port(lj_rem.lsn);
             lj_log("remote: TCP listening on %s:%u (no authentication%s)", ip, (unsigned)lj_rem.st.tcp_port, c->tcp_ip == LJ_IP_LOOPBACK ? ", this computer only" : ": anyone on that network can drive the show");

@@ -240,7 +240,7 @@ static void di_tr_fill(void)
     lj_window_set_text(win, "lActive", active);
     for (k = 0; k < di_ntables && rows < LJ_DI_TABLES + 15; k++) {   /* a node per TYPE, its tables below */
         if (!type || strcmp(type, di_tables[k].type) != 0) { type = di_tables[k].type; lj_str_copy(di_tree_rows[rows], sizeof di_tree_rows[rows], type); di_tree_table[rows] = -1; di_tree_items[rows] = di_tree_rows[rows]; rows++; }
-        if (snprintf(di_tree_rows[rows], sizeof di_tree_rows[rows], "\t%s", di_tables[k].name) < 0) di_tree_rows[rows][0] = 0; di_tree_table[rows] = k; di_tree_items[rows] = di_tree_rows[rows]; rows++;
+        { if (snprintf(di_tree_rows[rows], sizeof di_tree_rows[rows], "\t%s", di_tables[k].name) < 0) di_tree_rows[rows][0] = 0; } di_tree_table[rows] = k; di_tree_items[rows] = di_tree_rows[rows]; rows++;
     }
     if ((w = lj_window_find(win, "tv1")) != NULL) { int keep = ((lj_w_treeview *)w)->index; lj_w_treeview_set_items(w, di_tree_items, rows); for (k = 0; k < rows; k++) if (di_tree_table[k] < 0) lj_w_treeview_expand(w, k, 1); ((lj_w_treeview *)w)->index = keep < rows ? keep : -1; }
 }
