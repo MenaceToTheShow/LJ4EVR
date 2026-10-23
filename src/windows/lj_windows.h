@@ -197,6 +197,12 @@ enum lj_win {
     LJ_WIN_MSG_DEBUG,              /* TMsgDebugForm                    Debug window WM_CPOPYDATA DEBUG [13 s1.2] */
     LJ_WIN_MEMORY_VIEW,            /* TMemoryViewForm                  View > System Memory (ViewControlClick Tag 7, LJ_ACT_WINDOWS_MEMORY) [01 s4] */
     LJ_WIN_HELP,                   /* THelpViewer                      every Help leaf (LJ_ACT_HELP, F1): the bundled text viewer, code-built (design 13 item 12) */
+    /* ---- W5 (docs/w5-contracts.md seam 9; appended, never reordered). Classes of the side executables are their DFM classes
+     * (W5-X-HARVEST: generated when the harvest finds the TPF0 form, else code-built with tagged numbers). ---- */
+    LJ_WIN_AUDIO_ANALYZER,         /* TLJSoundApp (LJSound.exe)        &Audio > Audio Analyzer (M_AudioClick) [05 s9.1]; family AUDIO, track audio */
+    LJ_WIN_REMOTE_SETUP,           /* TRS232SettingsForm (LJ_RS232.exe) the remote settings (Hardware Setup TSDA_RS232 page, PROPOSAL entry) [05 s10.1]; family REMOTE, track remote */
+    LJ_WIN_EXTAPP_SETUP,           /* TExternalAppSetupForm            icon popup Define Application Link (PI_DefineAppLink) [05 s10.2, I11]; family EXTAPP, track extapp */
+    LJ_WIN_MEDIA_PLAYER,           /* TLJMediaForm (LJMediaPlayer.exe) cue list ListPop LJ Mediaplayer, transport [05 s8.1, design 8.5]; family MEDIA, track media */
     LJ_WIN_COUNT
 };
 

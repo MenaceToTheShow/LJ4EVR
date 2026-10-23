@@ -53,4 +53,10 @@ void lj_uiscript_fail(const char *reason);   /* "SCRIPT FAIL line n: reason" and
  *   dump_captions <path>            appends the runtime Caption / Text / Hint of every open window's widgets and menu items to path
  *                                   ("Class<TAB>object<TAB>property<TAB>value"), for tools/caption_diff.py (W4 acceptance 1) */
 
+/* ---- W5 verbs (docs/ui-script.md "W5 verbs"; contracts seat; synthetic input through the wire's entry points) ----
+ *   sacn_in <universe> <hex...>     an E1.31 data packet (lj_sacn_pack_data, the script's own CID) into lj_dmxin_rx; slots from the hex words
+ *   artnet_in <port-address> <hex...>   an ArtDmx (lj_artnet_pack_dmx) into lj_dmxin_rx(LJ_DMXIN_ARTNET)
+ *   audio_inject <level> [blocks]   analysis blocks of that level through lj_audio_detect on ctx->audio_state; a trig runs LJ_ACT_AUDIO_TRIG
+ *   remote <byte> ...               decimal bytes through lj_remote_inject (remote 129 1 2 = load cue 130) */
+
 #endif /* LJ_APP_UISCRIPT_H */

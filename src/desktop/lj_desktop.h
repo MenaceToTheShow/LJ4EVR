@@ -21,6 +21,11 @@
 #include "io/lj_hotkeys.h"
 #include "io/lj_midi.h"
 #include "io/lj_sacn.h"
+#include "io/lj_audio.h"
+#include "io/lj_dmxin.h"
+#include "io/lj_extapp.h"
+#include "io/lj_media.h"
+#include "io/lj_remote.h"
 #include "model/lj_cuelist.h"
 #include "model/lj_cuepage.h"
 #include "model/lj_gdc.h"
@@ -64,7 +69,19 @@ typedef struct {
     const lj_gm_shapes *gm_shapes;     /* the shape table in force: &lj_gm_shapes_builtin or the user's override (ME-34); the editor lists its names */
     lj_gdc_state   *gdc;               /* Generic DMX Control selection and preferences */
     uint8_t         followspot;        /* the active follow spot setting 1..20, 0 = none (tb_fixture_18 latches; LJ_FN_CLEAR_FOLLOWSPOT clears) */
+    /* ---- W5 (appended; docs/w5-contracts.md seam 10). Owned by app/lj_app_io.c, UI thread only; a settings window edits
+     * the record and runs LJ_ACT_IO_APPLY (arg = enum lj_io_part) so the app saves Hardware.Ini and re-opens that part.
+     * Art-Net output rides ctx->sacn (proto / artnet_addr / artnet_in) and the existing LJ_CMD_SACN_CFG path. ---- */
+    lj_dmxin_cfg   *dmxin;             /* Hardware.Ini [DMXIN] */
+    lj_dmxin_map   *dmxin_map;         /* the SAVED DMX-in assignments (05 s3.1: new ones take effect after Save) */
+    lj_audio_cfg   *audio;             /* Hardware.Ini [AUDIO] + the analyzer settings */
+    lj_audio_state *audio_state;       /* the analyzer state (the Analyzer window paints it; the UI script `audio_inject` drives lj_audio_detect on it) */
+    lj_remote_cfg  *remote;            /* Hardware.Ini [REMOTE] */
+    lj_extapp_cfg  *extapp;            /* Hardware.Ini [EXTAPP] */
+    lj_media       *media;             /* the one MediaPlayer (05 s8.1) */
+    int           (*audio_list)(lj_audio_dev *out, int max);   /* the Hardware Setup Audio page's device list (the platform's; NULL headless) */
 } lj_ctx;
+enum lj_io_part { LJ_IO_OUTPUT = 0 /* sACN / Art-Net: re-post LJ_CMD_SACN_CFG */, LJ_IO_DMXIN, LJ_IO_AUDIO, LJ_IO_REMOTE, LJ_IO_EXTAPP };   /* W5: LJ_ACT_IO_APPLY arg */
 lj_ctx *lj_ctx_get(void);                                   /* the one context; zeroed until the app fills it */
 lj_scene *lj_ctx_scene(void);                               /* ME-129: the current sequence's current scene, NULL past the end; the clamp happens where a sequence shrinks (delete / load), never on read */
 void    lj_ctx_set_modified(enum lj_modified which, int on); /* also repaints the status bar flag */
@@ -126,6 +143,11 @@ enum lj_desktop_action {
     LJ_ACT_FIXTURE_APPLY /* arg = fixture index: Customize Fixture / Channel Configuration Ok: Config.dat + Setup.<slot>.pal saved, lj_engine_rebind */,
     /* W4 (appended; bound by app/lj_app_w4.c to their W4 windows) */
     LJ_ACT_DEBUG_WINDOW /* View > De&bugWindow (hidden) */, LJ_ACT_FINGERS_SETUP /* &Fingers > Fingers Setup */, LJ_ACT_DMX_IN /* C-L toolbar DMX In, Global Patch DMX-in source */,
+    /* W5 (appended; bound by app/lj_app_io.c, docs/w5-contracts.md seam 10) */
+    LJ_ACT_IO_APPLY /* arg = enum lj_io_part: a W5 settings window changed its ctx record: save Hardware.Ini, close-old / open-new that part */,
+    LJ_ACT_AUDIO_ANALYZER /* &Audio > Audio Analyzer (M_AudioClick) */, LJ_ACT_AUDIO_OPTIONS /* &Audio > options (M_AudioOptionsClick): Hardware Setup on the tsAudio page */,
+    LJ_ACT_EXTAPP_SETUP /* arg = fixture: icon popup Define Application Link (PI_DefineAppLink) */, LJ_ACT_MEDIA_PLAYER /* cue list ListPop LJ Mediaplayer */,
+    LJ_ACT_AUDIO_TRIG /* one audio trig: LJ_CMD_TRIG LJ_RUN_ALL / LJ_TRIG_AUDIO_EVENT (Emulate Audio Trig, the DMX-in function, the analyzer) */,
     LJ_ACT_COUNT
 };
 typedef void (*lj_desktop_action_fn)(enum lj_desktop_action a, int arg, void *ud);

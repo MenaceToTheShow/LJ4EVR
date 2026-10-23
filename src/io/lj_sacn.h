@@ -23,7 +23,13 @@ enum {
 #define LJ_SACN_TTL_DEFAULT          1
 
 typedef struct { uint32_t nic_ipv4; char name[LJ_SACN_NAME_CAP]; uint8_t cid[16]; uint8_t priority, ttl, preview, unlock_rate;
-                 uint16_t universe_of_link[LJ_LINKS]; uint32_t unicast[LJ_LINKS][LJ_SACN_UNICAST_MAX]; int nunicast[LJ_LINKS]; } lj_sacn_cfg;   /* name: CP1252, converted to UTF-8 when the packet is built (design 2.1); universe 0 = link not mapped; nic_ipv4 / unicast: host byte order */
+                 uint16_t universe_of_link[LJ_LINKS]; uint32_t unicast[LJ_LINKS][LJ_SACN_UNICAST_MAX]; int nunicast[LJ_LINKS];
+                 /* W5 (appended, docs/w5-contracts.md seam 1; artnet track): the output record's per-link protocol. A link with
+                  * proto LJ_OUT_ARTNET is unmapped for sACN (lj_sacn_open terminates / never opens its universe) and fed to
+                  * lj_artnet_set instead; artnet_addr = its 15-bit Port-Address 1..32767 (default link N -> N, PROPOSAL rig W5-ART-4);
+                  * artnet_in = the Art-Net input Port-Address the engine thread hands to io/lj_dmxin.h (0 = Art-Net input off). */
+                 uint8_t proto[LJ_LINKS]; uint16_t artnet_addr[LJ_LINKS]; uint16_t artnet_in; } lj_sacn_cfg;   /* name: CP1252, converted to UTF-8 when the packet is built (design 2.1); universe 0 = link not mapped; nic_ipv4 / unicast: host byte order */
+enum lj_out_proto { LJ_OUT_SACN = 0, LJ_OUT_ARTNET };   /* W5: Hardware.Ini [ARTNET] Proto1..4 (ours, additive; 0 = sACN everywhere on a v1.0.0 file) */
 
 typedef struct { uint32_t packets[LJ_LINKS], pps[LJ_LINKS]; uint16_t universe[LJ_LINKS]; uint32_t send_errors; int last_err;
                  uint32_t terminated, discovery; uint32_t nic_ipv4; } lj_sacn_stats;   /* per link index (the universe it feeds); pps = packets in the last whole second */

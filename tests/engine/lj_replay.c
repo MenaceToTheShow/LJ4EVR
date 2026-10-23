@@ -1462,6 +1462,31 @@ static int rp_at(rp *p, char **argv, int argc)
         int m;
         if (argc != 5 || (m = lj_word_index(rp_pref_words, argv[3])) < 0 || rp_num(argv[4], 0, 1, &v)) return rp_fail(p, "pref: expected `pref <name> 0|1`");
         c.kind = LJ_CMD_PREFS; c.a = (uint32_t)m; c.b = (uint32_t)v;
+    /* ---- W5 forms (docs/replay-grammar.md "W5 lines"; contracts seat 2026-10-23) ---- */
+    } else if (!strcmp(w, "dmx_in")) {                         /* at k dmx_in <link 1..4> <ch>=<v> ... | clear : the UI's merged + translated input frame, unlisted slots 0 */
+        static uint8_t rp_in[LJ_LINKS][LJ_LINK_CH];
+        long ch;
+        if (argc < 5 || rp_num(argv[3], 1, LJ_LINKS, &n)) return rp_fail(p, "dmx_in: expected `dmx_in <link> <ch>=<v> ...` or `dmx_in <link> clear`");
+        c.kind = LJ_CMD_DMX_IN; c.a = (uint32_t)n;
+        if (argc == 5 && !strcmp(argv[4], "clear")) c.dmx_in = NULL;   /* zeros: the loss rule */
+        else {
+            memset(rp_in[n - 1], 0, LJ_LINK_CH);
+            for (i = 4; i < argc; i++) {
+                char *eq = strchr(argv[i], '=');
+                int bad;
+                if (!eq) return rp_fail(p, "dmx_in: expected <ch>=<v>, got \"%s\"", argv[i]);
+                *eq = 0; bad = rp_num(argv[i], 1, LJ_LINK_CH, &ch) || rp_num(eq + 1, 0, 255, &v); *eq = '=';
+                if (bad) return rp_fail(p, "dmx_in: channel 1..512 and value 0..255, got \"%s\"", argv[i]);
+                rp_in[n - 1][ch - 1] = (uint8_t)v;
+            }
+            c.dmx_in = rp_in[n - 1];
+        }
+    } else if (!strcmp(w, "overwrite_enable")) {               /* at k overwrite_enable 0|1 : the S1 gate (the DMX-in function Overwrite Enable) */
+        if (argc != 4 || rp_num(argv[3], 0, 1, &v)) return rp_fail(p, "overwrite_enable: expected 0|1");
+        c.kind = LJ_CMD_OVERWRITE_ENABLE; c.b = (uint32_t)v;
+    } else if (!strcmp(w, "audio_trig")) {                     /* at k audio_trig : one analyzer trig (LJ_TRIG_AUDIO_EVENT) to the slots in audio trig mode */
+        if (argc != 3) return rp_fail(p, "audio_trig takes no arguments");
+        c.kind = LJ_CMD_TRIG; c.a = LJ_RUN_ALL; c.b = LJ_TRIG_AUDIO_EVENT;
     } else return rp_fail(p, "unknown command %s", w);
     if (rp_run_to(p, k - 1)) return -1;
     if (lj_engine_cmd(p->e, &c)) return rp_fail(p, "lj_engine_cmd: command array full");

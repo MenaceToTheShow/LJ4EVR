@@ -56,6 +56,11 @@
 #include "windows/lj_lightcorder.h"
 #include "windows/lj_debug_form.h"
 #include "windows/lj_help_viewer.h"
+/* W5 (docs/w5-contracts.md seam 9) */
+#include "windows/lj_audio_form.h"
+#include "windows/lj_remote_form.h"
+#include "windows/lj_extapp_form.h"
+#include "windows/lj_media_form.h"
 
 static const char *const lj_win_classes[LJ_WIN_COUNT] = {
     "TSequenceForm", "TCurrentCue", "TSaveSeqForm", "TSaveCueForm", "TSeqListForm", "TCueListForm", "TLinkConfigForm3" /* windows-c: the DFM class (no TFixtureConfigForm exists) */,
@@ -70,7 +75,10 @@ static const char *const lj_win_classes[LJ_WIN_COUNT] = {
     /* W3 */
     "TCuelist2Form", "TSaveCuelist2Form", "TSelectCuelist2Form", "TClSetCueTrigForm", "TLogTimeCodeForm", "TCueMacroControlForm", "TSaveMacroDialog", "TLoadMacroList", "TMovementMacroForm" /* code-built */, "TDeleteMacrosForm", "TFanOutForm", "TAutoDelayForm", "TCueMacroForm", "TGenericMegaForm", "TFollowSpotForm", "TFollowListForm", "TDefault2Form", "TScanner2DefsForm", "TFixtureSetupForm", "TChannelDefForm", "TFixtureImportForm", "TExportFixtureForm",
     /* W4 (docs/w4-contracts.md section 3) */
-    "TAddFixForm2", "TApplyDefaultDMXForm", "TApplyMultiForm", "TAutoAddressForm2", "TCleanUpForm", "TCloneForm", "TCopyFromForm", "TConfigWarnForm", "TFixtureExportWarningDialog", "TFileExistsForm", "TFindProfileForm", "TFixtureInfoForm", "TFixtureNotesForm", "TFixtureSpecialForm", "THiddenFixtureForm", "TInternalIntensityPatchForm", "TScanner1DefsForm", "TColorScrolDefForm", "TRGBPackDefForm", "TPaletteValueTypeForm", "TProfileNameOldStyleForm", "TProfileImportModifiedFilesForm", "TBitMapPickerForm2", "TGetBitmapForm", "TRGBPaletteForm", "TCueStackForm", "TModalSelectCueForm", "TDeleteSceneForm", "TInsertScenesForm", "TSetSequenceForm", "TSeqUsedForm", "TSelectBGCueForm", "TSaveStaticForm", "TStaticsControlForm", "TStaticSlotNameForm", "TStaticsReplaceForm", "TNameSlotsForm", "TSelectCuelist2ModalForm", "TSortTimeCodeForm", "TTimeCodeOffsetForm", "TMovementOptionsForm", "TBackupForm", "TRestoreLibProgressForm", "TCopyingFilesForm", "TRenameFileForm", "TProgressForm", "TPrintWaitForm", "TRestoreDataForm", "TCreateDataForm", "TCompressRestoreDataForm", "TRestoreProgressForm", "TNewPasswordForm", "TUpdateForm", "TUpdateFileForm", "TUpdateProgramForm", "TUpdateBGCuesForm", "TUpdateCl2Form", "TPatchUpdateForm", "TRebuildSetupForm", "TInitForm1", "TAutoArrangeForm", "TGridForm", "TIconStyleForm", "TImageSetupForm", "TLayerManagerForm", "TNextPrevSelectionForm", "TCustomOrderForm", "TSaveSelectionForm", "TAutoLaunchForm", "TShowHotKeyWarningForm", "TShowHardwareWarningForm", "TLaserWarningForm", "TUnblockLasersForm", "TDmxInForm", "TDMXInValueTranslationForm", "TTranslationEditForm", "TValueTableImportErrorForm", "TExportTableForm", "TDa2532Form_3", "TButtonFunctions2532Form", "TColorScheme2532Form", "TDA2532_TabColorsForm", "TDa2532TabHeight", "TEdit2532TextForm", "TName2532PagesForm", "TLJFingersMainForm", "TFingersSetupDialog", "TFingersStatus", "TFingersErrorForm", "TFingersSkinSelectForm", "TFingersFunctionListForm", "TFingersJogFunctionListForm", "TFingersPageFunctionListForm", "TFingersSlotFunctionListForm", "TFingersUDFunctionListForm", "TLightCorderDialog", "TSaveLightCorderFileDialog", "TDebugForm", "TStaticsDebugForm", "TMsgDebugForm", "TMemoryViewForm", "THelpViewer" };
+    "TAddFixForm2", "TApplyDefaultDMXForm", "TApplyMultiForm", "TAutoAddressForm2", "TCleanUpForm", "TCloneForm", "TCopyFromForm", "TConfigWarnForm", "TFixtureExportWarningDialog", "TFileExistsForm", "TFindProfileForm", "TFixtureInfoForm", "TFixtureNotesForm", "TFixtureSpecialForm", "THiddenFixtureForm", "TInternalIntensityPatchForm", "TScanner1DefsForm", "TColorScrolDefForm", "TRGBPackDefForm", "TPaletteValueTypeForm", "TProfileNameOldStyleForm", "TProfileImportModifiedFilesForm", "TBitMapPickerForm2", "TGetBitmapForm", "TRGBPaletteForm", "TCueStackForm", "TModalSelectCueForm", "TDeleteSceneForm", "TInsertScenesForm", "TSetSequenceForm", "TSeqUsedForm", "TSelectBGCueForm", "TSaveStaticForm", "TStaticsControlForm", "TStaticSlotNameForm", "TStaticsReplaceForm", "TNameSlotsForm", "TSelectCuelist2ModalForm", "TSortTimeCodeForm", "TTimeCodeOffsetForm", "TMovementOptionsForm", "TBackupForm", "TRestoreLibProgressForm", "TCopyingFilesForm", "TRenameFileForm", "TProgressForm", "TPrintWaitForm", "TRestoreDataForm", "TCreateDataForm", "TCompressRestoreDataForm", "TRestoreProgressForm", "TNewPasswordForm", "TUpdateForm", "TUpdateFileForm", "TUpdateProgramForm", "TUpdateBGCuesForm", "TUpdateCl2Form", "TPatchUpdateForm", "TRebuildSetupForm", "TInitForm1", "TAutoArrangeForm", "TGridForm", "TIconStyleForm", "TImageSetupForm", "TLayerManagerForm", "TNextPrevSelectionForm", "TCustomOrderForm", "TSaveSelectionForm", "TAutoLaunchForm", "TShowHotKeyWarningForm", "TShowHardwareWarningForm", "TLaserWarningForm", "TUnblockLasersForm", "TDmxInForm", "TDMXInValueTranslationForm", "TTranslationEditForm", "TValueTableImportErrorForm", "TExportTableForm", "TDa2532Form_3", "TButtonFunctions2532Form", "TColorScheme2532Form", "TDA2532_TabColorsForm", "TDa2532TabHeight", "TEdit2532TextForm", "TName2532PagesForm", "TLJFingersMainForm", "TFingersSetupDialog", "TFingersStatus", "TFingersErrorForm", "TFingersSkinSelectForm", "TFingersFunctionListForm", "TFingersJogFunctionListForm", "TFingersPageFunctionListForm", "TFingersSlotFunctionListForm", "TFingersUDFunctionListForm", "TLightCorderDialog", "TSaveLightCorderFileDialog", "TDebugForm", "TStaticsDebugForm", "TMsgDebugForm", "TMemoryViewForm", "THelpViewer",
+    /* W5 */
+    "TLJSoundApp", "TRS232SettingsForm", "TExternalAppSetupForm", "TLJMediaForm"
+};
 static const char *const lj_win_ids[LJ_WIN_COUNT] = {
     "seq_form", "cue_form", "save_seq", "save_cue", "list_seq", "list_cue", "fixture_config",
     "master_intensity", "hardware_setup", "dmx_monitor", "startup_options", "warnings", "close_prompt", "please_wait",
@@ -84,7 +92,10 @@ static const char *const lj_win_ids[LJ_WIN_COUNT] = {
     /* W3 */
     "cuelist_form", "save_cuelist", "select_cuelist", "cl_set_cue_trig", "log_timecode", "genmacro_editor", "save_genmacro", "select_genmacro", "movemacro_editor", "delete_movemacro", "fan_out", "auto_delay", "cue_macro_control", "gdc_form", "followspot_form", "followspot_list", "seq_fades", "profile_editor", "customize_fixture", "channel_config", "gs2_import", "gs2_export",
     /* W4 */
-    "add_fixtures", "apply_default_dmx", "apply_multi", "auto_address", "cleanup", "clone", "copy_from", "config_warn", "export_warning", "file_exists", "find_profile", "fixture_info", "fixture_notes", "fixture_special", "hidden_fixture", "intensity_patch", "scanner1_defs", "color_scroller_defs", "rgbpack_defs", "palette_value_type", "profile_name_oldstyle", "profile_import_modified", "bitmap_picker", "get_bitmap", "rgb_palette", "cue_stack", "modal_select_cue", "delete_scene", "insert_scenes", "set_sequence", "seq_used", "select_bgcue_old", "save_static", "statics_control", "static_slot_name", "statics_replace", "name_slots", "select_cuelist_modal", "sort_timecode", "timecode_offset", "movement_options", "backup_progress", "restore_lib_progress", "copying_files", "rename_file", "progress", "print_wait", "restore_data", "create_data", "compress_restore", "restore_progress", "new_password", "update", "update_file", "update_program", "update_bgcues", "update_cl2", "patch_update", "rebuild_setup", "init_form", "auto_arrange", "desktop_grid", "icon_style", "desktop_image", "desktop_tabs", "nextprev_selection", "custom_order", "save_selection", "auto_launch", "hotkey_warning", "hardware_warning", "laser_warning", "unblock_lasers", "dmx_in", "dmxin_translation", "translation_edit", "value_table_error", "export_table", "da2532", "da2532_functions", "da2532_colors", "da2532_tab_colors", "da2532_tab_height", "da2532_text", "da2532_page_names", "fingers", "fingers_setup", "fingers_status", "fingers_error", "fingers_skin", "fingers_functions", "fingers_jog_functions", "fingers_page_functions", "fingers_slot_functions", "fingers_ud_functions", "lightcorder", "save_lightcorder", "debug", "statics_debug", "msg_debug", "memory_view", "help" };
+    "add_fixtures", "apply_default_dmx", "apply_multi", "auto_address", "cleanup", "clone", "copy_from", "config_warn", "export_warning", "file_exists", "find_profile", "fixture_info", "fixture_notes", "fixture_special", "hidden_fixture", "intensity_patch", "scanner1_defs", "color_scroller_defs", "rgbpack_defs", "palette_value_type", "profile_name_oldstyle", "profile_import_modified", "bitmap_picker", "get_bitmap", "rgb_palette", "cue_stack", "modal_select_cue", "delete_scene", "insert_scenes", "set_sequence", "seq_used", "select_bgcue_old", "save_static", "statics_control", "static_slot_name", "statics_replace", "name_slots", "select_cuelist_modal", "sort_timecode", "timecode_offset", "movement_options", "backup_progress", "restore_lib_progress", "copying_files", "rename_file", "progress", "print_wait", "restore_data", "create_data", "compress_restore", "restore_progress", "new_password", "update", "update_file", "update_program", "update_bgcues", "update_cl2", "patch_update", "rebuild_setup", "init_form", "auto_arrange", "desktop_grid", "icon_style", "desktop_image", "desktop_tabs", "nextprev_selection", "custom_order", "save_selection", "auto_launch", "hotkey_warning", "hardware_warning", "laser_warning", "unblock_lasers", "dmx_in", "dmxin_translation", "translation_edit", "value_table_error", "export_table", "da2532", "da2532_functions", "da2532_colors", "da2532_tab_colors", "da2532_tab_height", "da2532_text", "da2532_page_names", "fingers", "fingers_setup", "fingers_status", "fingers_error", "fingers_skin", "fingers_functions", "fingers_jog_functions", "fingers_page_functions", "fingers_slot_functions", "fingers_ud_functions", "lightcorder", "save_lightcorder", "debug", "statics_debug", "msg_debug", "memory_view", "help",
+    /* W5 */
+    "audio_analyzer", "remote_setup", "extapp_setup", "media_player"
+};
 
 /* windows-a: the dispatch, one row per window id naming its behaviour file; windows-b/c add their rows by index
  * (a row left empty = that track has not landed: open logs and returns NULL). */
@@ -171,7 +182,8 @@ static const lj_win_ops *lj_win_ops_of(enum lj_win id) { return (int)id >= 0 && 
 
 /* W4 (docs/w4-contracts.md section 3): the window families. An id with no lj_win_table row dispatches by id through its family's four
  * functions, one behaviour file per family; the tracks replace the stub bodies, never these tables. */
-enum { LJ_WFAM_NONE = 0, LJ_WFAM_CONFIG, LJ_WFAM_SHOW, LJ_WFAM_FILES, LJ_WFAM_DESKTOP, LJ_WFAM_DMXIN, LJ_WFAM_DA2532, LJ_WFAM_FINGERS, LJ_WFAM_LIGHTCORDER, LJ_WFAM_DEBUG, LJ_WFAM_HELP, LJ_WFAM_COUNT };
+enum { LJ_WFAM_NONE = 0, LJ_WFAM_CONFIG, LJ_WFAM_SHOW, LJ_WFAM_FILES, LJ_WFAM_DESKTOP, LJ_WFAM_DMXIN, LJ_WFAM_DA2532, LJ_WFAM_FINGERS, LJ_WFAM_LIGHTCORDER, LJ_WFAM_DEBUG, LJ_WFAM_HELP,
+       LJ_WFAM_AUDIO, LJ_WFAM_REMOTE, LJ_WFAM_EXTAPP, LJ_WFAM_MEDIA /* W5 */, LJ_WFAM_COUNT };
 typedef struct { lj_window *(*open)(enum lj_win); void (*close)(enum lj_win); lj_window *(*get)(enum lj_win); void (*refresh)(enum lj_win); } lj_win_fam_ops;
 static const lj_win_fam_ops lj_win_fams[LJ_WFAM_COUNT] = {
     [LJ_WFAM_CONFIG] = { lj_config_dlg_open, lj_config_dlg_close, lj_config_dlg_get, lj_config_dlg_refresh },
@@ -184,6 +196,10 @@ static const lj_win_fam_ops lj_win_fams[LJ_WFAM_COUNT] = {
     [LJ_WFAM_LIGHTCORDER] = { lj_lightcorder_open, lj_lightcorder_close, lj_lightcorder_get, lj_lightcorder_refresh },
     [LJ_WFAM_DEBUG] = { lj_debug_form_open, lj_debug_form_close, lj_debug_form_get, lj_debug_form_refresh },
     [LJ_WFAM_HELP] = { lj_help_viewer_open, lj_help_viewer_close, lj_help_viewer_get, lj_help_viewer_refresh },
+    [LJ_WFAM_AUDIO] = { lj_audio_form_open, lj_audio_form_close, lj_audio_form_get, lj_audio_form_refresh },
+    [LJ_WFAM_REMOTE] = { lj_remote_form_open, lj_remote_form_close, lj_remote_form_get, lj_remote_form_refresh },
+    [LJ_WFAM_EXTAPP] = { lj_extapp_form_open, lj_extapp_form_close, lj_extapp_form_get, lj_extapp_form_refresh },
+    [LJ_WFAM_MEDIA] = { lj_media_form_open, lj_media_form_close, lj_media_form_get, lj_media_form_refresh },
 };
 static const unsigned char lj_win_fam_of[LJ_WIN_COUNT] = {
     [LJ_WIN_ADD_FIXTURES] = LJ_WFAM_CONFIG,
@@ -288,6 +304,7 @@ static const unsigned char lj_win_fam_of[LJ_WIN_COUNT] = {
     [LJ_WIN_MSG_DEBUG] = LJ_WFAM_DEBUG,
     [LJ_WIN_MEMORY_VIEW] = LJ_WFAM_DEBUG,
     [LJ_WIN_HELP] = LJ_WFAM_HELP,
+    [LJ_WIN_AUDIO_ANALYZER] = LJ_WFAM_AUDIO, [LJ_WIN_REMOTE_SETUP] = LJ_WFAM_REMOTE, [LJ_WIN_EXTAPP_SETUP] = LJ_WFAM_EXTAPP, [LJ_WIN_MEDIA_PLAYER] = LJ_WFAM_MEDIA,   /* W5 */
     [LJ_WIN_PLEASE_WAIT] = LJ_WFAM_FILES,   /* existing id, the files track gives it a row (the startup status window lives in app/lj_startup.c) or deletes it with a fidelity row (W4-WIN) */
 };
 static const lj_win_fam_ops *lj_win_fam(enum lj_win id) { return (int)id >= 0 && id < LJ_WIN_COUNT && lj_win_fam_of[id] ? &lj_win_fams[lj_win_fam_of[id]] : NULL; }
@@ -321,7 +338,8 @@ void lj_win_set_host(const lj_win_host *host) { lj_win_the_host = host; lj_seq_f
     lj_loop_options_bind_fns(); lj_cue_time_bind_fns(); lj_cue_pages_bind_fns(); /* W2 windows-a */
     lj_htp_groups_bind_fns(); lj_fixture_groups_bind_fns(); lj_position_presets_bind_fns(); lj_user_palettes_bind_fns(); /* W2 windows-c */
     lj_cuelist_form_bind_fns(); lj_genmacro_editor_bind_fns(); lj_movemacro_editor_bind_fns(); lj_gdc_form_bind_fns(); lj_profile_editor_form_bind_fns(); lj_gs2_dialogs_bind_fns(); /* W3 */
-    lj_config_dlg_bind_fns(); lj_show_dlg_bind_fns(); lj_file_dlg_bind_fns(); lj_desktop_dlg_bind_fns(); lj_dmx_in_bind_fns(); lj_da2532_bind_fns(); lj_fingers_bind_fns(); lj_lightcorder_bind_fns(); lj_debug_form_bind_fns(); lj_help_viewer_bind_fns(); /* W4 families */ }
+    lj_config_dlg_bind_fns(); lj_show_dlg_bind_fns(); lj_file_dlg_bind_fns(); lj_desktop_dlg_bind_fns(); lj_dmx_in_bind_fns(); lj_da2532_bind_fns(); lj_fingers_bind_fns(); lj_lightcorder_bind_fns(); lj_debug_form_bind_fns(); lj_help_viewer_bind_fns(); /* W4 families */
+    lj_audio_form_bind_fns(); lj_remote_form_bind_fns(); lj_extapp_form_bind_fns(); lj_media_form_bind_fns(); /* W5 families */ }
 
 static int lj_caption(char *dst, size_t cap, const char *prefix, uint32_t number, const char *name, const char *suffix)
 {

@@ -271,3 +271,21 @@ Nine scenarios, 130 expects: `cuelist_run` (cuelist-core, 33), `genmacro_sine_am
 `movemacro_fade_freeze` (ME-115: a Freeze shifts the macro fade's t0, 4). The rule ids sit in each file's `# NOTE`
 lines. `macro_ctl` takes 0..999 for both values (`LJ_MOVEMACRO_PCT_MAX`, LORD_ENGINE-10).
 
+
+## W5 lines (contracts seat, 2026-10-23; parsed in `lj_replay.c`, acted on by the engine as committed)
+
+The engine side of DMX-in and audio trig is in the contract commit (docs/w5-contracts.md seams 2 and 4), so these lines
+act today. The dmxin and audio tracks append their scenarios (S1 per mode, the loss rule, Audio-Trigs / Trig on BG cues)
+to `tests/engine/replay/w5/`, outside the `replay_all` / `replay_dump` glob, so the determinism dump stays
+`5b13f419...` until the integrator re-records it once (W5-X-REPLAY).
+
+| Form | Command |
+|---|---|
+| `at k dmx_in <link 1..4> <ch>=<v> ...` | `LJ_CMD_DMX_IN` with `a` = the input link and `dmx_in` = a harness buffer holding the listed slots (1..512 = 0..255), every unlisted slot 0: the UI thread's merged and translated input frame (io/lj_dmxin.h). The engine copies it into `post.dmx_in[]` at the drain |
+| `at k dmx_in <link> clear` | `LJ_CMD_DMX_IN` with `dmx_in` NULL: zeros (the `LJ_DMXIN_LOSS_ZERO` rule) |
+| `at k overwrite_enable 0\|1` | `LJ_CMD_OVERWRITE_ENABLE`: the S1 gate (the DMX-in function Overwrite Enable, 05 s3.2) |
+| `at k audio_trig` | `LJ_CMD_TRIG a = LJ_RUN_ALL, b = LJ_TRIG_AUDIO_EVENT`: one analyzer trig (or Emulate Audio Trig) to every cue-slot and BG runner in audio trig mode, counted by `audio_trigs_per_trig` (the `atpt=` key of a `slot` line) |
+
+The S1 source is the build line `gpatch l:a src=in sl=<link> sc=<ch> mode=abs|lotp|htp|gt0|lt255` (W2 grammar); the
+scenario `tests/engine/replay/w5/dmxin_audio_contract.lj4r` (CTest `replay_w5_contract`, 10 expects) walks Absolute and
+HTP with the gate off and on, the clear rule, two audio trigs per scene and a manual slot that ignores them.

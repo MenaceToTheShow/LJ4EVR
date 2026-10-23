@@ -173,3 +173,18 @@ closes it, and quits. Run it in a scratch library (`lj4evr U:<name> --script tes
 up `%APPDATA%\LJ4EVR` first: the run saves `forms.ini` and `Main.Ini`), then
 `python -I tools/caption_diff.py --dump caption_dump.tsv -v`. The captions track extends the script as W4 windows land
 (it is regenerated from `lj_win_ids`, minus the ids that need a selection).
+
+## W5 verbs (contracts seat 2026-10-23; parsed in `src/app/lj_uiscript.c`, bodies are the W5 tracks' modules)
+
+Synthetic input through the same entry points the wire uses, so a script exercises the parser, not a shortcut. Each
+verb fails with `pending: <track>` until its track lands the module (docs/w5-contracts.md).
+
+| Line | Effect |
+|---|---|
+| `sacn_in <universe> <hex...>` | builds an E1.31 data packet with `lj_sacn_pack_data` (priority 100, the script's own CID, never ours: the receiver ignores our CID) for universe 1..63999, slots from the hex words concatenated from slot 1 (`sacn_in 10 FF80 00` = 255, 128, 0, the rest 0), and hands it to `lj_dmxin_rx(LJ_DMXIN_SACN, ...)`; fails when the receiver discards it (DMX-in off, another universe). The next idle pass's `lj_dmxin_poll` merges it and posts `LJ_CMD_DMX_IN` (dmxin track) |
+| `artnet_in <port-address> <hex...>` | the same with an ArtDmx from `lj_artnet_pack_dmx` (Port-Address 1..32767) into `lj_dmxin_rx(LJ_DMXIN_ARTNET, ...)` (artnet + dmxin tracks) |
+| `audio_inject <level> [blocks]` | feeds `blocks` (default 1, at most 1000) analysis blocks of that level 0..32767 to `lj_audio_detect` on `ctx->audio_state`, 1 ms apart; each trig runs `LJ_ACT_AUDIO_TRIG`, the analyzer's own path (`LJ_CMD_TRIG LJ_RUN_ALL / LJ_TRIG_AUDIO_EVENT`) (audio track) |
+| `remote <byte> ...` | up to six decimal bytes 0..255 through `lj_remote_inject`, the same feed and exec as a TCP or serial connection (`remote 129 1 2` = load cue 130, 05 s10.1) (remote track) |
+
+The DMX-in window's monitor fields, the Analyzer window and the remote settings are checked with the W1 `assert_text` /
+`assert_enabled` verbs once their tracks give the windows bodies; `assert_frame` reads the engine's out[] after S1.

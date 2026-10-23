@@ -3,6 +3,7 @@
  * release-then-free post checks the engine took the new pointer first (ME-102, lj_app_post_locked). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen / localtime under /W4 /WX on MSVC (as gfx/lj_bmp.c) */
 #include "app/lj_app_w3.h"
+#include "app/lj_app_io.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -154,10 +155,11 @@ static int h_timecode(void *ud, int src, uint32_t *ms)
     uint32_t day;
     if (src == LJ_TC_MIDI) return lj_mtc_time(&lj_w3.mtc, lj_clock_us(), ms);
     if (src == LJ_TC_PC_CLOCK) return h_clock(ud, ms, &day);
-    return -1;   /* PC elapsed is the runner's own; CD / DA / MP have none in LJ4EVR (design 8.5) */
+    if (src == LJ_TC_MP) return lj_app_io_mp_time(ms);               /* W5: the MediaPlayer clip clock (docs/w5-contracts.md seam 7) */
+    return -1;   /* PC elapsed is the runner's own; CD / DA have none in LJ4EVR (design 8.5) */
 }
 
-static const lj_cl_host lj_w3_host = { NULL, h_load_cue, h_post, h_load_bg, h_flash, h_link, h_fn, h_exec, h_clear_cue, h_timecode, h_clock };
+static const lj_cl_host lj_w3_host = { NULL, h_load_cue, h_post, h_load_bg, h_flash, h_link, h_fn, h_exec, h_clear_cue, h_timecode, h_clock, lj_app_io_cl_media };
 
 /* ---- the lj_app.h W3 block ---- */
 

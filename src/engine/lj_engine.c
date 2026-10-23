@@ -350,6 +350,21 @@ static void lj_engine_smoke(lj_engine *e, uint64_t now, uint8_t merged[LJ_CHANS]
     }
 }
 
+/* W5: one audio trig (LJ_TRIG_AUDIO_EVENT) to every cue-slot and BG runner in audio trig mode; "Audio-Trigs / Trig" counts [05 s9.1]. */
+static void lj_engine_audio_trig(lj_engine *e, uint64_t t)
+{
+    int k;
+    for (k = 0; k < LJ_RUN_STATIC0; k++) {
+        lj_runner *r = &e->run[k];
+        uint32_t link;
+        if (k == LJ_RUN_FLASH || k == LJ_RUN_CURRENT || r->trig != LJ_TRIG_AUDIO) continue;
+        if (!r->audio_left || r->audio_left > r->audio_per_trig) r->audio_left = r->audio_per_trig;
+        if (--r->audio_left) continue;
+        link = lj_runner_trig(r, 0xFF, 0, t, e->tick_us, e->frame.merged, k < LJ_CUE_SLOTS ? e->cue_pct : 100, &e->rng, e->cue_edit);
+        if (link) e->st.pending_link_cue = link;
+    }
+}
+
 static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
 {
     uint64_t t = c->at_us && c->at_us <= now ? c->at_us : now;   /* UI timestamp (chase taps at 1 ms, E9); never later than this tick */
@@ -391,6 +406,7 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     }
     case LJ_CMD_TRIG: {
         int lo = 0, n = LJ_CUE_SLOTS;
+        if (c->b == LJ_TRIG_AUDIO_EVENT) { if (c->a == LJ_RUN_ALL) lj_engine_audio_trig(e, t); break; }   /* W5 audio */
         if (c->a != LJ_RUN_ALL) { if (c->a >= LJ_RUN_STATIC0) break; lo = (int)c->a; n = 1; }   /* LORD_ENGINE-7 */
         if (c->a == LJ_RUN_ALL || c->a < LJ_CUE_SLOTS) lj_engine_tap(e, t, lo, n, 0);   /* F10: the cue's trigs only (the Sequence window's Trig is no chase tap, ME-93); period = the last two (E9: 1 ms) */
         for (k = lo; k < lo + n; k++) {
@@ -443,7 +459,13 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
     case LJ_CMD_MACRO_CTL: e->macro_amp_pct = (uint16_t)(c->a > LJ_MOVEMACRO_PCT_MAX ? LJ_MOVEMACRO_PCT_MAX : c->a); e->macro_speed_pct = (uint16_t)(c->b > LJ_MOVEMACRO_PCT_MAX ? LJ_MOVEMACRO_PCT_MAX : c->b); break;   /* W3: 1-999 % */
     case LJ_CMD_MACRO_FADE: lj_engine_mm_ctl(e, c, t); break;   /* W3 movement: the Cue macro control buttons [03 s5.11] */
     case LJ_CMD_DISABLE_FADE: e->run[LJ_RUN_CURRENT].disable_fade = (c->b != 0); break;   /* F15 */
-    case LJ_CMD_SACN_CFG: e->sacn_cfg = c->sacn; break;       /* ME-23: collected by the engine thread after the tick */
+    case LJ_CMD_SACN_CFG: e->sacn_cfg = c->sacn; break;
+    case LJ_CMD_DMX_IN:                                        /* W5: the UI's merged + translated input frame into the S1 source */
+        if (c->a < 1 || c->a > LJ_LINKS) break;
+        if (c->dmx_in) memcpy(&e->post.dmx_in[(c->a - 1) * LJ_LINK_CH], c->dmx_in, LJ_LINK_CH);
+        else memset(&e->post.dmx_in[(c->a - 1) * LJ_LINK_CH], 0, LJ_LINK_CH);
+        break;
+    case LJ_CMD_OVERWRITE_ENABLE: e->post.overwrite_enable = (uint8_t)(c->b != 0); break;   /* W5: S1 gate */       /* ME-23: collected by the engine thread after the tick */
     /* ---- W2 kinds ---- */
     case LJ_CMD_BG_ON:
         for (k = 0; k < LJ_BG_SLOTS; k++) if (c->a == LJ_RUN_ALL || c->a == (uint32_t)(LJ_RUN_BG0 + k)) e->run[LJ_RUN_BG0 + k].enabled = (c->b != 0);

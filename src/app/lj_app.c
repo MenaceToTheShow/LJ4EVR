@@ -9,6 +9,9 @@
 #include "app/lj_app_seam.h"
 #include "app/lj_app_w3.h"
 #include "app/lj_app_w4.h"
+#include "app/lj_app_io.h"
+#include "platform/sdl/lj_sdl_audio.h"
+#include "platform/sdl/lj_sdl_media.h"
 #include "app/lj_prefs.h"
 #include "app/lj_startup.h"
 #include "app/lj_sysmem.h"
@@ -252,6 +255,7 @@ static void lj_app_idle(void *ud)
     now = lj_clock_us();
     lj_app_cuelist_step(now);                                          /* W3: the cue list runs here, once per 10 ms wake, never in the engine (design 2.3 rule 4) */
     lj_app_w4_idle(now);                                               /* W4: the LightCorder recorder samples frames here (UI thread, ME-2) */
+    lj_app_io_idle(now);                                               /* W5: DMX-in, audio, remote, External Application, MediaPlayer (app/lj_app_io.c) */
     lj_app_seam_idle(now);
     if (now - lj_a.last_refresh >= 100000u) { lj_a.last_refresh = now; lj_app_refresh(); }   /* the 100 ms cadence [11 E24] */
     if (lj_a.run_ms > 0 && (now - lj_a.t0) / 1000u >= (uint64_t)lj_a.run_ms) lj_app_quit();
@@ -485,6 +489,9 @@ int lj_app_main(int argc, char **argv)
     lj_app_seam_start();
     lj_app_w3_start();                                               /* W3: cue-list runner, editor record, reloads, the W3 actions (lj_app_w3.c) */
     lj_app_w4_start();                                               /* W4: the actions that open W4 windows (lj_app_w4.c) */
+    { lj_app_io_platform io; io.audio_list = lj_sdl_audio_list; io.audio_open = lj_sdl_audio_open; io.audio_close = lj_sdl_audio_close; io.media = lj_sdl_media_host();
+      lj_app_io_set_platform(&io); }
+    lj_app_io_start();                                               /* W5: the W5 records, cfg loads, opens only what Hardware.Ini enables (W5-X-OFF) */
     lj_desktop_dlg_set_host(&lj_app_dd_host);                        /* W4 dlg-desktop: file dialog + BMP decoder (the saved wallpaper decodes here) */
     lj_ctl_set_host(&lj_app_host);                                   /* control windows reach the screen the way windows/ does */
     { static const enum lj_desktop_action acts[] = { LJ_ACT_CLOSE, LJ_ACT_FIXTURE_CONFIG, LJ_ACT_HARDWARE_SETUP, LJ_ACT_STARTUP_OPTIONS, LJ_ACT_SAVE_SEQUENCE, LJ_ACT_SAVE_CUE, LJ_ACT_CTL_OPEN_ONLY, LJ_ACT_RESTART };
@@ -507,6 +514,7 @@ int lj_app_main(int argc, char **argv)
 
 out:
     lj_app_seam_stop();                                            /* ME-23: the MIDI port closes before the engine thread stops */
+    lj_app_io_stop();                                              /* W5-X-THREAD: every W5 listener and device closes before the engine thread stops */
     lj_platform_engine_stop();                                     /* ME-23: join the engine thread, then the sender closes (3 x Stream_Terminated per universe) */
     lj_sacn_close();                                               /* no-op when the thread's last act already closed it; the UI thread is the only thread now */
     lj_win_close_all();

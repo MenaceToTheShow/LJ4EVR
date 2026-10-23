@@ -452,3 +452,28 @@ if(Python3_FOUND)
   add_test(NAME fidelity_check COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/fidelity_check.py" --repo "${CMAKE_SOURCE_DIR}")
   add_test(NAME fidelity_check_selftest COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/fidelity_check.py" --selftest)
 endif()
+
+# ---- W5 contracts (docs/w5-contracts.md seam 11), append-only ----
+# Serial: io/ is globbed, so the backend of the other OS is compiled out (the MIDI pattern); tools/test_layering.py OS_ALLOW
+# names both files. The app's W5 seam is SDL-free and in the tests (lj_app_w3.c's cue-list host points at it).
+if(WIN32)
+  set_source_files_properties("${CMAKE_SOURCE_DIR}/src/io/lj_serial_posix.c" PROPERTIES HEADER_FILE_ONLY TRUE)
+else()
+  set_source_files_properties("${CMAKE_SOURCE_DIR}/src/io/lj_serial_win.c" PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+target_sources(lj4evr_tests PRIVATE "${CMAKE_SOURCE_DIR}/src/app/lj_app_io.c")
+foreach(sub test_engine_w5 test_socket test_uiscript_w5)
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+# the W5 replay lines (docs/replay-grammar.md "W5 lines") on a scenario outside the replay_all / replay_dump glob (W5-X-REPLAY)
+add_test(NAME replay_w5_contract COMMAND lj4evr_tests replay "${CMAKE_SOURCE_DIR}/tests/engine/replay/w5/dmxin_audio_contract.lj4r")
+# Expected-pending rows (the W2 profiles_ids precedent): each proves its synthetic seed parses, then fuzzes the parser
+# (W5-X-HOSTILE). DISABLED until the named track lands the parser; that track deletes its name from the property line in
+# the same commit. dmxin: fuzz_sacn_rx fuzz_vtr; artnet: fuzz_artnet; remote: fuzz_remote; ljb: fuzz_ljb.
+foreach(sub fuzz_sacn_rx fuzz_vtr fuzz_artnet fuzz_remote fuzz_ljb)
+  add_test(NAME ${sub} COMMAND lj4evr_tests ${sub})
+endforeach()
+set_tests_properties(fuzz_sacn_rx fuzz_vtr PROPERTIES DISABLED TRUE)   # dmxin track
+set_tests_properties(fuzz_artnet PROPERTIES DISABLED TRUE)             # artnet track
+set_tests_properties(fuzz_remote PROPERTIES DISABLED TRUE)             # remote track
+set_tests_properties(fuzz_ljb PROPERTIES DISABLED TRUE)                # ljb track

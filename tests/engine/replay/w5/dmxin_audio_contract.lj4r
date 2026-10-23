@@ -1,0 +1,52 @@
+LJ4 replay 1
+# dmxin_audio_contract (docs/w5-contracts.md seams 2 and 4; contracts seat 2026-10-23): the W5 replay lines against the
+# engine the contract commit leaves. 1:1 takes DMX-in 1:5 Absolute and 1:2 takes DMX-in 1:6 HTP (Global Patch, 02 s7.1);
+# S1 is gated by Overwrite Enable (05 s3.2). Cue 1 slot 1 runs a 3-scene sequence on 1:3 in audio trig mode with 2
+# Audio-Trigs / Trig (05 s9.1); slot 2 is manual and ignores audio trigs.
+# NOTE this file sits outside the replay_all / replay_dump glob (tests/engine/replay/w5/), so the determinism dump is
+#      unchanged (W5-X-REPLAY); the dmxin and audio tracks append their scenarios here and add them to the glob row.
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+patch 3 profile=19 link=1 addr=3
+profile 3 class1=intensity use_gm=1
+patch 4 profile=19 link=1 addr=4
+profile 4 class1=intensity use_gm=1
+gpatch 1:1 src=in sl=1 sc=5 mode=abs
+gpatch 1:2 src=in sl=1 sc=6 mode=htp
+seq 1 name="base"
+scene st=60000 ft=0 ch 1:1=77:S 1:2=77:S
+seq 2 name="audio"
+scene st=60000 ft=0 ch 1:3=10:S
+scene st=60000 ft=0 ch 1:3=20:S
+scene st=60000 ft=0 ch 1:3=30:S
+seq 3 name="manual"
+scene st=60000 ft=0 ch 1:4=40:S
+scene st=60000 ft=0 ch 1:4=50:S
+cue 1
+slot 1 seq=2 trig=audio atpt=2
+slot 2 seq=3 trig=manual
+slot 3 seq=1
+at 0 load_cue 1
+expect 0 1:1=77 1:2=77 1:3=10 1:4=40
+at 1 dmx_in 1 5=200 6=30
+expect 1 1:1=77 1:2=77                 # Overwrite Enable off: the cue values stand
+at 2 overwrite_enable 1
+expect 2 1:1=200 1:2=77                # Absolute takes the input; HTP keeps 77 > 30
+at 3 dmx_in 1 5=10 6=250
+expect 3 1:1=10 1:2=250
+at 4 dmx_in 1 clear
+expect 4 1:1=0 1:2=77                  # the loss rule's zeros: Absolute follows, HTP falls back
+at 5 overwrite_enable 0
+expect 5 1:1=77 1:2=77
+at 6 audio_trig
+expect 6 1:3=10 1:4=40                 # first of two audio trigs: no advance
+at 7 audio_trig
+expect 7 1:3=20 1:4=40                 # second: one scene; the manual slot never moves
+at 8 audio_trig
+at 9 audio_trig
+expect 9 1:3=30
+at 10 trig slot2
+expect 10 1:3=30 1:4=50

@@ -17,6 +17,7 @@
 #include "platform/sdl/lj_sdl.h"
 #include "core/lj_clock.h"
 #include "core/lj_lock.h"
+#include "io/lj_artnet.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
 #include "engine/lj_engine.h"
@@ -562,11 +563,15 @@ static int SDLCALL lj_sdl_engine_main(void *ud)
         lj_lock(); lj_engine_tick(lj_sdl.engine, now); newcfg = lj_engine_take_sacn_cfg(lj_sdl.engine); offline = lj_engine_is_offline(lj_sdl.engine);
         if (newcfg) memcpy(&sacn, newcfg, sizeof sacn);                     /* ME-69: copied under the lock (Hardware Setup Apply rewrites the record under it) */
         lj_unlock();
-        if (newcfg) have_sacn = lj_sacn_open(&sacn) == 0;                   /* LJ_CMD_SACN_CFG: close-old then open-new, outside the lock (ME-23) */
+        if (newcfg) { have_sacn = lj_sacn_open(&sacn) == 0; lj_artnet_open(&sacn); }   /* LJ_CMD_SACN_CFG: close-old then open-new, outside the lock (ME-23); W5: Art-Net from the same record */
         if (have_sacn) {                                                    /* design 3.1: set per link unless offline (S9), then one pump */
             frame = lj_engine_frame(lj_sdl.engine);
-            if (!offline) for (link = 0; link < LJ_LINKS; link++) lj_sacn_set(sacn.universe_of_link[link], frame->out[link]);
+            if (!offline) for (link = 0; link < LJ_LINKS; link++) {         /* W5 seam 1: the one frame tap, per-link protocol */
+                if (sacn.proto[link] == LJ_OUT_ARTNET) lj_artnet_set(link, frame->out[link]);
+                else lj_sacn_set(sacn.universe_of_link[link], frame->out[link]);
+            }
             lj_sacn_pump(now);
+            lj_artnet_pump(now);                                            /* W5: ArtPoll, received packets (Art-Net input to lj_dmxin_post), ArtDmx; no-op while closed */
             lj_sacn_stats_get(&st);
             lj_lock(); lj_engine_set_sacn_stats(lj_sdl.engine, st.pps, st.last_err); lj_unlock();
         }
@@ -574,6 +579,7 @@ static int SDLCALL lj_sdl_engine_main(void *ud)
         if (now > next + lj_sdl.tick_us) { lj_lock(); lj_engine_note_overrun(lj_sdl.engine); lj_unlock(); lj_log_overrun(now - next); next = now + lj_sdl.tick_us; }   /* ME-144: the Debug window's Overruns */
     }
     lj_sacn_close();                                                        /* 3 x Stream_Terminated per universe on the owning thread; the app's lj_sacn_close after the join is then a no-op */
+    lj_artnet_close();                                                      /* W5: the Art-Net socket belongs to this thread too */
     return 0;
 }
 

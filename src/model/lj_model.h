@@ -21,6 +21,7 @@ enum { LJ_BG_FILES = 99, LJ_SCENES_MAX = 999, LJ_PRESETS = 99, LJ_USER_GROUPS = 
        LJ_HOTKEY_SETUPS = 8, LJ_STATIC_PAGES_MAX = 64,
        LJ_TIME_MAX_MS = 60000, LJ_SCENE_TIME_DEFAULT_MS = 1000, LJ_FADE_TIME_DEFAULT_MS = 50,
        LJ_NAME_CAP = 31, LJ_NUMBER_MAX = 99999999 /* 8-digit file names [F28] */ };
+enum { LJ_EXT_CMD_CAP = 33 /* 32 ASCII characters + NUL [05 s10.2] */, LJ_SCENE_EXT = 4 /* External Application fixtures carrying a string per scene, PROPOSAL rig W5-EXT-4 */ };   /* W5 extapp (appended) */
 #define LJ_STATICS2_SLOTS_PER_PAGE 20   /* 14 sB.8 item 2 PROPOSAL (one definition, ME-101) */
 #define LJ_STATICS2_SLOTS_MAX 64        /* ME-30 cap: slots stored per page and the global-index stride; n per page visible, LJ_STATICS2_SLOTS_PER_PAGE (20) default, PROPOSAL rig 14 sB.8 item 2 */
 
@@ -48,6 +49,7 @@ typedef struct {
     uint32_t scene_ms, fade_ms;      /* defaults 1000 / 50 [03 s3.1] */
     uint8_t  preset[LJ_FIXTURES];    /* 0 = none, 1..99 position preset reference [04 s4.3] */
     lj_movemacro macro[LJ_FIXTURES];
+    struct { uint8_t fixture /* 1..LJ_FIXTURES, 0 = unused */; char cmd[LJ_EXT_CMD_CAP]; } ext[LJ_SCENE_EXT];   /* W5 extapp (appended): the External Application/Device command string of this scene per profile-90 fixture [05 s10.2]; the `ext` word of the scene record (docs/w5-contracts.md seam 6) */
 } lj_scene;                          /* 5.9 KB; a 999-scene sequence is 5.9 MB, loaded on demand */
 
 typedef struct { uint32_t number; char name[31], type[31]; uint16_t n; lj_scene *scenes; uint8_t modified;

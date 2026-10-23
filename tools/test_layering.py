@@ -48,7 +48,8 @@ SDL_FREE = {"core", "model", "engine", "fixlib", "io", "gfx", "ui", "desktop", "
 
 OS_HEADERS = {"windows.h", "unistd.h", "pthread.h", "winsock2.h", "ws2tcpip.h", "iphlpapi.h", "mmsystem.h",
               "ifaddrs.h", "net/if.h", "netinet/in.h", "arpa/inet.h", "sys/socket.h", "CoreMIDI/CoreMIDI.h",
-              "direct.h", "io.h", "dirent.h"}   # ME-113 / ME-44: the CRT directory headers too
+              "direct.h", "io.h", "dirent.h",   # ME-113 / ME-44: the CRT directory headers too
+              "termios.h", "fcntl.h", "sys/select.h"}   # W5 contracts: the serial and socket seams
 OS_ALLOW = {   # relative to src/, forward slashes
     "core/lj_clock.c": {"windows.h", "time.h"},
     "core/lj_lock.c": {"windows.h", "pthread.h"},
@@ -60,6 +61,10 @@ OS_ALLOW = {   # relative to src/, forward slashes
     "io/lj_midi_coremidi.c": {"CoreMIDI/CoreMIDI.h"},
     "app/lj_sysmem.c": {"windows.h", "unistd.h", "sys/sysctl.h"},   # W2 app: the memory gauge free-memory query (ME-87)
     "core/lj_fsinfo.c": {"sys/types.h", "sys/stat.h", "direct.h"},   # W3 movement: file mtime (LORD_FIDELITY-12) and lj_fs_mkdir (_mkdir)
+    # W5 contracts (docs/w5-contracts.md, W5-X-OS): the one new socket file, and one serial backend per OS
+    "io/lj_socket.c": {"winsock2.h", "ws2tcpip.h", "sys/socket.h", "sys/select.h", "netinet/in.h", "arpa/inet.h", "unistd.h", "fcntl.h"},   # Art-Net, sACN input, remote TCP, External Application TCP
+    "io/lj_serial_win.c": {"windows.h"},                     # CreateFile / SetCommState / COMMTIMEOUTS (remote, External Application serial)
+    "io/lj_serial_posix.c": {"termios.h", "fcntl.h", "unistd.h"},   # open O_NONBLOCK / termios raw (macOS, Linux pty in CI)
 }
 NAME_EXEMPT = {"app/main.c"}
 # ME-44: the group headers blessed in docs/conventions.md and design 2.0. A ui/widgets/lj_w_<x>.c without its own
@@ -73,6 +78,8 @@ PAIR_EXEMPT = {   # .c files with no same-stem header, and why
     "io/lj_midi_winmm.c": "a backend of io/lj_midi.h",
     "io/lj_midi_coremidi.c": "a backend of io/lj_midi.h",
     "io/lj_midi_null.c": "a backend of io/lj_midi.h",
+    "io/lj_serial_win.c": "a backend of io/lj_serial.h (W5)",
+    "io/lj_serial_posix.c": "a backend of io/lj_serial.h (W5)",
 }
 ID = re.compile(r"[A-Za-z_]\w*")
 ID_OK = re.compile(r"^(lj_|LJ_)")

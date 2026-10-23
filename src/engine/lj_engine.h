@@ -33,7 +33,10 @@
 
 typedef struct lj_engine lj_engine;
 
-typedef struct { uint8_t out[LJ_LINKS][LJ_LINK_CH]; uint8_t merged[LJ_CHANS]; uint8_t layer_of[LJ_CHANS]; uint64_t tick_no; } lj_frame;
+typedef struct { uint8_t out[LJ_LINKS][LJ_LINK_CH]; uint8_t merged[LJ_CHANS]; uint8_t layer_of[LJ_CHANS]; uint64_t tick_no;
+                 /* W5 extapp (appended, docs/w5-contracts.md seam 6): the External Application strings of this tick, one per profile-90
+                  * fixture that has one in a running scene (the topmost runner wins, as LTP); read outside engine/ (io/lj_extapp.h) */
+                 uint8_t ext_fixture[LJ_SCENE_EXT]; char ext[LJ_SCENE_EXT][LJ_EXT_CMD_CAP]; } lj_frame;
 
 /* ---- runner ids: a, b of GO/STOP/TRIG/ENABLE/TIME name one of these ---- */
 enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RUN_SLOT0 + 0..11 */
@@ -43,6 +46,7 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
        LJ_RUN_STATIC0 = LJ_RUN_BG0 + LJ_BG_SLOTS,      /* active static slots, LJ_STATIC_RUNNERS of them */
        LJ_RUN_COUNT = LJ_RUN_STATIC0 + LJ_STATIC_RUNNERS,
        LJ_RUN_ALL = 0xFFFF };                          /* a = every cue slot (All Sequences Stop/Go, Trig All) */
+#define LJ_TRIG_AUDIO_EVENT 0xFEu                      /* TRIG b: one audio trig to the runners in LJ_TRIG_AUDIO mode (W5) */
 #define LJ_STATIC_REPIN 0xFEu                          /* STATIC_ACTIVATE c: re-pin a held LINK slot's sequence only (ME-88) */
 
 /* ---- commands (design 3.2 step 1) ----
@@ -96,6 +100,14 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
  * GM_SHAPES            -                           -                          -            gm_shapes = the pinned shape table (model/lj_genmacro.h): a user's Macros.Mac / UserMacros.Mac override (ME-34); NULL = the regenerated built-ins (engine/lj_shapes_gen.h)
  * MACRO_FADE           enum lj_mm_ctl              fade ms (FADE_OUT / FADE_IN; the cue macro control's time list)   -   -   the Cue macro control's movement-macro amplitude moves [03 s5.11]: Fade out / Fade in over b ms, Macros Off / On (instant), Freeze / Run (speed 0 / restore);
  *                      MACRO_CTL keeps setting the two scales (W3: a, b 0..999 % with the 1-999 % preference; still floored and clamped to 127 per macro, LJ_MOVEMACRO_AMP_MAX)
+ *
+ * ---- W5 kinds (design 10 W5, docs/w5-contracts.md seam 2; appended, never reordered) ----
+ * DMX_IN               input link 1..LJ_LINKS        -                          -            dmx_in = LJ_LINK_CH bytes the UI thread owns (io/lj_dmxin.h frame after merge and .vtr
+ *                      translation), copied into post.dmx_in[] at the drain under lj_lock (the S1 source of lj_post_s1_patch_src); NULL = zeros (the loss rule)
+ * OVERWRITE_ENABLE     -                           0/1                        -            -        S1 gate: the DMX-in function "Overwrite Enable" (> 127), 1 when unassigned [05 s3.2]
+ * TRIG b = LJ_TRIG_AUDIO_EVENT: one Audio Analyzer trig (or Emulate Audio Trig) to every cue-slot and BG runner whose trig mode is
+ *                      LJ_TRIG_AUDIO; each counts audio_left down from audio_per_trig ("Audio-Trigs / Trig") and trigs in its programmed
+ *                      direction when it reaches 0 [05 s9.1]; a must be LJ_RUN_ALL, no chase tap
  * Not engine commands (design 2.3 / 3.4; they write the CURRENT SCENE under lj_lock and post CURRENT_SEQ like every fixture control): Generic DMX
  * Control (model/lj_gdc.h), Sequence Fades (model/lj_seqfades.h), Follow spot recall (model/lj_followspot.h), Fan Out / Auto Delay (model/lj_movemacro.h),
  * the Movement Macro window (it edits lj_scene.macro[]). Bezier shapes reach the engine as show->bez (read per tick, swapped whole under lj_lock). */
@@ -111,6 +123,8 @@ enum lj_cmd_kind {
     LJ_CMD_LOOP_OPTS, LJ_CMD_HTP_GROUPS, LJ_CMD_GLOBAL_PATCH, LJ_CMD_DEFAULT_OUT, LJ_CMD_SNAPSHOT_REQ, LJ_CMD_PREFS,
     /* W3 (appended) */
     LJ_CMD_GENMACRO_ON, LJ_CMD_GENMACRO_RESTART, LJ_CMD_GM_SHAPES, LJ_CMD_MACRO_FADE,
+    /* W5 (appended) */
+    LJ_CMD_DMX_IN, LJ_CMD_OVERWRITE_ENABLE,
     LJ_CMD_COUNT,
     LJ_CMD_CUE_TIME = LJ_CMD_TIME        /* the 13 faders are the W1 TIME command (design 10 W2 "cue time control") */
 };
@@ -142,6 +156,8 @@ typedef struct {
     lj_frame *snapshot;                                                    /* SNAPSHOT_REQ: filled by the engine, read by the UI after snapshot_tick == its tick_no */
     /* W3 (appended) */
     const lj_gm_shapes *gm_shapes;                                         /* GM_SHAPES: UI-owned, pinned until the next GM_SHAPES (ME-34) */
+    /* W5 (appended) */
+    const uint8_t *dmx_in;                                                 /* DMX_IN: LJ_LINK_CH bytes, UI-owned; read only at the drain (the poster holds lj_lock) */
 } lj_cmd;
 
 /* ---- runner state (design 3.2) ---- */
@@ -224,7 +240,7 @@ typedef struct {
     uint8_t  gm, sub[LJ_SUBMASTERS];
     uint8_t  blackout, freeze, offline, solo; int solo_fixture;
     uint8_t  ovr_on[LJ_CHANS], ovr_val[LJ_CHANS]; /* S8 overwrites */
-    uint8_t  dmx_in[LJ_CHANS]; uint8_t overwrite_enable;   /* S1 DMX-in source (W later: always 0 / enabled) */
+    uint8_t  dmx_in[LJ_CHANS]; uint8_t overwrite_enable;   /* S1 DMX-in source by address code (input link 1 = 0..511), set by LJ_CMD_DMX_IN; gate set by LJ_CMD_OVERWRITE_ENABLE (W5) */
     uint8_t  htp_level[LJ_HTP_GROUPS + 1]; uint8_t htp_masters;   /* S5 g_k (1-based) and "Enable HTP group master intensity control" [11 P8] */
     uint8_t  frozen_s0[LJ_CHANS];                 /* S9: the S0 input held while frozen */
     const lj_patch_ch *patch;                     /* W2: the S1/S5/S6 table (LJ_CHANS entries): show->patch at bind, swapped by LJ_CMD_GLOBAL_PATCH / LJ_CMD_HTP_GROUPS */

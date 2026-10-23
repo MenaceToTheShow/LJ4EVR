@@ -32,6 +32,11 @@
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 #include "io/lj_midi.h"
+#include "io/lj_artnet.h"
+#include "io/lj_audio.h"
+#include "io/lj_dmxin.h"
+#include "io/lj_remote.h"
+#include "io/lj_sacn.h"
 #include "model/lj_cuelist.h"
 #include "model/lj_show.h"
 #include "windows/lj_cuelist_form.h"
@@ -44,7 +49,8 @@ enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLC
                   /* W2 (appended) */ LJ_US_MIDI, LJ_US_HOTKEY, LJ_US_ASSERT_LED, LJ_US_ASSERT_FILE_LINE, LJ_US_SLEEP_UNTIL_TICK, LJ_US_MOVE,
                   /* W3 (appended; assert_pos keeps its W1 row: a fixture number as the first word is the W3 form) */
                   LJ_US_CL_LOAD, LJ_US_CL_GOTO, LJ_US_CL_EXECUTE, LJ_US_CL_ASSERT_LINE, LJ_US_GS2_IMPORT, LJ_US_ASSERT_PROMPT, LJ_US_MM_SET,
-                  /* W4 (appended) */ LJ_US_DUMP_CAPTIONS, LJ_US_VERBS };
+                  /* W4 (appended) */ LJ_US_DUMP_CAPTIONS,
+                  /* W5 (appended) */ LJ_US_SACN_IN, LJ_US_ARTNET_IN, LJ_US_AUDIO_INJECT, LJ_US_REMOTE, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
     { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
@@ -54,7 +60,9 @@ static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ
     /* W3 (appended; docs/ui-script.md "W3 verbs") */
     { "cl_load", 1, 1 }, { "cl_goto", 1, 1 }, { "cl_execute", 0, 0 }, { "cl_assert_line", 2, 2 }, { "gs2_import", 1, 1 }, { "assert_prompt", 1, 1 }, { "mm_set", 4, 4 },
     /* W4 (appended; docs/ui-script.md "W4 verbs") */
-    { "dump_captions", 1, 1 } };   /* assert_view gains W2 field names inside its W1 row */
+    { "dump_captions", 1, 1 },
+    /* W5 (appended; docs/ui-script.md "W5 verbs") */
+    { "sacn_in", 2, 6 }, { "artnet_in", 2, 6 }, { "audio_inject", 1, 2 }, { "remote", 1, 6 } };   /* assert_view gains W2 field names inside its W1 row */
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -162,6 +170,18 @@ static int lj_us_vfield(const char *name, size_t len)
 }
 static int lj_us_u64(const char *s, unsigned long long *out) { char *end; if (!s || !*s || *s == '-') return -1; *out = strtoull(s, &end, 10); return *end ? -1 : 0; }
 static int lj_us_hex(const char *s, int *out) { char *end; long v; if (!s || !*s) return -1; v = strtol(s, &end, 16); if (*end || v < 0 || v > 255) return -1; *out = (int)v; return 0; }
+/* W5: a word of hex byte pairs ("FF0080") into out (NULL = count only); the byte count, -1 when malformed or past cap */
+static int lj_us_hexrun(const char *s, uint8_t *out, int cap)
+{
+    int n = 0, hi, lo;
+    for (; s && s[0]; s += 2, n++) {
+        hi = s[0] >= '0' && s[0] <= '9' ? s[0] - '0' : (s[0] | 32) >= 'a' && (s[0] | 32) <= 'f' ? (s[0] | 32) - 'a' + 10 : -1;
+        lo = !s[1] ? -1 : s[1] >= '0' && s[1] <= '9' ? s[1] - '0' : (s[1] | 32) >= 'a' && (s[1] | 32) <= 'f' ? (s[1] | 32) - 'a' + 10 : -1;
+        if (hi < 0 || lo < 0) return -1;
+        if (out) { if (n >= cap) return -1; out[n] = (uint8_t)(hi * 16 + lo); }
+    }
+    return n;
+}
 static int lj_us_led(const char *name) { int i; for (i = 0; i < LJ_LED_COUNT; i++) if (strcmp(lj_us_leds[i], name) == 0) return i; return -1; }
 /* assert_view arguments as (field index, value) pairs: name=value words, or one bare "<field> <value>" pair; -1 = malformed */
 static int lj_us_vpairs(const lj_us_stmt *st, int *field, unsigned long long *val)
@@ -253,6 +273,17 @@ static const char *lj_us_check(const lj_us_stmt *st)
     case LJ_US_MM_SET:
         if (!lj_us_in(st->arg[0], 1, LJ_FIXTURES)) return "mm_set fixture must be 1..100";
         for (a = 1; a < 4; a++) if (!lj_us_in(st->arg[a], 0, 255)) return "mm_set shape, amp and speed must be 0..255";
+        break;
+    case LJ_US_SACN_IN: case LJ_US_ARTNET_IN:                  /* W5 */
+        if (lj_us_int(st->arg[0], &v) || v < 1 || v > (st->verb == LJ_US_SACN_IN ? 63999 : 32767)) return "expected a universe (sACN 1..63999) / Port-Address (Art-Net 1..32767)";
+        for (a = 1; a < st->nargs; a++) if (lj_us_hexrun(st->arg[a], NULL, 0) < 0) return "expected words of hex byte pairs (FF0080)";
+        break;
+    case LJ_US_AUDIO_INJECT:
+        if (lj_us_int(st->arg[0], &v) || v < 0 || v > 32767) return "audio_inject level must be 0..32767";
+        if (st->nargs == 2 && (lj_us_int(st->arg[1], &v) || v < 1 || v > 1000)) return "audio_inject blocks must be 1..1000";
+        break;
+    case LJ_US_REMOTE:
+        for (a = 0; a < st->nargs; a++) if (!lj_us_in(st->arg[a], 0, 255)) return "remote takes decimal bytes 0..255";
         break;
     default: break;
     }
@@ -891,6 +922,44 @@ static int lj_us_dump_captions(const char *path)
 
 /* ---- step ------------------------------------------------------------------------- */
 
+/* ---- W5 verbs (docs/ui-script.md "W5 verbs"): synthetic input through the same entry points as the wire ---- */
+static int lj_us_exec_w5(const lj_us_stmt *st)
+{
+    static const uint8_t cid[16] = { 0x5C, 0x21, 0x9E, 0x10, 0x4A, 0x77, 0x4B, 0x3D, 0x80, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 };   /* the script's own source, never ours (our CID is ignored by the receiver) */
+    static uint8_t slots[LJ_LINK_CH], pkt[LJ_SACN_DATA_LEN];
+    lj_ctx *c = lj_ctx_get();
+    int i, n = 0, k, v, blocks = 1, len;
+    uint8_t bytes[LJ_US_ARGS];
+    memset(slots, 0, sizeof slots);
+    switch (st->verb) {
+    case LJ_US_SACN_IN: case LJ_US_ARTNET_IN:
+        lj_us_int(st->arg[0], &v);
+        for (i = 1; i < st->nargs; i++) { k = lj_us_hexrun(st->arg[i], slots + n, LJ_LINK_CH - n); if (k < 0) { lj_us_failf(lj_us.line, "%s", "more than 512 slots"); return -1; } n += k; }
+        if (st->verb == LJ_US_SACN_IN) {
+            lj_sacn_cfg cfg;
+            lj_sacn_cfg_default(&cfg, "script");
+            memcpy(cfg.cid, cid, sizeof cid);
+            len = lj_sacn_pack_data(pkt, &cfg, (uint16_t)v, (uint8_t)lj_us.line, 0, slots) == 0 ? LJ_SACN_DATA_LEN : -1;
+        } else len = lj_artnet_pack_dmx(pkt, (uint8_t)(lj_us.line % 255 + 1), 0, (uint16_t)v, slots);
+        if (len < 0) { lj_us_failf(lj_us.line, "%s: cannot build the packet (pending: artnet track)", st->verb == LJ_US_SACN_IN ? "sacn_in" : "artnet_in"); return -1; }
+        if (lj_dmxin_rx(st->verb == LJ_US_SACN_IN ? LJ_DMXIN_SACN : LJ_DMXIN_ARTNET, pkt, (size_t)len, 0x7F000002u, lj_clock_us()) != 0) { lj_us_failf(lj_us.line, "%s", "packet discarded by the DMX-in receiver (DMX-in off, another universe, or pending: dmxin track)"); return -1; }
+        return 0;   /* the next idle pass's lj_dmxin_poll merges it and posts LJ_CMD_DMX_IN */
+    case LJ_US_AUDIO_INJECT:
+        lj_us_int(st->arg[0], &v);
+        if (st->nargs == 2) lj_us_int(st->arg[1], &blocks);
+        if (!c->audio || !c->audio_state) { lj_us_failf(lj_us.line, "%s", "audio_inject: no analyzer (app/lj_app_io.c not started)"); return -1; }
+        for (i = 0; i < blocks; i++)   /* one analysis block per level, 1 ms apart; a trig runs what an analyzer trig runs */
+            if (lj_audio_detect(c->audio_state, c->audio, (uint16_t)v, lj_clock_us() + (uint64_t)i * 1000u)) lj_desktop_run_action(LJ_ACT_AUDIO_TRIG, 0);
+        return 0;
+    case LJ_US_REMOTE:
+        for (i = 0; i < st->nargs; i++) { lj_us_int(st->arg[i], &v); bytes[i] = (uint8_t)v; }
+        if (lj_remote_inject(bytes, (size_t)st->nargs, lj_clock_us()) < 0) { lj_us_failf(lj_us.line, "%s", "remote: not executed (pending: remote track)"); return -1; }
+        return 0;
+    default:
+        return -1;
+    }
+}
+
 static int lj_us_exec(lj_us_stmt *st)
 {
     lj_window *win;
@@ -985,6 +1054,8 @@ static int lj_us_exec(lj_us_stmt *st)
         return lj_us_exec_w3(st);
     case LJ_US_DUMP_CAPTIONS:
         return lj_us_dump_captions(st->arg[0]);
+    case LJ_US_SACN_IN: case LJ_US_ARTNET_IN: case LJ_US_AUDIO_INJECT: case LJ_US_REMOTE:
+        return lj_us_exec_w5(st);
     default:
         return -1;
     }

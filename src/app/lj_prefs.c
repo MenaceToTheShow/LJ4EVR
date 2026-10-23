@@ -4,6 +4,7 @@
 #include <string.h>
 #include "core/lj_log.h"
 #include "engine/lj_engine_rules.h"
+#include "io/lj_artnet.h"
 #include "io/lj_net.h"
 #include "ui/lj_formsini.h"
 
@@ -25,6 +26,7 @@ int lj_prefs_sacn(lj_ini *hardware_ini, const char *path, lj_sacn_cfg *cfg)
         lj_sacn_cfg_save(hardware_ini, cfg);
         if (lj_ini_save(hardware_ini, path) != 0) lj_log("prefs: cannot save %s", path);
     }
+    lj_artnet_cfg_load(hardware_ini, cfg);                        /* W5: [ARTNET] per-link protocol (missing = sACN everywhere) */
     rej = lj_sacn_cfg_validate(cfg);
     if (rej) { lj_log("Hardware.Ini [SACN]: %s", rej); return -1; }
     return 0;

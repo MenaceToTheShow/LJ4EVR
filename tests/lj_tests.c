@@ -113,6 +113,15 @@ int lj_test_config_dialogs(int argc, char **argv);   /* W4 dlg-config */
 int lj_test_da2532_fingers(int argc, char **argv);   /* W4 da2532-fingers */
 int lj_test_file_dialogs(int argc, char **argv);   /* W4 dlg-files */
 int lj_test_restore_data(int argc, char **argv);   /* W4 dlg-files */
+/* W5 contracts (docs/w5-contracts.md seam 11; append-only) */
+int lj_test_engine_w5(int argc, char **argv);
+int lj_test_socket(int argc, char **argv);
+int lj_test_fuzz_sacn_rx(int argc, char **argv);
+int lj_test_fuzz_vtr(int argc, char **argv);
+int lj_test_fuzz_artnet(int argc, char **argv);
+int lj_test_fuzz_remote(int argc, char **argv);
+int lj_test_fuzz_ljb(int argc, char **argv);
+int lj_test_uiscript_w5(int argc, char **argv);
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
     { "font_cells", lj_test_font_cells },
@@ -220,6 +229,15 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_da2532_fingers", lj_test_da2532_fingers },   /* W4 da2532-fingers: the 7 DA2532 + 10 FINGERS windows headless, 2532 latch / flash / pages / Record / file, the midi script row, EXT Learn, Fingers fader CC / bump / GM / F keys / slots / jog, keyboard EXT row, goldens W4DA_* (tests/ui/test_da2532_fingers.c) */
     { "test_file_dialogs", lj_test_file_dialogs },   /* dlg-files: the 19 FILES ids + please_wait open, the Startup Status countdown, Data Restore from the prefs tab and System menu (create, change, restore), password prompts, the F56 update dialogs on synthetic older records, Rename / Delete / Restore folder tree, goldens FD_* (tests/ui/test_file_dialogs.c) */
     { "test_restore_data", lj_test_restore_data },   /* dlg-files: restore-data round trip, password, truncated / CRC / hostile archives refused (LORD_C-5), ME-130 U:<new folder>, F56 header rewrite (tests/model/test_restore_data.c) */
+    /* W5 contracts (append-only) */
+    { "test_engine_w5", lj_test_engine_w5 },   /* contracts: LJ_CMD_DMX_IN / OVERWRITE_ENABLE into S1, LJ_TRIG_AUDIO_EVENT with Audio-Trigs / Trig (tests/engine/test_engine_w5.c) */
+    { "test_socket", lj_test_socket },         /* contracts: io/lj_socket.h on loopback, UDP + TCP, non-blocking (tests/io/test_socket.c) */
+    { "fuzz_sacn_rx", lj_test_fuzz_sacn_rx },  /* dmxin (pending): sACN receiver fuzz row (tests/io/test_dmxin.c) */
+    { "fuzz_vtr", lj_test_fuzz_vtr },          /* dmxin (pending): .vtr parser fuzz row (tests/io/test_dmxin.c) */
+    { "fuzz_artnet", lj_test_fuzz_artnet },    /* artnet (pending): ArtDmx / ArtPoll / ArtPollReply fuzz row (tests/io/test_artnet.c) */
+    { "fuzz_remote", lj_test_fuzz_remote },    /* remote (pending): 3-byte frame parser fuzz row (tests/io/test_remote.c) */
+    { "fuzz_ljb", lj_test_fuzz_ljb },          /* ljb (pending): .LJB container fuzz row (tests/model/test_ljb.c) */
+    { "test_uiscript_w5", lj_test_uiscript_w5 },   /* contracts: app/lj_app_io.c headless (W5-X-OFF, Emulate Audio Trig), the four W5 script verbs' checks (tests/ui/test_uiscript_w5.c) */
 };
 
 int main(int argc, char **argv)

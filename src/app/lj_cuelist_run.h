@@ -39,8 +39,12 @@ typedef struct {
     void (*fn)(void *ud, int fn);                                /* Hotkey Command: lj_fn_run(fn, 1), the "on" half only [RN v2.5 b5] */
     int  (*exec)(void *ud, const char *path, const char *args);  /* Execute File (see the header comment); -1 = refused / failed, the list goes on */
     void (*clear_cue)(void *ud);                                 /* Cuelist Stop and Clear: clears the current cue */
-    int  (*timecode)(void *ud, int src, uint32_t *ms);           /* enum lj_cl_tc_src: 0 with the time, -1 when that source has none (CD / DA / MP always -1 in W3) */
+    int  (*timecode)(void *ud, int src, uint32_t *ms);           /* enum lj_cl_tc_src: 0 with the time, -1 when that source has none (CD / DA always -1; MP = the clip clock from W5, lj_app_io_mp_time) */
     int  (*clock)(void *ud, uint32_t *ms_of_day, uint32_t *day); /* local wall clock for Wait PC-Clock / Wait Date-Change (day = any monotonic day number) */
+    /* W5 (appended, docs/w5-contracts.md seam 7; media track): an MP line (LJ_CL_MP_LOAD_FILE .. LJ_CL_MP_CLOSE) once lj_cl_cmd_inert
+     * no longer lists the MP family; 0 = done, 1 = still waiting (MP Load File / MP Seek up to 5 s, MP Wait), -1 = failed (the list goes on).
+     * NULL = MP lines stay inert. The app: lj_app_io_cl_media. */
+    int  (*media)(void *ud, const lj_cl_line *l, uint64_t now_us);
 } lj_cl_host;
 
 enum lj_cl_mtc_timeout { LJ_CL_MTC_STOP = 0 /* M_MTCStop */, LJ_CL_MTC_RESTART /* M_MTCRestart */, LJ_CL_MTC_IGNORE /* MTC_NoTimeout */ };
