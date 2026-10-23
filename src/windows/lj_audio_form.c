@@ -206,7 +206,7 @@ static void gain_hint(void)
     int pos = lj_audio_gain_pos(cfg()), t = pos * 200 / 127, a = t < 0 ? -t : t;   /* tenths of a dB */
     char v[32];
     snprintf(v, sizeof v, "%s%d%c%ddB", t < 0 ? "-" : "", a / 10, lj_locale_decimal(), a % 10);
-    snprintf(au.gain_hint, sizeof au.gain_hint, "Gain: %s|Global volume setting for the sound input: %s", v, v);   /* the DFM hint's format, "Gain: 0,0dB|..." */
+    if (snprintf(au.gain_hint, sizeof au.gain_hint, "Gain: %s|Global volume setting for the sound input: %s", v, v) < 0) au.gain_hint[0] = 0;   /* the DFM hint's format, "Gain: 0,0dB|..." */
     if (au.gain) au.gain->hint = au.gain_hint;
 }
 static void sync(void)
@@ -481,9 +481,9 @@ void lj_audio_form_refresh(enum lj_win id)
     lj_w_set_caption(au.bpm, au.bpm_text);
     if (au.bpm && au.bpm_desc) au.bpm->desc = bpm ? &au.bpm_lime : au.bpm_desc;   /* PROPOSAL rig W5-AUD-4: red until two trigs give a tempo */
     why = lj_audio_device_status(&ok);
-    if (!cfg()->enabled) snprintf(au.status, sizeof au.status, "Audio-in disabled (Setup > Hardware Setup > Audio)");
+    if (!cfg()->enabled) { if (snprintf(au.status, sizeof au.status, "Audio-in disabled (Setup > Hardware Setup > Audio)") < 0) au.status[0] = 0; }
     else if (!ok && why[0]) lj_str_copy(au.status, sizeof au.status, why);
-    else snprintf(au.status, sizeof au.status, "Input: %s", cfg()->device[0] ? cfg()->device : au_default_dev);   /* "Current soundcard|Input: " (exe) */
+    else { if (snprintf(au.status, sizeof au.status, "Input: %s", cfg()->device[0] ? cfg()->device : au_default_dev) < 0) au.status[0] = 0; }   /* "Current soundcard|Input: " (exe) */
     lj_w_statusbar_set_text(au.sb, 2, au.status);
     if (au.pb1) lj_widget_invalidate(au.pb1);
     if (au.pb2 && cfg()->use_eq) lj_widget_invalidate(au.pb2);

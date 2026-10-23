@@ -43,7 +43,7 @@ static char bad_log[512];
 static void sink(void *ud, const char *line)
 {
     (void)ud;
-    if ((strstr(line, "no binding for handler") || strstr(line, "unknown event") || strstr(line, "matches no DFM handler")) && !bad_log[0]) snprintf(bad_log, sizeof bad_log, "%s", line);
+    if ((strstr(line, "no binding for handler") || strstr(line, "unknown event") || strstr(line, "matches no DFM handler")) && !bad_log[0]) { if (snprintf(bad_log, sizeof bad_log, "%s", line) < 0) bad_log[0] = 0; }
 }
 
 /* ---- the fake platform ---- */
@@ -90,7 +90,7 @@ static void golden(lj_window *w, const char *name)
     const char *upd = getenv("LJ_GOLDEN_UPDATE");
     int rc;
     if (!w) { fails++; printf("FAIL golden %s: no window\n", name); return; }
-    snprintf(path, sizeof path, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name);
+    if (snprintf(path, sizeof path, "%s/tests/ui/golden/%s.bmp", LJ_SOURCE_DIR, name) < 0) path[0] = 0;
     snprintf(tmp, sizeof tmp, TMP "%s.bmp", name);
     lj_window_invalidate_all(w);
     lj_window_paint(w);

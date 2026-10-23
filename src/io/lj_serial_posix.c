@@ -37,7 +37,7 @@ int lj_serial_list(lj_serial_port *out, int max)
             size_t l = strlen(e->d_name), k = strlen(pre[p]);
             if (l <= k || l + 5 >= LJ_SERIAL_NAME || strncmp(e->d_name, pre[p], k) != 0) continue;
             if (p == 3 && (l != 5 || e->d_name[4] < '0' || e->d_name[4] > '3')) continue;
-            snprintf(out[n].name, LJ_SERIAL_NAME, "/dev/%s", e->d_name);
+            if (snprintf(out[n].name, LJ_SERIAL_NAME, "/dev/%s", e->d_name) < 0) out[n].name[0] = 0;
             n++;
         }
         closedir(d);

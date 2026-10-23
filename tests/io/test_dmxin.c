@@ -261,24 +261,24 @@ int lj_test_dmxin_vtr(int argc, char **argv)
     int i;
     di_fails = 0;
     /* parse: header, keys, entries, missing = 1:1 */
-    snprintf(text, sizeof text, "%sPURPOSE=p\r\n0=10\r\n255=0\r\n", hdr);
+    if (snprintf(text, sizeof text, "%sPURPOSE=p\r\n0=10\r\n255=0\r\n", hdr) < 0) text[0] = 0;
     DCHECK(lj_vtr_parse(text, strlen(text), &t, err, sizeof err) == 0 && t.map[0] == 10 && t.map[1] == 1 && t.map[255] == 0 && strcmp(t.name, "Test") == 0 && strcmp(t.purpose, "p") == 0);
     /* the limits */
-    snprintf(text, sizeof text, "%s5=1\r\n5=2\r\n", hdr); di_fails += di_vtr_bad(text, "duplicate n");
-    snprintf(text, sizeof text, "%s256=1\r\n", hdr); di_fails += di_vtr_bad(text, "n 256");
-    snprintf(text, sizeof text, "%s1=256\r\n", hdr); di_fails += di_vtr_bad(text, "m 256");
-    snprintf(text, sizeof text, "%s99999999999999999999=1\r\n", hdr); di_fails += di_vtr_bad(text, "ERANGE");
-    snprintf(text, sizeof text, "%s-1=1\r\n", hdr); di_fails += di_vtr_bad(text, "negative");
-    snprintf(text, sizeof text, "%s1=+1\r\n", hdr); di_fails += di_vtr_bad(text, "sign");
-    snprintf(text, sizeof text, "%s1=1 \r\n", hdr); di_fails += di_vtr_bad(text, "trailing blank");
+    if (snprintf(text, sizeof text, "%s5=1\r\n5=2\r\n", hdr) < 0) text[0] = 0; di_fails += di_vtr_bad(text, "duplicate n");
+    if (snprintf(text, sizeof text, "%s256=1\r\n", hdr) < 0) text[0] = 0; di_fails += di_vtr_bad(text, "n 256");
+    if (snprintf(text, sizeof text, "%s1=256\r\n", hdr) < 0) text[0] = 0; di_fails += di_vtr_bad(text, "m 256");
+    if (snprintf(text, sizeof text, "%s99999999999999999999=1\r\n", hdr) < 0) text[0] = 0; di_fails += di_vtr_bad(text, "ERANGE");
+    if (snprintf(text, sizeof text, "%s-1=1\r\n", hdr) < 0) text[0] = 0; di_fails += di_vtr_bad(text, "negative");
+    if (snprintf(text, sizeof text, "%s1=+1\r\n", hdr) < 0) text[0] = 0; di_fails += di_vtr_bad(text, "sign");
+    if (snprintf(text, sizeof text, "%s1=1 \r\n", hdr) < 0) text[0] = 0; di_fails += di_vtr_bad(text, "trailing blank");
     di_fails += di_vtr_bad("LightJockey value table\r\nID={00000000-0000-4000-8000-000000000001}\r\nTYPE=A\r\nNAME=B\r\n", "header");
     di_fails += di_vtr_bad("// LightJockey DMX value translation file\r\nID=1234\r\nTYPE=A\r\nNAME=B\r\n", "ID not a GUID");
     di_fails += di_vtr_bad("// LightJockey DMX value translation file\r\nID={00000000-0000-4000-8000-000000000001}\r\nNAME=B\r\n", "no TYPE");
     di_fails += di_vtr_bad("", "empty");
     memset(big, 'A', sizeof big); memcpy(big, hdr, sizeof hdr - 1); big[sizeof big - 1] = 0;
     di_fails += di_vtr_bad(big, "file too large");
-    snprintf(text, sizeof text, "%sNAME=", hdr); { size_t l = strlen(text); memset(text + l, 'n', 300); text[l + 300] = 0; } di_fails += di_vtr_bad(text, "line too long");
-    snprintf(text, sizeof text, "%sNAME=", hdr); { size_t l = strlen(text); memset(text + l, 'n', 100); text[l + 100] = 0; } di_fails += di_vtr_bad(text, "NAME longer than 63");
+    if (snprintf(text, sizeof text, "%sNAME=", hdr) < 0) text[0] = 0; { size_t l = strlen(text); memset(text + l, 'n', 300); text[l + 300] = 0; } di_fails += di_vtr_bad(text, "line too long");
+    if (snprintf(text, sizeof text, "%sNAME=", hdr) < 0) text[0] = 0; { size_t l = strlen(text); memset(text + l, 'n', 100); text[l + 100] = 0; } di_fails += di_vtr_bad(text, "NAME longer than 63");
     /* file names (LJ2's spelling) */
     lj_vtr_identity(&u); lj_str_copy(u.type, sizeof u.type, "SYSTEM"); lj_str_copy(u.name, sizeof u.name, "Off/on, disable treshold"); lj_str_copy(u.id, sizeof u.id, "{FC78008E-C9B8-4A92-B204-AF8D693CC6A6}");
     DCHECK(lj_vtr_file_name(name, sizeof name, &u) == 0 && strcmp(name, "SYSTEM_Off_on__disable_treshold_{FC78008E-C9B8-4A92-B204-AF8D693CC6A6}.vtr") == 0);
@@ -290,7 +290,7 @@ int lj_test_dmxin_vtr(int argc, char **argv)
     lj_vtr_linear(&u, 255, 0, 0, 255); DCHECK(u.map[0] == 255 && u.map[255] == 0);
     /* round trip through a file */
     DCHECK(lj_vtr_file_name(name, sizeof name, &u) == 0);
-    snprintf(path, sizeof path, "%s/%s", dir, name);
+    if (snprintf(path, sizeof path, "%s/%s", dir, name) < 0) path[0] = 0;
     DCHECK(lj_vtr_save(path, &u) == 0 && lj_vtr_load(path, &t, err, sizeof err) == 0 && memcmp(t.map, u.map, 256) == 0 && strcmp(t.name, u.name) == 0 && strcmp(t.id, u.id) == 0 && strcmp(t.type, u.type) == 0);
     remove(path);
     /* the SYSTEM tables (regenerated, io/lj_vtr_gen.c) */
@@ -305,14 +305,14 @@ int lj_test_dmxin_vtr(int argc, char **argv)
     m.ch[0].fn = LJ_DIF_HTP_GROUP; m.ch[0].num = 3;
     m.ch[511].fn = LJ_DIF_FLASH_SEQ; m.ch[511].num = 14;
     m.ch[4].has_table = 1; lj_vtr_stock(5, &m.ch[4].table);
-    snprintf(path, sizeof path, "%s/DmxIn_test.dat", dir);
+    if (snprintf(path, sizeof path, "%s/DmxIn_test.dat", dir) < 0) path[0] = 0;
     DCHECK(lj_dmxin_map_save(path, &m) == 0 && lj_dmxin_map_load(path, &m2, err, sizeof err) == 0);
     DCHECK(memcmp(&m, &m2, sizeof m) == 0);
     { const lj_dmxin_frame *f = lj_dmxin_frame_get(); lj_dmxin_reset(); lj_dmxin_map_load(path, &m2, err, sizeof err); lj_dmxin_emulate(5, 128, 0); DCHECK(f->out[4] == m.ch[4].table.map[128]); }
     { FILE *fp = fopen(path, "ab"); if (fp) { fputs("ch=513 htp_group 1\n", fp); fclose(fp); } }
     DCHECK(lj_dmxin_map_load(path, &m2, err, sizeof err) != 0 && m2.ch[0].fn == LJ_DIF_NONE);   /* a bad channel refuses the file, the map stays empty */
     remove(path);
-    snprintf(path, sizeof path, "%s/DmxIn_missing.dat", dir);
+    if (snprintf(path, sizeof path, "%s/DmxIn_missing.dat", dir) < 0) path[0] = 0;
     DCHECK(lj_dmxin_map_load(path, &m2, err, sizeof err) == 0 && m2.ch[0].fn == LJ_DIF_NONE);
     {
         lj_dmxin_assign a; char cap[64];

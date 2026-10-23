@@ -142,7 +142,7 @@ int lj_test_dmx_in(int argc, char **argv)
     {   /* a rerun starts from an empty table folder */
         static char names[64][LJ_DIRENT_CAP];
         int k, n = lj_library_dir_list("lj_test_dmxin_ud/User/ValueTables", ".vtr", names, 64);
-        for (k = 0; k < n; k++) { snprintf(path, sizeof path, "lj_test_dmxin_ud/User/ValueTables/%s", names[k]); remove(path); }
+        for (k = 0; k < n; k++) { if (snprintf(path, sizeof path, "lj_test_dmxin_ud/User/ValueTables/%s", names[k]) < 0) path[0] = 0; remove(path); }
     }
     lj_dmxin_cfg_default(&dcfg); lj_dmxin_map_init(&saved); lj_sacn_cfg_default(&scfg, "test");
     lj_dmxin_reset();
@@ -262,7 +262,7 @@ int lj_test_dmx_in(int argc, char **argv)
     /* a bad file raises TValueTableImportErrorForm from its trigger */
     {
         FILE *fp;
-        snprintf(path, sizeof path, "%sUser/ValueTables/USER_Bad_{00000000-0000-4000-8000-00000000000B}.vtr", ud);
+        if (snprintf(path, sizeof path, "%sUser/ValueTables/USER_Bad_{00000000-0000-4000-8000-00000000000B}.vtr", ud) < 0) path[0] = 0;
         if ((fp = fopen(path, "wb")) != NULL) { fputs("// LightJockey DMX value translation file\r\nID={00000000-0000-4000-8000-00000000000B}\r\nTYPE=USER\r\nNAME=Bad\r\n7=1\r\n7=2\r\n", fp); fclose(fp); }
         lj_win_close(LJ_WIN_DMXIN_TRANSLATION);
         if (di) CHECK(fire(di, "M_ValueTranslations") == 0);

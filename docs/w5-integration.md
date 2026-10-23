@@ -68,5 +68,25 @@ row the tracks returned as text.
     W5-X-RIG                              git diff v1.0.0 -- src/engine/lj_engine_rules.h empty; "PROPOSAL rig" 358 -> 464
     ME-159                                grep self-hosted|pull_request_target|secrets. in workflows, beyond GITHUB_TOKEN = 0
 
-Not run on this PC: gcc and clang (no Linux toolchain here); the linux-gcc-asan / linux-clang jobs are the first gcc /
-clang compile of the W5 files, and `test_serial_pty` runs only there.
+Not run on this PC: gcc (no Linux toolchain here); the linux-gcc-asan job is the first gcc compile of the W5 files, and
+`test_serial_pty` runs only on Linux / macOS.
+
+### CI round 1 (`f57fd58`, `4c22a41`) and the fixes
+
+windows-msvc and generate-check green; linux-gcc-asan, linux-clang and macos-clang red:
+
+- clang `-Wcomment`: `windows/lj_dmx_in.c:9` and `:89` wrote `ValueTables/*.vtr` inside a block comment; now
+  `ValueTables/<name>.vtr`. A scan of every `.c` / `.h` under `src`, `tests` and `tools/fuzz` for `/*` inside a comment:
+  0 left.
+- gcc `-Wformat-truncation`: `model/lj_ljb.c:221`. The return value of that call and of 31 more W5 `snprintf` calls
+  that write a fixed-size array into a smaller buffer is now checked, the repo idiom
+  `if (snprintf(d, ...) < 0) d[0] = 0;` (ljb, serial_posix, audio_form, backup_restore, dmx_in, test_dmxin,
+  test_audio_form, test_dmx_in).
+- `tools/fuzz/fuzz_vtr.c:14` held `'\'` (a backslash lost to a shell heredoc): `'\\'`. It only builds with
+  `LJ_FUZZ=ON` (clang), so no Windows tree saw it.
+
+Local clang check, a stand-in for the two clang jobs: zig cc 0.16.0 (clang) in the session scratchpad, the CI flags
+(`-std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wvla -Werror -O2`), every SDL-free `.c` for `x86_64-linux-gnu`: 339
+files, 0 failures beyond the three that need their platform (`lj_midi_coremidi.c`, `lj_midi_winmm.c`) or a CMake
+define (`test_corpus.c`); `src/io`, `src/model`, `tests/io`, `src/app` and `src/platform/sdl` (SDL3 headers) for
+`aarch64-macos`: 0 failures. MSVC trees and ctest unchanged after the fixes (153 / 151 / 153 passed).

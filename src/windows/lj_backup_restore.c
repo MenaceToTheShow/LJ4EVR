@@ -173,7 +173,7 @@ static void on_ljb_yes(int yes, void *ud)
     (void)ud;
     if (!yes) return;
     if (lj_ljb_import(rs.path, lj_ctx_get()->userdir, NULL, &rb.lib, &rb.rep, err, sizeof err) != 0) { lj_win_message("Warning", err); return; }
-    snprintf(rs.notes, sizeof rs.notes, "Imported into \"%s\": %d converted, %d not converted (" LJ_LJB_REPORT ")\n", rb.lib.name, rb.rep.converted, rb.rep.skipped);   /* PROPOSAL text */
+    if (snprintf(rs.notes, sizeof rs.notes, "Imported into \"%s\": %d converted, %d not converted (" LJ_LJB_REPORT ")\n", rb.lib.name, rb.rep.converted, rb.rep.skipped) < 0) rs.notes[0] = 0;   /* PROPOSAL text */
     for (i = 0; i < rb.rep.nlines; i++) { at = strlen(rs.notes); snprintf(rs.notes + at, sizeof rs.notes - at, "%s\n", rb.rep.lines[i]); }
     show_notes();
     lj_window_set_text(rs.win, "lPath", rb.lib.name);
@@ -183,7 +183,7 @@ static void on_ljb_yes(int yes, void *ud)
 static int ljb_run(void)
 {
     char l1[LJ_LIBNAME_CAP + 48];
-    snprintf(l1, sizeof l1, "Import \"%s\" as a new user library ?", rb.name[0] ? rb.name : "LJB");   /* PROPOSAL rig: LJ2 restores .LJB over a library [06 s4] */
+    if (snprintf(l1, sizeof l1, "Import \"%s\" as a new user library ?", rb.name[0] ? rb.name : "LJB") < 0) l1[0] = 0;   /* PROPOSAL rig: LJ2 restores .LJB over a library [06 s4] */
     lj_win_confirm("Please Confirm..", l1, "(No existing library is changed)", on_ljb_yes, NULL);
     return 0;
 }
@@ -232,7 +232,7 @@ int lj_restore_run(void)
     char l1[LJ_LIBNAME_CAP + 40];
     if (rs.path[0] && rb.on) return ljb_run();
     if (!rs.path[0] || !c->lib) return -1;
-    snprintf(l1, sizeof l1, "Restore Backup files to \"%s\" ?", c->lib->name);   /* PROPOSAL rig: Label7's words; LJ2's restore prompt is not in the exe pool */
+    if (snprintf(l1, sizeof l1, "Restore Backup files to \"%s\" ?", c->lib->name) < 0) l1[0] = 0;   /* PROPOSAL rig: Label7's words; LJ2's restore prompt is not in the exe pool */
     lj_win_confirm("Please Confirm..", l1, "(Files with the same names in the library are replaced)", on_restore_yes, NULL);
     return 0;
 }

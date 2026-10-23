@@ -11,6 +11,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     char err[128], name[256];
     if (lj_vtr_parse((const char *)data, size, &t, err, sizeof err) != 0) return 0;
     if (memchr(t.id, 0, sizeof t.id) == NULL || memchr(t.name, 0, sizeof t.name) == NULL || memchr(t.type, 0, sizeof t.type) == NULL || memchr(t.purpose, 0, sizeof t.purpose) == NULL) abort();
-    if (lj_vtr_file_name(name, sizeof name, &t) == 0 && (strchr(name, '/') || strchr(name, '\') || strchr(name, ':'))) abort();
+    if (lj_vtr_file_name(name, sizeof name, &t) == 0 && (strchr(name, '/') || strchr(name, '\\') || strchr(name, ':'))) abort();
     return 0;
 }

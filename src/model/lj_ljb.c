@@ -218,7 +218,7 @@ static void note(lj_ljb_out *o, const lj_ljb_entry *e, const char *fmt, ...)
     va_end(ap);
     if (o->f) fprintf(o->f, "%s%s: %s\r\n", e ? e->folder : "", e ? e->name : "", why);
     if (o->rep->nlines < (int)(sizeof o->rep->lines / sizeof o->rep->lines[0])) {
-        snprintf(line, sizeof line, "%.40s%.40s: %s", e ? e->folder : "", e ? e->name : "", why);
+        if (snprintf(line, sizeof line, "%.40s%.40s: %s", e ? e->folder : "", e ? e->name : "", why) < 0) line[0] = 0;
         lj_str_copy(o->rep->lines[o->rep->nlines++], sizeof line, line);
     }
 }
@@ -435,7 +435,7 @@ int lj_ljb_import(const char *ljb_path, const char *userdir, const char *name, l
         const char *base = ljb_path, *s, *dot;
         for (s = ljb_path; *s; s++) if (*s == '/' || *s == '\\') base = s + 1;
         dot = strrchr(base, '.');
-        snprintf(try_name, sizeof try_name, "%.*s", (int)(dot ? (size_t)(dot - base) : strlen(base)), base);
+        if (snprintf(try_name, sizeof try_name, "%.*s", (int)(dot ? (size_t)(dot - base) : strlen(base)), base) < 0) try_name[0] = 0;
         lib_name(want, sizeof want, try_name);
     }
     lj_str_copy(try_name, sizeof try_name, want);
@@ -444,7 +444,7 @@ int lj_ljb_import(const char *ljb_path, const char *userdir, const char *name, l
     if (lj_library_create(userdir, try_name, out) != 0) { errs(err, cap, LJ_LJB_ERR_EXISTS); goto done; }
     created = 1;
     for (i = 0; i < b.n; i++) {   /* W5-LJB-2: every name the file carries would fit inside the library (nothing is written under it) */
-        snprintf(rel, sizeof rel, "%s%s", b.e[i].folder, b.e[i].name);
+        if (snprintf(rel, sizeof rel, "%s%s", b.e[i].folder, b.e[i].name) < 0) rel[0] = 0;
         if (lib_file(out, rel, path) != 0) { erri(err, cap, LJ_LJB_ERR_PATH, i); goto done; }
     }
     if (lib_file(out, LJ_LJB_REPORT, path) != 0 || (o.f = fopen(path, "wb")) == NULL) { errs(err, cap, LJ_LJB_ERR_READ); goto done; }
@@ -498,7 +498,7 @@ int lj_ljb_import(const char *ljb_path, const char *userdir, const char *name, l
             if (num >= LJ_FIXTURES || lj_gs2_read(x, xn, &p, NULL, 0) != 0) { why = "not a GS2 record, not converted"; break; }
             lj_gs2_free(&p);
             snprintf(gs2[num], sizeof gs2[num], "LJBSlot%03u.GS2", (unsigned)num + 1);   /* our name, never the file's */
-            snprintf(rel, sizeof rel, "UserFixtureDef\\%s", gs2[num]);
+            if (snprintf(rel, sizeof rel, "UserFixtureDef\\%s", gs2[num]) < 0) rel[0] = 0;
             if (lib_file(out, rel, path) != 0 || (f = fopen(path, "wb")) == NULL) { gs2[num][0] = 0; why = "cannot write"; break; }
             if (fwrite(x, 1, xn, f) != xn) why = "cannot write";
             if (fclose(f) != 0) why = "cannot write";

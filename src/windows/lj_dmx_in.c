@@ -6,7 +6,7 @@
  *                      Options and Preferences menus; the popup assigns the current sequence / cue / cue list.
  *                      Entry points: C-L toolbar DMX In (LJ_ACT_DMX_IN), Global Patch DMX In source (double-click).
  *   dmxin_translation  TDMXInValueTranslationForm: channels with their copied table, the Available tables tree (the SYSTEM
- *                      tables regenerated in io/lj_vtr_gen.c, then <userdata>/User/ValueTables/*.vtr), Assign / Remove /
+ *                      tables regenerated in io/lj_vtr_gen.c, then <userdata>/User/ValueTables/<name>.vtr), Assign / Remove /
  *                      Update translations, Create / Edit table, Options -> Export (PROPOSAL rig W5-DMXIN-6: the DFM's
  *                      M_Options has an OnClick and no children). Ok copies the translations into the Dmx In working copy.
  *   translation_edit   TTranslationEditForm: the table's grid and graph, Set Linear Range (bSet), ID / Type / Name /
@@ -86,7 +86,7 @@ void lj_dmx_in_grey(lj_widget *root, const char *const *keep, int nkeep)
     for (c = root->first; c; c = c->next) lj_dmx_in_grey(c, keep, nkeep);
 }
 
-/* ---- the repository: SYSTEM tables, then User/ValueTables/*.vtr (a file that does not parse raises the error form) ---- */
+/* ---- the repository: SYSTEM tables, then User/ValueTables/<name>.vtr (a file that does not parse raises the error form) ---- */
 static int di_tables_dir(char *dst, size_t cap) { return snprintf(dst, cap, "%sUser/ValueTables", lj_ctx_get()->userdir) < (int)cap ? 0 : -1; }
 
 static void di_load_tables(void)
@@ -123,7 +123,7 @@ static void di_fill_rows(void)
     for (k = 0; k < LJ_DI_CH; k++) {
         const lj_dmxin_assign *a = &di_work.ch[k];
         lj_dmxin_fn_caption(a, fn, sizeof fn);
-        snprintf(di_rows[k], sizeof di_rows[k], "%03d\t%03d\t%s\t%s", k + 1, f->out[k], a->has_table ? a->table.name : "", fn);   /* dmxindialog.gif: "001" "255" "Off/On" "HTP Group 1" */
+        if (snprintf(di_rows[k], sizeof di_rows[k], "%03d\t%03d\t%s\t%s", k + 1, f->out[k], a->has_table ? a->table.name : "", fn) < 0) di_rows[k][0] = 0;   /* dmxindialog.gif: "001" "255" "Off/On" "HTP Group 1" */
         di_items[k] = di_rows[k];
     }
     if ((w = lj_window_find(di_win[0], "LVDmxFunctions")) != NULL) { int keep = lj_w_listview_index(w); lj_w_listview_set_items(w, di_items, LJ_DI_CH); ((lj_w_listview *)w)->index = keep; lj_widget_invalidate(w); }
@@ -231,7 +231,7 @@ static void di_tr_fill(void)
     int k, n = 0, rows = 0;
     if (!win) return;
     for (k = 0; k < LJ_DI_CH; k++) {
-        snprintf(di_tr_rows[k], sizeof di_tr_rows[k], "%d\t%s", k + 1, di_work.ch[k].has_table ? di_work.ch[k].table.name : "");   /* dmxintranslation.gif */
+        if (snprintf(di_tr_rows[k], sizeof di_tr_rows[k], "%d\t%s", k + 1, di_work.ch[k].has_table ? di_work.ch[k].table.name : "") < 0) di_tr_rows[k][0] = 0;   /* dmxintranslation.gif */
         di_tr_items[k] = di_tr_rows[k];
         n += di_work.ch[k].has_table;
     }
@@ -240,7 +240,7 @@ static void di_tr_fill(void)
     lj_window_set_text(win, "lActive", active);
     for (k = 0; k < di_ntables && rows < LJ_DI_TABLES + 15; k++) {   /* a node per TYPE, its tables below */
         if (!type || strcmp(type, di_tables[k].type) != 0) { type = di_tables[k].type; lj_str_copy(di_tree_rows[rows], sizeof di_tree_rows[rows], type); di_tree_table[rows] = -1; di_tree_items[rows] = di_tree_rows[rows]; rows++; }
-        snprintf(di_tree_rows[rows], sizeof di_tree_rows[rows], "\t%s", di_tables[k].name); di_tree_table[rows] = k; di_tree_items[rows] = di_tree_rows[rows]; rows++;
+        if (snprintf(di_tree_rows[rows], sizeof di_tree_rows[rows], "\t%s", di_tables[k].name) < 0) di_tree_rows[rows][0] = 0; di_tree_table[rows] = k; di_tree_items[rows] = di_tree_rows[rows]; rows++;
     }
     if ((w = lj_window_find(win, "tv1")) != NULL) { int keep = ((lj_w_treeview *)w)->index; lj_w_treeview_set_items(w, di_tree_items, rows); for (k = 0; k < rows; k++) if (di_tree_table[k] < 0) lj_w_treeview_expand(w, k, 1); ((lj_w_treeview *)w)->index = keep < rows ? keep : -1; }
 }
@@ -549,7 +549,7 @@ static void fill(int i)
             di_ex.list = lj_w_listbox_create(dl->parent, NULL);   /* the folder list in its place (the lj_backup_restore.c pattern) */
             if (di_ex.list) { di_ex.list->x = dl->x; di_ex.list->y = dl->y; di_ex.list->w = dl->w; di_ex.list->h = dl->h; di_ex.list->on_event = on_ex_pick; di_ex.list->ud = NULL; }
         }
-        if (!di_ex.dir[0]) snprintf(di_ex.dir, sizeof di_ex.dir, "%sUser", lj_ctx_get()->userdir);
+        if (!di_ex.dir[0]) { if (snprintf(di_ex.dir, sizeof di_ex.dir, "%sUser", lj_ctx_get()->userdir) < 0) di_ex.dir[0] = 0; }
         di_ex_fill();
     }
 }
