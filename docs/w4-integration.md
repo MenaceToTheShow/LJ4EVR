@@ -677,3 +677,45 @@ Note 16 itself is not edited (only design.md is in this pass's scope); design 5.
   has its fidelity row.
 - Captures of other windows that show the laser warning behind them (`lightcorder-*`, `save-lightcorder-*`,
   `close-prompt-TLaserWarningForm.png`) still show it without the sign; only the warning's own capture was re-shot.
+
+### CI record (items 9, 18, 23; ME-149 (1))
+
+Commits: `575077a` (the pass), `232fa91` and `283dc06` (ME-157: the install dir read from the uninstall key; the
+account's own environment), `bff756d` / `5021964` (a temporary fuzz A/B diagnostic), `054e9ac` (the fuzz fix below).
+
+    https://github.com/UnbannableGT/LJ4EVR/actions/runs/39909521611 (054e9ac), attempt 2: all six jobs green:
+    generate-check, linux-gcc-asan, linux-clang (with the two 60 s fuzz runs), windows-msvc (with the ME-157 step),
+    macos-clang, determinism.
+
+- Runners: the self-hosted `[self-hosted, lj4evr]` jobs ran on the LAN host's runners (`runs-on` unchanged, Part B
+  moves them). Attempt 1 of this run, and of 39907695969 before it, failed in linux-gcc-asan and linux-clang after
+  their ctest passed (118 of 118 each): `actions/upload-artifact` timed out (`CreateArtifact`, `EAI_AGAIN`) and the
+  fuzz step's `apt-get` could not fetch its index (exit 100), the container network on that host. `gh run rerun
+  --failed` went green both times. The hosted runners of Part B (ME-159) remove this.
+- Item 9 (ME-140): linux-gcc-asan `100% tests passed, 0 tests failed out of 118` with `-fno-sanitize-recover=all` in
+  the CMake sanitizer flags, after ME-132. The fuzz step does not take the flag: in its `CMAKE_C_FLAGS` it cut
+  `fuzz_gs2` to `INITED cov: 126` where the same build without it starts at 680 (A/B in one job, run 39908906076;
+  the first run with the flag ended `DONE cov: 137` / `334` against 708 / 1466 before). It now runs with
+  `UBSAN_OPTIONS=halt_on_error=1`, which makes a UBSan report fatal at run time (`docs/ci.md`, W4 fix pass A r1).
+  Deviation from the verdict's wording, same effect, recorded here.
+- Fuzz (ME-9): `fuzz_gs2` INITED cov 680, DONE cov 708 (483,438 runs); `fuzz_udf` INITED cov 1217, DONE cov 1468,
+  143 corpus entries (6,450 runs).
+- determinism: the three `dump-frames` files equal, sha256 `5b13f419...63114b50`; `replay-frames.bin` linux = windows
+  = macos = `c46fee4ceff60245c9b504a6d7b2028fca0d0ba6008e1f541af7c8279545039d` (ME-128 re-record).
+- Item 23 (ME-157), windows-msvc, the four records:
+
+      ME-157 account: runnervmdaln5\ljstd6572 (S-1-5-21-3776380004-1005456608-3524014338-1003)
+      1. whoami /groups as that account: Everyone, BUILTIN\Users (S-1-5-32-545), INTERACTIVE, Authenticated Users ...,
+         Medium Mandatory Level; OK: no S-1-5-32-544 (Administrators) in the token
+      installer /S as that account: exit code 0
+      profile C:\Users\ljstd6572, the account's %LOCALAPPDATA% = C:\Users\ljstd6572\AppData\Local
+      3. OK: HKU\S-1-5-21-3776380004-1005456608-3524014338-1003\Software\Microsoft\Windows\CurrentVersion\Uninstall\LJ4EVR
+         UninstallString="C:\Users\ljstd6572\AppData\Local\Programs\LJ4EVR\Uninstall.exe"; no LJ4EVR key under HKLM
+      2. OK: C:\Users\ljstd6572\AppData\Local\Programs\LJ4EVR = the account's %LOCALAPPDATA%\Programs\LJ4EVR
+         (help, lj4evr.exe, THIRD_PARTY_NOTICES.txt, Uninstall.exe)
+      4. DisplayVersion=0.3.0, VERSION=0.3.0: OK
+
+  The first attempt (`575077a`) started the installer with the runner's environment block, so NSIS saw an empty
+  `$LOCALAPPDATA` and installed to `\Programs\LJ4EVR`; `-UseNewEnvironment` gives the account its own block, as a
+  real logon does. ME-45 is ticked by this record (the verdict's re-ruling).
+- Item 18 (ME-149): (1) the run above; (2) `docs/ci.md` rule 1 rewritten; (3) is Part B, right after the flip.
