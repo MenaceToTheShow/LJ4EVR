@@ -505,3 +505,11 @@ ProductVersion=1.1.0 FileVersion=1.1.0; install_check on the silent CI install o
 
 ME-188 ticked by this record. Open after the tag: ME-187 (design.md v1.1.0 paragraph, orchestrator) and the section 6
 carries (the reference rig, the Mac hand run, the OemCode).
+
+## ME-187 (orchestrator, post-tag)
+
+design.md (vault) gained the section 1 "What v1.1.0 is not" paragraph and a shipped line under 10 W5. Revision line:
+
+> W5 revision (2026-10-23, ME-187, per `delegations/W5_CODE_MASTER_ELDER_VERDICT.md`, applied by the orchestrator as design owner): added the section 1 "What v1.1.0 is not" paragraph matching the README and a shipped line under 10 W5.
+
+`grep -c "v1.1.0" design.md` = 3.
