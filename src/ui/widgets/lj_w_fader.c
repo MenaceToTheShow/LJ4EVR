@@ -13,7 +13,7 @@ static void paint(lj_widget *w, lj_surface *s)
 {
     lj_w_fader *f = (lj_w_fader *)w;
     const lj_font *font = lj_w_font_of(w);
-    char buf[16];
+    char buf[12];
     int ax, ay, i, th = track_h(w), covered, p1 = f->pressed == 1, p2 = f->pressed == 2, cx;
     uint32_t ink = w->enabled ? LJ_CLR_3DDKSHADOW : LJ_CLR_BTNSHADOW;
     lj_widget_abs(w, &ax, &ay);

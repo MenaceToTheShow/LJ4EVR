@@ -118,7 +118,7 @@ static const lj_binding lj_rgb_bindings[] = {
     { "eEditEnter", lj_handler_noop, NULL }, { "bOkClick", rgb_ok, NULL }, { NULL, NULL, NULL } };
 static void rgb_open(uint32_t rgb, void (*done)(uint32_t rgb))
 {
-    char t[16];
+    char t[8];
     rgb_close();
     if ((rgbf.win = lj_window_create(&lj_form_TQUICKRGBDEFFORM, lj_rgb_bindings)) == NULL) { lj_log("profile editor: cannot create TQuickRGBDefForm"); return; }
     rgbf.done = done;
@@ -247,7 +247,7 @@ static void pe_paint_lists(void)
         r->n = LJ_PAL_ENTRIES;
         for (e = 0; e < LJ_PAL_ENTRIES; e++) {
             const uint8_t *b = pal_entry(p, e);
-            char v[5][16], bmp[32];
+            char v[5][4], bmp[32];
             for (k = 0; k < 5; k++) { if (b[0] && (b[1] >> k & 1)) snprintf(v[k], sizeof v[k], "%d", b[2 + k]); else v[k][0] = 0; }
             sstr_get((uint16_t)(lj_pe_pal[p].pal[pi] + 57 * e + 11), 30, bmp, sizeof bmp);
             if (b[0] && !bmp[0]) snprintf(name, sizeof name, "%02X%02X%02X", b[7], b[8], b[9]); else name[0] = 0;
@@ -704,7 +704,7 @@ static void cf_paint(void)
         const lj_pal_entry *x = &p->palette[pi].e[e], *c = &cf.work[pi].e[e];
         uint32_t rgb = c->used ? c->rgb : (x->bitmap[0] ? LJ_CUSTOM_NO_RGB : x->rgb);
         const char *bmp = c->used ? c->bitmap : x->bitmap;
-        char hex[16];
+        char hex[8];
         if (!x->used) continue;
         if (rgb == LJ_CUSTOM_NO_RGB) hex[0] = 0; else snprintf(hex, sizeof hex, "%06X", (unsigned)(rgb & 0xFFFFFF));
         snprintf(cf.rows[cf.nrows], sizeof cf.rows[0], "%d\t%s\t%s", e, hex, bmp);

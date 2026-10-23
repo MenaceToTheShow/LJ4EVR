@@ -438,7 +438,7 @@ void lj_cuelist_form_refresh(void)
     set_btn("sbAdd", !run, 1); set_btn("sbInsert", !run && sel_line(), 1); set_btn("sbDelete", !run && sel_line(), 1);
     set_btn("sbNew", !run, 1); set_btn("sbLoad", !run, 1); set_btn("sbSave", 1, 1);
     for (i = 0; i < CL_RECENT; i++) {
-        char nm[24];
+        char nm[16];
         lj_widget *b;
         snprintf(nm, sizeof nm, "sbCMD%d", i + 1);
         if ((b = lj_window_find(s.win, nm)) == NULL) continue;
@@ -1050,7 +1050,7 @@ void lj_log_timecode_close(void) { if (lg.win) { lj_win_hide(lg.win); lj_window_
 lj_window *lj_log_timecode_get(void) { return lg.win; }
 void lj_log_timecode_refresh(void)
 {
-    char b[40];
+    char b[32];
     uint64_t e;
     if (!lg.win) return;
     snprintf(b, sizeof b, "%03d Logs Total", lg_count());   /* the DFM caption "000 Logs Total" */

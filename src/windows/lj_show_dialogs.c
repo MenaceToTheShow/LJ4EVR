@@ -304,7 +304,7 @@ static void ns_place(int row)
 static void ns_grid(lj_widget *w, int ev, void *ud) { (void)ud; if (ev == LJ_WEV_SELECT_CELL || ev == LJ_WEV_CLICK) ns_place(((lj_w_grid *)w)->row); }
 static void ns_ok(lj_widget *w, void *ud)
 {
-    char key[24];
+    char key[16];
     int i;
     (void)w; (void)ud;
     ns_commit();
@@ -326,7 +326,7 @@ static void ns_open(void)
         { "FormActivate", lj_handler_noop, NULL }, { "FormClose", close_ev, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL },
         { "FormResize", lj_handler_noop, NULL } /* aligned */, { NULL, NULL, NULL } };
     lj_widget *g;
-    char key[24];
+    char key[16];
     int i;
     if (!mk(NS, &lj_form_TNAMESLOTSFORM, b) || (g = in(NS, "sg1")) == NULL) return;
     for (i = 0; i < LJ_CUE_SLOTS; i++) {

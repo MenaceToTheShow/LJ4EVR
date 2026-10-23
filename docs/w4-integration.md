@@ -198,9 +198,12 @@ Second CI run (`5c4efd7`): windows-msvc and generate-check were green. Three fai
 Nothing in W4 touches `core/lj_lock`, so it is left as is.
 
 Third CI run (`d734b71`): green on windows-msvc, macos-clang, linux-clang and generate-check. linux-gcc-asan failed
-with gcc 14 `format-truncation` at `lj_config_dialogs.c` `rg_save` (`"Entry%d"` into `key[16]`). The mingw builds of
-gcc 14.2 and gcc 16.2 do not reproduce it, because mingw's `snprintf` is an inline wrapper, not the builtin. So every
-`snprintf` with integer conversions in a file changed since v0.3.0 was scanned. The scan computes the worst-case
-length (11 per `%d`, 10 per `%u`, 8 per `%X`, width as given) against the declared buffer, and 41 buffers that could
-not hold it were widened (to the next multiple of 8 above the worst case). No text changes, so no golden moves.
-Four trees 0 warnings, ctest unchanged, and the clang sweep is clean.
+with gcc 14 `format-truncation` in `lj_config_dialogs.c` `rg_save` (`"Entry%d"` into `key[16]`). Both RGBPalette.Ini
+key buffers are now `key[24]`. The mingw builds of gcc 14.2 and 16.2 do not reproduce this class: mingw's `snprintf`
+is an inline wrapper, not the builtin. A blanket widening of 41 integer `snprintf` buffers was tried in `13ee343`, and
+CI showed that it moved gcc's range analysis onto the `%s` concatenations that read those buffers
+(`lj_fixture_config.c:166`, `lj_profile_editor_form.c:254`). It was reverted, so each remaining gcc 14 report is fixed
+where CI names it.
+The local gcc check now matches CI: w64devkit gcc 14.2 with `-fsanitize=address,undefined` and a forced
+`#define snprintf __builtin_snprintf`. It reproduces both of CI's reports on the old files, and the sweep of every
+SDL-free `.c` file is clean.

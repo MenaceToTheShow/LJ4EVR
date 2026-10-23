@@ -161,7 +161,7 @@ static void list_build(void)
         if (f && used(f)) {
             const lj_exe_row *r = row_by_id(f->profile_id);
             int fp = footprint_of(f);
-            char addr[40] = "";
+            char addr[24] = "";
             if (f->link) snprintf(addr, sizeof addr, "%d:%03d-%03d", f->link, f->address, f->address + fp - 1);   /* link:first-last as the JPEG shows */
             snprintf(fc.row_text[i], sizeof fc.row_text[i], "%d\t%s %s\t%s\t\t%s", i + 1, r ? r->manufacturer : "", r ? r->name : (f->kind == LJ_FX_GS2 ? f->gs2_file : "?"), addr, f->user_name);
             nfix++; if (f->address) naddr += fp;
@@ -195,7 +195,7 @@ static void panel_fill(void)
     lj_show *sh = show();
     const lj_fixture *f = (sh && fc.sel >= 0 && fc.sel < LJ_FIXTURES && used(&sh->fixture[fc.sel])) ? &sh->fixture[fc.sel] : NULL;
     static const char *const links[4] = { "sbL1", "sbl2", "sbl3", "sbl4" };
-    char num[16];
+    char num[8];
     int i;
     fc.loading = 1;
     set_visible("pFixtureSettings", f != NULL);
@@ -524,7 +524,7 @@ int lj_fixture_config_export_text(char *out, size_t cap)
     lj_show *sh = show();
     time_t now = time(NULL);
     struct tm *tm = localtime(&now);
-    char date[64] = "", num[12], no[8], type[48], user[24], addr[40], fp[16], full[112];
+    char date[64] = "", num[12], no[8], type[48], user[24], addr[24], fp[16], full[112];
     size_t n = 0;
     int i, k;
     if (!out || !cap) return -1;

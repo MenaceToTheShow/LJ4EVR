@@ -196,13 +196,13 @@ lj_window *lj_master_intensity_open(void)
     panel = lj_window_find(s.win, "Panel1");
     if (!panel) { lj_window_destroy(s.win); s.win = NULL; return NULL; }
     for (i = 1; i <= 19; i++) {                                   /* the DFM's placeholder labels sit under the runtime-built columns */
-        char n[24];
+        char n[12];
         lj_widget *l;
         snprintf(n, sizeof n, "Label%d", i);
         if ((l = lj_window_find(s.win, n)) != NULL && l->parent == panel) l->visible = 0;
     }
     for (i = 0; i < LJ_MI_COLS; i++) {
-        char nm[16];
+        char nm[8];
         const char *name = "Master";
         int x = lj_mi_col_x[i], w = lj_mi_col_w[i];
         s.col[i] = i;

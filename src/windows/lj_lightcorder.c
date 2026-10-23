@@ -56,7 +56,7 @@ uint32_t lj_lightcorder_frames(void) { return lc.rec.frames; }
 int lj_lightcorder_max_time_text(char *dst, size_t cap, int card_mb, int channels, int hz)
 {
     uint32_t s = lj_llf_max_seconds((uint32_t)card_mb << 20, channels, hz);
-    char ss[16];
+    char ss[8];
     int n;
     snprintf(ss, sizeof ss, "%02u", (unsigned)(s % 60));
     if (s >= 3600) n = snprintf(dst, cap, "Max recording time %d:%d:%s (Hour:Min:Sec)", (int)(s / 3600), (int)(s / 60 % 60), ss);

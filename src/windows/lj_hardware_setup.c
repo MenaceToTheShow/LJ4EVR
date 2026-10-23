@@ -55,7 +55,7 @@ static lj_widget *label(lj_widget *parent, lj_ctl_desc *d, const char *name, int
 static lj_widget *build_page(lj_widget *panel)
 {
     static lj_ctl_desc d[32];
-    static char lbl_u[LJ_LINKS][32], lbl_c[LJ_LINKS][32];
+    static char lbl_u[LJ_LINKS][24], lbl_c[LJ_LINKS][24];
     static const char *const nic_label = "Network interface", *const prio_label = "Priority (0..200)", *const name_label = "Source name";
     int i, n = 0, y = 110;
     label(panel, &d[n++], "lNicLabel", 4, y + 4, 140, nic_label);
