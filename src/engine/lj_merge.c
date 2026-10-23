@@ -43,14 +43,20 @@ static void lj_merge_cue(const lj_runner *slots, const lj_post_ctx *ctx, int mod
     }
 }
 
-static void lj_merge_statics(const lj_runner *st, uint8_t merged[LJ_CHANS], uint8_t layer_of[LJ_CHANS])
+int lj_merge_statics_order(const lj_runner *st, int order[LJ_STATIC_RUNNERS])
 {
-    int order[LJ_STATIC_RUNNERS], n = 0, i, j;
+    int n = 0, i, j;
     for (i = 0; i < LJ_STATIC_RUNNERS; i++) {                  /* insertion sort by activation time: LTP, the latest activation wins per channel [03 s8, C5] */
         if (!lj_runner_active(&st[i])) continue;
         for (j = n; j > 0 && st[order[j - 1]].activated_us > st[i].activated_us; j--) order[j] = order[j - 1];
         order[j] = i; n++;
     }
+    return n;
+}
+
+static void lj_merge_statics(const lj_runner *st, uint8_t merged[LJ_CHANS], uint8_t layer_of[LJ_CHANS])
+{
+    int order[LJ_STATIC_RUNNERS], n = lj_merge_statics_order(st, order), i;
     for (i = 0; i < n; i++) lj_merge_runner(&st[order[i]], LJ_L_STATICS, merged, layer_of);
 }
 

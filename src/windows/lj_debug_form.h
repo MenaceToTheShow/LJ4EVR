@@ -23,6 +23,8 @@ const char *lj_debug_form_label(const char *name);           /* TDebugForm label
 int         lj_debug_form_misc_lines(void);                  /* the Misc tab's layer_of[] readout (ME-28): lines "1:001 1111000000000000", 16 channels each */
 const char *lj_debug_form_misc_line(int i);
 uint32_t    lj_debug_form_load_tenths(uint32_t avg_tick_us, uint32_t period_us);   /* engine load in tenths of a percent (integer, no float) */
+void        lj_debug_form_load_sample(uint64_t at_us, uint64_t tick_no, uint64_t tick_us_sum);   /* W4 LORD_ENGINE-9: one refresh's view pair (tick_no, tick_us_sum) into the ring; TDebugForm's refresh calls it */
+uint32_t    lj_debug_form_load_avg_us(uint64_t window_us, uint32_t fallback_us);  /* mean tick time over the ticks between the newest sample and the oldest within window_us of it; fallback_us when no tick passed */
 void        lj_debug_form_set_memory(uint64_t avail_bytes, uint64_t total_bytes);  /* System Memory: the app's lj_sysmem_query figures (integrator: call beside lj_desktop_memory_set); until then the rows read n/a */
 
 #endif /* LJ_WINDOWS_DEBUG_FORM_H */

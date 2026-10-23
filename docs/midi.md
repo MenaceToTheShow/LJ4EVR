@@ -42,7 +42,9 @@ job; it has not run against a device yet (ME-21: Joey's Mac).
 ## The queue rule
 
 `lj_midi_post` ignores system messages (status `0xF0`-`0xFF`: clock, active sensing;
-MTC quarter-frame `0xF1` is W3 and lands here) and drops, counting in
+MTC quarter-frame `0xF1` is W3 and lands here; the Cuelist window's Preferences > MIDI Timecode > Sync Frames, Main.Ini
+`[CUELIST2] SyncFrames` = 0 / 1 / 5 / 10, makes the decoder follow only after that many frames, 4 quarter frames each,
+since the time code started or came back after the time-out, PROPOSAL rig W6-SYNC) and drops, counting in
 `lj_midi_dropped`, a malformed message (status `< 0x80`, a data byte `> 0x7F`) or one
 that finds the 256-entry queue full. `lj_midi_dispatch` applies the same check, so a
 malformed message is never dispatched by either entry.

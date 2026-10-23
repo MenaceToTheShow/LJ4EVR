@@ -235,6 +235,8 @@ typedef struct {
     uint32_t artnet_nodes;               /* ArtPollReply rows in the subscriber table */
     uint8_t  artnet_bound;               /* the UDP 6454 socket is open (0 with Art-Net in use = the port is taken, W5-ART-5) */
     int      artnet_last_err;            /* last bind / sendto error, 0 = none */
+    /* ---- W6 (appended) ---- */
+    uint64_t tick_us_sum;                /* W4 LORD_ENGINE-9: tick_us_last summed over every tick; with tick_no the per-tick sum pair the Debug window's 1 s / 5 s loads difference */
 } lj_engine_status;   /* design 2.3 names this struct lj_engine_view; C puts typedef and function names in one namespace, so the TYPE is lj_engine_status and the FUNCTION keeps the design name */
 
 /* ---- post-processing context (design 3.5): what S1-S9 read, rebuilt at bind and by commands ---- */

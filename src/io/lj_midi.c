@@ -278,6 +278,8 @@ int lj_mtc_feed(lj_mtc *t, uint8_t qf_data, uint64_t now_us)
     static const uint8_t rate_fps[4] = { 24, 25, 29, 30 };
     int n = (qf_data >> 4) & 7, f, s, m, h, fps;
     if (qf_data > 0x7F) return 0;
+    if (now_us - t->last_us > LJ_MTC_TIMEOUT_US) t->qf_run = 0;   /* SyncFrames: the time code (re)starts, count again */
+    if (t->qf_run < 0xFFFFu) t->qf_run++;
     if (n == 0) t->have = 0;                                   /* a set starts at piece 0 */
     t->piece[n] = (uint8_t)(qf_data & 0x0F);
     t->have |= (uint8_t)(1u << n);
@@ -297,6 +299,7 @@ int lj_mtc_feed(lj_mtc *t, uint8_t qf_data, uint64_t now_us)
 int lj_mtc_time(const lj_mtc *t, uint64_t now_us, uint32_t *ms)
 {
     if (!t->running || now_us - t->last_us > LJ_MTC_TIMEOUT_US) return -1;   /* none yet, or time code stopped: the time-out preference acts on -1 */
+    if (t->qf_run < 4u * t->sync_frames) return -1;                         /* SyncFrames: not locked yet */
     *ms = t->ms;
     return 0;
 }

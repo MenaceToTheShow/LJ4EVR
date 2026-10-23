@@ -347,6 +347,14 @@ on loopback; the LJ2 side is the CHM GIF named (reduced unless note 07 s14 says 
 | Restore User Library, an `.LJB` picked (W5-LJB-4) **supersedes** the Restore window part of the W5 rows above | (LJ2 restored `.LJB` over a library, 06 s4) | `lRestore` names the NEW library the import creates and, after the import, Target Library Path shows its folder | ME-181 | `docs/screenshots/w5/ljb-imported-TLibraryRestoreForm.png` (re-shot, scratch userdata) |
 | Audio Analyzer and MediaPlayer, Pass Keypresses to LightJockey | off: a key pressed in the side program stays there; on: LightJockey's hotkeys act | the same, per window: with the flag off a hotkey pressed while the Analyzer or the player has focus is dropped | ME-182 (ME-17: no stub widget) | `test_uiscript_w2` (both windows, flag 0 and 1) |
 
+## Fidelity rows touched by W6 (track engine, 2026-10-23)
+
+Append-only, as the sections above. Each row **supersedes** the row it names.
+
+| Item | LJ2 | LJ4EVR | Why | Evidence |
+|---|---|---|---|---|
+| Debug window, 1 sec / 5 sec loads **supersedes** the LORD_ENGINE-9 (LOW) row above | averages per tick | averages per tick: the engine adds every tick's time to `tick_us_sum` beside `tick_no` (the view's per-tick sum pair), and the window takes the difference of that pair between the newest refresh and the oldest one within 1 s / 5 s, so every tick counts once at any refresh rate; with no tick in between it shows the last tick's time | W4 LORD_ENGINE-9, landed in W6 | `test_debug_form` (equal loads at 10 Hz and 25 Hz refresh); golden `W4DBG_DEBUG` unchanged |
+
 ## What v1.1.0 is not
 
 v1.1.0 (W5) delivers all seven items of the v1.0.0 list above: Art-Net output beside sACN, the Audio Analyzer and

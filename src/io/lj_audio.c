@@ -164,14 +164,17 @@ int lj_audio_analyze(lj_audio_state *s, const lj_audio_cfg *c, const int16_t *pc
     int trigs = 0;
     if (!s || !c || !pcm) return 0;
     if (s->nrem >= LJ_AUDIO_BLOCK) s->nrem = 0;
+    if (!s->clocked) {                                 /* LORD_ENGINE-7: the first sample of this call arrived n samples before now_us */
+        uint64_t back = (uint64_t)n * 1000000u / LJ_AUDIO_RATE;
+        s->t0_us = now_us > back ? now_us - back : 0; s->samples = 0; s->clocked = 1;
+    }
     while (n) {
         size_t take = LJ_AUDIO_BLOCK - s->nrem;
         if (take > n) take = n;
         memcpy(s->rem + s->nrem, pcm, take * sizeof *pcm);
-        s->nrem = (uint16_t)(s->nrem + take); pcm += take; n -= take;
-        if (s->nrem == LJ_AUDIO_BLOCK) {               /* the block ended n samples before now_us */
-            uint64_t back = (uint64_t)n * 1000000u / LJ_AUDIO_RATE;
-            trigs += lj_au_block(s, c, s->rem, now_us > back ? now_us - back : 0);
+        s->nrem = (uint16_t)(s->nrem + take); pcm += take; n -= take; s->samples += take;
+        if (s->nrem == LJ_AUDIO_BLOCK) {               /* the block's time is its last sample's on the sample clock, whatever the poll jitter */
+            trigs += lj_au_block(s, c, s->rem, s->t0_us + s->samples * 1000000u / LJ_AUDIO_RATE);
             s->nrem = 0;
         }
     }

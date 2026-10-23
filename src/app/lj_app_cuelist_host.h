@@ -21,5 +21,9 @@ void     lj_app_cuelist_host_windows_start(void);   /* after lj_app_cuelist_host
                                             * ICON_STYLE, NEXTPREV_SETTINGS, RESTORE_DATA, HELP, SELECT_HELPFILE, WINDOWS_MEMORY, DEBUG_WINDOW,
                                             * FINGERS_SETUP and DMX_IN to their W4 windows */
 void     lj_app_cuelist_host_idle(uint64_t now_us);  /* every UI loop pass after lj_app_cuelist_step: lj_lightcorder_step (the recorder copies frames here) */
+/* W6 LORD_ENGINE-9: the idle pass's middle, in its order: lj_app_io_idle (DMX-in, audio, remote, External Application,
+ * and the MediaPlayer clock), then lj_app_cuelist_step, then lj_app_cuelist_host_idle. The media clock and the inputs
+ * are stepped first, so an MP wait releases in the same pass the clip crosses its point. lj_app.c calls this. */
+void     lj_app_cuelist_pass(uint64_t now_us);
 
 #endif /* LJ_APP_APP_CUELIST_HOST_H */

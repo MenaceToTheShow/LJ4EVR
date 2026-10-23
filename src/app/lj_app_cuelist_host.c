@@ -194,12 +194,21 @@ void lj_app_cuelist_step(uint64_t now_us)
         lj_host.run.autoseek_media = lj_ini_geti(mi, "CUELIST2", "AutoSeekAudio", 0) != 0;  /* W5 media: M_AutoCueAudio */
         t = lj_ini_geti(mi, "CUELIST2", "MTCTimeout", LJ_CL_MTC_STOP);
         lj_host.run.mtc_timeout = (uint8_t)(t >= LJ_CL_MTC_STOP && t <= LJ_CL_MTC_IGNORE ? t : LJ_CL_MTC_STOP);
+        t = lj_ini_geti(mi, "CUELIST2", "SyncFrames", 0);                                   /* W6 INT-s7-SYNCFRAMES: Off / 1 / 5 / 10 (the window's items) */
+        lj_host.mtc.sync_frames = (uint8_t)(t == 1 || t == 5 || t == 10 ? t : 0);
     }
     lj_cl_run_step(&lj_host.run, now_us, &lj_cl_host_app);
     if (lj_host.grave && lj_host.run.cl != lj_host.grave) { lj_cuelist_free(lj_host.grave); lj_host.grave = NULL; }
 }
 
 uint32_t lj_app_cuelist_steps(void) { return lj_host.steps; }
+
+void lj_app_cuelist_pass(uint64_t now_us)
+{
+    lj_app_io_idle(now_us);                                          /* W6 LORD_ENGINE-9: the media clock and the inputs first */
+    lj_app_cuelist_step(now_us);                                     /* W3: the cue list runs here, once per 10 ms wake, never in the engine (design 2.3 rule 4) */
+    lj_app_cuelist_host_idle(now_us);                                /* W4: the LightCorder recorder samples frames here (UI thread, ME-2) */
+}
 
 void lj_app_mtc_feed(uint8_t qf_data) { lj_mtc_feed(&lj_host.mtc, qf_data, lj_clock_us()); }
 
