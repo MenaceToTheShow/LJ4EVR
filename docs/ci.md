@@ -32,7 +32,7 @@ worse than a slow one).
 ## Runner security model (project.md, LORD_C-13, ME-159)
 
 Every job runs on GitHub-hosted runners. The Linux jobs run on `ubuntu-latest`
-inside `ghcr.io/unbannablegt/lj4evr-ci`, pinned by the same digest as before. Up
+inside `ghcr.io/unbannablegt/lj4evr-build`, pinned by the same digest as before. Up
 to v1.0.0 they ran on self-hosted LAN runners labelled `[self-hosted, lj4evr]`
 (`lj4evr-ci2-1..4` on atlas-ci2, Ubuntu 24.04, Docker 29, until 2026-10-22, then
 another LAN host under rootless podman); for the public release they moved to
@@ -66,7 +66,7 @@ Rules the workflows enforce, in this order of defence:
 ninja-build and python3 >= 3.12, the exact versions are printed by the
 workflow's smoke-test step), `git`, `ca-certificates`, root. `docker.yml` builds
 it on `ubuntu-latest`, smoke-tests the tool versions, and pushes
-`ghcr.io/unbannablegt/lj4evr-ci:<short-sha>` and `:latest`, logging in with
+`ghcr.io/unbannablegt/lj4evr-build:<short-sha>` and `:latest`, logging in with
 `GITHUB_TOKEN` (`github.actor`). The package is private because the repo is;
 `ci.yml` pulls it with the same token through `container.credentials`.
 
@@ -76,8 +76,8 @@ denied, open the package on github.com > Package settings > "Manage Actions
 access" and add `UnbannableGT/LJ4EVR` with read.
 
 **Pin by digest after the first push** (ME-20). `docker.yml` prints the digest
-in its step summary, e.g. `ghcr.io/unbannablegt/lj4evr-ci@sha256:abcd...`. In
-`ci.yml` replace every `image: ghcr.io/unbannablegt/lj4evr-ci:latest` with that
+in its step summary, e.g. `ghcr.io/unbannablegt/lj4evr-build@sha256:abcd...`. In
+`ci.yml` replace every `image: ghcr.io/unbannablegt/lj4evr-build:latest` with that
 string (four jobs; `container:` cannot read `env`, hence the repetition). After
 a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
 `ci.yml`. `:latest` is for bootstrap only.

@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE: ghcr.io/unbannablegt/lj4evr-ci
+  IMAGE: ghcr.io/unbannablegt/lj4evr-build
 
 jobs:
   build-push:
