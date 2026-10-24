@@ -192,3 +192,41 @@ The W6 gates run (`2668de8`, run 40038960636) had already failed windows-msvc on
 to v1.1.0. The test's 8192-byte log sink drops lines that do not fit, and the 8176-frame run logs about 204
 per-second lines (about 13 KB): locally the sink held 8186 bytes, and the card-full line fitted by a few bytes.
 `8803f37` widens the sink to 32768 bytes; `test_llf` passes in all four local trees.
+
+### CI round 2: green, run 40054522037 (`a38b065`)
+
+https://github.com/MenaceToTheShow/LJ4EVR/actions/runs/40054522037: six of six jobs green on the first run
+(generate-check, linux-gcc-asan, linux-clang, windows-msvc, macos-clang, determinism). The MSVC ASan ctest is a step of
+windows-msvc, not a seventh job.
+
+    linux-gcc-asan   ctest --preset ci-linux-asan: 100% tests passed, 0 tests failed out of 155
+    linux-clang      ctest --preset ci-linux-clang: 100% tests passed, 0 tests failed out of 155
+                     fuzz step, 60 s each from the CTest seeds (INITED, then DONE):
+                       fuzz_sacn_rx    #2 INITED cov: 279 ft: 280 corp: 1/638b
+                       fuzz_artnet     #4 INITED cov: 130 ft: 142 corp: 3/791b
+                       fuzz_remote     #2 INITED cov: 146 ft: 147 corp: 1/6b
+                       fuzz_vtr        #2 INITED cov: 139 ft: 140 corp: 1/148b
+                       fuzz_ljb        #2 INITED cov: 832 ft: 833 corp: 1/265b     #48367 DONE cov: 995 ft: 2980
+                       fuzz_ljb_index  #2 INITED cov: 2593 ft: 2594 corp: 1/1744b  #125049 DONE cov: 3059 ft: 10785 (LORD_C-7)
+                       fuzz_gs2 / fuzz_udf as before (corp: 1/1b, 1/222b)
+    windows-msvc     Release and Debug ctest: 100% tests passed out of 156, 156;
+                     "MSVC AddressSanitizer, LJ_SDL=OFF, Debug ctest": 100% tests passed out of 154 (LORD_C-12)
+    macos-clang      ctest --preset release-mac: 100% tests passed out of 157
+    determinism      frames-{linux,windows,macos}.bin: 5b13f41930362b75a7aa6f9c53f77db2d315a4039ea5a18da664ea1263114b50
+                     replay-frames.bin L / W / M: a1d1f2def045b0dc1cad89e489bf2625b6dbef25d4e4756c8d1ea500ef3d3d62 (= the local trees)
+    generate-check   success, with the `if [ -f ]` guard gone (WIZARD_STYLES-14)
+
+The windows-msvc runner passed the ASan ctest with `replay_dump` included and no CPU pinning, which supports the
+CPU-group reading of section 4.
+
+## 7. Clean-up
+
+The five `w6/*` branches were merged into `main` (`git branch -r --merged main` listed all five) and deleted on
+`origin` and locally; the five worktrees (each clean, at its branch's pushed head, no junction left inside) were
+removed with `git worktree remove`; `git worktree list` shows `main` only. The empty parent folder of the worktrees
+is left for the maintainer to delete.
+
+Left for the release step: the version bump to 1.2.0, the CHANGELOG, the 1.2.0 "what it is not" paragraph (GP-DMXIN
+takes its item off; `docs/w6-gates.md` section 3), and the ME-189 known-gap line in the release notes. Older docs
+(`CONTRIBUTING.md`, `docs/releasing.md`, the earlier logs) still name the repository as `UnbannableGT/LJ4EVR`; GitHub
+redirects those URLs.
