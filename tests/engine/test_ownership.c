@@ -54,7 +54,7 @@ int lj_test_engine_ownership(int argc, char **argv)
     (void)argc; (void)argv;
     memset(&s_dimmer, 0, sizeof s_dimmer);
     s_dimmer.footprint = 1; s_dimmer.channel_class[0] = LJ_CH_INTENSITY; s_dimmer.use_gm = 1; s_dimmer.intensity.enabled = 1; s_dimmer.intensity.max = 255;
-    show->fixture[0].kind = LJ_FX_BUILTIN; show->fixture[0].link = 1; show->fixture[0].address = 1;
+    show->fixture[0].kind = LJ_FX_GS2; show->fixture[0].link = 1; show->fixture[0].address = 1;
     cue->number = 7; cue->cue_time_pct = 100; cue->slot[0].seq = 1; cue->slot[0].enabled = 1; cue->bg_cue = 5;   /* bg cue 5 names a record the UI has not pinned */
     lj_engine_bind(e, show);
     lj_engine_bind_profile(e, 0, &s_dimmer);

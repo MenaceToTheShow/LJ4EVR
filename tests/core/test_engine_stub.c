@@ -75,9 +75,9 @@ static void lj_dump_show(lj_show *show, lj_sequence *seq, lj_cue *cue)
     s_head.footprint = 6; s_head.pt16 = 1; s_head.pan_ofs = 0; s_head.tilt_ofs = 2;
     s_head.channel_class[0] = s_head.channel_class[1] = LJ_CH_PAN; s_head.channel_class[2] = s_head.channel_class[3] = LJ_CH_TILT;
     s_head.channel_class[4] = LJ_CH_INTENSITY; s_head.channel_class[5] = LJ_CH_COLOR; s_head.use_gm = 1; s_head.intensity.enabled = 1; s_head.intensity.offset = 4; s_head.intensity.max = 255;
-    show->fixture[0].kind = LJ_FX_BUILTIN; show->fixture[0].link = 1; show->fixture[0].address = 1;
-    show->fixture[1].kind = LJ_FX_BUILTIN; show->fixture[1].link = 1; show->fixture[1].address = 2;
-    show->fixture[2].kind = LJ_FX_BUILTIN; show->fixture[2].link = 2; show->fixture[2].address = 1;
+    show->fixture[0].kind = LJ_FX_GS2; show->fixture[0].link = 1; show->fixture[0].address = 1;
+    show->fixture[1].kind = LJ_FX_GS2; show->fixture[1].link = 1; show->fixture[1].address = 2;
+    show->fixture[2].kind = LJ_FX_GS2; show->fixture[2].link = 2; show->fixture[2].address = 1;
     show->default_out[5] = 64;
     seq->number = 1; seq->n = 3; seq->scenes = (lj_scene *)calloc(3, sizeof(lj_scene));
     for (i = 0; i < 3; i++) {

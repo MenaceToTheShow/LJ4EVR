@@ -239,6 +239,47 @@ static void lj_test_config(const lj_library *lib)
     lj_show_free(b);
 }
 
+static size_t lj_read_all(const char *path, char *buf, size_t cap)
+{
+    FILE *f = fopen(path, "rb");
+    size_t n = f ? fread(buf, 1, cap - 1, f) : 0;
+    if (f) fclose(f);
+    buf[n] = 0;
+    return n;
+}
+
+/* G1 / W8D-11 (T-B8) and G2 (T-B9): a Config.dat naming an id this build lacks loads with that row kept and unpatched,
+ * the other rows bound, and saves back byte-identical; one bad chcap / chgm line no longer empties the patch; a
+ * Config.dat a newer LJ4EVR wrote ("LJ4 config 2") is never overwritten. */
+static void lj_test_config_g1(const lj_library *lib)
+{
+    static char want[4096], got[4096];
+    lj_show *a = lj_show_new(), *b = lj_show_new();
+    lj_fixture fx = { 0 };
+    char path[LJ_PATH_CAP];
+    size_t n;
+    FILE *f;
+    lj_library_path(lib, "Config.dat", path, sizeof path);
+    fx.link = 1; fx.address = 1; fx.profile_id = 12; CHECK(lj_show_add_fixture(a, &fx) == 0);      /* MAC 500 */
+    fx.address = 20; fx.profile_id = 9999; CHECK(lj_show_add_fixture(a, &fx) == 1);                  /* a later build's extra */
+    fx.address = 40; fx.profile_id = 19; CHECK(lj_show_add_fixture(a, &fx) == 2);                    /* a one-channel dimmer */
+    CHECK(lj_config_save(path, a) == 0);
+    n = lj_read_all(path, want, sizeof want);
+    CHECK(lj_show_load(b, lib) == 0 && lj_show_fixture_count(b) == 3 && b->fixture[1].profile_id == 9999 && lj_show_profile(b, 1) == NULL);
+    CHECK(lj_show_profile(b, 0) && lj_show_profile(b, 2) && lj_config_validate(b) != NULL);          /* kept, with an F41-style warning */
+    CHECK(lj_config_save(path, b) == 0 && lj_read_all(path, got, sizeof got) == n && memcmp(want, got, n) == 0);
+    if ((f = fopen(path, "ab")) != NULL) { fputs("chcap 40 text=X\nchcap 2 text=Toolong7\nchgm=3,40\nchgm=x\n", f); fclose(f); }   /* all four bind to fixture 3 */
+    CHECK(lj_show_load(b, lib) == 0 && lj_show_fixture_count(b) == 3);
+    CHECK(b->fixture[2].ch_gm_off == 1u << 2 && b->fixture[2].ch_caption[1][0] == 0);
+    if ((f = fopen(path, "wb")) != NULL) { fputs("LJ4 config 2\nfx 1 kind=builtin id=12 link=1 addr=1\n", f); fclose(f); }
+    n = lj_read_all(path, want, sizeof want);
+    CHECK(lj_config_save(path, a) == -1 && lj_read_all(path, got, sizeof got) == n && memcmp(want, got, n) == 0);
+    CHECK(lj_show_save_config(a, lib) == -1);
+    remove(path);
+    lj_show_free(a);
+    lj_show_free(b);
+}
+
 static void lj_test_presets_palettes_patch_macro(const lj_library *lib)
 {
     lj_preset p[LJ_PRESETS], q[LJ_PRESETS];
@@ -320,6 +361,7 @@ int lj_test_model_records(int argc, char **argv)
     lj_test_bgcue(&lib);
     lj_test_statics(&lib);
     lj_test_config(&lib);
+    lj_test_config_g1(&lib);
     lj_test_presets_palettes_patch_macro(&lib);
     printf("test_model_records: %d failure(s)\n", fails);
     return fails ? 1 : 0;

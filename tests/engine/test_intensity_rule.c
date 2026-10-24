@@ -35,7 +35,7 @@ static void lj_t_engine_table(void)
     if (!show || !e) { fails++; free(show); lj_engine_destroy(e); return; }
     memset(&dim, 0, sizeof dim); dim.footprint = 1; dim.channel_class[0] = LJ_CH_INTENSITY; dim.use_gm = 1; dim.intensity.enabled = 1; dim.intensity.max = 255;
     memset(seq, 0, sizeof seq); memset(sc, 0, sizeof sc); memset(&cue, 0, sizeof cue);
-    for (f = 0; f < 4; f++) { show->fixture[f].kind = LJ_FX_BUILTIN; show->fixture[f].link = 1; show->fixture[f].address = (uint16_t)(f + 1); }
+    for (f = 0; f < 4; f++) { show->fixture[f].kind = LJ_FX_GS2; show->fixture[f].link = 1; show->fixture[f].address = (uint16_t)(f + 1); }
     lj_engine_bind(e, show);
     for (f = 0; f < 4; f++) lj_engine_bind_profile(e, f, &dim);
     cue.number = 1;

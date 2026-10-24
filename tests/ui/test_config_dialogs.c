@@ -195,6 +195,12 @@ static void test_fixture_config(void)
     CHECK(!opened(LJ_WIN_CONFIG_WARN) && !lj_win_message_window());
     lj_fixture_config_set_address(1, 1, fp + 1);
     lj_fixture_config_set_address(3, 1, 2 * fp + 1);
+    {   /* G1 (W8D-11): a built-in id this build lacks is a warning row, kept unpatched (owns no channel) */
+        const char *rows[4];
+        sh->fixture[50].link = 1; sh->fixture[50].address = 1; sh->fixture[50].profile_id = 9999;
+        CHECK(lj_config_dlg_warnings(rows, 4) == 1 && strcmp(rows[0], "Fixture 51 profile 9999: Not available in LJ4EVR") == 0);
+        memset(&sh->fixture[50], 0, sizeof sh->fixture[50]);
+    }
     /* Save: "Clear data for new fixtures ?" (Yes), default DMX applied (AlwaysApplyDefault = 1), Config.dat */
     CHECK(lj_config_dlg_warnings(NULL, 0) == 0);
     CHECK(run_text("click TLinkConfigForm3.bSave\nassert_prompt \"Clear data for new fixtures ?\"\nclick confirm.BOk\n") == 0);

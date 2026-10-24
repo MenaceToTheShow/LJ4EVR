@@ -45,9 +45,9 @@ static int lj_run_fade(uint32_t fade_ms, uint16_t time_pct, int ticks, uint8_t o
     lj_cmd cmd;
     const lj_frame *f;
     int k;
-    show->fixture[0].kind = LJ_FX_BUILTIN; show->fixture[0].link = 1; show->fixture[0].address = 1;    /* dimmer at 1:001 */
-    show->fixture[1].kind = LJ_FX_BUILTIN; show->fixture[1].link = 1; show->fixture[1].address = 2;    /* dimmer at 1:002 (255 -> 0) */
-    show->fixture[2].kind = LJ_FX_BUILTIN; show->fixture[2].link = 1; show->fixture[2].address = 10;   /* head at 1:010 */
+    show->fixture[0].kind = LJ_FX_GS2; show->fixture[0].link = 1; show->fixture[0].address = 1;    /* dimmer at 1:001 */
+    show->fixture[1].kind = LJ_FX_GS2; show->fixture[1].link = 1; show->fixture[1].address = 2;    /* dimmer at 1:002 (255 -> 0) */
+    show->fixture[2].kind = LJ_FX_GS2; show->fixture[2].link = 1; show->fixture[2].address = 10;   /* head at 1:010 */
     show->default_out[1] = 255;
     seq->scenes[0].fade_ms = fade_ms;
     seq->scenes[0].val[0] = 255; seq->scenes[0].state[0] = LJ_FADE;

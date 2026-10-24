@@ -94,8 +94,8 @@ static void lj_engine_rebuild(lj_engine *e)
         const lj_profile *p;
         int ofs, code;
         if (!fx->link) { e->post.profile_of[f] = NULL; continue; }
+        if (fx->kind == LJ_FX_BUILTIN) e->post.profile_of[f] = lj_fixlib_by_id(fx->profile_id);   /* W8D-10: every rebuild, NULL included (an id this build lacks is unpatched, never the row's previous profile); a GS2 profile stays from lj_engine_bind_profile */
         if (fx->address < 1) continue;                             /* no DMX address yet (F41 warning state): unpatched; s7, the overlay and pan_winner skip it through lj_fx_code (ME-132) */
-        if (fx->kind == LJ_FX_BUILTIN) { p = lj_fixlib_by_id(fx->profile_id); if (p) e->post.profile_of[f] = p; }   /* built-ins resolve here; a GS2 (or test) profile stays from lj_engine_bind_profile */
         p = e->post.profile_of[f];
         if (!p) continue;
         for (ofs = 0; ofs < p->footprint && ofs < LJ_PROFILE_CH; ofs++) {

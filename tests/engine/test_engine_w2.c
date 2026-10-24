@@ -366,6 +366,38 @@ static void lj_t_address_guards(void)
     free(heap);
 }
 
+/* W8D-10 (T-B8): a built-in row whose id this build lacks is unpatched, whatever the row held before. Fixture 1 is a
+ * MAC 500 (id 12) at 1:001 with Invert Pan, then the engine is bound to a show whose fixture 1 is id 9999: no
+ * fixture_of[] entry names the row and out[] == merged[] on its addresses (the stale MAC binding would invert pan). */
+static void lj_t_stale_bind(void)
+{
+    static lj_show a, b; static lj_sequence q; static lj_scene sc; static lj_cue cue;
+    const lj_sequence *seqs[LJ_CUE_SLOTS] = { &q };
+    const lj_profile *mac = lj_fixlib_by_id(12);
+    const lj_frame *fr = NULL;
+    lj_engine *e = lj_engine_create();
+    int i, c;
+    if (!e || !mac) { fails++; lj_engine_destroy(e); return; }
+    memset(&a, 0, sizeof a); memset(&b, 0, sizeof b);
+    a.fixture[0].link = b.fixture[0].link = 1; a.fixture[0].address = b.fixture[0].address = 1;
+    a.fixture[0].invert_pan = b.fixture[0].invert_pan = 1;
+    a.fixture[0].profile_id = 12; b.fixture[0].profile_id = 9999;
+    lj_t_seq(&q, &sc, 1, 1, mac->pan_ofs, 200, 100000);
+    memset(&cue, 0, sizeof cue); cue.number = 1; cue.slot[0].seq = 1; cue.slot[0].enabled = 1;
+    lj_engine_bind(e, &a);
+    lj_t_load(e, &cue, seqs, 0);
+    for (i = 0; i < 4; i++) fr = lj_t_tick(e);
+    CHECK(fr && fr->merged[mac->pan_ofs] == 200 && fr->out[0][mac->pan_ofs] != 200);   /* the MAC binding inverts pan */
+    lj_engine_bind(e, &b);
+    for (i = 0; i < 4; i++) fr = lj_t_tick(e);
+    CHECK(lj_engine_post_ctx(e)->profile_of[0] == NULL);
+    for (c = 0; fr && c < mac->footprint; c++) {
+        CHECK(lj_engine_post_ctx(e)->fixture_of[c] == -1);
+        CHECK(fr->out[0][c] == fr->merged[c]);
+    }
+    lj_engine_destroy(e);
+}
+
 int lj_test_engine_w2(int argc, char **argv);
 int lj_test_engine_w2(int argc, char **argv)
 {
@@ -378,7 +410,7 @@ int lj_test_engine_w2(int argc, char **argv)
     s_prof.footprint = T_CH; s_prof.use_gm = 1; s_prof.intensity.enabled = 1; s_prof.intensity.max = 255;
     for (i = 0; i < 5; i++) s_prof.channel_class[i] = LJ_CH_INTENSITY;
     s_prof.channel_class[5] = LJ_CH_SMOKE; s_prof.channel_class[6] = LJ_CH_HAZE; s_prof.channel_class[7] = LJ_CH_HAZE_FAN;
-    show->fixture[0].kind = LJ_FX_BUILTIN; show->fixture[0].link = 1; show->fixture[0].address = 1;
+    show->fixture[0].kind = LJ_FX_GS2; show->fixture[0].link = 1; show->fixture[0].address = 1;
     lj_engine_bind(e, show);
     lj_engine_bind_profile(e, 0, &s_prof);
     lj_t_layers(e);
@@ -391,6 +423,7 @@ int lj_test_engine_w2(int argc, char **argv)
     lj_t_link_ownership(e);
     lj_t_movemacro_me83();
     lj_t_address_guards();
+    lj_t_stale_bind();
     lj_engine_bind(e, NULL); lj_engine_destroy(e); free(show);
     printf("test_engine_w2: %d failure(s)\n", fails);
     return fails ? 1 : 0;

@@ -71,7 +71,7 @@ int lj_test_statics(int argc, char **argv)
     if (!show || !e) { printf("FAIL alloc\n"); free(show); lj_engine_destroy(e); return 1; }
 
     memset(&dim, 0, sizeof dim); dim.footprint = 1; dim.channel_class[0] = LJ_CH_INTENSITY; dim.use_gm = 1; dim.intensity.enabled = 1; dim.intensity.max = 255;
-    for (i = 0; i < 4; i++) { show->fixture[i].kind = LJ_FX_BUILTIN; show->fixture[i].link = 1; show->fixture[i].address = (uint16_t)(i + 1); }
+    for (i = 0; i < 4; i++) { show->fixture[i].kind = LJ_FX_GS2; show->fixture[i].link = 1; show->fixture[i].address = (uint16_t)(i + 1); }
     lj_engine_bind(e, show);
     for (i = 0; i < 4; i++) lj_engine_bind_profile(e, i, &dim);
 

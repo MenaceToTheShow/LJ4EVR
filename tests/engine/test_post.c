@@ -35,7 +35,7 @@ static lj_t *lj_t_begin(void)
 
 static void lj_t_fixture(lj_t *t, int i, const lj_profile *p, int link, int addr, int group)
 {
-    t->show->fixture[i].kind = LJ_FX_BUILTIN; t->show->fixture[i].link = (uint8_t)link; t->show->fixture[i].address = (uint16_t)addr; t->show->fixture[i].intensity_group = (uint8_t)group;
+    t->show->fixture[i].kind = LJ_FX_GS2; t->show->fixture[i].link = (uint8_t)link; t->show->fixture[i].address = (uint16_t)addr; t->show->fixture[i].intensity_group = (uint8_t)group;
     lj_engine_bind(t->e, t->show);
     lj_engine_bind_profile(t->e, i, p);
 }

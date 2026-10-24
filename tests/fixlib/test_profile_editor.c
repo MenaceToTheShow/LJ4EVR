@@ -164,15 +164,15 @@ static void test_config_channels(void)
     CHECK(memcmp(b->fixture[4].ch_caption, a->fixture[4].ch_caption, sizeof a->fixture[4].ch_caption) == 0);
     CHECK(b->fixture[4].ch_gm_off == a->fixture[4].ch_gm_off);
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchcap 33 text=X\n");
-    CHECK(lj_config_load(path, b, err, sizeof err) == -1);      /* offset 33 rejected (lj_kv_range_lead) */
+    CHECK(lj_config_load(path, b, err, sizeof err) == 0 && b->fixture[0].link == 1 && !b->fixture[0].ch_caption[0][0]);   /* G1: offset 33 skipped, the fixture kept */
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchcap 1 text=TooLong\n");
-    CHECK(lj_config_load(path, b, err, sizeof err) == -1);      /* ME-118: seven bytes do not fit ch_caption[7] (DFM MaxLength = 6) */
+    CHECK(lj_config_load(path, b, err, sizeof err) == 0 && !b->fixture[0].ch_caption[0][0]);   /* ME-118: seven bytes do not fit ch_caption[7] (DFM MaxLength = 6); G1: skipped */
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchcap 1 text=Yellow\n");
     CHECK(lj_config_load(path, b, err, sizeof err) == 0 && strcmp(b->fixture[0].ch_caption[0], "Yellow") == 0);   /* ME-118: six accepted */
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchgm=0,2\n");
-    CHECK(lj_config_load(path, b, err, sizeof err) == -1);
+    CHECK(lj_config_load(path, b, err, sizeof err) == 0 && b->fixture[0].ch_gm_off == 1u << 1);   /* G1: the in-range entry kept */
     write_file(path, "LJ4 config 1\nchgm=2\n");
-    CHECK(lj_config_load(path, b, err, sizeof err) == -1);      /* before any fx */
+    CHECK(lj_config_load(path, b, err, sizeof err) == 0);       /* before any fx: G1, skipped */
     write_file(path, "LJ4 config 1\nfx 1 kind=builtin id=19 link=1 addr=1\nchcap 1 text=Dim\nchgm=1\nfx 2 kind=builtin id=19 link=1 addr=2\n");
     CHECK(lj_config_load(path, b, err, sizeof err) == 0 && strcmp(b->fixture[0].ch_caption[0], "Dim") == 0 && b->fixture[0].ch_gm_off == 1u && b->fixture[1].ch_gm_off == 0);
     remove(path);

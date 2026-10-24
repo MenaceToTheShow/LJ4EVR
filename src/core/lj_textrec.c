@@ -96,8 +96,16 @@ int lj_rec_next(lj_rec *rec, char *key, size_t kcap, char *val, size_t vcap)
 
 lj_rec *lj_rec_open_write(const char *path, const char *kind, int format)
 {
+    char got[LJ_REC_KIND_MAX + 1], line[64];
+    int old = -1;
     lj_rec *rec;
-    FILE *f = fopen(path, "wb");
+    FILE *f = fopen(path, "rb");
+    if (f) {                                                  /* G2 (W8D-14): a record a newer LJ4EVR wrote is never overwritten */
+        if (!fgets(line, sizeof line, f) || sscanf(line, "LJ4 %32s %d", got, &old) != 2 || strcmp(got, kind) != 0) old = -1;
+        fclose(f);
+        if (old > format) { lj_log("rec: %s made by a newer LJ4EVR (format %d); not overwritten", path, old); return NULL; }
+    }
+    f = fopen(path, "wb");
     if (!f) { lj_log("rec: cannot write %s", path); return NULL; }
     rec = lj_rec_new(path, f);
     if (fprintf(f, "LJ4 %s %d\n", kind, format) < 0) rec->err = 1;

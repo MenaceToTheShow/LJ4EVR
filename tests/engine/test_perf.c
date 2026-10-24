@@ -48,7 +48,7 @@ int lj_test_engine_perf(int argc, char **argv)
     s_prof.footprint = LJ_PERF_FOOTPRINT; s_prof.use_gm = 1; s_prof.intensity.enabled = 1; s_prof.intensity.max = 255;
     for (ch = 0; ch < LJ_PERF_FOOTPRINT; ch++) s_prof.channel_class[ch] = (ch % 4 == 0) ? LJ_CH_INTENSITY : LJ_CH_COLOR;
     for (i = 0; i < LJ_PERF_FIXTURES; i++) {                   /* 100 x 20 = 2000 channels over 4 links */
-        show->fixture[i].kind = LJ_FX_BUILTIN; show->fixture[i].link = (uint8_t)(1 + (i * LJ_PERF_FOOTPRINT) / LJ_LINK_CH);
+        show->fixture[i].kind = LJ_FX_GS2; show->fixture[i].link = (uint8_t)(1 + (i * LJ_PERF_FOOTPRINT) / LJ_LINK_CH);
         show->fixture[i].address = (uint16_t)(1 + (i * LJ_PERF_FOOTPRINT) % LJ_LINK_CH);
         show->fixture[i].intensity_group = (uint8_t)(1 + i % LJ_SUBMASTERS);
     }

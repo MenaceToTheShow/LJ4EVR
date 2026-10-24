@@ -12,7 +12,7 @@ typedef struct lj_rec lj_rec;                       /* one text record file, des
 
 lj_rec *lj_rec_open_read(const char *path, const char *kind, int *format);         /* NULL + log when the header is not "LJ4 <kind> <format>" */
 int     lj_rec_next(lj_rec *rec, char *key, size_t kcap, char *val, size_t vcap);  /* 1 = a key/value produced, 0 = EOF, -1 = error (the iterator model, design 2.0) */
-lj_rec *lj_rec_open_write(const char *path, const char *kind, int format);         /* writes the header line */
+lj_rec *lj_rec_open_write(const char *path, const char *kind, int format);         /* writes the header line; NULL + log when path holds this kind at a higher format (G2) */
 int     lj_rec_write(lj_rec *rec, const char *key, const char *fmt, ...) LJ_PRINTF(3, 4);   /* one "key=value" line; 0 / -1. A key ending in ' ' is a list head written without '=': ("scene ", "st=%d ft=%d") -> "scene st=1000 ft=50"; the reader splits at the first '=' or ' ' */
 int     lj_rec_close(lj_rec *rec);                                                 /* flushes; -1 when the final write failed; NULL is a no-op */
 

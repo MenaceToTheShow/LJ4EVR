@@ -109,20 +109,20 @@ int lj_config_load(const char *path, lj_show *show, char *err, size_t cap)
             f->tab = (uint8_t)lj_kv_range(v, "tab", 0, 0, 255, &rbad);
             f->intensity_group = (uint8_t)lj_kv_range(v, "sub", 0, 0, LJ_SUBMASTERS, &rbad);
         } else if (strcmp(k, "chcap") == 0) {                 /* W3 (ME-32): "chcap 3 text=Inte": offset 1..32, caption <= 6 bytes (DFM MaxLength = 6, ME-118) */
-            long n = lj_kv_range_lead(v, 0, 1, LJ_PROFILE_CH, &rbad);
-            if (!cur) { bad = "chcap before fx"; break; }
-            if (!rbad) {
-                int got = lj_kv_get(v, "text", q, sizeof cur->ch_caption[0]);
-                if (got < 0) { bad = "chcap text longer than 6"; break; }
-                lj_str_copy(cur->ch_caption[n - 1], sizeof cur->ch_caption[0], got == 1 ? q : "");
-            }
+            int lbad = 0;                                       /* G1: a bad chcap line is logged and skipped, never the whole patch */
+            long n = lj_kv_range_lead(v, 0, 1, LJ_PROFILE_CH, &lbad);
+            int got = cur && !lbad ? lj_kv_get(v, "text", q, sizeof cur->ch_caption[0]) : -1;
+            if (got < 0) lj_log("%s: item %d: chcap skipped (%s)", path, item, !cur ? "before fx" : lbad ? "offset out of range" : "text longer than 6");
+            else lj_str_copy(cur->ch_caption[n - 1], sizeof cur->ch_caption[0], got == 1 ? q : "");
         } else if (strcmp(k, "chgm") == 0) {                  /* W3 (ME-32): "chgm=1,3": the offsets 1..32 with Grand Master control disabled */
-            uint32_t o[LJ_PROFILE_CH];
-            int n = lj_kv_list(v, o, LJ_PROFILE_CH), j;
-            if (!cur) { bad = "chgm before fx"; break; }
-            if (n < 0) { bad = "chgm list"; break; }
+            uint32_t o[256];
+            int n = lj_kv_list(v, o, 256), j;
+            if (!cur || n < 0) { lj_log("%s: item %d: chgm skipped (%s)", path, item, !cur ? "before fx" : "bad list"); continue; }   /* G1 */
             cur->ch_gm_off = 0;
-            for (j = 0; j < n; j++) { if (o[j] < 1 || o[j] > LJ_PROFILE_CH) { rbad = 1; break; } cur->ch_gm_off |= 1u << (o[j] - 1); }
+            for (j = 0; j < n; j++) {
+                if (o[j] >= 1 && o[j] <= LJ_PROFILE_CH) cur->ch_gm_off |= 1u << (o[j] - 1);
+                else lj_log("%s: item %d: chgm offset %u skipped (out of range)", path, item, (unsigned)o[j]);   /* G1: the in-range entries are kept */
+            }
         } else if (strcmp(k, "sub") == 0) {
             long i = strtol(v, &e, 10);
             if (e == v || i < 1 || i > LJ_SUBMASTERS) { bad = "submaster index not 1..8"; break; }
@@ -182,8 +182,8 @@ static int lj_fixture_footprint(const lj_fixture *f)
     return p ? p->footprint : 1;   /* .GS2 profiles are parsed in W3 (lj_gs2_parse stub): footprint 1 until then */
 }
 
-/* warn_ok: the three F41 save-time warning states (no DMX address, past channel 512, a shared channel) pass, because
- * TConfigWarnForm's Save Anyway writes them as LJ2 does; every other check still refuses the file. */
+/* warn_ok: the F41 save-time warning states (no DMX address, past channel 512, a shared channel; G1: a built-in id this
+ * build lacks) pass, because TConfigWarnForm's Save Anyway writes them as LJ2 does; every other check still refuses the file. */
 static const char *config_check(const lj_show *show, int warn_ok)
 {
     static uint8_t owner[LJ_CHANS];   /* UI-thread only (library calls are UI-thread file I/O) */
@@ -198,8 +198,9 @@ static const char *config_check(const lj_show *show, int warn_ok)
         if (f->address < 1) { if (warn_ok) continue; return "fixture has no DMX address"; }
         if (f->kind > LJ_FX_GS2) return "fixture kind unknown";
         if (!memchr(f->user_name, 0, sizeof f->user_name) || !memchr(f->gs2_file, 0, sizeof f->gs2_file)) return "user name or gs2 file not NUL-terminated";
-        if (f->kind == LJ_FX_BUILTIN ? lj_fixlib_by_id(f->profile_id) == NULL : !f->gs2_file[0]) return "profile unknown";
+        if (f->kind == LJ_FX_GS2 && !f->gs2_file[0]) return "profile unknown";
         if (f->intensity_group > LJ_SUBMASTERS) return "intensity group not 0..8";
+        if (f->kind == LJ_FX_BUILTIN && !lj_fixlib_by_id(f->profile_id)) { if (warn_ok) continue; return "profile " LJ_NA_HINT; }   /* G1 (W8D-11): an id this build lacks is a fourth F41 state, kept unpatched and saved back as read */
         fp = lj_fixture_footprint(f);
         if (f->address + fp - 1 > LJ_LINK_CH) { if (!warn_ok) return "fixture runs past channel 512"; fp = LJ_LINK_CH - f->address + 1; }
         base = lj_addr_code(f->link, f->address);

@@ -45,7 +45,7 @@ static lj_show *lj_t_show(int nfix, int footprint)
     s_dim.footprint = (uint8_t)footprint; s_dim.use_gm = 1; s_dim.intensity.enabled = 1; s_dim.intensity.max = 255;
     for (i = 0; i < footprint; i++) s_dim.channel_class[i] = i % 4 ? LJ_CH_COLOR : LJ_CH_INTENSITY;
     if (show) for (i = 0; i < nfix; i++) {
-        show->fixture[i].kind = LJ_FX_BUILTIN;
+        show->fixture[i].kind = LJ_FX_GS2;
         show->fixture[i].link = (uint8_t)(1 + (i * footprint) / LJ_LINK_CH); show->fixture[i].address = (uint16_t)(1 + (i * footprint) % LJ_LINK_CH);
     }
     return show;

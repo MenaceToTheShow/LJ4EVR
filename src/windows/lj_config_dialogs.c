@@ -204,6 +204,7 @@ int lj_config_dlg_warnings(const char **rows, int max)
         const lj_fixture *f = &sh->fixture[i];
         int fp;
         if (!used(f)) continue;
+        if (f->link && f->kind == LJ_FX_BUILTIN && !lj_fixlib_by_id(f->profile_id)) { CD_WARN("Fixture %d profile %u: " LJ_NA_HINT, i + 1, f->profile_id); continue; }   /* G1 (W8D-11): kept unpatched */
         fp = footprint(i);
         if (!f->link || !f->address) { CD_WARN("Fixture %d has no DMX Address", i + 1); continue; }   /* exe 0x1B398C */
         if (f->address + fp - 1 > LJ_LINK_CH) { CD_WARN("Fixture %d has invalid DMX Address", i + 1); continue; }   /* exe 0x1B39A8 */
