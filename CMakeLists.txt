@@ -576,3 +576,6 @@ endif()
 if(Python3_FOUND)   # W6 fidelity (append-only): LORD_FIDELITY-12, the TPF0 decoder of tools/ref/pe_tpf0.py on a synthetic stream (no reference tree)
   add_test(NAME pe_tpf0_selftest COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/ref/pe_tpf0.py" --selftest)
 endif()
+# W6 integrator (append-only): the LORD_FIDELITY-19 restart row of test_uiscript_w2 sends universe 1 to 127.0.0.1:5568,
+# which test_sacn_loopback's receiver counted (its keep-alive check failed under ctest -j)
+set_tests_properties(test_uiscript_w2 PROPERTIES RESOURCE_LOCK sacn_port)
