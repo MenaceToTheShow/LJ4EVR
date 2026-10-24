@@ -307,3 +307,19 @@ CI step's settings) now runs `test_uiscript_w3` Passed, and its whole ctest, kep
     build-w6i-rel   ctest 100% tests passed, 0 tests failed out of 158
     build-w6i-nosdl ctest 100% tests passed, 0 tests failed out of 156
     build-w6i-dbg   ctest 100% tests passed, 0 tests failed out of 158
+
+### Must-fix r1: CI round 2, green (`fdb94a2`, run 40064261235)
+
+https://github.com/MenaceToTheShow/LJ4EVR/actions/runs/40064261235: six of six jobs green (generate-check,
+linux-gcc-asan, linux-clang, windows-msvc, macos-clang, determinism).
+
+    linux-gcc-asan   100% tests passed, 0 tests failed out of 157
+    linux-clang      100% tests passed, 0 tests failed out of 157
+    windows-msvc     Release and Debug: 100% tests passed out of 158, 158; MSVC ASan (LJ_SDL=OFF, Debug): out of 156
+    macos-clang      100% tests passed out of 159
+    determinism      frames-{linux,windows,macos}.bin: 5b13f41930362b75a7aa6f9c53f77db2d315a4039ea5a18da664ea1263114b50
+                     replay-frames.bin L / W / M: 3474ee7386eab212115c122c07595ec161a0e2e65f5732e89c127cf618f95f34 (= the local trees)
+
+Left for the next steps (not this pass): ME-207 (release sequence: VERSION, CHANGELOG, the 1.2.0 paragraph, the D4
+count record, the owner name in `CONTRIBUTING.md` / `docs/releasing.md`, RC CI, the scans, tag `v1.2.0`, assets),
+ME-208 (design, vault), and one verifier's check of each Verify line above.
