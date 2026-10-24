@@ -6,4 +6,4 @@ files except in compliance with the License. You may obtain a copy of the Licens
 http://www.apache.org/licenses/LICENSE-2.0 (a copy is in LICENSE beside this file).
 
 Modifications by LJ4EVR: the .qxf files are unchanged; tools/qxf2c.py converts them into
-C tables (src/fixlib/lj_profiles_gen.c), which are marked "modified: converted" per profile.
+C tables (src/fixlib/lj_profiles_gen*.c), which are marked "modified: converted" per profile.

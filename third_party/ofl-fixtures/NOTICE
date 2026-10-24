@@ -1,0 +1,8 @@
+Open Fixture Library fixture definitions
+Copyright (c) 2017 Florian & Felix Edelmann and the OFL contributors
+(https://github.com/OpenLightingProject/open-fixture-library)
+
+Released under the MIT licence (LICENSE beside this file).
+
+Modifications by LJ4EVR: the .json files are unchanged; tools/ofl2qxf.py and tools/qxf2c.py convert
+them into C tables (src/fixlib/lj_profiles_gen*.c), which are marked "modified: converted" per profile.

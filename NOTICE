@@ -28,13 +28,27 @@ miniz 3.0.2, MIT licence
   Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
   The full MIT text follows below (third_party/miniz/LICENSE).
 
-QLC+ fixture definitions (Martin/*.qxf), Apache License 2.0
+QLC+ fixture definitions (Martin, Elation, Chauvet, Clay Paky, GLP, Acme,
+Ayrton, ETC, Robe, High End Systems, Vari-Lite, American DJ, SGM .qxf files),
+Apache License 2.0
   https://github.com/mcallegari/qlcplus  (third_party/qlcplus-fixtures/SOURCE records the commit)
   Copyright the QLC+ contributors. The definitions are converted offline to C
-  tables (src/fixlib/lj_profiles_gen.c, each profile marked "modified:
+  tables (src/fixlib/lj_profiles_gen*.c, each profile marked "modified:
   converted"); the .qxf files are not read at run time. LJ4EVR's attribution
   and modification notice for them (upstream has no NOTICE file) and the full
   Apache License 2.0 text follow below.
+
+Open Fixture Library fixture definitions (.json files of the same makers), MIT licence
+  https://github.com/OpenLightingProject/open-fixture-library  (third_party/ofl-fixtures/SOURCE records the commit)
+  Copyright (c) 2017 Florian & Felix Edelmann and the OFL contributors. The
+  definitions are converted offline (tools/ofl2qxf.py, tools/qxf2c.py) to the
+  same C tables, each profile marked "modified: converted"; the .json files are
+  not read at run time. The full MIT text follows below.
+
+LJ4EVR-authored fixture definitions (fixtures/authored/), MIT licence, as the code
+  Written for LJ4EVR from the DMX charts in the manufacturers' published user
+  manuals (each file names its manual, revision and URL); DMX charts are
+  reproduced as facts, no manual text, image or logo is copied.
 
 Fonts, artwork and help text
   The bitmap fonts, glyphs, icons, swatches and tiles are original pixel art

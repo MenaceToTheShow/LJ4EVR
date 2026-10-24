@@ -1,0 +1,13 @@
+Open Fixture Library fixture definitions, copied verbatim (W7, fetched 2026-10-24).
+Repository: https://github.com/OpenLightingProject/open-fixture-library
+Commit:     78816e4f2803ec0ccf907fc634269b91df34e7f7 (master, 2026-10-23T22:32:01+02:00)
+Paths:      fixtures/<dir>/*.json -> <dir>/*.json here, plus fixtures/manufacturers.json:
+            martin (24)  elation (20)  chauvet-dj (29)  chauvet-professional (10)  clay-paky (6)  glp (8)  ayrton (3)
+            etc (16)  robe (11)  american-dj (43)  sgm (1)  = 171 files. OFL has no acme, high-end-systems or
+            vari-lite directory at this commit.
+Licence:    MIT (LICENSE = the repository's LICENSE at that commit, Copyright (c) 2017 Florian & Felix Edelmann)
+Use:        read offline by tools/ofl2qxf.py (OFL JSON -> the QLC+ .qxf subset qxf2c reads), called by tools/qxf2c.py
+            into src/fixlib/lj_profiles_gen*.c (modified: converted); never read at runtime.
+Refresh:    git -c core.autocrlf=false clone --depth 1 https://github.com/OpenLightingProject/open-fixture-library.git o,
+            copy o/fixtures/<dir>/*.json and o/fixtures/manufacturers.json here, update the commit line above, rerun
+            python -I tools/qxf_map_sync.py and python -I tools/qxf2c.py.

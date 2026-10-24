@@ -1,9 +1,15 @@
-QLC+ fixture definitions, Martin only, copied verbatim (fetched 2026-10-21).
+QLC+ fixture definitions, copied verbatim (W7, fetched 2026-10-24).
 Repository: https://github.com/mcallegari/qlcplus
-Commit:     b7a65b8240899c325e53ceb22546c24aee398467 (master, 2026-10-21T20:04:20Z)
-Path:       resources/fixtures/Martin/*.qxf (73 files)
+Commit:     6f7f290da8b04a360339667234cae5fb9207bfdc (master, 2026-10-23T21:34:45Z)
+            The 73 Martin files came first at b7a65b8240899c325e53ceb22546c24aee398467 (2026-10-21);
+            resources/fixtures is unchanged between the two commits and the 73 files are byte-identical.
+Paths:      resources/fixtures/<dir>/*.qxf, flat in this directory (no two names collide):
+            Martin (73)  Elation (23)  Chauvet (187: Chauvet DJ and Chauvet Professional, split by product line in
+            tools/qxf_map_sync.py)  Clay_Paky (46)  GLP (24)  Acme (7)  Ayrton (9)  ETC (7)  Robe (47)
+            High_End_Systems (6)  Vari-Lite (7)  American_DJ (162)  SGM (16)  = 614 files
 Licence:    Apache License 2.0 (LICENSE = the repository's COPYING at that commit). Upstream has no NOTICE file;
             NOTICE here is LJ4EVR's attribution and modification notice
-Use:        read offline by tools/qxf2c.py into src/fixlib/lj_profiles_gen.c (modified: converted); never read at runtime.
-Refresh:    for n in $(ls *.qxf); do curl -sfL -o $n https://raw.githubusercontent.com/mcallegari/qlcplus/<commit>/resources/fixtures/Martin/$n; done
-            then update the commit line above and rerun python -I tools/qxf2c.py.
+Use:        read offline by tools/qxf2c.py into src/fixlib/lj_profiles_gen*.c (modified: converted); never read at runtime.
+Refresh:    git clone --filter=blob:none --no-checkout https://github.com/mcallegari/qlcplus.git q && cd q &&
+            git -c core.autocrlf=false checkout <commit> -- resources/fixtures/<dir>   (one dir at a time), copy the
+            *.qxf here, update the commit line above, rerun python -I tools/qxf_map_sync.py and python -I tools/qxf2c.py.
