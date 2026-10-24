@@ -103,6 +103,38 @@ int lj_test_draw_goldens(int argc, char **argv)
     CHECK(px(&s, 2, 2) == LJ_CLR_YELLOW && px(&s, 3, 2) == LJ_CLR_BTNFACE && px(&s, 9, 2) == LJ_CLR_YELLOW && px(&s, 2, 3) == LJ_CLR_BTNFACE && px(&s, 3, 3) == LJ_CLR_YELLOW);
     CHECK(px(&s, 63, 63) == LJ_CLR_RED && px(&s, 0, 62) == LJ_CLR_BTNFACE && px(&s, 0, 63) == LJ_CLR_YELLOW);        /* 0x5A row 1 bit 7 clear, bit 6 set at x=-3+... */
     lj_surface_free(&s);
+
+    /* lj_blit_rgb_fit: a 50x50 icon into the 60x36 Fixed Size tile body shrinks to 36x36, centred, nothing outside the box;
+     * a 20x20 one is copied 1:1 (never enlarged); src pixel (x, y) is coloured (x << 8) | y + 1 so the sample is readable */
+    {
+        lj_surface src = { 0 };
+        int x, y, out = 0, in = 0;
+        CHECK(lj_surface_init(&s, 64, 64) == 0 && lj_surface_init(&src, 50, 50) == 0);
+        for (y = 0; y < 50; y++) for (x = 0; x < 50; x++) src.px[y * 50 + x] = ((uint32_t)x << 8) | (uint32_t)(y + 1);
+        lj_fill(&s, 0, 0, 64, 64, LJ_CLR_BTNFACE);
+        lj_blit_rgb_fit(&s, 2, 20, 60, 36, &src, 0);
+        for (y = 0; y < 64; y++) for (x = 0; x < 64; x++) {
+            int inbox = x >= 14 && x < 50 && y >= 20 && y < 56;
+            if (px(&s, x, y) != LJ_CLR_BTNFACE) { if (inbox) in++; else out++; }
+        }
+        CHECK(out == 0 && in == 36 * 36);
+        CHECK(px(&s, 14, 20) == 1u && px(&s, 49, 55) == ((48u << 8) | 49u) && px(&s, 15, 21) == ((1u << 8) | 2u) && px(&s, 32, 38) == ((25u << 8) | 26u));
+        src.px[48 * 50] = 50u;                                                          /* (0, 48), the last row sampled, takes the key colour of (0, 49) */
+        lj_fill(&s, 0, 0, 64, 64, LJ_CLR_BTNFACE);
+        lj_blit_rgb_fit(&s, 2, 20, 60, 36, &src, 1);
+        CHECK(px(&s, 14, 55) == LJ_CLR_BTNFACE && px(&s, 15, 55) == ((1u << 8) | 49u));
+        lj_surface_free(&src);
+        CHECK(lj_surface_init(&src, 20, 10) == 0);
+        lj_fill(&src, 0, 0, 20, 10, LJ_CLR_RED);
+        lj_fill(&s, 0, 0, 64, 64, LJ_CLR_BTNFACE);
+        lj_blit_rgb_fit(&s, 2, 20, 60, 36, &src, 0);
+        CHECK(px(&s, 22, 33) == LJ_CLR_RED && px(&s, 41, 42) == LJ_CLR_RED && px(&s, 21, 33) == LJ_CLR_BTNFACE && px(&s, 42, 42) == LJ_CLR_BTNFACE && px(&s, 22, 43) == LJ_CLR_BTNFACE);
+        lj_fill(&s, 0, 0, 64, 64, LJ_CLR_BTNFACE);
+        lj_blit_rgb_fit(&s, 0, 0, 10, 60, &src, 0);                                       /* wide: 10x5 at y 27 */
+        CHECK(px(&s, 0, 27) == LJ_CLR_RED && px(&s, 9, 31) == LJ_CLR_RED && px(&s, 10, 27) == LJ_CLR_BTNFACE && px(&s, 0, 26) == LJ_CLR_BTNFACE && px(&s, 0, 32) == LJ_CLR_BTNFACE);
+        lj_surface_free(&src);
+        lj_surface_free(&s);
+    }
     CHECK(lj_surface_init(&s, 0, 5) == -1 && s.px == NULL);
     lj_surface_free(&s);
 

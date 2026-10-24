@@ -128,6 +128,29 @@ void lj_blit_rgb(lj_surface *s, int x, int y, const lj_surface *src, int transpa
     }
 }
 
+void lj_blit_rgb_fit(lj_surface *s, int x, int y, int w, int h, const lj_surface *src, int transparent)
+{
+    int i, j, dw, dh;
+    uint32_t key = 0;
+    if (!s || !s->px || !src || !src->px || src->w <= 0 || src->h <= 0 || w <= 0 || h <= 0) return;
+    dw = src->w; dh = src->h;
+    if (dw > w || dh > h) {                                      /* shrink to the tighter side: dw/dh = src w/h, integer */
+        if (src->w * h > src->h * w) { dw = w; dh = src->h * w / src->w; }
+        else { dh = h; dw = src->w * h / src->h; }
+        if (dw < 1) dw = 1;
+        if (dh < 1) dh = 1;
+    }
+    x += (w - dw) / 2; y += (h - dh) / 2;
+    if (transparent) key = src->px[(size_t)(src->h - 1) * (size_t)src->w];
+    for (j = 0; j < dh; j++) {
+        const uint32_t *row = src->px + (size_t)(j * src->h / dh) * (size_t)src->w;
+        for (i = 0; i < dw; i++) {
+            uint32_t c = row[i * src->w / dw];
+            if (!transparent || c != key) lj_pixel(s, x + i, y + j, c);
+        }
+    }
+}
+
 /* ---- masks: '#' = ink, drawn at (x, y) ------------------------------------------ */
 static void lj_mask(lj_surface *s, int x, int y, const char *const *rows, int n, uint32_t rgb)
 {

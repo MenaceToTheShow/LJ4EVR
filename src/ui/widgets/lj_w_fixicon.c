@@ -17,8 +17,8 @@ static void paint(lj_widget *w, lj_surface *s)
     lj_fill(s, ax + 1, ay, w->w - 3, LJ_FIXICON_CAP_H, lj_fix_cap_rgb[f->state & 3]);
     snprintf(cap, sizeof cap, "(%d) %s", f->number, f->user_name ? f->user_name : "");
     lj_w_text_fit(s, w, ax + 2, ay + 1, cap, LJ_CLR_BTNHIGHLIGHT, w->w - 5);
-    if (f->bitmap && bh > 0)
-        lj_blit_rgb(s, ax + 1 + (w->w - 3 - f->bitmap->w) / 2, ay + LJ_FIXICON_CAP_H + (bh - f->bitmap->h) / 2, f->bitmap, 1);
+    if (f->bitmap && bh > 0)   /* Fixed Size: our 50-px art shrinks into the 60x36 body under the caption, as LJ2 draws it (unselectedfixture.gif); Image Size tiles grow, so 1:1 */
+        lj_blit_rgb_fit(s, ax + 1, ay + LJ_FIXICON_CAP_H, w->w - 3, bh, f->bitmap, 1);
     if (f->programmed) lj_fill(s, ax + 3, ay + LJ_FIXICON_CAP_H + 3, 5, 5, f->programmed == LJ_FIX_PROG_SCENE ? LJ_CLR_GREEN : 0x00FFFFu);
 }
 

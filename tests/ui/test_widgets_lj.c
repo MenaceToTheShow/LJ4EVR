@@ -396,6 +396,19 @@ int lj_test_widgets_lj(int argc, char **argv)
         paint(w, &s);
         CHECK(px(&s, 71, 100) == LJ_CLR_RED && px(&s, 100, 130) == 0x123456u && px(&s, 74, 119) == LJ_CLR_GREEN);
         CHECK(px(&s, 91, 142) == LJ_CLR_BTNFACE && px(&s, 92, 142) == 0x123456u);                 /* the key pixel is not painted */
+        lj_surface_free(&bmp);
+        /* a 50x50 art/icons bitmap (Joey: "the mac500 icon is outside of the cell"): shrunk to 36x36 in the body
+         * x 71..130, y 115..150, centred at (83,115); no pixel over the caption or outside the 63x53 rect */
+        CHECK(lj_surface_init(&bmp, 50, 50) == 0);
+        lj_fill(&bmp, 0, 0, 50, 50, 0xFF00FFu);
+        lj_fill(&bmp, 0, 49, 1, 1, 0xC0C0C0);
+        lj_w_fixicon_set(w, LJ_FIX_UNSELECTED, LJ_FIX_PROG_NONE, &bmp);
+        lj_fill(&s, 0, 0, s.w, s.h, 0x123456u);
+        w->vt->paint(w, &s);
+        CHECK(non(&s, 0, 0, s.w, 100, 0x123456u) == 0 && non(&s, 0, 153, s.w, s.h - 153, 0x123456u) == 0);
+        CHECK(non(&s, 0, 100, 70, 53, 0x123456u) == 0 && non(&s, 133, 100, s.w - 133, 53, 0x123456u) == 0);
+        CHECK(non(&s, 71, 101, 60, 14, 0xFF00FFu) == 60 * 14 && non(&s, 83, 115, 36, 36, 0xFF00FFu) == 0);
+        CHECK(non(&s, 70, 100, 63, 53, 0xFF00FFu) == 63 * 53 - 36 * 36);
         lj_w_fixicon_set(w, LJ_FIX_SLAVE, LJ_FIX_PROG_SEQ, NULL);
         paint(w, &s);
         CHECK(px(&s, 71, 100) == 0x800000u && px(&s, 74, 119) == 0x00FFFFu && px(&s, 100, 130) == LJ_CLR_BTNFACE);

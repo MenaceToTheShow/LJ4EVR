@@ -27,6 +27,7 @@ void lj_edge_sunken(lj_surface *s, int x, int y, int w, int h, uint32_t interior
 void lj_focus_rect(lj_surface *s, int x, int y, int w, int h);                          /* 1-px dotted black (alternate pixels) */
 void lj_blit_1bit(lj_surface *s, int x, int y, const uint8_t *bits, int w, int h, uint32_t rgb);   /* set bits painted rgb; row stride (w+7)/8 bytes, MSB first; clear bits untouched */
 void lj_blit_rgb(lj_surface *s, int x, int y, const lj_surface *src, int transparent);           /* transparent: bottom-left pixel of src is the key [07 fact-check 16] */
+void lj_blit_rgb_fit(lj_surface *s, int x, int y, int w, int h, const lj_surface *src, int transparent);   /* src centred in the box; 1:1 when it fits, else shrunk nearest-neighbour, aspect kept (never enlarged); nothing outside the box */
 
 /* --- the rest of the 7.3 classic rules. Integer, clipped. (Frame, menu, scrollbar and spinner painting live in ui/.) --- */
 void lj_checker(lj_surface *s, int x, int y, int w, int h, uint32_t a, uint32_t b);  /* 50 % dither: a where (x+y) even, else b */
