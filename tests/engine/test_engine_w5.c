@@ -36,6 +36,8 @@ static void t_dmx_in(lj_engine *e)
     memset(in, 0, sizeof in); in[4] = 200; in[5] = 30;
     c = cmd(LJ_CMD_DMX_IN, 1, 0); c->dmx_in = in; lj_engine_cmd(e, c);
     tick(e);
+    CHECK(p->dmx_in_live == 0 && lj_post_s1_patch_src(p, 1, 11, 77) == 77);   /* ME-190: DMX-in disabled (the default): an Ignore channel keeps its value */
+    lj_engine_cmd(e, cmd(LJ_CMD_DMX_IN_LIVE, 0, 1)); tick(e);
     CHECK(p->dmx_in[4] == 200 && p->dmx_in[5] == 30);
     CHECK(lj_post_s1_patch_src(p, 1, 9, 77) == 77);                   /* Overwrite Enable off: the cue value stands */
     CHECK(lj_post_s1_patch_src(p, 1, 11, 77) == 200);                 /* W6: an Ignore channel takes DMX-in with the gate off */

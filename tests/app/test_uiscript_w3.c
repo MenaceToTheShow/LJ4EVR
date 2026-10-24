@@ -49,6 +49,8 @@
 #include "ui/widgets/lj_widgets_lists.h"
 #include "windows/lj_bgcue_form.h"
 #include "windows/lj_genmacro_editor.h"
+#include "windows/lj_global_patch.h"
+#include "windows/lj_user_palettes.h"
 #include "windows/lj_gs2_dialogs.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
@@ -274,6 +276,34 @@ int lj_test_uiscript_w3(int argc, char **argv)
     CHECK(run_text("open global_patch\nclick TGlobalPatchForm.ClearAllInverted1\nassert_prompt \"Clear All Inverted Channels ?\"\nquit\n") == 0);
     lj_warnings_close_all();
     CHECK(run_text("close global_patch\nquit\n") == 0);
+    /* W6 ME-192: cbIgnoreEnable shows the selected DMX-in channel's DMX in Enable Switch, and <- Set Values applies it */
+    CHECK(run_text("open global_patch\nclick TGlobalPatchForm.PatchtoLink11\nquit\n") == 0);
+    CHECK(lj_global_patch_select(0) == 0);
+    CHECK(run_text("click TGlobalPatchForm.P_EnableIgnore\n"
+                   "assert_enabled TGlobalPatchForm.cbIgnoreEnable 1\nassert_checked TGlobalPatchForm.cbIgnoreEnable 1\n"
+                   "click TGlobalPatchForm.P_EnableUse\nassert_checked TGlobalPatchForm.cbIgnoreEnable 0\n"
+                   "click TGlobalPatchForm.cbIgnoreEnable\nclick TGlobalPatchForm.bSet\nclick TGlobalPatchForm.SaveGlobalPatch1\n"
+                   "assert_file_line GlobalPatch.GPA \"ch 1:1 src=in sl=1 sc=1 mode=abs inv=0 min=0 max=255 htp=0 ign=1\"\nquit\n") == 0);
+    CHECK(lj_global_patch_work() && lj_global_patch_work()[0].ign_en == 1);
+    CHECK(lj_global_patch_select(600) == 0);            /* 2:089, no source: give it a DMX Out source through the panel */
+    CHECK(run_text("click TGlobalPatchForm.eSourceOut\ntype \"7\"\nclick TGlobalPatchForm.bSet\n"
+                   "assert_enabled TGlobalPatchForm.cbIgnoreEnable 0\nassert_checked TGlobalPatchForm.cbIgnoreEnable 0\nquit\n") == 0);
+    CHECK(lj_global_patch_work() && lj_global_patch_work()[600].src_kind == LJ_SRC_DMX_OUT);
+    lj_warnings_close_all();
+    lj_global_patch_close();                            /* the working copy changed: no "save changes" prompt from a script close */
+    /* W6 ME-201: TSavePresetForm2 Preferences > Save on [Enter] (forms.ini [SAVEPRESET2] SaveOnEnter): Return in the name field saves */
+    {   lj_ini *keep = c->forms_ini;
+        int n0;
+        c->forms_ini = lj_ini_new();
+        CHECK(lj_user_palettes_open_kind(LJ_CTL_COLORS) != NULL);
+        n0 = lj_user_palettes_count();
+        CHECK(run_text("click user_palettes.bSave\nclick TSavePresetForm2.SaveonEnter1\nclick TSavePresetForm2.ePresetName\ntype \"OnEnter\"\nkey Enter\nquit\n") == 0);
+        CHECK(lj_user_palettes_count() == n0 + 1 && lj_user_palettes_save_window() == NULL);   /* saved, and Auto Close (default on) closed the box */
+        CHECK(lj_ini_geti(c->forms_ini, "SAVEPRESET2", "SaveOnEnter", 0) == 1);
+        printf("  ME-201 Save on [Enter]: %d entries before, %d after Return\n", n0, lj_user_palettes_count());
+        if (lj_user_palettes_count() > n0) lj_user_palettes_delete(n0);
+        lj_user_palettes_close();
+        lj_ini_free(c->forms_ini); c->forms_ini = keep; }
 
     /* ---- 8. gs2_import: the importer's message; a missing file fails the line ---- */
     {   static uint8_t ten[10];

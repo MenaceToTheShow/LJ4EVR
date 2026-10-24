@@ -25,7 +25,7 @@ enum { LJ_IO_PCM = 2048, LJ_IO_PCM_PASSES = 8 /* LJ_AUDIO_RING / LJ_IO_PCM: the 
 static struct {
     lj_app_io_platform plat;
     lj_dmxin_cfg dmxin; lj_dmxin_map map; uint8_t in[LJ_LINK_CH];   /* in: the engine's DMX_IN source, written under lj_lock only */
-    lj_audio_cfg audio; lj_audio_state audio_state; uint8_t audio_open;
+    lj_audio_cfg audio; lj_audio_state audio_state; uint8_t audio_open; uint32_t audio_dropped;   /* audio_dropped: lj_audio_dropped() at the last pass (ME-191) */
     lj_remote_cfg remote; lj_extapp_cfg extapp; lj_media media;
     int16_t pcm[LJ_IO_PCM];
 } lj_io;
@@ -61,6 +61,7 @@ static void lj_io_dmxin_apply(void)
     lj_ctx *c = lj_ctx_get();
     lj_dmxin_open(&lj_io.dmxin, c->sacn ? c->sacn->cid : NULL);
     lj_io_post(LJ_CMD_OVERWRITE_ENABLE, 0, lj_io.dmxin.enabled);   /* 05 s3.2: always on while the function is unassigned; off with DMX-in off (the v1.0.0 behaviour); the dmxin track refines */
+    lj_io_post(LJ_CMD_DMX_IN_LIVE, 0, lj_io.dmxin.enabled);        /* ME-190: with DMX-in off S1 leaves every channel alone, an Ignore one included */
     if (c->sacn) {                                                   /* Art-Net input rides the sender's socket: the engine thread filters on artnet_in */
         lj_lock(); c->sacn->artnet_in = (uint16_t)(lj_io.dmxin.enabled && lj_io.dmxin.source == LJ_DMXIN_ARTNET ? lj_io.dmxin.universe : 0); lj_unlock();
         { lj_cmd s; memset(&s, 0, sizeof s); s.kind = LJ_CMD_SACN_CFG; s.sacn = c->sacn; lj_ctx_post(&s); }
@@ -149,6 +150,7 @@ void lj_app_io_idle(uint64_t now_us)
     lj_dmxin_functions_step(&lj_io.map, k, lj_io.dmxin.functions_off);   /* ME-167: a live frame only; once more on a functions_off change */
     for (k = 0; k < LJ_IO_PCM_PASSES && (n = lj_audio_poll(lj_io.pcm, LJ_IO_PCM)) > 0; k++)   /* seam 4 */
         trigs += lj_audio_analyze(&lj_io.audio_state, &lj_io.audio, lj_io.pcm, n, now_us);
+    { uint32_t d = lj_audio_dropped(); lj_io.audio_state.samples += d - lj_io.audio_dropped; lj_io.audio_dropped = d; }   /* ME-191: the ring's drops advance the sample clock too (unsigned difference: wrap-safe) */
     for (k = 0; k < trigs; k++) lj_io_post(LJ_CMD_TRIG, LJ_RUN_ALL, LJ_TRIG_AUDIO_EVENT);
     lj_remote_poll(now_us);                                          /* seam 5 */
     if (c->engine) {                                                 /* seam 6: the strings leave from a frame copy, outside engine/ */

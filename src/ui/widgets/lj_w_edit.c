@@ -231,7 +231,7 @@ int lj_w_edit_set_text(lj_widget *w, const char *s)
         lj_str_copy(e->text, (size_t)e->max_length + 1, s ? s : "");
         e->len = (int)strlen(e->text);
     }
-    e->caret = e->anchor = e->variant == LJ_W_EDIT_MASK ? 0 : e->len;   /* CARET (fidelity.md:27): at the end of the text; a fixed-length mask keeps it home so typing overwrites */
+    e->caret = e->anchor = 0;   /* ME-206: a Win32 EDIT leaves the caret at 0 after WM_SETTEXT (VCL Text :=); the Sequence time fields move it to the end themselves (CARET) */
     changed(e);
     return 0;
 }

@@ -52,7 +52,7 @@ static const lj_menu_desc lj_fg_menus[] = { { "MainMenu1", 1, lj_fg_main, LJ_COU
 static const lj_form_desc lj_form_GROUPS = {
     .name = "GroupForm", .class_name = "TGroupForm", .caption = "Fixture Groups",
     .client_width = 212, .client_height = 204, .color = LJ_CLR(0xC0C0C0) /* clBtnFace */, .style = LJ_FS_STAYONTOP, .border = LJ_BS_SIZEABLE,
-    .icons = LJ_BI_GIVEN | LJ_BI_SYSMENU, .position = LJ_PO_DESIGNED, .left = 100, .top = 100, .text_height = 13, .font = LJ_FONT_SANS13,
+    .icons = LJ_BI_GIVEN | LJ_BI_SYSMENU, .position = LJ_PO_DESIGNED, .text_height = 13, .font = LJ_FONT_SANS13,
     .font_name = "MS Sans Serif", .font_height = -11, .min_width = 220, .min_height = 150, .menu = "MainMenu1", .menus = lj_fg_menus, .nmenus = LJ_COUNT_OF(lj_fg_menus),
     .ctls = lj_fg_ctls, .n = LJ_COUNT_OF(lj_fg_ctls), .events = { { "OnClose", "FormClose" } }
 };

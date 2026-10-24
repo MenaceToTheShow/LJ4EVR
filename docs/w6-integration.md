@@ -230,3 +230,63 @@ Left for the release step: the version bump to 1.2.0, the CHANGELOG, the 1.2.0 "
 takes its item off; `docs/w6-gates.md` section 3), and the ME-189 known-gap line in the release notes. Older docs
 (`CONTRIBUTING.md`, `docs/releasing.md`, the earlier logs) still name the repository as `UnbannableGT/LJ4EVR`; GitHub
 redirects those URLs.
+
+## Must-fix r1 (W6 council verdict section 4, items 1-14)
+
+2026-10-23, on `55527ac`. One commit, `W6: must-fix r1`. Toolchain as section 4 (MSVC cl 19.44 + Ninja, SDL from the
+`release-3.4.18` source). Every app run used `SDL_VIDEO_DRIVER=dummy` in the foreground under a timeout; no window
+reached the screen. `VERSION` stays 1.1.0; no tag; ME-207 (release) and ME-208 (design, vault) are not part of this
+pass. Each mutant below was applied to the working tree, built in `build-w6i-nosdl`, run, and the file restored from
+its saved copy (for ME-194, applied to a scratch copy of `src/`).
+
+| # | ME | Change | Verify (quoted) |
+|---|---|---|---|
+| 1 | ME-190 | `LJ_CMD_DMX_IN_LIVE` (appended kind) sets the appended `lj_post_ctx.dmx_in_live`; `lj_post_s1_patch_src` returns the channel's own value for every channel while it is 0; `lj_io_dmxin_apply` posts it with Overwrite Enable (= `dmxin.enabled`). The replay harness posts it at build when the scenario has an `at k dmx_in` line (`docs/replay-grammar.md`). New `tests/engine/replay/w5/dmxin_s1_ignore_off.lj4r`; `test_engine_w5` gains the live-0 row | `replay dmxin_s1_ignore_off: 5 ticks, 2 expects, 0 fails`; `replay dmxin_s1_ignore: 6 ticks, 4 expects, 0 fails`; mutant (`!c->dmx_in_live` removed): `FAIL tests/engine/replay/w5/dmxin_s1_ignore_off.lj4r:18 tick 2 1:2 expected 100 got 0 (out, layer 1)`, `replay dmxin_s1_ignore_off: 5 ticks, 2 expects, 3 fails`. `replay-frames.bin` re-recorded once: 129,960,144 bytes, sha256 `3474ee7386eab212115c122c07595ec161a0e2e65f5732e89c127cf618f95f34` in all three trees; the same dump of the other 44 scenarios (the new file left out): 129,939,560 bytes, `a1d1f2def045b0dc1cad89e489bf2625b6dbef25d4e4756c8d1ea500ef3d3d62` (= W6 integration); `dump-frames` 1,641,600 bytes, `5b13f41930362b75a7aa6f9c53f77db2d315a4039ea5a18da664ea1263114b50` (Release, Debug, no-SDL) |
+| 2 | ME-191 | `lj_app_io_idle` adds the growth of `lj_audio_dropped()` since the last pass to `audio_state.samples` (unsigned difference) | `test_audio`: `ring drops: 2 onsets 320 ms apart, 10143 samples dropped between them: 2 trig(s)`, `test_audio: PASS (0 failures)`; mutant (the add removed): `ring drops: ... 1 trig(s)`, `FAIL D:\lj4evr\tests\io\test_audio.c:258 c->audio_state->trigs == 2` |
+| 3 | ME-192 | `panel_fill`: `cbIgnoreEnable` enabled for a DMX-in source, checked = `ign_en` (refilled after the popup Use / Ignore too); `<- Set Values` takes the box for a DMX-in source. New UI-script verb `assert_checked` (`docs/ui-script.md`) | `test_uiscript_w3: 0 failure(s)` with the rows: popup `P_EnableIgnore` -> `assert_enabled TGlobalPatchForm.cbIgnoreEnable 1`, `assert_checked ... 1`; `P_EnableUse` -> `assert_checked ... 0`; box clicked, `bSet`, `SaveGlobalPatch1` -> `assert_file_line GlobalPatch.GPA "ch 1:1 src=in sl=1 sc=1 mode=abs inv=0 min=0 max=255 htp=0 ign=1"`; a DMX Out source typed and set -> `assert_enabled ... 0`. No golden moved |
+| 4 | ME-194 | `lj_dmxin.c` formats with `lj_net_ip_fmt`; `IP_SCAN_RE` takes the quad anywhere in the literal, `IP_FN_RE` any return type | `test_layering: 463 file(s) checked, 221 header(s) compiled alone, ..., popup_at 2, ip-parse copies 0, 0 finding(s)`; the fix reverted in a scratch copy: `io/lj_dmxin.c: a dotted-IPv4 sscanf / snprintf; use lj_net_ip_parse / lj_net_ip_fmt (WIZARD_STYLES-9)`, `... ip-parse copies 1, 1 finding(s)` |
+| 5 | ME-196 | the two comments back on their own declarations | `v1.1.0` and here: the same `lj_app_post_locked` line with `/* W3 (ME-102): caller holds lj_lock; ... */`, and the same `lj_platform_sleep_us` line with `/* SDL_DelayPrecise; the engine thread's sleep_until (design 3.1) */`; `test_layering` 0 findings (headers compiled alone) |
+| 6 | ME-197 | one `lj_log` line naming the key when a non-empty `[SACN] Nic`, a `UnicastN` entry or `[DMXIN] Nic` is refused | `test_net`: `refused: Nic= 10.0.0.5 -> nic_ipv4 0, logged:` `sacn: Hardware.Ini [SACN] Nic is not a dotted IPv4 address: the OS default interface sends`, `sacn: Hardware.Ini [SACN] Unicast1: an entry is not a dotted IPv4 address (dropped)`, `dmxin: Hardware.Ini [DMXIN] Nic is not a dotted IPv4 address: every interface listens`; `test_net: PASS` |
+| 7 | ME-198 | `comp_ok` takes `'0'` as a device digit | `test_ljb`: `ljb container: 0 failures after the refusal rows` (`COM0.txt`, `LPT0`, `lpt0\` refused; `COM\xB4.txt`, `COM10.txt` accepted), `test_ljb: PASS (0)` |
+| 8 | ME-199 | `left/top` dropped from the TGroupForm and THTPGroupsForm descs; a fidelity row names the 12 Positions we centre on the main window | `w6_podesigned.lj4s` (empty scratch userdata, dummy video): rc 0, 0 SCRIPT FAIL, with `assert_pos TGroupForm 389 278` (220x250 outer: 100 + (799 - 220) / 2, 100 + (606 - 250) / 2) and `assert_pos THTPGroupsForm 364 230` (270x346: 100 + (799 - 270) / 2, 100 + (606 - 346) / 2); a wrong-value probe: `SCRIPT FAIL line 3: TGroupForm position is 389x278, expected 100x100`; `fidelity_check` green |
+| 9 | ME-200 | `Help1Click` binding deleted (TSavePresetForm2); `w4_entry_prep.sh` creates `User/Default` | `w4_entry_points.lj4s` from a userdata prepared by the script alone (`Default W4Aux W4Entry W4Update`), a scratch working directory, dummy video and audio: `rc=0`, `PASS lines: 156`, `SCRIPT FAIL: 0`, `no binding: 0` |
+| 10 | ME-201 | the code comment, a fidelity row superseding row 375's wording, two `file-formats.md` rows; the UI script's `type` / `key` reach TSavePresetForm2 | `git grep -n "SAVESELECTION" -- src/windows/lj_user_palettes.c`: no output; `grep -c "SAVEPRESET2\|SyncFrames" docs/file-formats.md`: 2; `test_uiscript_w3`: `ME-201 Save on [Enter]: 0 entries before, 1 after Return`; mutant (the Enter test reads another key): `ME-201 Save on [Enter]: 0 entries before, 0 after Return`, `FAIL D:\lj4evr\tests\app\test_uiscript_w3.c:301 lj_user_palettes_count() == n0 + 1 && lj_user_palettes_save_window() == NULL` |
+| 11 | ME-204 | `golden_anchors.py --selftest` (synthetic golden and DFM text: the anchor probe hit and miss, the 3DLight count, three bad BMPs) and CTest `golden_anchors_selftest`; `--date` and `--reviewer` required | `ctest -R golden_anchors_selftest`: Passed (`golden_anchors --selftest: OK`); without `--date`: `usage: golden_anchors.py [-h] --ref REF [--since SINCE] --date DATE --reviewer REVIEWER [--note NOTE] [--write]`, `golden_anchors.py: error: the following arguments are required: --date`, rc 2 |
+| 12 | ME-206 | `lj_w_edit_set_text` puts the caret at 0; the Sequence form's ES / EF call `lj_w_edit_select(w, len, 0)` after the write | `widgets_basic: 0 failure(s)` (caret 0 after `set_text("4:00")`); `test_windows_a`: `ME-206 Sequence ES: caret 4 after the form writes "4:00"`, `W2A_TSEQUENCEFORM_CARET: identical`; three goldens moved, each with a REVIEWED row naming the caret: `W4DD_TSAVESELECTIONFORM` (17 px), `W4SD_NAME_SLOTS` (19 px), `W4SD_STATIC_SLOT_NAME` (22 px); against the v1.1.0 goldens only the ME-161-3DLIGHT caption-button pixels differ (23, 23, 69), so the caret is where v1.1.0 drew it |
+| 13 | ME-193 | the bullet deleted from `help/not-available.txt`, `help_check.py --write`, `docs/user-guide.md`; both files appended to the release-step sentence (`w6-gates.md` s3) | `git grep -n -i "Use / Ignore" -- help src/windows/lj_help_topics_gen.c docs/user-guide.md`: no output (rc 1); `help_check: 19 texts against 200060 reference 8-word runs`, `help_check: 18 topics`; `help_check selftest: OK` |
+| 14 | ME-195, -202, -203, -205 | fidelity rows appended to the W6 fidelity track table (Debug tabs, multi-select, the Export Warning body, beside the ME-199 and ME-201 rows); 12 REVIEWED rows; `(F47).;` -> `(F47);`; headings: one H2 `Fidelity rows touched by W6` over three H3s (levels only); `w6-gates.md` s3 gains the GP-DMXIN and ME-190 rulings and the W5 blocker sentence | `fidelity_check: 73 F/I id(s) with a row of 73, sacrifice paragraphs equal, 0 finding(s)`; `grep -n "OwnerDraw" docs/fidelity.md`: line 379; `grep -n "MultiSelect" docs/fidelity.md`: line 382; ME-203: the newest REVIEWED row of each of the 12 forms names its GIF (12 of 12, split on tabs); `grep -c "(F47)\.;" src/fixlib/hand/*.c`: 0 in each; `grep -c "^## Fidelity rows touched by W6" docs/fidelity.md`: 1; `ui_golden` / `ui_golden_ctl` Passed |
+
+ME-203 note: for four of the twelve forms the window is not sizeable, and the rows say so instead of "sizeable":
+TCUEMACROFORM (bsSingle, `cuemacrocontrol2.gif` reduced and cropped), TFINGERSSTATUS (bsToolWindow,
+`fingersstatuslarge.gif` shows part of the panel), TFIXTUREINFOFORM (bsToolWindow, `fixtureinfo.gif` reduced; the
+seat's title match `fixturefoldermode.gif` is the profile editor's tab) and TSAVEPRESETFORM2 (the help has no capture
+of this box; the title match `savecuelistdialog.gif` is the Save Cue List dialog).
+
+ME-190 note: the verdict's "the other 44 equal `a1d1f2de...`" needs the harness to enable the input from tick 0 in a
+scenario with any `dmx_in` line. With the bit posted at the first `dmx_in` line instead, `dmxin_s1_ignore.lj4r`
+changed at tick 0 (its Ignore channel no longer took the empty input before the first frame) and the 44-scenario dump
+read `bd70d29d...`; the build-time post restores `a1d1f2de...` exactly.
+
+D4: `git grep -o "PROPOSAL rig" -- src tests tools | wc -l` is 396 at `55527ac` and 396 here (the Save Palette comment
+was reworded with its tag kept); the whole tree 503 -> 504 (the new fidelity row's tag). `git diff v1.1.0 --
+src/engine/lj_engine_rules.h` empty. No listener, dependency, secret or workflow change.
+
+Builds and tests (every tree `--clean-first` on the must-fix tree, then rebuilt incrementally after the last change,
+`tests/engine/lj_replay.c`; 0 warnings, 0 errors each time):
+
+    build-w6i-rel   (Release, SDL)        [592/593]   ctest 100% tests passed, 0 tests failed out of 158
+    build-w6i-nosdl (Release, LJ_SDL=OFF) [352/353]   ctest 100% tests passed, 0 tests failed out of 156
+    build-w6i-dbg   (Debug, SDL)          [592/593]   ctest 100% tests passed, 0 tests failed out of 158
+    test_layering                         463 file(s) checked, 221 header(s) compiled alone, ..., popup_at 2, ip-parse copies 0, 0 finding(s)
+    fidelity_check                        73 F/I id(s) with a row of 73, sacrifice paragraphs equal, 0 finding(s)
+    help_check                            19 texts against 200060 reference 8-word runs; 18 topics
+    replay_all                            replay: 36 scenario(s), 0 failed
+    ui_golden / ui_golden_ctl             Passed / Passed (three goldens re-rendered for ME-206, REVIEWED rows above)
+
+The new rows: `golden_anchors_selftest`, `replay_w5_dmxin_s1_ignore_off` (158 = 156 + 2; no-SDL 154 + 2).
+
+Pre-commit scans over the working-tree diff against `55527ac` (46 paths) and the commit message: `reference/` 0 paths,
+sha1 of each changed file (as-is and CRLF->LF) against the 18,926 `reference/` files 0 equal; REL-PRIVATE (the
+ME-148 table: user name, work-PC and host names, both LAN prefixes of this PC, its NIC names, the account mails, the
+design-vault root, the user-profile path, plus the old account name) 0 hits in the added lines, the new file and the
+message. No capture was re-shot.

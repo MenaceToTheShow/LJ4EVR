@@ -35,8 +35,8 @@ int  lj_platform_load_bmp(const char *path, lj_surface *out);            /* SDL_
 int  lj_platform_clipboard_get(char *dst, size_t cap);                   /* CP1252 text, unmappable -> '?'; 0 / -1 when empty or unavailable */
 int  lj_platform_clipboard_set(const char *text);                        /* CP1252 in; 0 / -1 */
 int  lj_platform_pref_path(char *dst, size_t cap);                       /* SDL_GetPrefPath("LJ4EVR", "LJ4EVR") as UTF-8 bytes (not converted: ME-65, a path only fopen sees), trailing separator; 0 / -1 */
-void lj_platform_sleep_us(uint64_t us);
-int  lj_platform_spawn(const char *const *argv);                         /* LORD_FIDELITY-19: SDL_CreateProcess(argv) left running (the restart re-exec); argv bytes as main got them; 0 / -1 + log */                                  /* SDL_DelayPrecise; the engine thread's sleep_until (design 3.1) */
+void lj_platform_sleep_us(uint64_t us);                                  /* SDL_DelayPrecise; the engine thread's sleep_until (design 3.1) */
+int  lj_platform_spawn(const char *const *argv);                         /* LORD_FIDELITY-19: SDL_CreateProcess(argv) left running (the restart re-exec); argv bytes as main got them; 0 / -1 + log */
 
 /* Engine thread (design 3.1): started once after lj_engine_bind; stopped before lj_engine_destroy. */
 struct lj_engine;

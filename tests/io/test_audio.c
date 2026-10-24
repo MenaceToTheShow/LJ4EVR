@@ -5,7 +5,8 @@
  *  - the FFT bands put each bin-exact tone in its band and the equalizer removes a cut band; clip 0 / 1 / 2;
  *  - the capture ring drops and counts past LJ_AUDIO_RING; Hardware.Ini [AUDIO] round trip and hostile values clamped;
  *  - W5-AUD-6: the DMX-in gain / noise levels and the Fingers jogs reach the same two settings;
- *  - W6 LORD_ENGINE-7: trig times follow the sample count, not a jittered wall clock. */
+ *  - W6 LORD_ENGINE-7: trig times follow the sample count, not a jittered wall clock;
+ *  - W6 ME-191: lj_app_io_idle adds the ring's dropped samples to that count, so a UI stall loses no trig. */
 #include <stdio.h>
 #include <string.h>
 #include "core/lj_ini.h"
@@ -226,6 +227,40 @@ static void test_sample_clock(void)
            nb, (unsigned long long)(nb ? b[0] : 0), (unsigned long long)(nb ? b[nb - 1] : 0));
 }
 
+#ifndef LJ_AUDIO_SDL_TEST
+#include "app/lj_app_io.h"
+/* W6 ME-191: two onsets 320 ms apart (over the 312 ms default decay), with 230 ms of samples dropped by a full ring
+ * between them (a UI stall). The ring holds 16384 samples: onset 1 sits 50 ms before its end, 10143 samples (230 ms)
+ * posted into the full ring are dropped, then onset 2 arrives 40 ms into the next post. Without the drops on the sample
+ * clock the two read 90 ms apart and the second is lost inside the decay. */
+static void test_ring_drops(void)
+{
+    enum { MS = LJ_AUDIO_RATE / 1000, A = LJ_AUDIO_RING - 50 * MS, DROP = 10143, B = 40 * MS, TAIL = 4096 };
+    lj_ctx *c = lj_ctx_get();
+    int16_t out[2048];
+    int i;
+    lj_app_io_set_platform(NULL);
+    lj_app_io_start();                                 /* a fresh ctx: no Hardware.Ini, audio off, nothing opened */
+    while (lj_audio_poll(out, 2048) > 0) {}
+    lj_app_io_idle(1000000);                           /* takes in the drops of earlier rows */
+    lj_audio_reset(c->audio_state);
+    memset(pcm, 0, sizeof pcm);
+    for (i = 0; i < 256; i++) pcm[A + i] = lj_av_click[i];
+    lj_audio_post(pcm, LJ_AUDIO_RING);                 /* the ring is full */
+    lj_audio_post(pcm + LJ_AUDIO_RING, DROP);          /* dropped and counted */
+    lj_app_io_idle(2000000);
+    CHECK(c->audio_state->trigs == 1);
+    memset(pcm, 0, sizeof pcm);
+    for (i = 0; i < 256; i++) pcm[B + i] = lj_av_click[i];
+    lj_audio_post(pcm, B + TAIL);
+    lj_app_io_idle(2400000);
+    printf("  ring drops: 2 onsets 320 ms apart, %d samples dropped between them: %u trig(s)\n", DROP, (unsigned)c->audio_state->trigs);
+    CHECK(c->audio_state->trigs == 2);
+    lj_app_io_stop();
+    c->dmxin = NULL; c->dmxin_map = NULL; c->audio = NULL; c->audio_state = NULL; c->remote = NULL; c->extapp = NULL; c->media = NULL; c->audio_list = NULL;
+}
+#endif
+
 int lj_test_audio(int argc, char **argv);
 int lj_test_audio(int argc, char **argv)
 {
@@ -236,6 +271,9 @@ int lj_test_audio(int argc, char **argv)
     test_cfg();
     test_remote_inputs();
     test_sample_clock();
+#ifndef LJ_AUDIO_SDL_TEST
+    test_ring_drops();
+#endif
     printf("test_audio: %s (%d failure%s)\n", fails ? "FAIL" : "PASS", fails, fails == 1 ? "" : "s");
     return fails ? 1 : 0;
 }

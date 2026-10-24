@@ -9,8 +9,9 @@ bevel or border, TBevel box / line, TButton / TBitBtn, the sunken list / edit fa
 client origin + (Left, Top) and must carry its edge colour there; and the CHM capture: a GIF of a help topic that names
 the form's caption with the golden's aspect ratio (within 3%), with its scale, or "no CHM capture".
 
-usage: golden_anchors.py --ref <reference dir> [--since HEAD] [--date 2026-10-23] [--reviewer "W6 fidelity"]
+usage: golden_anchors.py --ref <reference dir> --date <yyyy-mm-dd> --reviewer <name> [--since HEAD]
                          [--note <tsv: form, text>] [--write]
+       golden_anchors.py --selftest     a synthetic golden and DFM text: the anchor probe, the 3DLight count, a bad BMP
 Without --write the rows are printed; --write appends them to tests/ui/golden/REVIEWED.tsv (earlier rows untouched).
 The reference tree is read as data only (DFM text, help text, GIF headers); nothing of it is written anywhere.
 Python 3, stdlib only.
@@ -231,12 +232,61 @@ def chm(ref, tops, caption, w, h):
     return "CHM %s %dx%d, scale %.2f (reduced: layout only, note 07 s14)" % (g, sz[0], sz[1], sz[0] / w)
 
 
+def make_bmp(w, h, px):
+    """24-bit bottom-up BI_RGB BMP bytes from px[y][x] = 0xRRGGBB"""
+    stride = (w * 3 + 3) & ~3
+    body = b"".join(b"".join(bytes((p & 255, p >> 8 & 255, p >> 16)) for p in px[y]) + b"\0" * (stride - w * 3)
+                    for y in range(h - 1, -1, -1))
+    hdr = b"BM" + (54 + len(body)).to_bytes(4, "little") + b"\0" * 4 + (54).to_bytes(4, "little")
+    info = (40).to_bytes(4, "little") + w.to_bytes(4, "little") + h.to_bytes(4, "little") + (1).to_bytes(2, "little") + \
+        (24).to_bytes(2, "little") + b"\0" * 24
+    return hdr + info + body
+
+
+def selftest():
+    """ME-204: a synthetic 40x30 golden (frame 4, client 32x22 at y 4) with a raised TPanel edge at DFM (5,6)"""
+    import tempfile
+    w, h = 40, 30
+    px = [[FACE] * w for _ in range(h)]
+    px[4 + 6][4 + 5] = 0xFFFFFF
+    img = read_bmp(make_bmp(w, h, px))
+    assert img[:2] == (w, h) and img[2][10][9] == 0xFFFFFF
+    dfm = ("object F: TF\n  ClientWidth = 32\n  ClientHeight = 22\n  object P1: TPanel\n    Left = 5\n    Top = 6\n"
+           "    Width = 10\n    Height = 8\n  end\n  object L1: TLabel\n    Left = 1\n    Top = 1\n  end\nend\n")
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "TF.dfm.txt")
+        with open(path, "w", encoding="cp1252", newline="\n") as f:
+            f.write(dfm)
+        got = probe("TF", path, "W4-GOLD DFM-only render; DFM ClientWidth 32 + 2x4 frame by ClientHeight 22", img)
+        assert got == "client origin (4,4); P1 TPanel (5,6) at (9,10) #FFFFFF; 1 of 1 on the edge colour", got
+        px[10][9] = 0x808080
+        got = probe("TF", path, "DFM ClientWidth 32 + 2x4 frame by ClientHeight 22", read_bmp(make_bmp(w, h, px)))
+        assert got.endswith("#808080 MISS; 0 of 1 on the edge colour"), got
+    new = [row[:] for row in img[2]]
+    new[0][0] = new[0][1] = LIGHT
+    new[29][39] = 0x000000
+    got = classify(img, (w, h, new))
+    assert got.startswith("3 px changed") and ": 2 (192,192,192)->(223,223,223)" in got and "1 other px in x,y 39,29-39,29" in got, got
+    assert classify(None, img) == "new golden, no previous"
+    for bad in (b"", b"BM" + b"\0" * 60, make_bmp(w, h, px)[:-7]):
+        try:
+            read_bmp(bad)
+        except ValueError:
+            continue
+        raise AssertionError("a bad BMP was read")
+    assert chm("", [], "Ab", w, h).startswith("no CHM capture")
+    print("golden_anchors --selftest: OK")
+    return 0
+
+
 def main():
+    if sys.argv[1:] == ["--selftest"]:
+        return selftest()
     ap = argparse.ArgumentParser()
     ap.add_argument("--ref", required=True)
     ap.add_argument("--since", default="HEAD")
-    ap.add_argument("--date", default="2026-10-23")
-    ap.add_argument("--reviewer", default="W6 fidelity")
+    ap.add_argument("--date", required=True)          # ME-204: no wave baked in
+    ap.add_argument("--reviewer", required=True)
     ap.add_argument("--note")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()

@@ -62,7 +62,7 @@ static int comp_ok(const char *s, size_t n)
     for (i = 0; i < 6; i++) {
         int d = stem == 4 ? (unsigned char)s[3] : 0;
         if (stem < 3 || ci(s[0]) != dev[i][0] || ci(s[1]) != dev[i][1] || ci(s[2]) != dev[i][2]) continue;
-        if (i < 4 ? stem == 3 : (d >= '1' && d <= '9') || d == 0xB9 || d == 0xB2 || d == 0xB3) return 0;   /* CP1252 superscript 1 2 3 count (LORD_C-8) */
+        if (i < 4 ? stem == 3 : (d >= '0' && d <= '9') || d == 0xB9 || d == 0xB2 || d == 0xB3) return 0;   /* CP1252 superscript 1 2 3 count (LORD_C-8); ME-198: COM0 / LPT0 too (Microsoft's naming page) */
     }
     return 1;
 }

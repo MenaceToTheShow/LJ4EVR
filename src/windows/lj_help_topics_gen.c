@@ -13,7 +13,7 @@
  *   1a9f9a34b303b75b6b5ae9ac88411386404ff42f90d9be1bd5af12255d599ed6  help/index.txt
  *   320c892f80bb0454af3dc20bddbad508b0313eb4c25bb126964cb3d46f1cff49  help/input.txt
  *   b4823140ba4d9d634ac8844af1efe8ba4987b78183648de62fc0e78a781369bd  help/macros.txt
- *   31f71920ad6f548af98aaa5b610baf85a1d27bc1b025534b50a2e6d8b1f27866  help/not-available.txt
+ *   c74112955d4eda9362798985634f318a5ae34d22abbf4768490f34c6a7e27c6b  help/not-available.txt
  *   648a1c85285a3efa7a93204baec94f687b2a424c9dbe9d34ccc6c2d524761c05  help/notices.txt
  *   a933cd6b5b4e9b9cee5722a56f83badc63c3f0c298c60ef0fce011d8404f6d79  help/output.txt
  *   73bdf774d8f7641364acecfffc007df16a5f4a21c3d5de7c8984708c58648def  help/sequences.txt
@@ -411,9 +411,7 @@ static const char *const lj_ht_16[] = {
     "What is still greyed, with the hint \"Not available in LJ4EVR\":",
     "",
     "- the audio CD and Winamp rows of the cue list and of Hardware Setup;",
-    "- the video options of the MediaPlayer: it plays WAV sound files only;",
-    "- the per-channel \"Use / Ignore DMX In Enable\" items of the Global",
-    "  Patch.",
+    "- the video options of the MediaPlayer: it plays WAV sound files only.",
     "",
     "The Martin hardware that LightJockey 2 drove directly (the 2510 and 2518",
     "controllers, the MC-X, the CD control, SandNet and the USB interfaces)",
@@ -455,7 +453,7 @@ const lj_help_topic lj_help_topics[] = {
     { "import", "Importing a LightJockey 2 backup", lj_ht_13, 12 },
     { "hotkeys-midi", "Hotkeys and MIDI", lj_ht_14, 12 },
     { "files", "Files and libraries", lj_ht_15, 29 },
-    { "not-available", "Not available in LJ4EVR", lj_ht_16, 17 },
+    { "not-available", "Not available in LJ4EVR", lj_ht_16, 15 },
     { "notices", "Notices and licence", lj_ht_17, 15 },
 };
 const int lj_help_ntopics = 18;

@@ -64,6 +64,7 @@ typedef struct {
     lj_scene *scene;                               /* target of ch/fx lines: the current scene or a static slot's */
     lj_cue *cue; lj_bgcue *bg; lj_genmacro *macro;
     const void *sacn_posted;
+    int dmx_in_live;                               /* ME-190: the scenario has an `at k dmx_in` line, so its input is enabled from tick 0 */
     lj_sacn_cfg sacn;
     FILE *frames; lj_replay_result *r;
     char line_buf[RP_LINE_MAX + 2];
@@ -709,6 +710,11 @@ static int rp_finish(rp *p)
     lj_engine_bind(p->e, p->show);
     for (i = 0; i < LJ_FIXTURES; i++) if (p->prof[i]) lj_engine_bind_profile(p->e, i, p->prof[i]);
     p->f = lj_engine_frame(p->e);
+    if (p->dmx_in_live) {                                      /* ME-190: the app posts this with Overwrite Enable when DMX-in is enabled */
+        lj_cmd l;
+        memset(&l, 0, sizeof l); l.kind = LJ_CMD_DMX_IN_LIVE; l.b = 1;
+        if (lj_engine_cmd(p->e, &l)) return rp_fail(p, "lj_engine_cmd: command array full");
+    }
     p->built = 1;
     p->seq = NULL; p->scene = NULL; p->cue = NULL; p->bg = NULL; p->macro = NULL;
     return 0;
@@ -1728,6 +1734,11 @@ int lj_replay_run(const char *path, FILE *frames_out, lj_replay_result *out)
     rp_basename(p->path, p->name, sizeof p->name);
     f = fopen(p->path, "rb");
     if (!f) { rp_fail(p, "cannot open"); free(p); return -1; }
+    while (fgets(p->line_buf, sizeof p->line_buf, f)) {        /* ME-190: a scenario that drives DMX-in anywhere has the input enabled (lj_io_dmxin_apply) */
+        char w[16];
+        if (sscanf(p->line_buf, " at %*s %15s", w) == 1 && strcmp(w, "dmx_in") == 0) { p->dmx_in_live = 1; break; }
+    }
+    rewind(f);
     p->show = lj_show_new();
     memset(&rp_mm, 0, sizeof rp_mm);   /* W3 movement: the Bezier scratch, per scenario (show->bez points into it) */
     memset(&rp_clx, 0, sizeof rp_clx); lj_cl_run_init(&rp_clx.run);   /* W3 cuelist-core */

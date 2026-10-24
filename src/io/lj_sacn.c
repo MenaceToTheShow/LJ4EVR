@@ -169,7 +169,8 @@ int lj_sacn_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
     lj_net_hostname(host, sizeof host);
     lj_sacn_cfg_default(cfg, host);
     if (!ini) return -1;
-    lj_net_ip_parse(lj_ini_gets(ini, "SACN", "Nic", ""), &cfg->nic_ipv4);
+    s = lj_ini_gets(ini, "SACN", "Nic", "");
+    if (s[0] && lj_net_ip_parse(s, &cfg->nic_ipv4) != 0) { cfg->nic_ipv4 = 0; lj_log("sacn: Hardware.Ini [SACN] Nic is not a dotted IPv4 address: the OS default interface sends"); }   /* ME-197: strict, not silent */
     lj_str_copy(cfg->name, sizeof cfg->name, lj_ini_gets(ini, "SACN", "Name", cfg->name));
     s = lj_ini_gets(ini, "SACN", "CID", "");
     if (strlen(s) == 32) {
@@ -199,6 +200,7 @@ int lj_sacn_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
             q = strchr(p, ',');
             if (q) *q++ = 0; else q = p + strlen(p);
             if (lj_net_ip_parse(p, &cfg->unicast[i][cfg->nunicast[i]]) == 0) cfg->nunicast[i]++;
+            else if (*p) lj_log("sacn: Hardware.Ini [SACN] %s: an entry is not a dotted IPv4 address (dropped)", key);   /* ME-197 */
         }
     }
     s = lj_sacn_cfg_validate(cfg);

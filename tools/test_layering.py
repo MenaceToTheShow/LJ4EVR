@@ -104,8 +104,8 @@ NA_EXEMPT = {"core/lj_types.h", "windows/lj_help_topics_gen.c"}
 HINT_WRITE_RE = re.compile(r'->\s*hint\s*=\s*(?:LJ_NA_HINT|NULL)\b')
 EDIT_INT_RE = re.compile(r'\bstatic\s+int\s+\w*edit_int\s*\(')
 POPUP_AT_RE = re.compile(r'\bstatic\s+void\s+\w*popup_at\s*\(')
-IP_FN_RE = re.compile(r'\b(?:static\s+)?(?:int|void)\s+((?:\w*_)?ip_(?:parse|fmt|text))\s*\(')                                # W6 WIZARD_STYLES-9
-IP_SCAN_RE = re.compile(r'\b(?:sscanf|snprintf)\s*\([^;]*"%\d*u\.%\d*u\.%\d*u\.%\d*u')
+IP_FN_RE = re.compile(r'^[ \t]*(?:static\s+)?(?:const\s+)?\w+[\s*]+((?:\w*_)?ip_(?:parse|fmt|text))\s*\(', re.M)               # W6 WIZARD_STYLES-9; ME-194: any return type
+IP_SCAN_RE = re.compile(r'\b(?:sscanf|snprintf)\s*\([^;]*"[^"]*%\d*u\.%\d*u\.%\d*u\.%\d*u')                                    # ME-194: the quad anywhere in the literal (lj_log stays exempt)
 IP_ONE = {"lj_net_ip_parse", "lj_net_ip_fmt"}
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*([<"])([^>"]+)[>"]', re.M)
 

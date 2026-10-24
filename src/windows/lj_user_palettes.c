@@ -156,8 +156,8 @@ int lj_user_palettes_delete(int index)
 static int selected_row(void) { lj_widget *lv = find("lv"); int i = lv ? lj_w_listview_index(lv) : -1; return i < up.list.n ? i : -1; }
 static int filter_now(void) { int f = find("rgFixtures") ? lj_w_radiogroup_index(find("rgFixtures")) : 1; return f < 0 ? 1 : f; }
 static void save_close(void) { if (up.save) { lj_win_hide(up.save); lj_window_destroy(up.save); up.save = NULL; } }
-/* W4 LORD_FIDELITY-15: Preferences > Auto Close / Save on [Enter] (PrefsClick), forms.ini [SAVEPRESET2] AutoClose (1) SaveOnEnter (0):
- * ours, PROPOSAL rig as [SAVESELECTION] (LJ2 keeps no key we know of) */
+/* W4 LORD_FIDELITY-15: Preferences > Auto Close / Save on [Enter] (PrefsClick), forms.ini [SAVEPRESET2] AutoClose (1) SaveOnEnter (0);
+ * PROPOSAL rig W4 LORD_FIDELITY-15 (LJ2 keeps no key we know of) */
 static int save_pref(const char *key) { return lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEPRESET2", key, key[0] == 'A'); }
 static void save_checks(void)
 {
@@ -192,7 +192,7 @@ static int save_name_key(lj_widget *w, const lj_key_ev *k)
 static void save_form_close(lj_widget *w, void *ud) { (void)w; (void)ud; save_close(); }
 static const lj_binding lj_up_save_bindings[] = {
     { "FormClose", save_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL },
-    { "FormShow", lj_handler_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", save_prefs, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { NULL, NULL, NULL } };
+    { "FormShow", lj_handler_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", save_prefs, NULL }, { NULL, NULL, NULL } };   /* ME-200: the DFM's Help1 has no OnClick */
 static void save_dialog(void)
 {
     int i = selected_row();

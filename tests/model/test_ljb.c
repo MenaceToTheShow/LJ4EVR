@@ -292,6 +292,8 @@ static void test_container(void)
     /* LORD_C-8: CP1252 superscript digits are COM / LPT digits; spaces before the extension leave the device name */
     CHECK(!lj_ljb_path_ok("", "COM\xB9.txt") && !lj_ljb_path_ok("", "lpt\xB2") && !lj_ljb_path_ok("COM\xB3\\", "a") && !lj_ljb_path_ok("", "CON .txt") && !lj_ljb_path_ok("", "com1  .ini"));
     CHECK(lj_ljb_path_ok("", "COM\xB4.txt") && lj_ljb_path_ok("", "CONX .txt"));
+    CHECK(!lj_ljb_path_ok("", "COM0.txt") && !lj_ljb_path_ok("", "LPT0") && !lj_ljb_path_ok("lpt0\\", "a.txt"));   /* ME-198: digit 0 is a device too */
+    CHECK(lj_ljb_path_ok("", "COM10.txt"));                                                                       /* a 5-character stem is a name */
     printf("ljb container: %d failures after the refusal rows\n", fails);
 }
 

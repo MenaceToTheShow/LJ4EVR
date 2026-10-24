@@ -294,3 +294,10 @@ W6 (dmxpatch): `gpatch ... ign=1` marks a channel "Ignore DMX In Enable" (CHM `g
 always be overwritten by the DMX in channel values regardless of overwrite Enable state"). The scenario
 `tests/engine/replay/w5/dmxin_s1_ignore.lj4r` (CTest `replay_w5_dmxin_s1_ignore`, picked up by the `dmxin_s1_*` glob) has
 one Use and one Ignore channel on the same input with the gate off, then on, then off.
+
+W6 must-fix r1 (ME-190): an input that is off has no effect. The engine's S1 reads DMX-in only while
+`LJ_CMD_DMX_IN_LIVE` is 1, which the app posts with Overwrite Enable from `lj_io_dmxin_apply` (1 = DMX-in enabled);
+with it 0 every channel keeps its own value, an Ignore channel included. The harness posts `LJ_CMD_DMX_IN_LIVE 1`
+when the scenario is built if any `at k dmx_in` line appears in it, so a scenario that drives DMX-in has the input
+enabled from tick 0 and the older scenarios keep their output byte for byte. `tests/engine/replay/w5/dmxin_s1_ignore_off.lj4r` (CTest `replay_w5_dmxin_s1_ignore_off`) drives none: its
+Ignore channel keeps the cue value 100 with the gate off and on.

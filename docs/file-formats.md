@@ -333,6 +333,8 @@ separator.
 | `Main.Ini` | `[CUELIST2]` | `AllowExecute UseColor IgnoreFirstWait LoadCueOnDblClick StopAudio AutoCue AutoSeekAudio Autosave` (ours; `StopAudio AutoSeekAudio` W5, `docs/media.md`) | windows (cue list) |
 | `forms.ini` | `[CUELIST2]` | also `TCSource` (the shown time-code source, W5) and `Cmd1..8` (the recent-command buttons) | windows (cue list) |
 | `forms.ini` | `[LJMEDIAPLAYER]` | `OnTop ShowControls KeyPass File0..File4` (ours, W5; LJ2 kept them in `LJMediaPlayer.Ini`, `docs/media.md`) | windows (media) |
+| `forms.ini` | `[SAVEPRESET2]` | `AutoClose` (default 1) `SaveOnEnter` (default 0): Save Palette Entry > Preferences (ours, W4 LORD_FIDELITY-15; ME-201) | windows (user palettes) |
+| `Main.Ini` | `[CUELIST2]` | also `SyncFrames` 0 / 1 / 5 / 10: the MTC Sync Frames popup, the frames the decoder counts before it follows (ours, W6 INT-s7-SYNCFRAMES; ME-201) | windows (cue list), app (MTC) |
 
 Files W5 adds (each read as hostile input, every length checked; the grammar is in the feature doc):
 

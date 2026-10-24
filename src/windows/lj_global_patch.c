@@ -117,6 +117,10 @@ static void panel_fill(void)
         r->enabled = p->src_kind == LJ_SRC_DMX_IN;
         if (k == p->in_mode && !lj_w_radiobutton_checked(r)) lj_w_radiobutton_click(r);
     }
+    if (find("cbIgnoreEnable")) {                      /* ME-192: the DMX in Enable Switch of a DMX-in source, as the five radios */
+        find("cbIgnoreEnable")->enabled = p->src_kind == LJ_SRC_DMX_IN;
+        lj_w_checkbox_set_checked(find("cbIgnoreEnable"), p->ign_en);
+    }
     if (clb) for (k = 0; k < LJ_HTP_GROUPS; k++) lj_w_list_set_checked(clb, k, (p->htp_mask >> k) & 1u);
     gp->filling = 0;
 }
@@ -178,7 +182,7 @@ const char *lj_global_patch_set_values(void)
         n.min = (uint8_t)(mn < 0 ? 0 : mn); n.max = (uint8_t)(mx < 0 ? 255 : mx);
         n.src_kind = LJ_SRC_NONE; n.src_link = 0; n.src_ch = 0;
         if (out > 0) { n.src_kind = LJ_SRC_DMX_OUT; n.src_link = (uint8_t)((out - 1) / LJ_LINK_CH + 1); n.src_ch = (uint16_t)((out - 1) % LJ_LINK_CH + 1); }
-        if (in > 0) { n.src_kind = LJ_SRC_DMX_IN; n.src_link = 1; n.src_ch = (uint16_t)in; }   /* one DMX-in universe (05 s3) */
+        if (in > 0) { n.src_kind = LJ_SRC_DMX_IN; n.src_link = 1; n.src_ch = (uint16_t)in; n.ign_en = (uint8_t)lj_w_checkbox_checked(find("cbIgnoreEnable")); }   /* one DMX-in universe (05 s3); ME-192: the box sets the switch */
         else n.ign_en = 0;                                                                     /* W6: the switch belongs to a DMX-in source */
         for (k = 0; k < 5; k++) if (find(rb[k]) && lj_w_radiobutton_checked(find(rb[k]))) n.in_mode = (uint8_t)k;
         tmp = (lj_patch_ch *)malloc(sizeof gp->work);
@@ -298,7 +302,7 @@ int lj_global_patch_menu(const char *item)
     else if (strcmp(item, "P_OutSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, out_seq_done, NULL); }   /* TSetSequenceForm; ponytail: the list is single-select, so one channel */
     else if (strcmp(item, "P_InSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, in_seq_done, NULL); }   /* W5 dmxin: TSetSequenceForm, as P_OutSeq */
     else if (strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0) {   /* W6: "DMX in Enable Switch" on the selected DMX-in channel (CHM globalpatch.htm) */
-        if (gp->sel >= 0 && gp->work[gp->sel].src_kind == LJ_SRC_DMX_IN) { gp->work[gp->sel].ign_en = (uint8_t)(item[8] == 'I'); gp->changed = 1; row_text(gp->sel); }
+        if (gp->sel >= 0 && gp->work[gp->sel].src_kind == LJ_SRC_DMX_IN) { gp->work[gp->sel].ign_en = (uint8_t)(item[8] == 'I'); gp->changed = 1; row_text(gp->sel); panel_fill(); }   /* ME-192: the box follows */
     }
     else return -1;
     return 0;

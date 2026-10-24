@@ -8,9 +8,7 @@ importer for .LJB backups, the LJ MediaPlayer and Art-Net output.
 What is still greyed, with the hint "Not available in LJ4EVR":
 
 - the audio CD and Winamp rows of the cue list and of Hardware Setup;
-- the video options of the MediaPlayer: it plays WAV sound files only;
-- the per-channel "Use / Ignore DMX In Enable" items of the Global
-  Patch.
+- the video options of the MediaPlayer: it plays WAV sound files only.
 
 The Martin hardware that LightJockey 2 drove directly (the 2510 and 2518
 controllers, the MC-X, the CD control, SandNet and the USB interfaces)

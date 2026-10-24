@@ -213,3 +213,9 @@ the Audio Analyzer or the MediaPlayer current and its flag off, the key is dropp
 and `shot` captures it (LORD_FIDELITY-15). `assert_pos <Form> x y` is the check of `tests/ui/scripts/w6_podesigned.lj4s`:
 a `poDesigned` form that forms.ini does not know opens at its DFM Left / Top (W2 INT-s9-PODESIGNED). Under a UI script
 the restart re-exec (LORD_FIDELITY-19) is never spawned: the app quits as before.
+
+## W6 must-fix r1 (2026-10-23)
+
+| Verb | Effect |
+|---|---|
+| `assert_checked <Form>.<widget> 0\|1` | a TCheckBox's or TRadioButton's `Checked` (the Global Patch `cbIgnoreEnable`, ME-192); any other kind fails the line |

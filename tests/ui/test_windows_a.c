@@ -136,11 +136,13 @@ int lj_test_windows_a(int argc, char **argv)
         fire(sync, LJ_WEV_ENTER);
         CHECK(s->scenes[0].scene_ms == 4000 && s->scenes[0].fade_ms == 3000);
         CHECK(strcmp(lj_w_edit_text(lj_window_find(win, "ES")), "4:00") == 0 && strcmp(lj_w_edit_text(lj_window_find(win, "EF")), "3:00") == 0);
-        {   /* CARET (fidelity.md:27): a written value leaves the caret at the end; golden W2A_TSEQUENCEFORM_CARET with ES focused */
+        {   /* CARET (fidelity.md:27): the Sequence form's written time leaves the caret at the end (ME-206: the form does it, not
+             * lj_w_edit_set_text); golden W2A_TSEQUENCEFORM_CARET with ES focused */
             lj_widget *es = lj_window_find(win, "ES");
-            lj_w_edit_set_text(es, "4:00");
+            lj_seq_form_update();
             lj_w_focus(es);
-            CHECK(((lj_w_edit *)es)->caret == 4);
+            CHECK(strcmp(lj_w_edit_text(es), "4:00") == 0 && ((lj_w_edit *)es)->caret == 4 && ((lj_w_edit *)es)->anchor == 4);
+            printf("  ME-206 Sequence ES: caret %d after the form writes \"%s\"\n", ((lj_w_edit *)es)->caret, lj_w_edit_text(es));
             golden(win, "TSEQUENCEFORM_CARET", argc > 1 && strcmp(argv[1], "--write-golden") == 0);
             lj_w_focus(sync);
         }

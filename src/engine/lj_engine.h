@@ -105,6 +105,7 @@ enum { LJ_RUN_SLOT0 = 0,                               /* cue slots 1-12 = LJ_RU
  * DMX_IN               input link 1..LJ_LINKS        -                          -            dmx_in = LJ_LINK_CH bytes the UI thread owns (io/lj_dmxin.h frame after merge and .vtr
  *                      translation), copied into post.dmx_in[] at the drain under lj_lock (the S1 source of lj_post_s1_patch_src); NULL = zeros (the loss rule)
  * OVERWRITE_ENABLE     -                           0/1                        -            -        S1 gate: the DMX-in function "Overwrite Enable" (> 127), 1 when unassigned [05 s3.2]
+ * DMX_IN_LIVE          -                           0/1                        -            -        W6 ME-190: 1 while DMX-in is enabled (posted with OVERWRITE_ENABLE by the I/O apply); 0 = S1 passes every channel, Ignore ones included
  * TRIG b = LJ_TRIG_AUDIO_EVENT: one Audio Analyzer trig (or Emulate Audio Trig) to every cue-slot and BG runner whose trig mode is
  *                      LJ_TRIG_AUDIO; each counts audio_left down from audio_per_trig ("Audio-Trigs / Trig") and trigs in its programmed
  *                      direction when it reaches 0 [05 s9.1]; a must be LJ_RUN_ALL, no chase tap
@@ -125,6 +126,7 @@ enum lj_cmd_kind {
     LJ_CMD_GENMACRO_ON, LJ_CMD_GENMACRO_RESTART, LJ_CMD_GM_SHAPES, LJ_CMD_MACRO_FADE,
     /* W5 (appended) */
     LJ_CMD_DMX_IN, LJ_CMD_OVERWRITE_ENABLE,
+    LJ_CMD_DMX_IN_LIVE,                  /* W6 ME-190 (appended) */
     LJ_CMD_COUNT,
     LJ_CMD_CUE_TIME = LJ_CMD_TIME        /* the 13 faders are the W1 TIME command (design 10 W2 "cue time control") */
 };
@@ -251,6 +253,7 @@ typedef struct {
     uint8_t  htp_level[LJ_HTP_GROUPS + 1]; uint8_t htp_masters;   /* S5 g_k (1-based) and "Enable HTP group master intensity control" [11 P8] */
     uint8_t  frozen_s0[LJ_CHANS];                 /* S9: the S0 input held while frozen */
     const lj_patch_ch *patch;                     /* W2: the S1/S5/S6 table (LJ_CHANS entries): show->patch at bind, swapped by LJ_CMD_GLOBAL_PATCH / LJ_CMD_HTP_GROUPS */
+    uint8_t  dmx_in_live;                         /* W6 ME-190: LJ_CMD_DMX_IN_LIVE; 0 (DMX-in disabled) = S1 has no effect on any channel */
 } lj_post_ctx;
 
 /* ---- the function set (design 2.3) ---- */

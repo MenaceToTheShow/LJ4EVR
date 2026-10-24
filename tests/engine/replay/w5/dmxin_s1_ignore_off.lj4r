@@ -1,0 +1,20 @@
+LJ4 replay 1
+# dmxin_s1_ignore_off (W6 ME-190): a fresh show that never enables DMX-in. Global Patch 1:2 is "Ignore DMX In Enable"
+# (ign=1) Absolute from input 1:5 over a cue value of 100, and the scenario drives no DMX-in line, so the input is off
+# (LJ_CMD_DMX_IN_LIVE 0, the engine default). An input that is off has no effect: 1:2 keeps 100, with the Overwrite
+# Enable gate off and on. Before ME-190 the zero input buffer reached 1:2 (`expected 100 got 0`).
+tick_us=25000
+patch 1 profile=19 link=1 addr=1
+profile 1 class1=intensity use_gm=1
+patch 2 profile=19 link=1 addr=2
+profile 2 class1=intensity use_gm=1
+gpatch 1:1 src=in sl=1 sc=5 mode=abs
+gpatch 1:2 src=in sl=1 sc=5 mode=abs ign=1
+seq 1 name="base"
+scene st=60000 ft=0 ch 1:1=100:S 1:2=100:S
+cue 1
+slot 1 seq=1
+at 0 load_cue 1
+expect 2 1:1=100 1:2=100               # DMX-in off: the Ignore channel keeps the cue value
+at 3 overwrite_enable 1
+expect 4 1:1=100 1:2=100               # the gate on changes nothing while the input is off

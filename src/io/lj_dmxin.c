@@ -127,7 +127,7 @@ int lj_dmxin_rx(int kind, const uint8_t *pkt, size_t n, uint32_t src_ip, uint64_
         if (lj_artnet_parse_dmx(pkt, n, &pa, &seq, slots, &nslots) != 0 || pa != lj_di.cfg.universe || nslots < 0 || nslots > LJ_LINK_CH) return lj_di_discard();
         prio = LJ_SACN_PRIORITY_DEFAULT;                                                    /* PROPOSAL rig W5-DMXIN-2: Art-Net merges at 100 */
         data = slots;
-        if (snprintf(name, sizeof name, "Art-Net %u.%u.%u.%u", (unsigned)(src_ip >> 24), (unsigned)(src_ip >> 16 & 255), (unsigned)(src_ip >> 8 & 255), (unsigned)(src_ip & 255)) < 0) name[0] = 0;
+        { char ip[16]; lj_net_ip_fmt(ip, sizeof ip, src_ip); if (snprintf(name, sizeof name, "Art-Net %s", ip) < 0) name[0] = 0; }   /* ME-194: the one formatter */
     } else return lj_di_discard();
     for (s = 0; s < f->nsources; s++)
         if (f->src[s].kind == kind && (kind == LJ_DMXIN_SACN ? memcmp(f->src[s].cid, cid, 16) == 0 : f->src[s].ip == src_ip)) break;
@@ -252,7 +252,8 @@ void lj_dmxin_cfg_load(lj_ini *ini, lj_dmxin_cfg *cfg)
     cfg->source = (uint8_t)(lj_ini_geti(ini, "DMXIN", "Source", 0) == 1 ? LJ_DMXIN_ARTNET : LJ_DMXIN_SACN);
     v = lj_ini_geti(ini, "DMXIN", "Universe", 1);
     cfg->universe = (uint16_t)(v >= 1 && v <= LJ_SACN_UNIVERSE_MAX ? v : 1);
-    if (lj_net_ip_parse(lj_ini_gets(ini, "DMXIN", "Nic", ""), &cfg->nic_ipv4) != 0) cfg->nic_ipv4 = 0;
+    { const char *nic = lj_ini_gets(ini, "DMXIN", "Nic", "");
+      if (lj_net_ip_parse(nic, &cfg->nic_ipv4) != 0) { cfg->nic_ipv4 = 0; if (nic[0]) lj_log("dmxin: Hardware.Ini [DMXIN] Nic is not a dotted IPv4 address: every interface listens"); } }   /* ME-197 */
     cfg->loss = (uint8_t)(lj_ini_geti(ini, "DMXIN", "Loss", 0) == 1 ? LJ_DMXIN_LOSS_ZERO : LJ_DMXIN_LOSS_HOLD);
     cfg->functions_off = (uint8_t)(lj_ini_geti(ini, "DMXIN", "FunctionsOff", 0) != 0);
 }

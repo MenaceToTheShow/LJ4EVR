@@ -10,4 +10,15 @@ close bgcue_form
 open about
 assert_pos TAboutForm2 316 217
 close about
+# W6 must-fix r1 (ME-199): the code-built TGroupForm and THTPGroupsForm carry no Left / Top, so they centre on the main
+# window too. TGroupForm (bsSizeable, 4-px frame, caption 19, menu bar 19, client 212x204) is 220x250 outer:
+# 100 + (799 - 220) / 2 = 389, 100 + (606 - 250) / 2 = 278. THTPGroupsForm (bsSingle, 3-px frame, caption 19, menu
+# bar 19, client 264x302) is 270x346: 100 + (799 - 270) / 2 = 364, 100 + (606 - 346) / 2 = 230. Before ME-199 they
+# opened at 100,100 and 300,200.
+open fixture_groups
+assert_pos TGroupForm 389 278
+close fixture_groups
+open htp_groups
+assert_pos THTPGroupsForm 364 230
+close htp_groups
 quit

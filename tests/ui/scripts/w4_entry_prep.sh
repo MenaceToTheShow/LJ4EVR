@@ -13,6 +13,7 @@ set -e
 U=${1:?usage: w4_entry_prep.sh <userdir>}
 E="$U/W4Entry"
 mkdir -p "$E" "$U/W4Aux"   # W4Aux: a spare library row for User Libraries Rename / Backup (sorted after Default, before W4Captions)
+mkdir -p "$U/Default"      # ME-200: our own empty folder; the walkthrough's library list expects the Default row on a fresh userdata
 printf '[DEBUG]\r\nDebugWindow=1\r\n' > "$E/Main.Ini"
 printf '[SETUP]\r\nMode=1\r\n' > "$E/Fingers.Ini"
 {

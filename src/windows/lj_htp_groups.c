@@ -36,7 +36,7 @@ static const lj_menu_desc lj_hg_menus[] = { { "MainMenu1", 1, lj_hg_menu, LJ_COU
 static const lj_form_desc lj_form_HTPGROUPS = {
     .name = "HTPGroupsForm", .class_name = "THTPGroupsForm", .caption = "HTP Groups",
     .client_width = 264, .client_height = 302, .color = LJ_CLR(0xC0C0C0) /* clBtnFace */, .style = LJ_FS_STAYONTOP, .border = LJ_BS_SINGLE,
-    .icons = LJ_BI_GIVEN | LJ_BI_SYSMENU, .position = LJ_PO_DESIGNED, .left = 300, .top = 200, .text_height = 13, .font = LJ_FONT_SANS13,
+    .icons = LJ_BI_GIVEN | LJ_BI_SYSMENU, .position = LJ_PO_DESIGNED, .text_height = 13, .font = LJ_FONT_SANS13,
     .font_name = "MS Sans Serif", .font_height = -11, .menu = "MainMenu1", .menus = lj_hg_menus, .nmenus = LJ_COUNT_OF(lj_hg_menus),
     .ctls = lj_hg_ctls, .n = LJ_COUNT_OF(lj_hg_ctls), .events = { { "OnClose", "FormClose" } }
 };

@@ -77,8 +77,8 @@ string output to external applications, the `.LJB` importer, the LJ MediaPlayer
 and Art-Net output; each has its page in this folder (`artnet.md`, `audio.md`,
 `dmx-in.md`, `extapp.md`, `ljb-import.md`, `media.md`, `remote.md`). Still left
 out, greyed with the hint "Not available in LJ4EVR": audio CD and Winamp
-playback, video in the MediaPlayer (it plays WAV files only) and the Global
-Patch's per-channel "Use / Ignore DMX In Enable" items. The Martin hardware that
+playback and video in the MediaPlayer (it plays WAV files only). Since 1.2.0 the
+Global Patch's per-channel DMX in Enable Switch is live. The Martin hardware that
 LightJockey drove directly (2510 and 2518 controllers, MC-X, CD control, SandNet,
 the USB and PCI interfaces) is replaced by network output. Every other known
 difference from LightJockey 2.209 is listed with its reason in

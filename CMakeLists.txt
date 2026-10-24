@@ -579,3 +579,7 @@ endif()
 # W6 integrator (append-only): the LORD_FIDELITY-19 restart row of test_uiscript_w2 sends universe 1 to 127.0.0.1:5568,
 # which test_sacn_loopback's receiver counted (its keep-alive check failed under ctest -j)
 set_tests_properties(test_uiscript_w2 PROPERTIES RESOURCE_LOCK sacn_port)
+# W6 must-fix r1 (append-only): ME-204, golden_anchors.py on a synthetic golden and DFM text (no reference tree needed)
+if(Python3_FOUND)
+  add_test(NAME golden_anchors_selftest COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/ref/golden_anchors.py" --selftest)
+endif()

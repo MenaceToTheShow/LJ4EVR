@@ -54,7 +54,8 @@ enum lj_us_verb { LJ_US_OPEN, LJ_US_CLOSE, LJ_US_CLICK, LJ_US_RCLICK, LJ_US_DBLC
                   LJ_US_CL_LOAD, LJ_US_CL_GOTO, LJ_US_CL_EXECUTE, LJ_US_CL_ASSERT_LINE, LJ_US_GS2_IMPORT, LJ_US_ASSERT_PROMPT, LJ_US_MM_SET,
                   /* W4 (appended) */ LJ_US_DUMP_CAPTIONS,
                   /* W5 (appended) */ LJ_US_SACN_IN, LJ_US_ARTNET_IN, LJ_US_AUDIO_INJECT, LJ_US_REMOTE,
-                  /* W5 fix pass (appended) */ LJ_US_ASSERT_DOWN, LJ_US_VERBS };
+                  /* W5 fix pass (appended) */ LJ_US_ASSERT_DOWN,
+                  /* W6 must-fix (appended) */ LJ_US_ASSERT_CHECKED, LJ_US_VERBS };
 static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ_US_VERBS] = {
     { "open", 1, 1 }, { "close", 1, 1 }, { "click", 1, 3 }, { "rclick", 1, 3 }, { "dblclick", 1, 3 }, { "drag", 2, 6 }, { "type", 1, 1 }, { "key", 1, 2 },
     { "wait", 1, 1 }, { "shot", 1, 1 }, { "assert_caption", 2, 2 }, { "assert_text", 2, 2 }, { "assert_enabled", 2, 2 }, { "assert_visible", 2, 2 },
@@ -68,7 +69,9 @@ static const struct { const char *name; int min_args, max_args; } lj_us_verbs[LJ
     /* W5 (appended; docs/ui-script.md "W5 verbs") */
     { "sacn_in", 2, 6 }, { "artnet_in", 2, 6 }, { "audio_inject", 1, 2 }, { "remote", 1, 6 },
     /* W5 fix pass (appended): a TSpeedButton's Down (ME-181) */
-    { "assert_down", 2, 2 } };   /* assert_view gains W2 field names inside its W1 row */
+    { "assert_down", 2, 2 },
+    /* W6 must-fix r1 (appended): a TCheckBox / TRadioButton's Checked (ME-192) */
+    { "assert_checked", 2, 2 } };   /* assert_view gains W2 field names inside its W1 row */
 
 typedef struct { int verb, line, nargs; char *arg[LJ_US_ARGS]; } lj_us_stmt;
 
@@ -226,7 +229,7 @@ static const char *lj_us_check(const lj_us_stmt *st)
     case LJ_US_WAIT:
         if (lj_us_int(st->arg[0], &v) || v < 0) return "wait takes milliseconds";
         break;
-    case LJ_US_ASSERT_TEXT: case LJ_US_ASSERT_ENABLED: case LJ_US_ASSERT_VISIBLE: case LJ_US_ASSERT_DOWN:
+    case LJ_US_ASSERT_TEXT: case LJ_US_ASSERT_ENABLED: case LJ_US_ASSERT_VISIBLE: case LJ_US_ASSERT_DOWN: case LJ_US_ASSERT_CHECKED:
         if (!strchr(st->arg[0], '.')) return "expected <Form>.<widget>";
         if (st->verb != LJ_US_ASSERT_TEXT && strcmp(st->arg[1], "0") != 0 && strcmp(st->arg[1], "1") != 0) return "expected 0 or 1";
         break;
@@ -401,6 +404,7 @@ static lj_window *lj_us_cur(void)
     for (id = 0; id < LJ_CTL_COUNT; id++) if (lj_ctl_window_get((enum lj_ctl_kind)id) == lj_us.cur) return lj_us.cur;
     if (lj_us.host.resolve && lj_us.host.resolve(lj_us.host.ud, "TSequenceForm") == lj_us.cur) return lj_us.cur;   /* the app's W0 fallback forms */
     if (lj_us.host.resolve && lj_us.host.resolve(lj_us.host.ud, "TCurrentCue") == lj_us.cur) return lj_us.cur;
+    if (lj_us.cur == lj_user_palettes_save_window()) return lj_us.cur;   /* ME-201: TSavePresetForm2 has no lj_win id; type / key reach its name field */
     lj_us.cur = NULL;
     return NULL;
 }
@@ -1038,6 +1042,10 @@ static int lj_us_exec(lj_us_stmt *st)
         if (!(w = lj_us_widget(st->arg[0], &win, NULL, NULL))) return -1;
         if (w->kind != LJ_K_SPEEDBUTTON) { lj_us_failf(lj_us.line, "%s is not a TSpeedButton", st->arg[0]); return -1; }
         return lj_us_assert_eq(st->arg[0], lj_w_speedbutton_down(w) ? "1" : "0", st->arg[1]);
+    case LJ_US_ASSERT_CHECKED:
+        if (!(w = lj_us_widget(st->arg[0], &win, NULL, NULL))) return -1;
+        if (w->kind != LJ_K_CHECKBOX && w->kind != LJ_K_RADIOBUTTON) { lj_us_failf(lj_us.line, "%s is not a TCheckBox or TRadioButton", st->arg[0]); return -1; }
+        return lj_us_assert_eq(st->arg[0], (w->kind == LJ_K_CHECKBOX ? lj_w_checkbox_checked(w) : lj_w_radiobutton_checked(w)) ? "1" : "0", st->arg[1]);
     case LJ_US_ASSERT_FRAME: return lj_us_assert_frame(st);
     case LJ_US_ASSERT_VIEW:  return lj_us_assert_view(st);
     case LJ_US_ASSERT_FILE:

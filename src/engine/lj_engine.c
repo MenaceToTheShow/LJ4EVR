@@ -466,6 +466,7 @@ static void lj_engine_apply(lj_engine *e, const lj_cmd *c, uint64_t now)
         else memset(&e->post.dmx_in[(c->a - 1) * LJ_LINK_CH], 0, LJ_LINK_CH);
         break;
     case LJ_CMD_OVERWRITE_ENABLE: e->post.overwrite_enable = (uint8_t)(c->b != 0); break;   /* W5: S1 gate */       /* ME-23: collected by the engine thread after the tick */
+    case LJ_CMD_DMX_IN_LIVE: e->post.dmx_in_live = (uint8_t)(c->b != 0); break;              /* W6 ME-190: an input that is off has no effect */
     /* ---- W2 kinds ---- */
     case LJ_CMD_BG_ON:
         for (k = 0; k < LJ_BG_SLOTS; k++) if (c->a == LJ_RUN_ALL || c->a == (uint32_t)(LJ_RUN_BG0 + k)) e->run[LJ_RUN_BG0 + k].enabled = (c->b != 0);

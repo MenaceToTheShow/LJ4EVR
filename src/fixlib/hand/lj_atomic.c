@@ -7,7 +7,7 @@
  * The scroller protocol is QLC+ "Mode 3 with Colour and Fan" (Martin's Atomic Colors manual not fetched): values unverified [15/06 s3].
  * Captions are the exe literals of TIntensityControl_Atomic, TColorControl_AtomicC1 / _AtomicC2 [13 s2.6]; TSpecialSettings_AtomicC1 / _C2
  * carry no captions of their own (the "Fan" bar caption is ours: PROPOSAL). No Lamp, Gobo, Beam, Effects or Movement window [15/06 s3].
- * Every button value = the low end of its range (F47).;
+ * Every button value = the low end of its range (F47);
  * rotation buttons carry the slow end (lj_profile.h row conventions). */
 #include "fixlib/hand/lj_atomic.h"
 #include "fixlib/hand/lj_martin.h"

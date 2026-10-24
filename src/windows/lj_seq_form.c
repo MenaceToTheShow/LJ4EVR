@@ -88,6 +88,11 @@ static void lj_sf_set_edit(const char *name, const char *text)
     lj_widget *w = lj_sf_win ? lj_window_find(lj_sf_win, name) : NULL;
     if (w) lj_w_edit_set_text(w, text);
 }
+static void lj_sf_set_time(const char *name, const char *text)   /* CARET (fidelity.md:27, ME-206): the time fields leave the caret at the end */
+{
+    lj_widget *w = lj_sf_win ? lj_window_find(lj_sf_win, name) : NULL;
+    if (w && lj_w_edit_set_text(w, text) == 0) lj_w_edit_select(w, (int)strlen(text), 0);
+}
 
 static void lj_sf_set_check(const char *name, int on)
 {
@@ -121,8 +126,8 @@ static void lj_sf_update(void)
     lj_sf_set_edit("ESeqType", s ? s->type : "");
     snprintf(buf, sizeof buf, "%d:%d", scene, scenes ? scenes : 1);   /* "1:1" for an empty sequence [03 s4.1] */
     lj_w_set_caption(lj_window_find(lj_sf_win, "Panel2"), buf);
-    if (lj_fmt_time(buf, sizeof buf, sc ? sc->scene_ms : LJ_SCENE_TIME_DEFAULT_MS) == 0) lj_sf_set_edit("ES", buf);
-    if (lj_fmt_time(buf, sizeof buf, sc ? sc->fade_ms : LJ_FADE_TIME_DEFAULT_MS) == 0) lj_sf_set_edit("EF", buf);
+    if (lj_fmt_time(buf, sizeof buf, sc ? sc->scene_ms : LJ_SCENE_TIME_DEFAULT_MS) == 0) lj_sf_set_time("ES", buf);
+    if (lj_fmt_time(buf, sizeof buf, sc ? sc->fade_ms : LJ_FADE_TIME_DEFAULT_MS) == 0) lj_sf_set_time("EF", buf);
     if (sc && sc->scene_ms) snprintf(buf, sizeof buf, "(%u.%02u bmp)", (unsigned)(6000000u / sc->scene_ms / 100), (unsigned)(6000000u / sc->scene_ms % 100));   /* Martin's typo kept [07 s5, D13] */
     else lj_str_copy(buf, sizeof buf, "XXXX.X BPM");
     lj_w_set_caption(lj_window_find(lj_sf_win, "lBPM"), buf);
