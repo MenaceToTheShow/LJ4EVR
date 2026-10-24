@@ -9,7 +9,8 @@
  *               classes are the channel set its exe control classes imply: PROPOSAL rig item.
  * Captions are the exe literals of TColorControl_Color2 (Color Head 1-4; the RoboColor III has no class of its own and uses the Color2 set),
  * TIntensityControl_C400, TColorControl_C400, TGoboControl_C400, TLampControl_C400, TSpecialSettings_Color2 / _C400 / _OCol1 [13 s2.6].
- * Every value = the low end of its range (F47). */
+ * Every value = the low end of its range (F47).;
+ * rotation buttons carry the slow end (lj_profile.h row conventions). */
 #include "fixlib/hand/lj_robocolor.h"
 #include "fixlib/hand/lj_martin.h"
 

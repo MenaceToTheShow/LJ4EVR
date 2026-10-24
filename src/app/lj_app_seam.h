@@ -20,6 +20,11 @@ void lj_app_key(const lj_key_ev *ev, lj_window *win);   /* the platform key hook
 int  lj_app_key_passes(const lj_window *win);           /* ME-182: 0 when win is the Audio Analyzer / LJ MediaPlayer and its Pass Keypresses is off (the side window keeps the key) */
 void lj_app_repin_current_cue(void);       /* a slot of the working cue changed: under lj_lock the engine re-pins every runner from the tables (the Cue control's repin hook) */
 int  lj_app_hotkey_setup(int setup);       /* <library>Hotkeys/SetupN.Hot -> ctx->hotkeys (missing file: Setup 1 = lj_hotkeys_default, 2..8 empty, no log line); 0 / -1 */
-int  lj_app_post_locked(const lj_cmd *cmd);  /* W3 (ME-102): caller holds lj_lock; lj_engine_cmd, 0 / -1 when the array is full (logged once): the caller then keeps the record the post was to replace */
+int  lj_app_post_locked(const lj_cmd *cmd);
+/* LORD_FIDELITY-19 (System > Restart LightJockey, a user-library switch): the first request names the library; at shutdown, after the
+ * engine thread has stopped, lj_app_restart_spawn closes the sender (3 x Stream_Terminated per universe, a no-op when closed) and then
+ * calls spawn({self, "U:<library>", NULL}). 1 spawned, 0 nothing requested, -1 the spawn failed (logged). */
+void lj_app_restart_request(const char *lib);
+int  lj_app_restart_spawn(const char *self, int (*spawn)(const char *const *argv));  /* W3 (ME-102): caller holds lj_lock; lj_engine_cmd, 0 / -1 when the array is full (logged once): the caller then keeps the record the post was to replace */
 
 #endif /* LJ_APP_APP_SEAM_H */

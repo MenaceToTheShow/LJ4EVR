@@ -282,6 +282,7 @@ int lj_test_widgets_basic(int argc, char **argv)
     CHECK(strcmp(lj_w_edit_text(ro), "RO") == 0 && px(62, 202) == LJ_CLR_BTNFACE);  /* read-only: text kept, silver interior */
     CHECK(px(192, 202) == LJ_CLR_BTNFACE);                                           /* disabled: face interior */
     INK(count_rgb(193, 204, 10, 13, LJ_CLR_BTNSHADOW) > 0);                          /* disabled: grey text */
+    CHECK(lj_w_edit_set_text(es, "4:00") == 0 && ((lj_w_edit *)es)->caret == 4 && ((lj_w_edit *)es)->anchor == 4);   /* CARET (fidelity.md:27): caret at the end, no "I4:00" */
     took(LJ_WEV_CHANGE);
 
     /* TNumEdit: digits only, Value clamped, OnValueChange */

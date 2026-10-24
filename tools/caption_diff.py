@@ -15,7 +15,10 @@ Each difference must be named in tools/caption_diff_excl.tsv (form, object, prop
 explains it, e.g. a runtime caption of F19); --check fails on any difference without an exclusion row. Absent rows
 are counted, not gated (the captions track decides per row).
 
-usage: caption_diff.py --dump <dump.tsv> [--tsv <13-dfm-captions.tsv>] [--excl tools/caption_diff_excl.tsv] [--check] [-v]
+W6 LORD_FIDELITY-12: --dfm <FORM.dfm.txt> (repeatable) adds the Caption / Hint / Text rows of a DFM text that the research
+table does not carry (the side-exe forms TLJSoundApp, TLJMediaForm, TRS232SettingsForm, extracted by tools/ref/pe_tpf0.py).
+
+usage: caption_diff.py --dump <dump.tsv> [--tsv <13-dfm-captions.tsv>] [--dfm <FORM.dfm.txt>]... [--excl tools/caption_diff_excl.tsv] [--check] [-v]
        caption_diff.py --selftest        (a planted bad caption must fail; no reference data needed)
 Python 3.12, stdlib only.
 """
@@ -37,6 +40,22 @@ def read_tsv(lines):
         if len(p) < 6 or p[0] in ("form", "") or p[0].startswith("#") or p[4] not in PROPS or p[3] == "TAction":
             continue
         out[(p[0].upper(), p[2], p[4])] = p[5]
+    return out
+
+
+def read_dfm(text, form):
+    """the Caption / Hint / Text string properties of every object of a DFM text -> {(FORM, object, property): value}"""
+    sys.path.insert(0, HERE)
+    import dfm2c
+    out = {}
+
+    def walk(o):
+        for k, v in o.props:
+            if k in PROPS and v[0] == "str" and o.cls != "TAction":
+                out[(form.upper(), o.name, k)] = v[1].decode("cp1252")
+        for c in o.children:
+            walk(c)
+    walk(dfm2c.parse_dfm(text))
     return out
 
 
@@ -103,6 +122,9 @@ def selftest():
     assert not d and len(e) == 1, (d, e)
     d, e, a, _ = compare(ref, {("TCLOSEORSAVEFORM", "CloseOrSaveForm", "Caption"): "Close Lightjockey ?"}, {"TCLOSEORSAVEFORM"}, {})
     assert a == [("TCLOSEORSAVEFORM", "Label4", "Caption")] and not d, a
+    dfm = read_dfm("object F: TF\n  Caption = 'Audio'\n  object L: TLabel\n    Caption = 'Alway'\n    Hint = 'x|y'\n  end\n"
+                   "  object A: TAction\n    Caption = 'never'\n  end\nend\n", "TF")
+    assert dfm == {("TF", "F", "Caption"): "Audio", ("TF", "L", "Caption"): "Alway", ("TF", "L", "Hint"): "x|y"}, dfm
     print("caption_diff --selftest: OK")
     return 0
 
@@ -111,6 +133,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dump")
     ap.add_argument("--tsv", default=DEFAULT_TSV)
+    ap.add_argument("--dfm", action="append", default=[])
     ap.add_argument("--excl", default=DEFAULT_EXCL)
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--selftest", action="store_true")
@@ -124,6 +147,8 @@ def main():
         print("caption_diff: SKIP, no %s (developer PC only)" % a.tsv)
         return 0
     ref = read_tsv(open(a.tsv, encoding="cp1252").read().splitlines())
+    for p in a.dfm:
+        ref.update(read_dfm(open(p, encoding="utf-8").read(), os.path.basename(p).split(".")[0]))
     dump, forms = read_dump(open(a.dump, encoding="cp1252").read().splitlines())
     excl = read_excl(open(a.excl, encoding="cp1252").read().splitlines()) if os.path.exists(a.excl) else {}
     differs, excluded, absent, per = compare(ref, dump, forms, excl)

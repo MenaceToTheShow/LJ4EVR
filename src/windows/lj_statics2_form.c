@@ -271,7 +271,7 @@ static void menu_action(lj_widget *w, void *ud)
         lj_unlock();
         lj_ctx_set_modified(LJ_MOD_SEQ, 1);
         return;
-    }
+    } else { lj_log("statics: %s has no behaviour", a); return; }   /* W3 INT-s7-ACTIONS: an Action item is never silent (test_show_dialogs counts these) */
     if (rc != 0) { lj_log("statics: %s failed", it->caption); lj_win_message("Statics", "Error!"); return; }   /* exe 0x218BC4 [12 Q9]; trigger PROPOSAL rig 14 sB.8 item 5 */
     lj_statics2_save();
     fill_rows();

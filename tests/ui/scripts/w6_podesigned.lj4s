@@ -1,0 +1,13 @@
+# w6_podesigned.lj4s - W2 INT-s9-PODESIGNED (W6 fidelity): a poDesigned form that forms.ini does not know yet opens at its
+# DFM Left / Top (TBGCueForm 403,208), and a poMainFormCenter form still centres on the main window (TAboutForm2, 366x371,
+# on the 799x606 main window moved to 100,100). Run in an empty scratch userdata (LJ4EVR_USERDATA = a new folder ending in
+# a separator, docs/running.md), so forms.ini has no entry for either:
+#   lj4evr U:W6Pos --script tests/ui/scripts/w6_podesigned.lj4s
+move main 100 100
+open bgcue_form
+assert_pos TBGCueForm 403 208
+close bgcue_form
+open about
+assert_pos TAboutForm2 316 217
+close about
+quit

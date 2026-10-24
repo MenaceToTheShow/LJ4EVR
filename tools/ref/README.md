@@ -18,3 +18,13 @@ then re-copy.
 listener on 127.0.0.2, sACN / Art-Net senders, a TCP remote client, a TCP receiver for External Application output)
 and `prep`, which writes the scratch library the `tests/ui/scripts/w5_acc_*.lj4s` scripts run in. It imports
 `08-sacn_ref.py` for the E1.31 packets. See `docs/w5-integration.md`, "Acceptance".
+
+`pe_tpf0.py` and `golden_anchors.py` are ours too (W6 fidelity track). `pe_tpf0.py <exe> <out dir> [NAME ...]` reads the
+named RT_RCDATA TPF0 form streams of a Delphi exe (bounds-checked, never run) and writes them as DFM text in the
+dfm_text form; it reproduces the 208 LightJockey.exe texts of `reference/installer/exe_resources/dfm_text/` and wrote
+the three side-exe forms there (TLJSOUNDAPP, TLJMEDIAFORM, TRS232SETTINGSFORM; gitignored, read by
+`caption_diff.py --dfm`). `golden_anchors.py --ref <reference dir>` writes the `tests/ui/golden/REVIEWED.tsv` rows of
+a golden re-render: the pixel diff against a git revision, and for the DFM-only template rows the DFM anchors probed
+in the golden and the CHM capture with its scale (ME-162). Both read `reference/` as data only; `pe_tpf0.py --selftest`
+needs no reference tree (a CTest row), and `golden_anchors.py` only prints its rows unless `--write` is given; see
+`docs/w6-track-fidelity.md`.

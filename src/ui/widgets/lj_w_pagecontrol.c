@@ -129,10 +129,11 @@ void lj_w_tabs_layout(lj_widget *w)
     }
 }
 
-static void tab_text(lj_surface *s, const lj_widget *w, int x, int y, const char *str, uint32_t rgb)   /* '&' prefixes as the tab control draws them: "&&" = '&' */
+static void tab_text(lj_surface *s, const lj_widget *w, int i, int x, int y, const char *str, uint32_t rgb)   /* '&' prefixes as the tab control draws them: "&&" = '&' */
 {
     const lj_font *f = lj_w_font_of(w);
-    if (w->enabled) { lj_text(s, f, x, y, str, rgb, 1); return; }
+    const lj_widget *pg = lj_w_tabs_page(w, i);
+    if (w->enabled && (!pg || pg->enabled)) { lj_text(s, f, x, y, str, rgb, 1); return; }   /* W4 LORD_FIDELITY-16: a disabled TTabSheet's caption is greyed too */
     lj_text_disabled(s, f, x, y, str, 1);
 }
 
@@ -167,13 +168,13 @@ void lj_w_tabs_paint(lj_widget *w, lj_surface *s)
         if (act) continue;
         ty = ay + p[i].y + 2; tt = rh;
         tab_shape(s, x, ty, tw, tt);
-        tab_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, i))) / 2, ty + (tt - f->height) / 2 + 1, tab_caption(w, i), LJ_CLR_3DDKSHADOW);
+        tab_text(s, w, i, x + (tw - lj_text_width(f, tab_caption(w, i))) / 2, ty + (tt - f->height) / 2 + 1, tab_caption(w, i), LJ_CLR_3DDKSHADOW);
     }
     if (t->active >= 0 && t->active < n) {
         int tw = p[t->active].w + 4, x = ax + p[t->active].x - 2, ty = ay + p[t->active].y, tt = rh + 3;
         tab_shape(s, x, ty, tw, tt);
         lj_hline(s, x + 1, fy, tw - 2, LJ_CLR_BTNFACE);   /* the frame's top line breaks under the active tab */
-        tab_text(s, w, x + (tw - lj_text_width(f, tab_caption(w, t->active))) / 2, ty + (tt - f->height) / 2, tab_caption(w, t->active), LJ_CLR_3DDKSHADOW);
+        tab_text(s, w, t->active, x + (tw - lj_text_width(f, tab_caption(w, t->active))) / 2, ty + (tt - f->height) / 2, tab_caption(w, t->active), LJ_CLR_3DDKSHADOW);
         if (w->focused) lj_focus_rect(s, x + 3, ty + 3, tw - 6, tt - 5);
     }
 }

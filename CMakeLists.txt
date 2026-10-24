@@ -562,3 +562,6 @@ if(LJ_SDL)   # W5 audio: the SDL3 capture glue on SDL's dummy driver (W5-AUD-1, 
   add_test(NAME test_audio_sdl COMMAND lj4evr_audio_sdl_test)
   set_tests_properties(test_audio_sdl PROPERTIES ENVIRONMENT "SDL_AUDIO_DRIVER=dummy")
 endif()
+if(Python3_FOUND)   # W6 fidelity (append-only): LORD_FIDELITY-12, the TPF0 decoder of tools/ref/pe_tpf0.py on a synthetic stream (no reference tree)
+  add_test(NAME pe_tpf0_selftest COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_SOURCE_DIR}/tools/ref/pe_tpf0.py" --selftest)
+endif()

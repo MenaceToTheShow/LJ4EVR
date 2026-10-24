@@ -44,6 +44,7 @@ static int blue_px(lj_window *win, lj_widget *bar)
 
 static int file_exists(const char *path) { FILE *f = fopen(path, "rb"); if (f) fclose(f); return f != NULL; }
 
+static void golden(lj_window *win, const char *form, int write);   /* below, with the W2 goldens */
 int lj_test_windows_a(int argc, char **argv);
 int lj_test_windows_a(int argc, char **argv)
 {
@@ -135,6 +136,14 @@ int lj_test_windows_a(int argc, char **argv)
         fire(sync, LJ_WEV_ENTER);
         CHECK(s->scenes[0].scene_ms == 4000 && s->scenes[0].fade_ms == 3000);
         CHECK(strcmp(lj_w_edit_text(lj_window_find(win, "ES")), "4:00") == 0 && strcmp(lj_w_edit_text(lj_window_find(win, "EF")), "3:00") == 0);
+        {   /* CARET (fidelity.md:27): a written value leaves the caret at the end; golden W2A_TSEQUENCEFORM_CARET with ES focused */
+            lj_widget *es = lj_window_find(win, "ES");
+            lj_w_edit_set_text(es, "4:00");
+            lj_w_focus(es);
+            CHECK(((lj_w_edit *)es)->caret == 4);
+            golden(win, "TSEQUENCEFORM_CARET", argc > 1 && strcmp(argv[1], "--write-golden") == 0);
+            lj_w_focus(sync);
+        }
         /* Synchronize: the fade follows the scene time */
         lj_w_checkbox_set_checked(sync, 1);
         CHECK(s->sync_times == 1 && s->scenes[0].fade_ms == 4000);

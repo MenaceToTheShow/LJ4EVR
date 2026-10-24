@@ -30,6 +30,9 @@ UNKNOWN_TXT = os.path.join("tools", "dfm2c_unknown.txt")
 BLOBS_TXT = os.path.join("tools", "dfm2c_blobs.txt")
 GLYPHMAP_TSV = os.path.join("tools", "glyphmap.tsv")
 CENSUS_TSV = os.path.join("tests", "ui", "dfm_census.tsv")
+# W6 LORD_FIDELITY-12: the side-exe forms (tools/ref/pe_tpf0.py) sit in the same folder; their windows are code-built
+# (src/windows/lj_audio_form.c, lj_media_form.c, lj_remote_form.c) and caption_diff --dfm compares them, so no table here
+SIDE_EXE = {"TLJSOUNDAPP.dfm.txt", "TLJMEDIAFORM.dfm.txt", "TRS232SETTINGSFORM.dfm.txt"}
 EVENTS_MAX = 12                                  # LJ_EVENTS_MAX in lj_form.h
 
 
@@ -823,7 +826,7 @@ class Gen:
 
     def run(self):
         dfm_dir = os.path.join(self.repo, DFM_DIR)
-        for fn in sorted(f for f in os.listdir(dfm_dir) if f.endswith(".dfm.txt")):
+        for fn in sorted(f for f in os.listdir(dfm_dir) if f.endswith(".dfm.txt") and f not in SIDE_EXE):
             data = open(os.path.join(dfm_dir, fn), "rb").read()
             self.inputs.append((fn, hashlib.sha256(data).hexdigest()))
             stem = fn[:-len(".dfm.txt")]

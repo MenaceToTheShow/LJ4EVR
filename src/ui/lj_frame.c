@@ -162,6 +162,7 @@ void lj_frame_paint(lj_surface *s, const lj_window_caption_state *cs, int presse
             glyph(s, b, r.x + 1, r.y + 1, cs->maximized, LJ_CLR_3DDKSHADOW);
         } else {
             lj_button_raised(s, r.x, r.y, r.w, r.h);
+            lj_hline(s, r.x + 1, r.y + 1, r.w - 3, LJ_CLR_3DLIGHT); lj_vline(s, r.x + 1, r.y + 1, r.h - 3, LJ_CLR_3DLIGHT);   /* W5-INT ME-161-3DLIGHT: movement2.gif close button */
             if (enabled) glyph(s, b, r.x, r.y, cs->maximized, LJ_CLR_3DDKSHADOW);
             else { glyph(s, b, r.x + 1, r.y + 1, cs->maximized, LJ_CLR_BTNHIGHLIGHT); glyph(s, b, r.x, r.y, cs->maximized, LJ_CLR_BTNSHADOW); }
         }

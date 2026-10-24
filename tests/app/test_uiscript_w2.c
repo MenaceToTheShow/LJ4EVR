@@ -35,6 +35,7 @@ static unsigned long long lj_t_tid(void) { return (unsigned long long)(uintptr_t
 #include "io/lj_fn.h"
 #include "io/lj_hotkeys.h"
 #include "io/lj_midi.h"
+#include "io/lj_sacn.h"
 #include "model/lj_bgcue.h"
 #include "model/lj_cue.h"
 #include "model/lj_library.h"
@@ -54,6 +55,20 @@ static unsigned long long lj_t_tid(void) { return (unsigned long long)(uintptr_t
 #include "ui/widgets/lj_widgets_basic.h"
 
 static int fails;
+
+/* LORD_FIDELITY-19: the stub spawner records argv and how many Stream_Terminated packets had gone out when it was called */
+static char lj_t_argv[3][64];
+static int lj_t_argc, lj_t_spawned;
+static uint32_t lj_t_term;
+static int lj_t_spawn(const char *const *argv)
+{
+    lj_sacn_stats st;
+    lj_sacn_stats_get(&st);
+    lj_t_term = st.terminated;
+    for (lj_t_argc = 0; argv[lj_t_argc] && lj_t_argc < 3; lj_t_argc++) snprintf(lj_t_argv[lj_t_argc], sizeof lj_t_argv[0], "%s", argv[lj_t_argc]);
+    lj_t_spawned++;
+    return 0;
+}
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
 
 /* ---- the fn handler every MIDI / hotkey path ends in ---- */
@@ -440,6 +455,28 @@ int lj_test_uiscript_w2(int argc, char **argv)
         lj_statics2_release(0);
         lj_lock(); lj_engine_tick(e, t + 25000u); lj_unlock();
         lj_statics2_form_close();
+    }
+
+    /* LORD_FIDELITY-19: System > Restart re-executes self with U:<library> (stub spawner); the sender's universe has terminated first */
+    {
+        lj_sacn_cfg sc;
+        lj_sacn_stats st;
+        uint8_t slots[LJ_LINK_CH];
+        uint32_t term0;
+        memset(slots, 0, sizeof slots);
+        lj_sacn_cfg_default(&sc, "restart");
+        memset(sc.universe_of_link, 0, sizeof sc.universe_of_link);
+        sc.universe_of_link[0] = 1; sc.nunicast[0] = 1; sc.unicast[0][0] = 0x7F000001u;   /* unicast 127.0.0.1, as test_sacn_rate */
+        CHECK(lj_app_restart_spawn("lj4evr", lj_t_spawn) == 0 && lj_t_spawned == 0);     /* nothing requested: no spawn */
+        CHECK(lj_sacn_open(&sc) == 0);
+        lj_sacn_set(1, slots); lj_sacn_pump(1000000u);
+        lj_sacn_stats_get(&st); term0 = st.terminated;
+        lj_app_restart_request("Show A"); lj_app_restart_request("Show B");                /* the first request names the library */
+        CHECK(lj_app_restart_spawn("lj4evr", lj_t_spawn) == 1);
+        CHECK(lj_t_spawned == 1 && lj_t_argc == 2 && strcmp(lj_t_argv[0], "lj4evr") == 0 && strcmp(lj_t_argv[1], "U:Show A") == 0);
+        CHECK(lj_t_term == term0 + 3);                                                    /* 3 x Stream_Terminated before the new instance */
+        CHECK(lj_app_restart_spawn("lj4evr", lj_t_spawn) == 0 && lj_t_spawned == 1);     /* once */
+        printf("  LORD_FIDELITY-19 restart: argv {%s, %s}, %u terminate packet(s) before the spawn\n", lj_t_argv[0], lj_t_argv[1], (unsigned)(lj_t_term - term0));
     }
 
     /* ---- teardown ---- */
