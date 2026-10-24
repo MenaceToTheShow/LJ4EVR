@@ -38,7 +38,7 @@
 static int fails;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
 
-static char logged[8192];
+static char logged[32768];   /* the 8176-frame run logs ~204 per-second lines (~13 KB): 8192 left the card-full line a few bytes of room, and CI dropped it once */
 static int bind_complaints;
 static void sink(void *ud, const char *line)
 {
