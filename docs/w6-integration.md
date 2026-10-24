@@ -323,3 +323,88 @@ linux-gcc-asan, linux-clang, windows-msvc, macos-clang, determinism).
 Left for the next steps (not this pass): ME-207 (release sequence: VERSION, CHANGELOG, the 1.2.0 paragraph, the D4
 count record, the owner name in `CONTRIBUTING.md` / `docs/releasing.md`, RC CI, the scans, tag `v1.2.0`, assets),
 ME-208 (design, vault), and one verifier's check of each Verify line above.
+
+## Release
+
+### v1.2.0 (ME-207)
+
+2026-10-24 (UTC), after the must-fix r1 lines (items 1-14) were verified on `f670fbf` (CI run 40064926688, six of six).
+Every app run used `SDL_VIDEO_DRIVER=dummy` (and `SDL_AUDIO_DRIVER=dummy`) in the foreground under a timeout; no window
+reached the screen.
+
+`Release 1.2.0` (`e2ece32`): `VERSION` 1.2.0 (configure re-run in `build-w6i-rel`, `-nosdl`, `-dbg`: `lj4evr.exe
+--version` = `LJ4EVR 1.2.0`; ctest 158 / 156 / 158 of 158 / 156 / 158 passed, 0 warnings), `CHANGELOG [1.2.0]` (the
+WIZARD_STYLES-6 list plus ME-190, -191, -192, -197, -199 and -206 in user terms, what 1.2.0 is not, the known gaps with
+the ME-189 microphone line, developer detail), the README status line, a "What v1.2.0 is not" paragraph in README and
+`docs/fidelity.md` (the v1.0.0 and v1.1.0 paragraphs untouched; `fidelity_check` now compares all three:
+`fidelity_check: 73 F/I id(s) with a row of 73, sacrifice paragraphs equal, 0 finding(s)`, selftest passed; with the
+new fidelity.md paragraph's last full stop removed: `the "What v1.2.0 is not" section is not byte-equal to README.md's`,
+rc 1), and `CONTRIBUTING.md` / `docs/releasing.md` naming `MenaceToTheShow/LJ4EVR` (`git grep -n UnbannableGT --
+CONTRIBUTING.md docs/releasing.md`: no output, rc 1). The earlier wave logs stay as written.
+
+    ci.yml run 40066853105 (e2ece32)   success: generate-check, linux-gcc-asan, linux-clang, windows-msvc, macos-clang,
+                                       determinism (six of six)
+    tag                                git tag -a v1.2.0 -m "LJ4EVR 1.2.0" on e2ece32 (= v$(cat VERSION)), pushed
+    release.yml run 40067527564        check, windows, macos, release: success
+    gh release view v1.2.0             "LJ4EVR 1.2.0", isPrerelease false, isDraft false, published 2026-10-24T05:49:10Z;
+                                       repos/MenaceToTheShow/LJ4EVR/releases/latest = v1.2.0
+    assets                             LJ4EVR-1.2.0-win64-setup.exe   1,940,372 bytes
+                                       LJ4EVR-1.2.0-macos.dmg         5,144,815 bytes
+                                       SHA256SUMS                       184 bytes
+    SHA256SUMS                         efd1bc70fd993ff8b9fea75f3e284be8da3a4372bf65007f0144fc226d440814  LJ4EVR-1.2.0-win64-setup.exe
+                                       8187e553bba804db2e881c8c4fd96d53e3680e53d749887ba88c3533a02c3c46  LJ4EVR-1.2.0-macos.dmg
+                                       (downloaded, sha256sum -c: both OK)
+    notes                              the install / notices / trademark header, then CHANGELOG [1.2.0] up to "Developer
+                                       detail:"; gh release view v1.2.0 --json body -q .body | grep -c -i microphone = 1
+
+Windows installed tree (the downloaded release asset, silent per-user install into a scratch folder:
+`LJ4EVR-1.2.0-win64-setup.exe /S /D=<scratch>\inst120`, exit 0; no LJ4EVR install or uninstall key existed before):
+
+    lj4evr.exe                12,060,160
+    THIRD_PARTY_NOTICES.txt       15,645
+    Uninstall.exe                111,921
+    help\  audio-media controls cuelists cues desktop files fixtures getting-started hotkeys-midi import index input
+           macros not-available notices output sequences statics-bgcues  (.txt, 18 topics)
+    HKCU ...\Uninstall\LJ4EVR   DisplayVersion=1.2.0, UninstallString = "<scratch>\inst120\Uninstall.exe"; no HKLM key
+    help_check.py --install-tree         install_check: <scratch>\inst120\THIRD_PARTY_NOTICES.txt ok (rc 0)
+    lj4evr.exe --version                 LJ4EVR 1.2.0 (rc 0)
+    w4_entry_points.lj4s against the installed exe (scratch LJ4EVR_USERDATA prepared by w4_entry_prep.sh alone:
+      Default W4Aux W4Entry W4Update; a scratch working directory for the shots)
+                                         rc 0, 156 PASS lines, 0 SCRIPT FAIL, 0 "no binding" lines (18 s)
+    w5_acc_media.lj4s against the installed exe (scratch LJ4EVR_USERDATA from `w5_wire.py prep`, U:W5Acc)
+                                         rc 0, 0 SCRIPT FAIL; `media: <scratch>\ud5\User\W5Acc\tone.wav loaded, 44100 Hz,
+                                         1 ch, 176400 frames`; clip.mp3 / clip.avi: `not a local .wav file, kept and skipped`
+    Uninstall.exe /S                     exit 0; the folder, lj4evr.exe and the HKCU key gone
+
+macOS (the `release.yml` macos job log; no hand run, ME-189):
+
+    lipo        Architectures in the fat file: build-release-mac/lj4evr.app/Contents/MacOS/lj4evr are: x86_64 arm64
+    codesign    Format=app bundle with Mach-O universal (x86_64 arm64), Signature=adhoc; --verify --strict:
+                valid on disk, satisfies its Designated Requirement
+    Info.plist  "CFBundleShortVersionString" => "1.2.0", "LSMinimumSystemVersion" => "12.0"; minos 12.0
+    .dmg        5,144,815 bytes (downloaded), UDIF trailer at size - 512 = `koly` (6b 6f 6c 79); hdiutil verify: every
+                partition verified; mounted: Applications -> /Applications, LJ4EVR.app; install_check:
+                .../LJ4EVR.app/Contents/Resources/THIRD_PARTY_NOTICES.txt ok
+
+Windows release job: the `dumpbin /dependents ... | findstr /i "vcruntime msvcp ucrtbase" && exit /b 1` step passed;
+installer VERSIONINFO `ProductName=LJ4EVR ProductVersion=1.2.0 FileVersion=1.2.0`; install_check on the silent CI
+install ok.
+
+D4, corrected record (WIZARD_STYLES-5): `git grep -o "PROPOSAL rig" | wc -l` was **503** at `55527ac`, not the 505
+quoted in section 4 and in `docs/w6-gates.md` s3 (505 was the count at `d701f79`, before `b3afd86` deleted the track
+logs that carried 2). `-- src tests tools`: 393 at `v1.1.0` -> 396 at `55527ac` -> 396 at `v1.2.0`; `git diff v1.1.0
+v1.2.0 -- src tests tools`: 0 removed lines and 3 added lines carry the tag. Whole tree at `v1.2.0`: 508 (the must-fix
+fidelity row, the two "What v1.2.0 is not" paragraphs and the CHANGELOG line). `git diff v1.1.0 --
+src/engine/lj_engine_rules.h`: empty. Every `PROPOSAL rig` tag stays (D4 carried, Joey).
+
+Scans over the release (`v1.1.0..v1.2.0`, 22 commits, 451 paths), the release notes and every commit message:
+`reference/` 0 paths, and the git-blob sha1 of each of the 451 changed files (as-is and CRLF->LF) against the 18,923
+non-empty `reference/` files: 0 equal. REL-PRIVATE (the ME-148 table: user name, work-PC and host names, this PC's LAN
+prefixes, its NIC names and descriptions, the account mails, the design-vault root, the user-profile path): 0 hits in
+3,399 added and message lines. The old account name appears in 7 of those lines, each a record of the 2026-10-23
+rename (`docs/ci.md:76`, `docs/w6-gates.md:4`, `docs/w6-integration.md` section 6 and the end of section 7, and the
+`a38b065` message); it is the public former login of this repository, kept as written. No capture was re-shot in the
+release step.
+
+ME-207 ticked by this record. Open after the tag: ME-208 (design.md v1.2.0 paragraph, orchestrator) and the verdict's
+section 5 carries (the reference rig, the Mac hand run, the OemCode, ME-209, ME-210, ME-211).
