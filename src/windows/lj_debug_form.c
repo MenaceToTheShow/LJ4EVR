@@ -31,7 +31,7 @@
 #define LJ_DBG_NA "n/a"
 enum { LJ_DBG_SAMPLES = 128, LJ_DBG_MISC_LINES = LJ_CHANS / 16, LJ_DBG_MEM_ROWS = 16 };
 
-typedef struct { uint64_t at; uint32_t us; } lj_dbg_sample;
+typedef struct { uint64_t at, ticks, sum; } lj_dbg_sample;   /* W4 LORD_ENGINE-9: the view's per-tick sum pair at one refresh */
 static struct {
     lj_window *win, *statics, *msg, *memwin;
     int pending;                                   /* bit per id (LJ_WIN_DEBUG .. LJ_WIN_MEMORY_VIEW) to close at the next refresh */
@@ -58,12 +58,22 @@ static void tenths(char *dst, size_t cap, uint32_t t) { snprintf(dst, cap, "%u%c
 
 uint32_t lj_debug_form_load_tenths(uint32_t avg_tick_us, uint32_t period_us) { return period_us ? (uint32_t)((uint64_t)avg_tick_us * 1000u / period_us) : 0; }
 
-static uint32_t avg_since(uint64_t now, uint64_t window_us)
+void lj_debug_form_load_sample(uint64_t at_us, uint64_t tick_no, uint64_t tick_us_sum)
 {
-    uint64_t sum = 0;
-    int i, n = 0;
-    for (i = 0; i < dbg.nsamp; i++) if (now - dbg.samp[i].at <= window_us) { sum += dbg.samp[i].us; n++; }
-    return n ? (uint32_t)(sum / (uint64_t)n) : 0;
+    dbg.samp[dbg.head].at = at_us; dbg.samp[dbg.head].ticks = tick_no; dbg.samp[dbg.head].sum = tick_us_sum;
+    dbg.head = (dbg.head + 1) % LJ_DBG_SAMPLES; if (dbg.nsamp < LJ_DBG_SAMPLES) dbg.nsamp++;
+}
+/* W4 LORD_ENGINE-9: every tick counts once, whatever the refresh rate: the sums differenced between the newest sample and
+ * the oldest one within window_us of it (ponytail: a 128-sample ring, 5.1 s at 25 refreshes/s; a faster refresh shortens
+ * the 5 s window to what the ring holds) */
+uint32_t lj_debug_form_load_avg_us(uint64_t window_us, uint32_t fallback_us)
+{
+    const lj_dbg_sample *nw, *o;
+    int i;
+    if (!dbg.nsamp) return fallback_us;
+    nw = o = &dbg.samp[(dbg.head + LJ_DBG_SAMPLES - 1) % LJ_DBG_SAMPLES];
+    for (i = 0; i < dbg.nsamp; i++) if (nw->at - dbg.samp[i].at <= window_us && dbg.samp[i].at < o->at) o = &dbg.samp[i];
+    return nw->ticks > o->ticks && nw->sum >= o->sum ? (uint32_t)((nw->sum - o->sum) / (nw->ticks - o->ticks)) : fallback_us;   /* no tick between them: the last tick's time */
 }
 
 /* ---- TDebugForm ---- */
@@ -85,13 +95,12 @@ static void debug_fill(void)
     set_label(dbg.win, "Label67", "");
     for (i = 0; i < LJ_LINKS; i++) { char nm[16]; snprintf(nm, sizeof nm, "Label%d", 68 + i); snprintf(t, sizeof t, "Link %d: %u packets/s", i + 1, (unsigned)v->sacn_pps[i]); set_label(dbg.win, nm, t); }
 
-    dbg.samp[dbg.head].at = now; dbg.samp[dbg.head].us = v->tick_us_last;
-    dbg.head = (dbg.head + 1) % LJ_DBG_SAMPLES; if (dbg.nsamp < LJ_DBG_SAMPLES) dbg.nsamp++;
+    lj_debug_form_load_sample(now, v->tick_no, v->tick_us_sum);
     if (lj_w_speedbutton_down(find(dbg.win, "sbEnablePerformanceCounters"))) {
-        tenths(t, sizeof t, lj_debug_form_load_tenths(avg_since(now, 1000000u), period)); set_label(dbg.win, "lpfCounter1", t);
+        tenths(t, sizeof t, lj_debug_form_load_tenths(lj_debug_form_load_avg_us(1000000u, v->tick_us_last), period)); set_label(dbg.win, "lpfCounter1", t);
         set_label(dbg.win, "lpfCounter2", LJ_DBG_NA);                                                         /* no cue-evaluation counter (the cue list runs on the UI thread) */
         snprintf(t, sizeof t, "%u%c%03u", (unsigned)(v->tick_us_last / 1000), lj_locale_decimal(), (unsigned)(v->tick_us_last % 1000)); set_label(dbg.win, "lpfCounter3", t);
-        tenths(t, sizeof t, lj_debug_form_load_tenths(avg_since(now, 5000000u), period)); set_label(dbg.win, "lpfCounter4", t);
+        tenths(t, sizeof t, lj_debug_form_load_tenths(lj_debug_form_load_avg_us(5000000u, v->tick_us_last), period)); set_label(dbg.win, "lpfCounter4", t);
         set_label(dbg.win, "lpfCounter5", LJ_DBG_NA);                                                         /* no macro-evaluation counter */
     } else {
         static const char *const pf[] = { "lpfCounter1", "lpfCounter2", "lpfCounter3", "lpfCounter4", "lpfCounter5" };

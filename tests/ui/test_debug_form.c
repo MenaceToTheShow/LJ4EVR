@@ -7,7 +7,8 @@
  *    (no float), Cue / Macro evaluation n/a;
  *  - TStaticsDebugForm, TMsgDebugForm ("WM_CPOPYDATA DEBUG", sic) and TMemoryViewForm ("System Memory", the DFM's 16 rows)
  *    open; System Memory fills MemoryLoad / Total / Available Physical from lj_debug_form_set_memory;
- *  - goldens W4DBG_* (tests/ui/golden, REVIEWED.tsv); LJ_GOLDEN_UPDATE=1 rewrites them. */
+ *  - goldens W4DBG_* (tests/ui/golden, REVIEWED.tsv); LJ_GOLDEN_UPDATE=1 rewrites them;
+ *  - W4 LORD_ENGINE-9: the 1 s / 5 s loads from the view's per-tick sum pair are equal at two refresh rates. */
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
 #include <stdlib.h>
@@ -207,6 +208,30 @@ int lj_test_debug_form(int argc, char **argv)
     CHECK(lj_win_get(LJ_WIN_DEBUG) != NULL);                                 /* FormClose closes at the next refresh, never inside its own event */
     lj_win_refresh(LJ_WIN_DEBUG);
     CHECK(lj_win_get(LJ_WIN_DEBUG) == NULL);
+
+    /* W4 LORD_ENGINE-9: the engine sums every tick's time beside tick_no, and the 1 s / 5 s loads difference that pair, so
+     * two refresh rates (100 ms and 40 ms) over one tick trace (25 ms ticks of 400..1599 us) give the same loads, equal to
+     * the true mean of the ticks in the window. The sampled-at-refresh average this replaces depended on the rate. */
+    {   lj_engine_status a, b;
+        uint64_t sum = 0, ticks = 0, base, t, true1 = 0, true5 = 0;
+        uint32_t l1[2], l5[2];
+        int rate, k;
+        lj_lock(); lj_engine_view(c->engine, &a); lj_engine_tick(c->engine, lj_clock_us()); lj_engine_tick(c->engine, lj_clock_us()); lj_engine_view(c->engine, &b); lj_unlock();
+        CHECK(b.tick_no == a.tick_no + 2 && b.tick_us_sum >= a.tick_us_sum + b.tick_us_last);
+        for (k = 1; k <= 240; k++) { uint64_t d = 400u + (uint64_t)(k * 7919) % 1200u; if (k > 200) true1 += d; if (k > 40) true5 += d; }
+        for (rate = 0; rate < 2; rate++) {
+            uint64_t step = rate ? 40000u : 100000u;
+            base = 1000000000000ull + (uint64_t)rate * 1000000000ull; sum = ticks = 0; k = 0;
+            for (t = step; t <= 6000000u; t += step) {
+                while ((uint64_t)(k + 1) * 25000u <= t) { k++; ticks++; sum += 400u + (uint64_t)(k * 7919) % 1200u; }
+                lj_debug_form_load_sample(base + t, ticks, sum);
+            }
+            l1[rate] = lj_debug_form_load_avg_us(1000000u, 0); l5[rate] = lj_debug_form_load_avg_us(5000000u, 0);
+        }
+        CHECK(l1[0] == l1[1] && l5[0] == l5[1] && l1[0] == (uint32_t)(true1 / 40u) && l5[0] == (uint32_t)(true5 / 200u));
+        printf("  loads from the sum pair: 1 s %u us / 5 s %u us at 10 Hz, %u / %u at 25 Hz (true means %u / %u)\n", (unsigned)l1[0], (unsigned)l5[0],
+               (unsigned)l1[1], (unsigned)l5[1], (unsigned)(true1 / 40u), (unsigned)(true5 / 200u));
+    }
 
 out:
     CHECK(act_debug == 1);

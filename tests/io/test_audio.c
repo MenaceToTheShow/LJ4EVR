@@ -4,7 +4,8 @@
  *  - decay 24 ms vs 600 ms and sensitivity 2.0 vs 10.0 change the count as stated; gain moves only the threshold side;
  *  - the FFT bands put each bin-exact tone in its band and the equalizer removes a cut band; clip 0 / 1 / 2;
  *  - the capture ring drops and counts past LJ_AUDIO_RING; Hardware.Ini [AUDIO] round trip and hostile values clamped;
- *  - W5-AUD-6: the DMX-in gain / noise levels and the Fingers jogs reach the same two settings. */
+ *  - W5-AUD-6: the DMX-in gain / noise levels and the Fingers jogs reach the same two settings;
+ *  - W6 LORD_ENGINE-7: trig times follow the sample count, not a jittered wall clock. */
 #include <stdio.h>
 #include <string.h>
 #include "core/lj_ini.h"
@@ -186,6 +187,45 @@ static void test_remote_inputs(void)   /* W5-AUD-6: one row per input */
     c->audio = NULL;
 }
 
+/* W6 LORD_ENGINE-7: the trig times come from the sample count. The same clicks fed with a wall clock that jitters by up to
+ * +-20 ms per poll give the same trig times as an exact clock, each one on a 512-sample block boundary after t0. */
+static int clocked(lj_audio_state *s, const lj_audio_cfg *c, size_t n, int jitter, uint64_t *times, int cap)
+{
+    size_t i = 0, k = 0;
+    uint64_t t = 1000000;
+    int m = 0;
+    lj_audio_reset(s);
+    while (i < n) {
+        size_t take = 700 + (k % 5) * 300;
+        int64_t j = jitter && k ? (int64_t)((k * 7919u) % 41u) * 1000 - 20000 : 0;   /* the first poll is on time: it anchors t0 */
+        if (take > n - i) take = n - i;
+        t += (uint64_t)take * 1000000u / LJ_AUDIO_RATE;
+        if (lj_audio_analyze(s, c, pcm + i, take, (uint64_t)((int64_t)t + j)) > 0 && m < cap) times[m++] = s->last_trig_us;
+        i += take; k++;
+    }
+    return m;
+}
+static void test_sample_clock(void)
+{
+    static lj_audio_state s;
+    lj_audio_cfg c;
+    uint64_t a[16], b[16], t0;
+    int na, nb, i, ok = 1;
+    lj_audio_cfg_default(&c);
+    make(4, SEC / 2, 1, 0);
+    na = clocked(&s, &c, 4u * SEC, 0, a, 16);
+    nb = clocked(&s, &c, 4u * SEC, 1, b, 16);
+    t0 = s.t0_us;
+    CHECK(na == 8 && nb == 8 && t0 == 1000000u && s.samples == 4u * SEC);
+    for (i = 0; i < na && i < nb; i++) {
+        uint64_t blk = ((b[i] - t0) * LJ_AUDIO_RATE + 256000000u) / 512000000u;   /* the nearest block count */
+        if (a[i] != b[i] || b[i] != t0 + blk * 512u * 1000000u / LJ_AUDIO_RATE) ok = 0;
+    }
+    CHECK(ok);
+    printf("  sample clock: %d trigs under a +-20 ms jittered wall clock, times equal to the exact clock's (first %llu us, last %llu us)\n",
+           nb, (unsigned long long)(nb ? b[0] : 0), (unsigned long long)(nb ? b[nb - 1] : 0));
+}
+
 int lj_test_audio(int argc, char **argv);
 int lj_test_audio(int argc, char **argv)
 {
@@ -195,6 +235,7 @@ int lj_test_audio(int argc, char **argv)
     test_ring();
     test_cfg();
     test_remote_inputs();
+    test_sample_clock();
     printf("test_audio: %s (%d failure%s)\n", fails ? "FAIL" : "PASS", fails, fails == 1 ? "" : "s");
     return fails ? 1 : 0;
 }

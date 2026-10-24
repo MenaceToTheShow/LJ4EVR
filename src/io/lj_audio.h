@@ -61,6 +61,9 @@ typedef struct {
     int16_t  wave[LJ_AUDIO_BLOCK]; /* the last analysed block after gain (the Real-time view) */
     int16_t  rem[LJ_AUDIO_BLOCK]; uint16_t nrem;   /* the part block kept between two lj_audio_analyze calls */
     uint16_t peak;                 /* the last block's raw peak (clip indicator) */
+    /* W6 LORD_ENGINE-7 (appended): block times come from a running sample count, not the wall clock of each poll */
+    uint64_t t0_us, samples;       /* the first call's now_us less its samples; samples analysed or kept since the reset */
+    uint8_t  clocked;              /* t0_us is set (0 after lj_audio_reset) */
 } lj_audio_state;
 
 void lj_audio_cfg_default(lj_audio_cfg *c);                                /* off, default device, Medium, decay 312 ms, factor 6.0, gain 100, EQ flat (the DFM fader defaults; noise PROPOSAL rig W5-AUD-2) */
@@ -69,7 +72,7 @@ void lj_audio_cfg_save(lj_ini *hardware_ini, const lj_audio_cfg *c);
 
 void lj_audio_reset(lj_audio_state *s);
 int  lj_audio_detect(lj_audio_state *s, const lj_audio_cfg *c, uint16_t level, uint64_t now_us);   /* the onset rule on one block level: 1 = trig; the UI script `audio_inject` feeds this */
-int  lj_audio_analyze(lj_audio_state *s, const lj_audio_cfg *c, const int16_t *pcm, size_t n, uint64_t now_us);   /* whole blocks of n samples (a remainder is kept for the next call): level, clip, bands, detect; returns the trigs */
+int  lj_audio_analyze(lj_audio_state *s, const lj_audio_cfg *c, const int16_t *pcm, size_t n, uint64_t now_us);   /* whole blocks of n samples (a remainder is kept for the next call): level, clip, bands, detect; returns the trigs. A block ends at t0 + samples * 1000000 / LJ_AUDIO_RATE; now_us only anchors t0 on the first call after a reset (LORD_ENGINE-7) */
 
 void     lj_audio_post(const int16_t *pcm, size_t n);                      /* the capture thread's only act: copy under lj_lock into the ring */
 size_t   lj_audio_poll(int16_t *pcm, size_t cap);                          /* UI thread: samples taken from the ring */

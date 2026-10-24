@@ -103,7 +103,11 @@ extern const char *const lj_midi_kind_words[];   /* seq cue bgcue cl fn cc (the 
  * hands every F1 data byte to lj_mtc_feed on the UI thread (lj_app_midi_dispatch, ME-23: never in the OS callback); the
  * cue list runner reads lj_mtc_time each 10 ms step. LORD_C-6: the CoreMIDI byte-stream parser moves to lj_midi_feed so
  * quarter-frames ride the same parser on both OSes. */
-typedef struct { uint8_t piece[8], have; uint8_t fps /* 24 25 29 (=30df) 30, 0 = unknown */; uint32_t ms; uint64_t last_us; uint8_t running; } lj_mtc;
+typedef struct { uint8_t piece[8], have; uint8_t fps /* 24 25 29 (=30df) 30, 0 = unknown */; uint32_t ms; uint64_t last_us; uint8_t running;
+                 /* W6 INT-s7-SYNCFRAMES (appended): Main.Ini [CUELIST2] SyncFrames (0 Off, 1, 5, 10; PROPOSAL rig W6-SYNC): lj_mtc_time
+                  * follows only after that many frames (4 quarter frames each) since the time code (re)started, a gap past the
+                  * time-out restarting the count */
+                 uint8_t sync_frames; uint16_t qf_run; } lj_mtc;
 void lj_mtc_reset(lj_mtc *t);
 int  lj_mtc_feed(lj_mtc *t, uint8_t qf_data, uint64_t now_us);    /* one quarter-frame data byte; 1 when a full time was assembled (t->ms valid), else 0 */
 int  lj_mtc_time(const lj_mtc *t, uint64_t now_us, uint32_t *ms); /* 0 with the last time, -1 when none or older than LJ_MTC_TIMEOUT_MS (the time-out preference acts on -1) */

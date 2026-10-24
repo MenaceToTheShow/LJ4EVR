@@ -120,6 +120,19 @@ static void lj_t_feed_mtc(void)
     for (k = 0; k < 8; k++) lj_mtc_feed(&t, (uint8_t)(k == 2 ? 0x2F : qf[k]), 90000u);   /* seconds lo 15 + hi 0 = 15: a valid set */
     CHECK(lj_mtc_time(&t, 90000u, &ms) == 0 && ms == 3735160u);
     { uint8_t m[3] = { 0xF1, 0x04, 0 }; uint8_t got[3]; while (lj_midi_poll(got)) {} lj_midi_post(m); CHECK(lj_midi_poll(got) == 1 && got[0] == 0xF1 && got[1] == 0x04); }   /* F1 rides the queue to the UI thread */
+    /* W6 INT-s7-SYNCFRAMES: [CUELIST2] SyncFrames=5 follows after the fifth frame (20 quarter frames at 25 fps = 10 ms each), not before; a gap past the time-out counts again */
+    {   int q, first = -1;
+        uint64_t now = 2000000u;
+        lj_mtc_reset(&t); t.sync_frames = 5;
+        for (q = 0; q < 24; q++) { lj_mtc_feed(&t, qf[q % 8], now += 10000u); if (first < 0 && lj_mtc_time(&t, now, &ms) == 0) first = q + 1; }
+        CHECK(first == 20 && ms == 3723160u);                                   /* the set of quarter frames 9..16, shown from the 20th on */
+        printf("  MTC SyncFrames=5: follows at quarter frame %d (frame %d)\n", first, first / 4);
+        now += 600000u; first = -1;                                            /* the time code stops past 0.5 s and restarts */
+        for (q = 0; q < 24; q++) { lj_mtc_feed(&t, qf[q % 8], now += 10000u); if (first < 0 && lj_mtc_time(&t, now, &ms) == 0) first = q + 1; }
+        CHECK(first == 20);
+        lj_mtc_reset(&t); first = -1;                                          /* Off: the first full set */
+        for (q = 0; q < 8; q++) { lj_mtc_feed(&t, qf[q], now += 10000u); if (first < 0 && lj_mtc_time(&t, now, &ms) == 0) first = q + 1; }
+        CHECK(first == 8); }
 }
 
 /* W4 da2532-fingers (appended): the LJ_FNF_EXT rows of the 2532 and Fingers surfaces through the map (fn = note, cc = level rows),

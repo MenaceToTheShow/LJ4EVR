@@ -4,7 +4,8 @@
  *                    runner with the MP lines live: Load, Play, Wait 00:00:02:00 firing at sample frame 88200 and not at
  *                    88199 (44.1 kHz), pause and seek moving the clock, Stop on list stop, Auto seek on Run, the shown MP
  *                    time code and Log; a .Cl2 with MP lines loading clean and round-tripping byte-unchanged, a missing clip
- *                    and a CD line loading red (ME-11).
+ *                    and a CD line loading red (ME-11); W6 LORD_ENGINE-9: the app's idle pass releases an MP Wait in the
+ *                    pass the clip crosses its point.
  *  `test_media_form` the LJ MediaPlayer window headless (transport enable table, time code, file, recent list, greyed
  *                    video / .mps items) with the golden tests/ui/golden/W5MED_MEDIA_PLAYER.bmp (LJ_GOLDEN_UPDATE=1 rewrites
  *                    it; REVIEWED.tsv), and the Cuelist window's MP rows live: ListPop items, sbMPTime, the MP pages
@@ -13,7 +14,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "app/lj_app_cuelist_host.h"
+#include "app/lj_app_io.h"
 #include "app/lj_cuelist_run.h"
+#include "core/lj_clock.h"
 #include "core/lj_ini.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
@@ -83,6 +87,38 @@ static int same_file(const char *a, const char *b)
     do { ca = fgetc(fa); cb = fgetc(fb); if (ca != cb) { rc = 0; break; } } while (ca != EOF);
     fclose(fa); fclose(fb);
     return rc;
+}
+
+/* W6 LORD_ENGINE-9: the app's idle pass (lj_app_cuelist_pass, which lj_app.c calls) steps the MediaPlayer clock before the
+ * cue list, so an MP Wait 00:00:02:00 releases in the pass where the clip reaches sample frame 88200, not one pass later. */
+static void app_pass(void)
+{
+    lj_ctx *c = lj_ctx_get();
+    lj_app_io_platform p;
+    lj_cuelist *cl;
+    lj_cl_line l;
+    char err[160];
+    memset(&p, 0, sizeof p); p.media = &FH;
+    c->show = lj_show_new(); c->hardware_ini = lj_ini_new();
+    if (!c->show || !c->hardware_ini || !(cl = lj_cuelist_new_rec())) { fails++; printf("FAIL app_pass setup\n"); return; }
+    lj_app_io_set_platform(&p);
+    lj_app_io_start();
+    lj_app_cuelist_host_start();
+    memset(&F, 0, sizeof F);
+    l = ln(LJ_CL_MP_WAIT, lj_cl_hmsf_ms(0, 0, 2, 0, 100), NULL, 0); CHECK(lj_cuelist_insert(cl, 1, &l) == 0);
+    l = ln(LJ_CL_MP_WAIT, lj_cl_hmsf_ms(0, 0, 5, 0, 100), NULL, 0); CHECK(lj_cuelist_insert(cl, 2, &l) == 0);
+    c->show->current_cl = cl;
+    CHECK(c->media && lj_media_cmd(c->media, &FH, LJ_CL_MP_LOAD_FILE, "show.wav", 0, err, sizeof err) == 0 && lj_media_cmd(c->media, &FH, LJ_CL_MP_PLAY, NULL, 0, err, sizeof err) == 0);
+    lj_desktop_run_action(LJ_ACT_CUELIST_OP, LJ_CL_OP_ARG(LJ_CL_OP_TC_SRC, LJ_TC_MP));
+    lj_desktop_run_action(LJ_ACT_CUELIST_OP, LJ_CL_OP_ARG(LJ_CL_OP_TOP, 0));
+    CHECK(c->cl && c->cl->state == LJ_CL_RUNNING && c->cl->next == 1);
+    F.pos = 88199; lj_app_cuelist_pass(lj_clock_us()); CHECK(c->cl->next == 1 && c->cl->tc_ms == 1990);   /* one frame short */
+    F.pos = 88200; lj_app_cuelist_pass(lj_clock_us()); CHECK(c->cl->next == 2 && c->cl->tc_ms == 2000);   /* the same pass */
+    printf("  app pass: MP Wait 00:00:02:00 released in the pass the clip reached frame 88200 (next line %u)\n", (unsigned)c->cl->next);
+    lj_app_io_stop();
+    lj_app_cuelist_host_stop();
+    lj_show_free(c->show); c->show = NULL;
+    lj_ini_free(c->hardware_ini); c->hardware_ini = NULL;
 }
 
 int lj_test_media(int argc, char **argv);
@@ -206,6 +242,7 @@ int lj_test_media(int argc, char **argv)
     remove("lj_test_media_a.Cl2"); remove("lj_test_media_b.Cl2");
     CHECK(lj_cl_cmd_inert(LJ_CL_MP_PLAY) == 0 && lj_cl_cmd_inert(LJ_CL_CD_STOP) == 1 && lj_cl_cmd_inert(LJ_CL_DA_PLAY) == 1);
 
+    app_pass();
     printf("test_media: %s (%d failures)\n", fails ? "FAIL" : "ok", fails);
     return fails ? 1 : 0;
 }

@@ -1,6 +1,6 @@
 /* lj_app_io.h - the W5 I/O seam of the app (docs/w5-contracts.md seam 10). It owns the W5 records lj_ctx points at
  * (DMX-in, audio, remote, External Application, MediaPlayer), opens what Hardware.Ini enables at start (nothing on a
- * fresh userdata, W5-X-OFF), polls every part on each UI loop pass after lj_app_cuelist_host_idle, posts the engine commands
+ * fresh userdata, W5-X-OFF), polls every part on each UI loop pass before lj_app_cuelist_step (lj_app_cuelist_pass, W6), posts the engine commands
  * (LJ_CMD_DMX_IN, LJ_CMD_OVERWRITE_ENABLE, LJ_CMD_TRIG / LJ_TRIG_AUDIO_EVENT) under lj_lock, and closes every listener
  * before the engine thread stops (W5-X-THREAD). SDL-free: the platform pieces (audio capture, WAV playback) arrive
  * through lj_app_io_set_platform, so tests drive it headless. The tracks never edit this file's logic; a track that

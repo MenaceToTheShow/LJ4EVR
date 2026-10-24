@@ -614,20 +614,23 @@ static int lj_engine_mm_amp(const lj_engine *e) { return (int)((uint32_t)e->macr
 static int lj_engine_mm_speed(const lj_engine *e) { return e->mmc.frozen ? 0 : e->macro_speed_pct; }
 
 /* W5 extapp (docs/w5-contracts.md seam 6): the External Application strings of this tick into frame.ext. Runners in the
- * merge order of lj_merge.c (cue slots, flash, current, statics, BG slots), a later one replacing an earlier one's string
- * for the same profile-90 fixture (the topmost wins, as LTP); a runner whose scene names no string leaves the one below.
- * A plain copy: no I/O, no allocation, no lj_table_* (ME-2). */
+ * merge order of lj_merge.c (LJ_LAYER_ORDER: cue slots, flash, current, statics in activation order, BG slots; W6
+ * LORD_ENGINE-8), a later one replacing an earlier one's string for the same profile-90 fixture (the topmost wins, as
+ * LTP); a runner whose scene names no string leaves the one below. A plain copy: no I/O, no allocation, no lj_table_* (ME-2). */
 static void lj_engine_ext_copy(lj_engine *e, lj_frame *f)
 {
-    static const int order[] = { LJ_RUN_FLASH, LJ_RUN_CURRENT };
-    int ids[LJ_RUN_COUNT], n = 0, i, j, k;
+    int ids[LJ_RUN_COUNT], st[LJ_STATIC_RUNNERS], n = 0, i, j, k, ns;
     memset(f->ext_fixture, 0, sizeof f->ext_fixture);
     memset(f->ext, 0, sizeof f->ext);
     if (!e->show) return;
-    for (i = 0; i < LJ_CUE_SLOTS; i++) ids[n++] = LJ_RUN_SLOT0 + i;
-    for (i = 0; i < 2; i++) ids[n++] = order[i];
-    for (i = LJ_RUN_STATIC0; i < LJ_RUN_COUNT; i++) ids[n++] = i;
-    for (i = 0; i < LJ_BG_SLOTS; i++) ids[n++] = LJ_RUN_BG0 + i;
+    for (i = 1; i < LJ_L_COUNT; i++) switch (LJ_LAYER_ORDER[i]) {
+    case LJ_L_CUE:     for (k = 0; k < LJ_CUE_SLOTS; k++) ids[n++] = LJ_RUN_SLOT0 + k; break;
+    case LJ_L_FLASH:   ids[n++] = LJ_RUN_FLASH; break;
+    case LJ_L_CURRENT: ids[n++] = LJ_RUN_CURRENT; break;
+    case LJ_L_STATICS: ns = lj_merge_statics_order(&e->run[LJ_RUN_STATIC0], st); for (k = 0; k < ns; k++) ids[n++] = LJ_RUN_STATIC0 + st[k]; break;
+    case LJ_L_BGCUE:   for (k = 0; k < LJ_BG_SLOTS; k++) ids[n++] = LJ_RUN_BG0 + k; break;
+    default: break;                                            /* rank 6 / 7 carry no scene strings */
+    }
     for (i = 0; i < n; i++) {
         const lj_scene *sc;
         if (!lj_runner_active(&e->run[ids[i]]) || (ids[i] == LJ_RUN_CURRENT && e->run[ids[i]].blind) || (sc = lj_engine_scene_of(e, ids[i])) == NULL) continue;
@@ -693,6 +696,7 @@ void lj_engine_tick(lj_engine *e, uint64_t now_us)
     t_end = lj_clock_us();
     e->st.tick_us_last = (uint32_t)(t_end - t_start);
     if (e->st.tick_us_last > e->st.tick_us_max) e->st.tick_us_max = e->st.tick_us_last;
+    e->st.tick_us_sum += e->st.tick_us_last;                   /* W4 LORD_ENGINE-9: pairs with st.tick_no (both cover this tick once the view is copied) */
 }
 
 const lj_frame *lj_engine_frame(const lj_engine *e)

@@ -24,6 +24,7 @@
 #include "desktop/lj_desktop.h"
 #include "desktop/lj_selection.h"
 #include "engine/lj_engine.h"
+#include "engine/lj_runner.h"
 #include "gfx/lj_bmp.h"
 #include "io/lj_extapp.h"
 #include "io/lj_net.h"
@@ -156,6 +157,39 @@ static void engine_copy(void)
     printf("  engine: frame.ext carries the topmost runner's string per profile-90 fixture\n");
 }
 
+/* W6 LORD_ENGINE-8: the statics layer their strings in activation order (LJ_LAYER_ORDER and the lj_merge statics sort),
+ * not in runner order. A on runner 0 and B on runner 1 both name a string for fixture 5: B, activated later, wins; A
+ * re-activated (same runner, now the latest) wins back. */
+static void engine_statics(void)
+{
+    static lj_static_slot a, b; static lj_scene sa, sb;
+    lj_show *show = lj_show_new();
+    lj_engine *e = lj_engine_create();
+    lj_cmd c;
+    const lj_frame *f;
+    uint64_t now = 1000000;
+    int i;
+    if (!show || !e) { fails++; printf("FAIL engine setup\n"); lj_show_free(show); lj_engine_destroy(e); return; }
+    show->fixture[4].kind = LJ_FX_BUILTIN; show->fixture[4].profile_id = 90; show->fixture[4].link = 2; show->fixture[4].address = 1;
+    memset(&sa, 0, sizeof sa); memset(&sb, 0, sizeof sb);
+    sa.ext[0].fixture = 5; strcpy(sa.ext[0].cmd, "STATIC A");
+    sb.ext[0].fixture = 5; strcpy(sb.ext[0].cmd, "STATIC B");
+    memset(&a, 0, sizeof a); a.kind = LJ_STATIC_RECORDED; a.level_pct = 100; a.replace = LJ_REP_ADD; a.scene = &sa;
+    b = a; b.scene = &sb;
+    lj_lock(); lj_engine_bind(e, show); lj_unlock();
+    for (i = 0; i < 3; i++) {                                    /* A, then B, then A again */
+        memset(&c, 0, sizeof c); c.kind = LJ_CMD_STATIC_ACTIVATE; c.a = i == 1 ? 1u : 0u; c.b = 0xFFFF; c.c = 0xFF; c.st = i == 1 ? &b : &a;
+        lj_lock(); lj_engine_cmd(e, &c); lj_engine_tick(e, now += 25000); f = lj_engine_frame(e); lj_unlock();
+        CHECK(f->ext_fixture[0] == 5 && strcmp(f->ext[0], i == 1 ? "STATIC B" : "STATIC A") == 0 && f->ext_fixture[1] == 0);
+    }
+    {   const lj_runner *r0 = lj_engine_runner(e, LJ_RUN_STATIC0), *r1 = lj_engine_runner(e, LJ_RUN_STATIC0 + 1);
+        CHECK(r0 && r1 && lj_runner_active(r0) && lj_runner_active(r1) && r0->activated_us > r1->activated_us); }   /* the later activation sits on the lower runner */
+    lj_lock(); lj_engine_bind(e, NULL); lj_unlock();
+    lj_engine_destroy(e);
+    lj_show_free(show);
+    printf("  engine: two statics on fixture 5, the later-activated one's string wins (A, B, A again on runner 0)\n");
+}
+
 static int recv_wait(lj_socket s, uint8_t *buf, size_t cap)        /* up to ~1 s of polling */
 {
     int i, n = 0;
@@ -227,7 +261,7 @@ int lj_test_extapp(int argc, char **argv)
     (void)argc; (void)argv;
     fails = 0;
     lj_fs_mkdir(TMP);
-    grammar(); settings(); engine_copy(); loopback();
+    grammar(); settings(); engine_copy(); engine_statics(); loopback();
     printf("test_extapp: %d failure(s)\n", fails);
     return fails ? 1 : 0;
 }

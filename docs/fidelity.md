@@ -354,6 +354,14 @@ on loopback; the LJ2 side is the CHM GIF named (reduced unless note 07 s14 says 
 | F48, Global Patch popup `DMX in Enable Switch` > `Use` / `Ignore` **supersedes** the "stay greyed" part of the W5 F48 row | "Channels marked as ignoring the switch will always be overwritten by the DMX in channel values regardless of overwrite Enable state" (CHM `globalpatch.htm`) | live on the selected DMX-in row (the list is single-select, as Set DMX In Sequence); the switch is the `lj_patch_ch.ign_en` flag, `ign=1` in the `.GPA` line; the `In mode/Sw` column reads `Abs/Ign` (PROPOSAL rig: `globalpatch.gif` is reduced) | done (W5/GP-DMXIN) | `test_engine_w5`, `replay_w5_dmxin_s1_ignore`, `test_records`, `test_dmx_in` |
 | DMX-in `Static n, Latch` **supersedes** the `docs/dmx-in.md` "presses the slot on the current Statics page" note | "the entry is activated as soon as the level reaches 50%. Note that the static control entry flash and merge/replace modes disregarded" (CHM, DMX-in) | at 50 % slot n of the Statics page shown is latched with the Add scope whatever its Flash / replace mode; below 50 % releases that same slot by its global index, even after a page change (which page LJ2 addresses is not written: the current one, PROPOSAL rig 14 sB.8 item 9) | done (W5-INT/STATICS-LATCH) | `test_dmx_in` |
 
+## Fidelity rows touched by W6 (track engine, 2026-10-23)
+
+Append-only, as the sections above. Each row **supersedes** the row it names.
+
+| Item | LJ2 | LJ4EVR | Why | Evidence |
+|---|---|---|---|---|
+| Debug window, 1 sec / 5 sec loads **supersedes** the LORD_ENGINE-9 (LOW) row above | averages per tick | averages per tick: the engine adds every tick's time to `tick_us_sum` beside `tick_no` (the view's per-tick sum pair), and the window takes the difference of that pair between the newest refresh and the oldest one within 1 s / 5 s, so every tick counts once at any refresh rate; with no tick in between it shows the last tick's time | W4 LORD_ENGINE-9, landed in W6 | `test_debug_form` (equal loads at 10 Hz and 25 Hz refresh); golden `W4DBG_DEBUG` unchanged |
+
 ## What v1.1.0 is not
 
 v1.1.0 (W5) delivers all seven items of the v1.0.0 list above: Art-Net output beside sACN, the Audio Analyzer and

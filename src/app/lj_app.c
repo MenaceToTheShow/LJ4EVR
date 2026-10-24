@@ -252,9 +252,7 @@ static void lj_app_idle(void *ud)
     lj_app_service_pending();
     lj_app_midi_dispatch();                                            /* seam 2: MIDI events run on this thread */
     now = lj_clock_us();
-    lj_app_cuelist_step(now);                                          /* W3: the cue list runs here, once per 10 ms wake, never in the engine (design 2.3 rule 4) */
-    lj_app_cuelist_host_idle(now);                                               /* W4: the LightCorder recorder samples frames here (UI thread, ME-2) */
-    lj_app_io_idle(now);                                               /* W5: DMX-in, audio, remote, External Application, MediaPlayer (app/lj_app_io.c) */
+    lj_app_cuelist_pass(now);                                          /* W6 LORD_ENGINE-9: lj_app_io_idle (W5 inputs, MediaPlayer clock), then the cue list (W3, design 2.3 rule 4), then the LightCorder (W4) */
     lj_app_seam_idle(now);
     if (now - lj_a.last_refresh >= 100000u) { lj_a.last_refresh = now; lj_app_refresh(); }   /* the 100 ms cadence [11 E24] */
     if (lj_a.run_ms > 0 && (now - lj_a.t0) / 1000u >= (uint64_t)lj_a.run_ms) lj_app_quit();

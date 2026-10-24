@@ -89,7 +89,8 @@ int  lj_app_strike_lamps(int from_startup);
  * Idle pass order (design 2.3 rule 4): lj_uiscript_step -> lj_app_service_pending (pending_link_cue / pending_bg /
  * pending_genmacro: the latched gen_macro is loaded from CueMacros\ and posted as LOAD_GENMACRO c = LJ_GM_SRC_CUE,
  * the old record freed only after the engine took the new pointer, ME-102) -> lj_app_midi_dispatch (MTC quarter-frames
- * fed to lj_mtc_feed here) -> lj_app_cuelist_step -> lj_app_seam_idle -> the 100 ms refresh.
+ * fed to lj_mtc_feed here) -> lj_app_cuelist_pass (W6: lj_app_io_idle -> lj_app_cuelist_step -> lj_app_cuelist_host_idle)
+ * -> lj_app_seam_idle -> the 100 ms refresh.
  * Cue list hotkeys (01 s7 rows, io/lj_actions.h LJ_FN_CUELIST_*): CueList Control / Toggle List of Cuelists open the
  * windows; Cuelist Start Top / Start Selected / Go / Back / Stop / Stop and Clear / Goto Mark n / Run from Mark n / Log
  * Timecode map to LJ_ACT_CUELIST_OP with the enum lj_cl_op of the same name; Quick Save CueList saves without the

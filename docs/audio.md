@@ -43,6 +43,8 @@ Each trig posts the same engine command as the *Emulate Audio Trig* hotkey and t
 - cue slots in Audio trig mode, which advance one scene every *Audio-Trigs / Trig* trigs (Loop Options);
 - BG cue slots in `mode=audio`, which advance one scene per trig.
 
+Trig times come from the count of samples analysed since the capture opened (44100 per second), not from the
+clock at the moment the UI loop polls, so a late poll does not move a trig or shorten the decay (W6 LORD_ENGINE-7).
 The status bar's *Trig* panel flashes blue on each analyzer trig. Replay scenario
 `tests/engine/replay/w5/audio_trig.lj4r` (CTest `replay_w5_audio`) pins this behaviour.
 
