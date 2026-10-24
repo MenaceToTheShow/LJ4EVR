@@ -7,7 +7,7 @@ key Down
 key Enter
 assert_text THardwareSetupForm2.cbDmxInSource "Art-Net"
 click THardwareSetupForm2.bOk
-assert_file_line Hardware.Ini "In=10"
+assert_file_line Hardware.Ini "Source=1"                 # [DMXIN] Source 1 = Art-Net; `[ARTNET] In` is runtime only since ME-178 (W5 fix pass r1)
 click main.tb_cuelist_10
 wait 2000
 assert_text TDmxInForm.lChIn "DMX Channels In 512"

@@ -92,3 +92,59 @@ and nine must LAND. Every non-Joey row can be done without the rig or Joey. The 
 ME-162 read is already in `reference/` on the developer PC, so W6 has no written close.
 
 Owners: net 5, dmxpatch 2, engine 6 (one DONE), hardening 10 (one DONE), fidelity 12, Joey 3.
+
+## 3. Status after integration
+
+Written by the W6 integrator from the five track logs (`docs/w6-track-*.md`, folded here and into
+`docs/w6-integration.md`, then deleted). Tree: `main` after the five `--no-ff` merges and the integration commits.
+Every Verify line below was re-run on the integrated tree (`build-w6i-rel`, Release, SDL ON, unless the row says
+otherwise) and its output is quoted; the tracks' own runs are summarised in `docs/w6-integration.md` section 2. No row
+is CLOSED IN WRITING: every row at 3 landed or was already DONE.
+
+| Id | Status | Evidence (integrated tree) |
+|---|---|---|
+| D4 | carried (Joey) | `git diff v1.1.0 -- src/engine/lj_engine_rules.h`: empty; `git grep -o "PROPOSAL rig" \| wc -l`: 505 (>= 487) |
+| ME-189 | carried (Joey) | the release-notes line belongs to the release step; not track work |
+| W5-ART-7 | carried (Joey) | `src/io/lj_artnet.h:45:#define LJ_ARTNET_OEM 0x00FFu /* OemUnknown; PROPOSAL rig W5-ART-7 ... */` |
+| ME-162 | LANDED (fidelity) | newest `REVIEWED.tsv` row per form (split on tabs): `371 forms; 0 whose newest row begins W4-GOLD DFM-only render` (102 at `bae0441`); `tools/ref/golden_anchors.py` probe (track run): 82 forms with 1-4 anchors, 0 MISS, 20 forms with no edge-drawing control at a DFM corner (said in their row); CHM: 8 forms matched a help GIF, 94 rows "no CHM capture" |
+| W5/LORD_FIDELITY-11 | LANDED (net) | `test_uiscript_w3: 0 failure(s)` (17 rows appended to `w5_entry_points.lj4s`: sACN gives `seArtAddr1 0` / `seU1 1`, Art-Net gives `seArtAddr1 1` / `seU1 0`); track mutant: `SCRIPT FAIL line 58: THardwareSetupForm2.seU1 is "0", expected "1"` |
+| W5/LORD_FIDELITY-12 | LANDED (fidelity) | `caption_diff: 149 implemented form(s) of 210, 0 difference(s), 142 excluded by a fidelity row, 89 absent at runtime`, rc 0 (the three side-exe `.dfm.txt` passed with `--dfm`); `git check-ignore -q` on `TLJSOUNDAPP` / `TLJMEDIAFORM` / `TRS232SETTINGSFORM.dfm.txt`: rc 0, 0, 0; `pe_tpf0 --selftest: OK`; `dfm2c --check: OK` |
+| W5/LORD_ENGINE-7 | LANDED (engine) | `sample clock: 8 trigs under a +-20 ms jittered wall clock, times equal to the exact clock's (first 1011609 us, last 4506213 us)`, `test_audio: PASS (0 failures)` |
+| W5/LORD_ENGINE-8 | LANDED (engine) | `engine: two statics on fixture 5, the later-activated one's string wins (A, B, A again on runner 0)`, `test_extapp: 0 failure(s)`; dump-frames sha unchanged (`5b13f419...`) |
+| W5/LORD_ENGINE-9 | LANDED (engine) | `app pass: MP Wait 00:00:02:00 released in the pass the clip reached frame 88200 (next line 2)`, `test_media: ok (0 failures)`; `lj_app_cuelist_pass` (`src/app/lj_app_cuelist_host.c`) runs `lj_app_io_idle`, then `lj_app_cuelist_step`, then `lj_app_cuelist_host_idle`; `lj4evr --selftest` (Debug): `selftest cue-list runner: 3 step(s) over 3 idle passes: OK` |
+| W5/LORD_ENGINE-10 | LANDED (net) | `reopen: nodes=1 after re-open, 1 ArtDmx, 0 polls since`, `test_artnet: PASS` |
+| W5/LORD_C-7 | LANDED (hardening); CI half in `docs/w6-integration.md` section 6 | `fuzz_ljb: 20000 iterations, PASS`, `fuzz_ljb index: 20000 iterations, 6598 opened, PASS`; MSVC ASan at 200000: `fuzz_ljb index: 200000 iterations, 66348 opened, PASS` |
+| W5/LORD_C-8 | LANDED (hardening) | `ljb container: 0 failures after the refusal rows`, `test_ljb: PASS (0)` (`COM\xB9.txt`, `lpt\xB2`, `COM\xB3\`, `CON .txt`, `com1  .ini` refused; `COM\xB4.txt`, `CONX .txt` accepted) |
+| W5/LORD_C-10 | LANDED (net) | `idle: a connection silent 60 s closed, its slot reused, a live one kept`, `test_remote: PASS`; `LJ_REMOTE_IDLE_US` tagged PROPOSAL |
+| W5/LORD_C-12 | LANDED (hardening); CI half in `docs/w6-integration.md` section 6 | `grep -n LJ_SANITIZE .github/workflows/ci.yml`: line 154, `cmake -S . -B build-asan-win -G Ninja -DCMAKE_C_COMPILER=cl -DCMAKE_BUILD_TYPE=Debug -DLJ_SDL=OFF -DLJ_SANITIZE=address`, inside `windows-msvc`; the same configure locally (`build-w6i-fuzz`): `100% tests passed, 0 tests failed out of 154` |
+| W5/WIZARD_STYLES-9 | LANDED (net) | `test_layering: ... popup_at 2, ip-parse copies 0, 0 finding(s)`; `ip: 17 hostile forms refused ("+127.0.0.1" first), fmt round trip`, `test_net: PASS` |
+| W5/WIZARD_STYLES-10 | LANDED (net) | `grep -c '"io/lj_sacn.c"' tools/test_layering.py`: 0; `test_layering` 0 findings; dump-frames `5b13f419...63114b50` in Release (twice), Debug and no-SDL; `test_sacn_packets`, `test_sacn_loopback` Passed |
+| W5/GP-DMXIN | LANDED (dmxpatch) | `test_engine_w5: PASS (0 failures)`; `replay dmxin_s1_ignore: 6 ticks, 4 expects, 0 fails`; `test_model_records: 0 failure(s)` (`ign=1` round-trips, a v1.1.0 line saves byte-identical, `ign=2` refused); `test_dmx_in: 0 failure(s)`; `fidelity_check: 73 F/I id(s) with a row of 73, sacrifice paragraphs equal, 0 finding(s)`. Read through the CHM: with Overwrite Enable off an Ignore channel takes DMX-in and a Use channel keeps its value; with the gate on both take DMX-in |
+| W5-INT/STATICS-LATCH | LANDED (dmxpatch) | `test_dmx_in: 0 failure(s)` (block "W6 STATICS-LATCH": a Flash-mode, Replace Page slot posts `STATIC_ACTIVATE` with `LJ_REP_ADD`; a second rise posts nothing; after the page changes to 2 the fall posts `STATIC_DEACTIVATE` for the recorded global index) |
+| W5-INT/ME-161-3DLIGHT | LANDED (fidelity) | `CTL_MAC500_MOVEMENT` close button (311,5) 16x14 vs `movement2.gif` (1:1): 0 differing px (track run); 317 goldens re-rendered, a W6 REVIEWED row each; `ui_golden: 208 form(s), 0 failure(s)`, `ui_golden_ctl: 0 failure(s)` |
+| W4/LORD_FIDELITY-14 | LANDED (fidelity) | `docs/screenshots/w4/entry/copy-from-TCopyFromForm.png` re-shot (rows `8 DIM8`, `9 DIM9`) and `copy-from-TLinkConfigForm3.png` ("9 Fixtures configured"); both viewed by the integrator: no path, user, host or address |
+| W4/LORD_FIDELITY-15 | LANDED (fidelity) | `w4_entry_points.lj4s` PASS lines read `TPresetForm`, and `PASS Save Color Palette Entry (TSavePresetForm2) <- User Color Palette > Save`; the headless re-run: rc 0, 156 of 156 PASS lines, 0 SCRIPT FAIL; `PrefsClick` wired (Auto Close / Save on [Enter], PROPOSAL rig keys) |
+| W4/LORD_FIDELITY-16 | LANDED (fidelity) | goldens `W4DBG_DEBUG`, `W4DBG_MISC`, `W4DBG_PCI` with greyed tab captions and REVIEWED rows; `test_debug_form: 0 failure(s)` |
+| W4/LORD_ENGINE-9 | LANDED (engine) | `loads from the sum pair: 1 s 899 us / 5 s 979 us at 10 Hz, 899 / 979 at 25 Hz (true means 899 / 979)`, `test_debug_form: 0 failure(s)`; fidelity row appended superseding the ME-138 row |
+| W4/LORD_C-11 | LANDED (hardening) | `srcimg: in-memory loader, 7 loader calls, 0 failures` (`test_srcimg`); `srcimg_sdl: real BMPs, truncated BMP, '..' name, no folder: 0 failures` |
+| W4/LORD_C-12-part | LANDED (hardening); CI half in `docs/w6-integration.md` section 6 | `logged` declared inside the `NDEBUG` block of `tests/ui/test_window.c`; the four `snprintf(key, ...)` calls of `lj_sacn.c` use `if (snprintf(...) >= (int)sizeof key) continue;`; 0 warnings in all four local trees; image digest unchanged (`sha256:731edd12...`) |
+| W4/WIZARD_STYLES-14 | LANDED (hardening); CI half in `docs/w6-integration.md` section 6 | `grep -c 'if \[ -f "tools/' .github/workflows/ci.yml`: 0 |
+| W4/WIZARD_STYLES-18 | LANDED (hardening) | the banner of `src/windows/lj_help_topics_gen.c` carries 18 `help/*.txt` sha256 lines; `help_check: 18 topics`; `help_check selftest: OK` (an edited topic fails with `FAIL lj_help_topics_gen.c is stale`, track run) |
+| W3/INT-s7-ACTIONS | LANDED (fidelity) | `INT-s7-ACTIONS TCuelist2Form: 47 .action leaves, 15 greyed, 0 unbound`; `INT-s7-ACTIONS TStatics2Form: 27 .action leaves, 0 unbound`; `lj4evr --selftest` (Debug, scratch userdata): rc 0, 0 `no binding` lines. The count rows live in `test_cuelist_form` and `test_show_dialogs`, not `test_desktop` (the same 74 leaves) |
+| W3/INT-s7-TCSRC | DONE | `test_media` Passed (the `LJ_CL_OP_TC_SRC` row unchanged) |
+| W3/INT-s7-SYNCFRAMES | LANDED (engine) | `MTC SyncFrames=5: follows at quarter frame 20 (frame 5)`, `test_midi_map: 0 failure(s)`; the frame meaning is `PROPOSAL rig W6-SYNC` |
+| W3/INT-s7-CLSAVE | LANDED (hardening) | `test_cuelist_form: 0 failure(s)` (a stale copy of 7 dropped after `lj_cuelist_form_save(2, 7)`; the window's own list kept) |
+| W3/INT-s7-GS2DLG | LANDED (fidelity) | `grep -c -i "Export Warning" docs/fidelity.md`: 1; `grep -c -i oldstyle docs/fidelity.md`: 1; `fidelity_check ... 0 finding(s)` |
+| W2/INT-s9-GROUPINFO | LANDED (hardening) | `test_model_w2_library: fresh-library save_config logged 0 line(s)` |
+| W2/INT-s9-PODESIGNED | LANDED (fidelity) | `tests/ui/scripts/w6_podesigned.lj4s` in an empty scratch userdata, SDL dummy video: rc 0, 0 SCRIPT FAIL (`assert_pos TBGCueForm 403 208`, `assert_pos TAboutForm2 316 217`); the `bae0441` build (track run): `SCRIPT FAIL line 8: TBGCueForm position is 304x319, expected 403x208` |
+| ME-66 | DONE | `git grep -n find_form -- src tests tools`: no output, rc 1 |
+| CARET | LANDED (fidelity) | `widgets_basic: 0 failure(s)` (caret 4 after `set_text("4:00")`); `W2A_TSEQUENCEFORM_CARET: identical` (`test_windows_a`) |
+| LORD_FIXTURES-8 | LANDED (fidelity) | `grep -c "rotation buttons carry the slow end"`: `lj_minimac.c` 1, `lj_robocolor.c` 1, `lj_atomic.c` 1 |
+| LORD_FIDELITY-19 | LANDED (fidelity) | `LORD_FIDELITY-19 restart: argv {lj4evr, U:Show A}, 3 terminate packet(s) before the spawn`, `test_uiscript_w2: 0 failure(s)`; `SDL_CreateProcess` stays in `platform/sdl` |
+
+Counts: 33 LANDED, 2 DONE, 3 carried (Joey), 0 CLOSED IN WRITING. Four rows (LORD_C-7, LORD_C-12, LORD_C-12-part,
+WIZARD_STYLES-14) have a CI half, quoted from the RC run in `docs/w6-integration.md` section 6.
+
+For the release step (not a gate row): GP-DMXIN takes the "Use / Ignore DMX In Enable" item off the 1.2.0 "what it is
+not" list. The README and `fidelity.md` "What v1.1.0 is not" paragraphs describe the tagged v1.1.0 and stay
+byte-equal (`fidelity_check` compares them); the 1.2.0 paragraph and the CHANGELOG drop the item.

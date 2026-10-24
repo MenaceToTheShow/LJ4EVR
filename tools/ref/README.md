@@ -27,4 +27,4 @@ the three side-exe forms there (TLJSOUNDAPP, TLJMEDIAFORM, TRS232SETTINGSFORM; g
 a golden re-render: the pixel diff against a git revision, and for the DFM-only template rows the DFM anchors probed
 in the golden and the CHM capture with its scale (ME-162). Both read `reference/` as data only; `pe_tpf0.py --selftest`
 needs no reference tree (a CTest row), and `golden_anchors.py` only prints its rows unless `--write` is given; see
-`docs/w6-track-fidelity.md`.
+`docs/w6-integration.md` (section 2, fidelity).
