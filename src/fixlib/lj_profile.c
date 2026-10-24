@@ -42,7 +42,7 @@ static const lj_profile *lj_hand_by_id(uint16_t id)
 /* lj_qxf_build: one tools/qxf2c.py byte string -> a heap lj_profile (UI thread; the engine only reads
  * profiles the UI built, rule 10). The encoding, all bytes:
  *   F                                   footprint 1..32
- *   F x { class flags dflt pair n c[n] } lj_ch_class, 1 invisible | 2 disabled, default_dmx, pair_lsb, level caption (n <= 5)
+ *   F x { class flags dflt pair n c[n] } lj_ch_class, 1 invisible | 2 disabled | 4 ext_gm, default_dmx, pair_lsb, level caption (n <= 5)
  *   D, D x { slot ofs lo hi n c[n] }    a dyn record: slot = lj_qxf_dyn order below, name n <= 8
  *   P pan tilt p0 p1 p2 p3              1 pt16 | 2 pt8 | 4 cmy_on | 8 rgb_on | 16 pt_patch_on | 32/64/128 hsv[0..2]; pt_patch
  *   so v                                strobe_off = v when so = 1
@@ -67,7 +67,7 @@ static lj_profile *lj_qxf_build(const lj_qxf_desc *d)
     p->footprint = *b++;
     if (p->footprint > LJ_PROFILE_CH) p->footprint = LJ_PROFILE_CH;     /* qxf2c never writes more (the map refuses > 32) */
     for (i = 0; i < p->footprint; i++) {
-        p->channel_class[i] = b[0]; p->level_invisible[i] = b[1] & 1; p->level_disabled[i] = (b[1] >> 1) & 1; p->default_dmx[i] = b[2]; p->pair_lsb[i] = b[3];
+        p->channel_class[i] = b[0]; p->level_invisible[i] = b[1] & 1; p->level_disabled[i] = (b[1] >> 1) & 1; p->ext_gm[i] = (b[1] >> 2) & 1; p->default_dmx[i] = b[2]; p->pair_lsb[i] = b[3];
         n = b[4] < 5 ? b[4] : 5;
         memcpy(p->level_caption[i], b + 5, (size_t)n);
         b += 5 + b[4];

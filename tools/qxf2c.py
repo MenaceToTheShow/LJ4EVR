@@ -55,6 +55,11 @@ RGB_PRESET = {"IntensityRed": 0, "IntensityGreen": 1, "IntensityBlue": 2}
 CMY_PRESET = {"IntensityCyan": 0, "IntensityMagenta": 1, "IntensityYellow": 2}
 HSV_PRESET = {"IntensityHue": 0, "IntensitySaturation": 1, "IntensityValue": 2}
 
+
+def rotation(caps):
+    """a Pan / Tilt group channel that spins (continuous rotation) is not a position channel (W8D-6)."""
+    return any((pr or "").startswith("Rotation") or re.search(r"rotat", txt, re.I) for mn, mx, pr, r, txt in caps)
+
 # The W7 groups (docs/fixtures.md): display manufacturer (the name the products carry, OFL's manufacturers.json),
 # OFL directory, and the spellings a catalog / authored directory may use (lower case, letters and digits only).
 GROUPS = [("Martin", "martin", ["martin"]), ("Elation", "elation", ["elation"]),
@@ -122,14 +127,15 @@ def parse_qxf(root):
         chans[ch.get("Name")] = {"name": ch.get("Name"), "group": g.text if g is not None else None,
                                  "byte": int(g.get("Byte", "0")) if g is not None else 0, "preset": ch.get("Preset"),
                                  "default": int(ch.get("Default", "0")), "caps": caps}
-    modes = {}
+    modes, heads = {}, {}
     for m in root.findall(NS + "Mode"):
         rows = sorted((int(c.get("Number")), c.text) for c in m.findall(NS + "Channel"))
         modes[m.get("Name")] = [chans[name] for _, name in rows]
+        heads[m.get("Name")] = [{int(c.text) for c in h.findall(NS + "Channel")} for h in m.findall(NS + "Head")]
     text = lambda tag: (root.findtext(NS + tag) or "").strip()
     author = root.find(NS + "Creator")
     author = (author.findtext(NS + "Author") or "").strip() if author is not None else ""
-    return {"manufacturer": text("Manufacturer"), "model": text("Model"), "author": author, "modes": modes,
+    return {"manufacturer": text("Manufacturer"), "model": text("Model"), "author": author, "modes": modes, "heads": heads,
             "mode_order": [m.get("Name") for m in root.findall(NS + "Mode")]}
 
 
@@ -218,8 +224,8 @@ def exe_rows():
 
 
 class Profile:
-    def __init__(self, ident, chans, src):
-        self.ident, self.src = ident, src
+    def __init__(self, ident, chans, src, heads=()):
+        self.ident, self.src, self.heads = ident, src, heads    # heads: the mode's QLC+ <Head> channel sets (offsets)
         self.footprint = len(chans)
         self.cls = ["LJ_CH_NONE"] * CH
         self.dyn = {}                    # slot -> (ofs, name, min, max)
@@ -231,6 +237,7 @@ class Profile:
         self.level_caption = [""] * CH
         self.invisible = [0] * CH
         self.disabled = [0] * CH
+        self.ext_gm = [0] * CH
         self.default_dmx = [c["default"] for c in chans] + [0] * (CH - len(chans))
         self.convert(chans)
 
@@ -255,8 +262,8 @@ class Profile:
 
     def convert(self, chans):
         prev_coarse = {}       # (group) -> ofs of the last byte-0 channel, for byte-1 pairs
-        pan = tilt = None
-        pan_fine = tilt_fine = None
+        pos = []               # positional pan / tilt channels (ofs, is_pan, fine), bound after the loop
+        dimmers = []           # coarse dimmer channels (ofs, preset), intensity bound after the loop
         for ofs, c in enumerate(chans):
             p, g, name, caps = c["preset"] or "", c["group"] or "", c["name"], c["caps"]
             fine = c["byte"] == 1 or p.endswith("Fine")
@@ -264,27 +271,24 @@ class Profile:
             cls = "LJ_CH_LEVEL"
             if p == "NoFunction" or g == "Nothing":
                 cls = "LJ_CH_NONE"; self.invisible[ofs] = 1; self.disabled[ofs] = 1
-            elif p.startswith("Position") or g in ("Pan", "Tilt"):
+            elif re.match(r"Position(Pan|Tilt)(Fine)?$", p) or (g in ("Pan", "Tilt") and not p and not rotation(caps)):   # W8D-6: positional only
                 is_pan = p.startswith("PositionPan") or g == "Pan"
                 cls = "LJ_CH_PAN" if is_pan else "LJ_CH_TILT"
-                if fine:
-                    if is_pan: pan_fine = ofs
-                    else: tilt_fine = ofs
-                else:
-                    if is_pan: pan = ofs
-                    else: tilt = ofs
+                pos.append((ofs, is_pan, fine))
                 self.invisible[ofs] = 1
-            elif p in RGB_PRESET or p in CMY_PRESET:
+            elif p in RGB_PRESET or p in CMY_PRESET:                 # W8D-5 (e, f): the first kind and the first triple bind, the rest stay Levels
                 k = RGB_PRESET.get(p, CMY_PRESET.get(p))
-                self.flags["rgb_on" if p in RGB_PRESET else "cmy_on"] = 1
-                self.setdyn("cmy[%d]" % k, ofs, name, 0, 255)
+                kind, other = ("rgb_on", "cmy_on") if p in RGB_PRESET else ("cmy_on", "rgb_on")
+                if self.ident["id"] == 170 or (other not in self.flags and "cmy[%d]" % k not in self.dyn):   # id 170 (MAC 401 Dual RGB-1) keeps its binding (W8D-3)
+                    self.flags[kind] = 1
+                    self.setdyn("cmy[%d]" % k, ofs, name, 0, 255)
             elif p in HSV_PRESET:
                 self.flags.setdefault("hsv", [0, 0, 0])[HSV_PRESET[p]] = 1
             elif p.startswith("Intensity") or g == "Intensity":
                 if fine:
                     cls = "LJ_CH_INTENSITY"
-                elif "intensity" not in self.dyn and (p in ("IntensityDimmer", "IntensityMasterDimmer") or not p):
-                    cls = "LJ_CH_INTENSITY"; self.setdyn("intensity", ofs, name, 0, 255)
+                elif p in ("IntensityDimmer", "IntensityMasterDimmer") or not p:
+                    dimmers.append((ofs, p))
             elif p.startswith("Shutter") and "Iris" in p or (g == "Beam" and "iris" in name.lower()):
                 cls = "LJ_CH_BEAM"
                 if not fine: self.setdyn("iris", ofs, name, 0, 255)
@@ -345,6 +349,8 @@ class Profile:
                 if pr == "ResetAll": self.sfunc.setdefault("reset", (ofs, mn))
                 elif pr == "LampOn": self.sfunc.setdefault("lamp_on", (ofs, mn))
                 elif pr == "LampOff": self.sfunc.setdefault("lamp_off", (ofs, mn))
+        self.bind_intensity(chans, dimmers)
+        pan, tilt, pan_fine, tilt_fine = self.bind_position(pos)
         if pan is not None and tilt is not None:
             self.flags["pan_ofs"], self.flags["tilt_ofs"] = pan, tilt
             if pan_fine is not None and tilt_fine is not None:
@@ -355,6 +361,45 @@ class Profile:
                 self.flags["pt8"] = 1
         if "blackout" not in self.sfunc and "intensity" in self.dyn:
             self.sfunc["blackout"] = (self.dyn["intensity"][0], 0)
+
+    def bind_intensity(self, chans, dimmers):
+        """W8D-6: intensity on an IntensityMasterDimmer outside every head, else on the first dimmer; every other coarse
+        dimmer (an IntensityDimmer or IntensityMasterDimmer preset) gets ext_gm, so the Grand Master and blackout reach every
+        head [RN L.459]. An untyped Intensity-group channel (a fan, a QLC+ 3 colour) can take the intensity, never ext_gm."""
+        in_head = set().union(*self.heads)
+        master = [d for d in dimmers if d[1] == "IntensityMasterDimmer" and d[0] not in in_head]
+        pick = (master or dimmers or [None])[0]
+        for d in dimmers:
+            if d is pick:
+                self.cls[d[0]] = "LJ_CH_INTENSITY"
+                self.setdyn("intensity", d[0], chans[d[0]]["name"], 0, 255)
+            elif d[1]:
+                self.ext_gm[d[0]] = 1
+
+    def bind_position(self, pos):
+        """W8D-6 and Q6 (fidelity row W8-8): the first positional coarse pan and tilt (head 1) drive Movement, each with
+        the first fine after it; every other positional channel is a Levels fader ("Pan2", "Tilt2" when an axis
+        repeats) with its fine paired to it. A lone pan or tilt binds nothing and stays visible."""
+        coarse = {a: [o for o, ip, f in pos if ip == a and not f] for a in (True, False)}
+        bound = {a: coarse[a][0] for a in coarse} if coarse[True] and coarse[False] else {}
+        fine_of, last = {}, {}                                    # fine ofs -> the coarse ofs it follows
+        for o, a, f in pos:
+            if not f:
+                last[a] = o
+            elif a in last and last[a] not in fine_of.values():
+                fine_of[o] = last[a]
+        bfine = {a: next((o for o, c in fine_of.items() if c == bound.get(a)), None) for a in (True, False)}
+        for o, a, f in pos:
+            if o == bound.get(a) or o == bfine[a]:
+                continue
+            self.cls[o] = "LJ_CH_LEVEL"
+            if f and o in fine_of:
+                self.pair_lsb[fine_of[o]] = 1 + o
+                continue
+            self.invisible[o] = 0
+            if not f and len(coarse[a]) > 1:
+                self.level_caption[o] = "%s%d" % ("Pan" if a else "Tilt", coarse[a].index(o) + 1)
+        return bound.get(True), bound.get(False), bfine[True], bfine[False]
 
     # dyn slots in the order of lj_qxf_build's table (src/fixlib/lj_profile.c)
     DYN_SLOTS = ["shutter", "strobe", "intensity", "color[0]", "color[1]", "color[2]", "color[3]", "cmy[0]", "cmy[1]", "cmy[2]",
@@ -368,7 +413,7 @@ class Profile:
         for ofs in range(self.footprint):
             cap = cp1252(self.level_caption[ofs])[:NAME_CAP["level"]]
             cls = self.cls[ofs]
-            b += [CLASSES.index(cls), self.invisible[ofs] | self.disabled[ofs] << 1, self.default_dmx[ofs], self.pair_lsb[ofs], len(cap)] + list(cap)
+            b += [CLASSES.index(cls), self.invisible[ofs] | self.disabled[ofs] << 1 | self.ext_gm[ofs] << 2, self.default_dmx[ofs], self.pair_lsb[ofs], len(cap)] + list(cap)
         b.append(len(self.dyn))
         for key in sorted(self.dyn, key=self.DYN_SLOTS.index):
             ofs, name, lo, hi = self.dyn[key]
@@ -432,7 +477,7 @@ def convert_all(files=None):
             tag, name, md = q["model"].upper(), q["model"], mode
         ident = {"id": pid, "tag": tag, "manufacturer": man, "name": name, "mode": md}
         k = source_kind(fname)
-        profiles.append(Profile(ident, chans, (fname, mode, commits[k], q["author"], licence[k])))
+        profiles.append(Profile(ident, chans, (fname, mode, commits[k], q["author"], licence[k]), q["heads"].get(mode, [])))
     profiles.sort(key=lambda p: p.ident["id"])
     h = hashlib.sha256(open(MAP, "rb").read()).hexdigest()[:16]
     parts, descs, extras = [], [], []
@@ -645,10 +690,39 @@ def selftest():
     assert manufacturer_of({"manufacturer": "Chauvet", "model": "Rogue R2 Wash"}, "x.qxf") == "Chauvet Professional"
     assert manufacturer_of({"manufacturer": "Chauvet", "model": "Intimidator Spot 355"}, "x.qxf") == "Chauvet DJ"
     assert manufacturer_of({"manufacturer": "x", "model": "y"}, "fixtures/authored/hes/a.qxf") == "High End Systems" and group_of("ADJ") == "American DJ"
+    # W8D-5 (e, f), W8D-6, Q6: a two-head mover with a spinning pan, a CMY channel after RGB and a trailing master
+    ch = lambda n, pr: '<Channel Name="%s" Preset="%s"/>' % (n, pr)
+    names = [("Pan1", "PositionPan"), ("PanF1", "PositionPanFine"), ("Tilt1", "PositionTilt"), ("TiltF1", "PositionTiltFine"), ("Spin", ""),
+             ("R1", "IntensityRed"), ("G1", "IntensityGreen"), ("B1", "IntensityBlue"), ("Dim1", "IntensityDimmer"), ("Pan2", "PositionPan"),
+             ("PanF2", "PositionPanFine"), ("Tilt2", "PositionTilt"), ("R2", "IntensityRed"), ("G2", "IntensityGreen"), ("B2", "IntensityBlue"),
+             ("Cyan", "IntensityCyan"), ("Dim2", "IntensityDimmer"), ("Master", "IntensityMasterDimmer")]
+    two = ('<FixtureDefinition xmlns="http://www.qlcplus.org/FixtureDefinition"><Manufacturer>Test</Manufacturer><Model>Two</Model>'
+           + "".join(ch(n, pr) for n, pr in names if pr)
+           + '<Channel Name="Spin"><Group Byte="0">Pan</Group><Capability Min="0" Max="255" Preset="RotationClockwise">CW</Capability></Channel>'
+           + '<Mode Name="M">' + "".join('<Channel Number="%d">%s</Channel>' % (i, n) for i, (n, pr) in enumerate(names))
+           + '<Head>' + "".join('<Channel>%d</Channel>' % i for i in (0, 1, 2, 3, 5, 6, 7, 8)) + '</Head>'
+           + '<Head>' + "".join('<Channel>%d</Channel>' % i for i in range(9, 17)) + '</Head></Mode></FixtureDefinition>')
+    q2 = parse_qxf(ET.fromstring(two))
+    t = Profile(ident, q2["modes"]["M"], ("t.qxf", "M", "x", "", "MIT"), q2["heads"]["M"])
+    assert t.flags["pan_ofs"] == 0 and t.flags["tilt_ofs"] == 2 and t.flags["pt16"] == 1 and "patch" not in t.flags, t.flags   # head 1, first wins
+    assert t.cls[4] == "LJ_CH_LEVEL" and not t.invisible[4]                                    # continuous rotation: a Levels fader
+    assert t.cls[9] == t.cls[11] == "LJ_CH_LEVEL" and t.level_caption[9] == "Pan2" and t.level_caption[11] == "Tilt2" and not t.invisible[9]
+    assert t.pair_lsb[9] == 11 and t.invisible[10] == 1                                       # head 2's pan fine pairs with its pan
+    assert [t.dyn["cmy[%d]" % k][0] for k in range(3)] == [5, 6, 7] and not any(t.invisible[12:16]) and "cmy_on" not in t.flags
+    assert t.dyn["intensity"][0] == 17 and t.ext_gm[8] == t.ext_gm[16] == 1 and t.ext_gm[17] == 0, t.ext_gm[:18]
+    named = {}
+    for fname, mode in (("Robe-Robin-Tetra-1.qxf", "1-Wash"), ("American-DJ-Quad-Scan-LED.qxf", "28 Channels mode"), ("American-DJ-Asteroid-1200.qxf", "Standard")):
+        r = load_qxf(os.path.join(QXF_DIR, fname))
+        named[fname] = Profile(ident, r["modes"][mode], (fname, mode, "x", "", "MIT"), r["heads"][mode])
+    tetra, quad, ast = named.values()
+    assert tetra.dyn["intensity"][0] == 24 and tetra.ext_gm[13] == tetra.ext_gm[21] == 1 and tetra.dyn["cmy[0]"][0] == 7   # id 2950
+    assert quad.flags["pan_ofs"] == 0 and quad.dyn["intensity"][0] == 5 and quad.ext_gm[12] == quad.ext_gm[19] == quad.ext_gm[26] == 1   # id 1468
+    assert ast.flags["pan_ofs"] == 0 and ast.flags["tilt_ofs"] == 2 and "patch" not in ast.flags and ast.cls[4] == "LJ_CH_LEVEL"   # id 1060
     c1 = convert_all()
     c2 = convert_all()
     assert c1[0] == c2[0] and c1[1] == c2[1], "convert_all is not deterministic"
-    print("qxf2c selftest: ok (MAC500 DMX4 footprint 16, Color1 overflow %d, synthetic patch + reversed focus + NoFunction, lint %d kinds, Chauvet split)"
+    print("qxf2c selftest: ok (MAC500 DMX4 footprint 16, Color1 overflow %d, synthetic patch + reversed focus + NoFunction, lint %d kinds, Chauvet split,"
+          " W8D-5/6 binding rules on a two-head mode and ids 2950 / 1468 / 1060)"
           % (p.overflow[0][1], len(kinds)))
     return 0
 

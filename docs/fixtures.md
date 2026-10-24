@@ -97,15 +97,23 @@ are not generated: `lj_layout_derive()` builds them at first use (below).
 
 ### Group + Preset -> class / dyn / palette (ME-26)
 
+The binding rules marked W8D-5 / W8D-6 are the W8 design verdict's converter must-fix list (request R1), taken
+before the v1.3.0 tag; `docs/w7-fixtures.md` section 8 has the counts and the decoded diffs. Id 170 (MAC 401 Dual
+`RGB-1`) keeps the v1.3.0 colour binding (W8D-3).
+
 | QLC+ channel | `channel_class` | dyn / field | palette |
 |---|---|---|---|
-| Preset `IntensityDimmer`, `IntensityMasterDimmer`, Group `Intensity` without preset (first one) | `INTENSITY` | `intensity` 0..255 | - |
+| The dimmer (W8D-6): an `IntensityMasterDimmer` that is in no `<Head>`, else the first `IntensityDimmer` / `IntensityMasterDimmer` / Group `Intensity` without preset | `INTENSITY` | `intensity` 0..255 | - |
+| every other `IntensityDimmer` / `IntensityMasterDimmer` (a head dimmer) | `LEVEL` | visible Levels fader, `ext_gm = 1` (Grand Master and blackout reach every head [RN L.459]) | - |
 | any other Group `Intensity` channel, `IntensityWhite/Amber/Lime/UV/...` | `LEVEL` | visible Levels fader | - |
-| `IntensityRed/Green/Blue` | `LEVEL` | `cmy[0..2]`, `rgb_on = 1` | - |
-| `IntensityCyan/Magenta/Yellow` | `LEVEL` | `cmy[0..2]`, `cmy_on = 1` | - |
+| `IntensityRed/Green/Blue`: the first of each (W8D-5 f) | `LEVEL` | `cmy[0..2]`, `rgb_on = 1` (hidden from Levels) | - |
+| `IntensityCyan/Magenta/Yellow`: the first of each | `LEVEL` | `cmy[0..2]`, `cmy_on = 1` | - |
+| a later R/G/B or C/M/Y, or the other kind once one is bound (W8D-5 e: first kind in channel order wins) | `LEVEL` | visible Levels fader | - |
 | `IntensityHue/Saturation/Value` | `LEVEL` | `hsv[0..2] = 1` | - |
-| `PositionPan` / `PositionTilt`, Group `Pan` / `Tilt` Byte 0 | `PAN` / `TILT` | `pan_ofs`, `tilt_ofs`; both fine channels present -> `pt16`, else `pt8`; a fine channel not at MSB + 1 -> `pt_patch_on` + `pt_patch` | - |
-| `PositionPanFine` / `TiltFine`, Byte 1 | `PAN` / `TILT` | the LSB of the pair | - |
+| `PositionPan` / `PositionTilt`, or Group `Pan` / `Tilt` without preset and with no rotation capability (a `Rotation*` preset or "rotat" in the text), Byte 0: the first pan and the first tilt (W8D-6; head 1 of a multi-head mode, Q6) | `PAN` / `TILT` | `pan_ofs`, `tilt_ofs`; both fine channels present -> `pt16`, else `pt8`; a fine channel not at MSB + 1 -> `pt_patch_on` + `pt_patch` | - |
+| `PositionPanFine` / `TiltFine`, Byte 1, after the bound pan / tilt | `PAN` / `TILT` | the LSB of the pair | - |
+| every other positional pan / tilt (another head, or a lone pan or tilt with no partner) | `LEVEL` | visible Levels fader, captioned `Pan2`, `Tilt3` ... when the axis repeats (fidelity row W8-8); its fine channel is its `pair_lsb` | - |
+| Group `Pan` / `Tilt` with a rotation capability (continuous rotation) | `LEVEL` | visible Levels fader, never Movement | - |
 | Group `Shutter` with `ShutterClose` + `ShutterOpen` capabilities (first such) | `SHUTTER` | `shutter` {closed value, open value}, `blackout` = closed value; first `Strobe*` capability -> `strobe` {min, max}, `strobe_off` = open value | - |
 | Group `Shutter` otherwise | `STROBE` | `strobe` from the first `Strobe*` capability | - |
 | `ShutterIris*`, Group `Beam` with "iris" in the name | `BEAM` | `iris` | - |
