@@ -3,7 +3,7 @@
 
 Fails (exit 1, one line per finding) when
   - an id F1..F60 or I1..I13 has no table row whose second cell is non-empty (`| F17 | <pair or deferral> |`);
-  - the "What v1.0.0 is not" or the "What v1.1.0 is not" section differs byte for byte from README.md's (design 1,
+  - the "What v1.0.0 is not", "What v1.1.0 is not" or "What v1.2.0 is not" section differs byte for byte from README.md's (design 1,
     the sacrifice list; W5-X-SACRIFICE keeps the 1.0.0 paragraph and adds the 1.1.0 one);
   - a capture the file names (`E/<x>.png` = docs/screenshots/w4/entry/<x>.png, or `docs/screenshots/...png`) is missing.
 usage: fidelity_check.py [--repo <dir>]          fidelity_check.py --selftest
@@ -38,7 +38,7 @@ def check(fid, readme, exists):
         for n in range(1, top + 1):
             if (kind, n) not in have:
                 out.append('%s%d: no row with a pair or a deferral' % (kind, n))
-    for title in ('What v1.0.0 is not', 'What v1.1.0 is not'):   # W5-X-SACRIFICE: one paragraph per version, the old one kept
+    for title in ('What v1.0.0 is not', 'What v1.1.0 is not', 'What v1.2.0 is not'):   # W5-X-SACRIFICE: one paragraph per version, the old ones kept
         a, b = section(readme, title), section(fid, title)
         if a is None:
             out.append('README.md: no "## %s" section' % title)
@@ -52,9 +52,9 @@ def check(fid, readme, exists):
 
 
 def selftest():
-    readme = '# x\n\n## What v1.0.0 is not\n\nNo audio.\n\n## What v1.1.0 is not\n\nNo rig.\n\n## Docs\n'
+    readme = '# x\n\n## What v1.0.0 is not\n\nNo audio.\n\n## What v1.1.0 is not\n\nNo rig.\n\n## What v1.2.0 is not\n\nNo video.\n\n## Docs\n'
     rows = ''.join('| F%d | `E/a.png` | done |\n' % n for n in range(1, 61)) + ''.join('| I%d | x | W5 |\n' % n for n in range(1, 14))
-    good = rows + '\n## What v1.0.0 is not\n\nNo audio.\n\n### next\n\n## What v1.1.0 is not\n\nNo rig.\n'
+    good = rows + '\n## What v1.0.0 is not\n\nNo audio.\n\n### next\n\n## What v1.1.0 is not\n\nNo rig.\n\n## What v1.2.0 is not\n\nNo video.\n'
     assert check(good, readme, lambda p: True)[0] == [], check(good, readme, lambda p: True)
     bad = good.replace('| F17 | `E/a.png` |', '| F17 |  |').replace('No audio.', 'No audio')
     errs = check(bad, readme, lambda p: False)[0]

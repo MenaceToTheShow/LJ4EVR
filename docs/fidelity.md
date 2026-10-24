@@ -396,3 +396,17 @@ protocol, External Application string output and the LJ MediaPlayer. It still le
   only and its video options stay greyed;
 - the Global Patch per-channel "Use / Ignore DMX In Enable" items, which need a per-channel flag in the patch record
   and an engine rule.
+
+## What v1.2.0 is not
+
+v1.2.0 (W6) lands the rows the v1.1.0 review carried forward and makes the Global Patch per-channel "Use / Ignore DMX
+In Enable" items live. It still leaves out:
+
+- the reference rig (design D4): every timing and layering rule tagged `PROPOSAL rig` stays a best estimate until it
+  is compared with LightJockey 2 on real fixtures;
+- audio CD and Winamp (DA) playback, dropped for good: their cue-list rows, time-code buttons and Hardware Setup rows
+  stay greyed with the hint `Not available in LJ4EVR`;
+- video: SDL3 decodes WAV and nothing else, and no codec library is added, so the MediaPlayer plays WAV sound files
+  only and its video options stay greyed;
+- multi-select in the Global Patch list: Use / Ignore, Set DMX In / Out Sequence and `<- Set Values` act on the one
+  selected row.

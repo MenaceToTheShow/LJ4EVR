@@ -8,7 +8,9 @@ every pixel is drawn by LJ4EVR itself, so both OSes produce identical images.
 LightJockey is a trademark of Martin Professional; LJ4EVR is not affiliated with or endorsed by Martin Professional or HARMAN.
 Art-Net is a trade mark of Artistic Licence: Art-Net(TM) Designed by and Copyright Artistic Licence.
 
-Status: **1.1.0** adds the seven features 1.0.0 left out: Art-Net output, the
+Status: **1.2.0** lands the rows the 1.1.0 review carried forward, among them
+the Global Patch Use / Ignore DMX In Enable switch. 1.1.0 added the seven
+features 1.0.0 left out: Art-Net output, the
 Audio Analyzer and audio trig, the `.LJB` importer, DMX-in over sACN and
 Art-Net, the RS-232 / TCP remote, External Application string output and the
 LJ MediaPlayer. 1.0.0 was the first full release: every LightJockey 2 window of
@@ -75,6 +77,20 @@ protocol, External Application string output and the LJ MediaPlayer. It still le
   only and its video options stay greyed;
 - the Global Patch per-channel "Use / Ignore DMX In Enable" items, which need a per-channel flag in the patch record
   and an engine rule.
+
+## What v1.2.0 is not
+
+v1.2.0 (W6) lands the rows the v1.1.0 review carried forward and makes the Global Patch per-channel "Use / Ignore DMX
+In Enable" items live. It still leaves out:
+
+- the reference rig (design D4): every timing and layering rule tagged `PROPOSAL rig` stays a best estimate until it
+  is compared with LightJockey 2 on real fixtures;
+- audio CD and Winamp (DA) playback, dropped for good: their cue-list rows, time-code buttons and Hardware Setup rows
+  stay greyed with the hint `Not available in LJ4EVR`;
+- video: SDL3 decodes WAV and nothing else, and no codec library is added, so the MediaPlayer plays WAV sound files
+  only and its video options stay greyed;
+- multi-select in the Global Patch list: Use / Ignore, Set DMX In / Out Sequence and `<- Set Values` act on the one
+  selected row.
 
 ## Docs
 

@@ -5,6 +5,64 @@ single source of the number.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-23 - W6 The carry wave
+
+1.2.0 lands the rows the 1.1.0 review carried forward. What changes for you:
+
+- **Global Patch: Use / Ignore DMX In Enable is live.** Right-click DMX-in channels in the Global Patch list and pick
+  Use or Ignore DMX In Enable; the edit panel's Ignore DMX In Enable box shows the channel's setting and `<- Set
+  Values` applies it. The Global Patch file saves it (`ign=1` in the `.GPA`). An Ignore channel takes DMX-in whatever
+  Overwrite Enable says; while DMX-in is turned off, every channel keeps its own value. The list selects one row at a
+  time.
+- **System > Restart and switching the user library** relaunch LJ4EVR on that library (`U:<library>`).
+- **Window positions.** Windows LightJockey 2 opens where they were designed (`poDesigned`, and the MediaPlayer and
+  Audio Analyzer windows) first open at that spot. The Group and HTP Groups windows, and the dialogs LightJockey centres, open
+  centred on the main window.
+- **Save Palette Entry** has Auto Close and Save on [Enter] under Preferences.
+- **MIDI time code:** the `Main.Ini [CUELIST2] SyncFrames` setting takes effect.
+- **Hardware Setup** greys the Port-Address or the universe field of a link to match its protocol (sACN uses the
+  universe, Art-Net the Port-Address).
+- **TCP remote:** a client that sends nothing for 60 s is dropped and its slot freed (a best estimate until compared
+  on a rig).
+- **sACN** output no longer holds up the engine tick when the network send buffer is full.
+- **Audio trig** keeps its timing after a long pause of the user interface: the samples the capture buffer dropped
+  are counted, so two beats 320 ms apart both trigger.
+- **Hardware.Ini:** a `Nic` or `UnicastN` value that is not a plain dotted IPv4 address (a stray space, for example)
+  is now reported in the log by its key instead of being ignored silently.
+- **Look:** the caption buttons' inner bevel is the light grey LightJockey 2 draws, and the Debug window greys the
+  captions of the seven tabs LJ4EVR does not implement.
+- **Text fields:** setting a field's text leaves the caret at the start, as in Windows; the Sequence window's time
+  fields put it at the end.
+
+What 1.2.0 is not (README "What v1.2.0 is not"): it still leaves out the comparison with LightJockey 2 on a real
+rig, audio CD and Winamp, video, and multi-select in the Global Patch list.
+
+Known gaps:
+
+- macOS: the build is tested by CI on every change, but no release (1.0.0, 1.1.0, 1.2.0) has been run by hand on a
+  Mac, and the macOS microphone permission prompt the Audio Analyzer triggers has not been seen on a real Mac. Use
+  the system's window frames there (`--native`, or `[CHROME] Native=1` in `Main.Ini`), the recommended setting on
+  macOS.
+- The installers are not code-signed: Windows SmartScreen warns (More info > Run anyway); on macOS right-click
+  LJ4EVR.app > Open the first time.
+- A few timings and layering rules are best estimates until they are compared with LightJockey on a real rig; each is
+  marked "deferred: needs rig" in `docs/fidelity.md`.
+- The remote has no authentication: keep it on 127.0.0.1 unless the controller is on a lighting network you trust.
+- The Art-Net OemCode is OemUnknown (0x00FF) until a code is registered.
+- The Statics 2 page layout and the background-cue file (`.bgc`) are LJ4EVR's own choices until a LightJockey sample
+  shows the original.
+
+Developer detail:
+
+- W6 gates, integration and the must-fix pass: `docs/w6-gates.md`, `docs/w6-integration.md`; council verdict
+  `W6_CODE_MASTER_ELDER_VERDICT.md` (must-fix r1, ME-190..ME-206, in `d1025e4` and `fdb94a2`). `replay-frames.bin`
+  re-recorded once (ME-190): `3474ee73...8f95f34`; `dump-frames` unchanged (`5b13f419...63114b50`).
+- D4: `git grep -o "PROPOSAL rig" | wc -l` was 503 at `55527ac` (the integration log's 505 counted the deleted track
+  logs); `-- src tests tools` 393 at `v1.1.0` -> 396, 0 tags removed. `git diff v1.1.0 -- src/engine/lj_engine_rules.h`
+  is empty.
+- Carried past 1.2.0: the reference rig (D4), the Mac hand run (ME-189 / ME-158), the Art-Net OemCode (W5-ART-7), the
+  frame 3DLight line (ME-209), the Movement grid (ME-210) and the newer-compiler build (ME-211).
+
 ## [1.1.0] - 2026-10-23 - W5 The seven left-out features
 
 The seven features 1.0.0 left out are in, each replacing its greyed `Not available in LJ4EVR` chrome:
