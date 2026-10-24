@@ -116,6 +116,26 @@ int lj_statics2_press(int slot, int down)
     return 0;
 }
 
+int lj_statics2_latch(int slot, int on)
+{
+    static int held[LJ_S2_N];                 /* global index + 1 of the slot each input latched; 0 = none */
+    lj_static_slot *st;
+    lj_cmd cmd;
+    if (slot < 1 || slot > LJ_S2_N) return -1;
+    if (!on) {                                /* below 50 %: release the slot latched, whatever page shows now */
+        if (!held[slot - 1]) return -1;
+        memset(&cmd, 0, sizeof cmd);
+        cmd.kind = LJ_CMD_STATIC_DEACTIVATE; cmd.a = (uint32_t)(held[slot - 1] - 1);
+        held[slot - 1] = 0;
+        post(&cmd);
+        return 0;
+    }
+    if (held[slot - 1] || !(st = slot_ptr(slot)) || st->kind == LJ_STATIC_EMPTY) return -1;
+    held[slot - 1] = lj_static_global_index(lj_s2_cur_page, slot) + 1;
+    if (!lj_statics2_slot_active(slot)) activate(slot, st, LJ_REP_ADD);   /* flash and merge/replace modes disregarded (05 s3.2): latched, no scope releases */
+    return 0;
+}
+
 void lj_statics2_release(int page)
 {
     lj_cmd cmd;

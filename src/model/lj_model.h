@@ -90,7 +90,8 @@ typedef struct { uint8_t kind /*enum lj_fixture_kind*/; uint16_t profile_id;   /
 typedef struct { char name[31]; uint8_t member[LJ_FIXTURES]; } lj_group;                       /* 18 s8 */
 typedef struct { uint8_t used; int16_t pan, tilt; } lj_preset;                                  /* per fixture x 99, readout units 17 s1 */
 typedef struct { char name[31]; uint8_t val[LJ_CHANS], state[LJ_CHANS]; } lj_user_palette;     /* per control kind, growable */
-typedef struct { uint8_t src_kind /*enum lj_patch_src*/, src_link; uint16_t src_ch; uint8_t in_mode /*enum lj_in_mode*/, invert, min, max; uint32_t htp_mask; } lj_patch_ch;  /* 02 s7.1; min/max 0/255 = no limit */
+typedef struct { uint8_t src_kind /*enum lj_patch_src*/, src_link; uint16_t src_ch; uint8_t in_mode /*enum lj_in_mode*/, invert, min, max; uint32_t htp_mask;
+                 uint8_t ign_en; } lj_patch_ch;  /* 02 s7.1; min/max 0/255 = no limit; W6 ign_en 1 = "Ignore DMX In Enable" (the DMX-in source applies whatever Overwrite Enable says, CHM globalpatch.htm), 0 = Use */
 typedef struct { uint8_t shape, base_on, base; int16_t amp_pos, amp_neg; uint16_t cycle_ds; uint8_t dir; uint16_t delay; } lj_gm_param;   /* W3 named it (was anonymous): shape 0..65 = Macros.Mac index [14 sA.6], dir enum lj_dir FWD/REV/BOUNCE, delay 0..8191 */
 typedef struct { uint32_t number; char name[31]; uint8_t restart_on_load;
                  lj_gm_param ch[LJ_CHANS]; } lj_genmacro;

@@ -61,7 +61,7 @@ static void row_text(int c)
         snprintf(desc, sizeof desc, "Ch %d", c - lj_show_fixture_base(sh, f) + 1);   /* PROPOSAL rig: LJ2 shows the control function here */
     }
     if (p->src_kind == LJ_SRC_DMX_OUT) addr_text(lj_addr_code(p->src_link, p->src_ch), out, sizeof out);
-    if (p->src_kind == LJ_SRC_DMX_IN) { snprintf(in, sizeof in, "%u", (unsigned)p->src_ch); lj_str_copy(mode, sizeof mode, lj_gp_mode_text[p->in_mode < 5 ? p->in_mode : 0]); }
+    if (p->src_kind == LJ_SRC_DMX_IN) { snprintf(in, sizeof in, "%u", (unsigned)p->src_ch); snprintf(mode, sizeof mode, "%s%s", lj_gp_mode_text[p->in_mode < 5 ? p->in_mode : 0], p->ign_en ? "/Ign" : ""); }   /* W6: "/Ign" = Ignore DMX In Enable, the "Sw" of "In mode/Sw" (PROPOSAL rig: globalpatch.gif is reduced) */
     for (k = 0; k < LJ_HTP_GROUPS && n < (int)sizeof htp - 4; k++) if (p->htp_mask & (1u << k)) n += snprintf(htp + n, sizeof htp - (size_t)n, n ? ",%d" : "%d", k + 1);
     if (p->min) snprintf(mn, sizeof mn, "%u", p->min);           /* 0/255 defaults not shown (02 s7.1) */
     if (p->max != 255) snprintf(mx, sizeof mx, "%u", p->max);
@@ -179,6 +179,7 @@ const char *lj_global_patch_set_values(void)
         n.src_kind = LJ_SRC_NONE; n.src_link = 0; n.src_ch = 0;
         if (out > 0) { n.src_kind = LJ_SRC_DMX_OUT; n.src_link = (uint8_t)((out - 1) / LJ_LINK_CH + 1); n.src_ch = (uint16_t)((out - 1) % LJ_LINK_CH + 1); }
         if (in > 0) { n.src_kind = LJ_SRC_DMX_IN; n.src_link = 1; n.src_ch = (uint16_t)in; }   /* one DMX-in universe (05 s3) */
+        else n.ign_en = 0;                                                                     /* W6: the switch belongs to a DMX-in source */
         for (k = 0; k < 5; k++) if (find(rb[k]) && lj_w_radiobutton_checked(find(rb[k]))) n.in_mode = (uint8_t)k;
         tmp = (lj_patch_ch *)malloc(sizeof gp->work);
         if (!tmp) lj_fatal("global patch: out of memory");
@@ -223,7 +224,7 @@ static void clear_rows(int what, int only)   /* what: 0 all, 1 DMX out, 2 DMX in
     for (c = from; c < to; c++) {
         lj_patch_ch *p = &gp->work[c];
         if (what == 0 || what == 6) { if (p->htp_mask) gp->htp_changed = 1; p->htp_mask = 0; }
-        if (what == 0 || (what == 1 && p->src_kind == LJ_SRC_DMX_OUT) || (what == 2 && p->src_kind == LJ_SRC_DMX_IN)) { p->src_kind = LJ_SRC_NONE; p->src_link = 0; p->src_ch = 0; p->in_mode = LJ_IN_ABSOLUTE; }
+        if (what == 0 || (what == 1 && p->src_kind == LJ_SRC_DMX_OUT) || (what == 2 && p->src_kind == LJ_SRC_DMX_IN)) { p->src_kind = LJ_SRC_NONE; p->src_link = 0; p->src_ch = 0; p->in_mode = LJ_IN_ABSOLUTE; p->ign_en = 0; }
         if (what == 0 || what == 3) p->invert = 0;
         if (what == 0 || what == 4) p->min = 0;
         if (what == 0 || what == 5) p->max = 255;
@@ -296,8 +297,9 @@ int lj_global_patch_menu(const char *item)
     }
     else if (strcmp(item, "P_OutSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, out_seq_done, NULL); }   /* TSetSequenceForm; ponytail: the list is single-select, so one channel */
     else if (strcmp(item, "P_InSeq") == 0) { if (gp->sel >= 0) lj_show_dlg_set_sequence(1, in_seq_done, NULL); }   /* W5 dmxin: TSetSequenceForm, as P_OutSeq */
-    else if (strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0)
-        lj_log("global patch: %s: " LJ_NA_HINT, item);   /* W5 dmxin: the per-channel "Ignore DMX In Enable" flag needs a lj_patch_ch field and an S1 rule (model + engine, integrator): still greyed */
+    else if (strcmp(item, "P_EnableUse") == 0 || strcmp(item, "P_EnableIgnore") == 0) {   /* W6: "DMX in Enable Switch" on the selected DMX-in channel (CHM globalpatch.htm) */
+        if (gp->sel >= 0 && gp->work[gp->sel].src_kind == LJ_SRC_DMX_IN) { gp->work[gp->sel].ign_en = (uint8_t)(item[8] == 'I'); gp->changed = 1; row_text(gp->sel); }
+    }
     else return -1;
     return 0;
 }
@@ -385,9 +387,7 @@ lj_window *lj_global_patch_open(void)
     }
     lj_menu_set_checked(lj_window_menus(gp->win), "M_HTPgroupsaffectedgyGM", lj_global_patch_htp_masters());
     {
-        static const char *const w5[] = { "P_EnableUse", "P_EnableIgnore" };   /* W5 dmxin: P_InSeq live; the Overwrite Enable exemption per channel still greyed (see lj_global_patch_menu) */
-        lj_widget *in = find("eSourceIn");
-        for (k = 0; k < LJ_COUNT_OF(w5); k++) lj_menu_set_enabled(lj_window_menus(gp->win), w5[k], 0);
+        lj_widget *in = find("eSourceIn");   /* W6: P_EnableUse / P_EnableIgnore live (lj_global_patch_menu) */
         if (in) { if (!lj_gp_in_mouse) { lj_gp_in_vt = *in->vt; lj_gp_in_mouse = in->vt->mouse; lj_gp_in_vt.mouse = src_in_mouse; } in->vt = &lj_gp_in_vt; }
     }
     fill_list();

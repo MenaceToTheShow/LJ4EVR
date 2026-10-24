@@ -347,6 +347,7 @@ static int rp_gpatch(rp *p, char **argv, int argc)
         KV_NUM("min", 0, 255, pc->min, uint8_t);
         KV_NUM("max", 0, 255, pc->max, uint8_t);
         KV_NUM("htp", 0, 0xFFFFFF, pc->htp_mask, uint32_t);
+        KV_NUM("ign", 0, 1, pc->ign_en, uint8_t);                 /* W6: Ignore DMX In Enable */
         return rp_fail(p, "gpatch: unknown key %s", key);
     }
     if (p->built && rp_run_to(p, p->edit_tick - 1)) return -1;   /* `at k gpatch`: the UI edits show->patch under the lock before tick k */

@@ -29,6 +29,7 @@ int        lj_statics2_page(void);                         /* the current page, 
 int        lj_statics2_set_page(int page);                 /* 0 / -1 out of range */
 int        lj_statics2_visible(void);                      /* slot rows shown: page n, else ctx->static_visible, else 20; 1..64 (LJ_STATICS2_SLOTS_MAX), 20 the default */
 int        lj_statics2_press(int slot, int down);          /* the slot button on the current page (1-based): Toggle flips on press, Flash follows the button; 0 posted, -1 empty / out of range */
+int        lj_statics2_latch(int slot, int on);            /* W6: DMX-in "Static n, Latch": on latches slot n of the current page with c = LJ_REP_ADD whatever its Flash / replace mode, off releases the slot it latched (pinned by global index, so a page change between does not move it); 0 posted, -1 nothing to do */
 int        lj_statics2_slot_active(int slot);              /* from ctx->view, current page */
 int        lj_statics2_set_level(int slot, int pct);       /* 0..100 into the slot under lj_lock; an active slot is re-posted with c = LJ_REP_ADD (no scope releases); [STATICS] LevelAutoEnable / LevelAutoDisable */
 void       lj_statics2_release(int page);                  /* 0 = Release All, else Release Page */

@@ -1,6 +1,7 @@
 /* test_engine_w5.c - `lj4evr_tests test_engine_w5`: the W5 engine seams (docs/w5-contracts.md seam 2 and 4).
  *  - LJ_CMD_DMX_IN copies the UI's 512 bytes into post.dmx_in[] of its input link at the drain; NULL = zeros; a link
- *    outside 1..LJ_LINKS is ignored; LJ_CMD_OVERWRITE_ENABLE gates S1 (lj_post_s1_patch_src Absolute / HTP).
+ *    outside 1..LJ_LINKS is ignored; LJ_CMD_OVERWRITE_ENABLE gates S1 (lj_post_s1_patch_src Absolute / HTP), except a
+ *    W6 "Ignore DMX In Enable" channel (ign_en), which takes DMX-in with the gate off too.
  *  - LJ_CMD_TRIG b = LJ_TRIG_AUDIO_EVENT advances only the slots in audio trig mode, one scene per audio_trigs_per_trig
  *    trigs (Audio-Trigs / Trig, 05 s9.1), and never an auto or manual slot. */
 #include <stdio.h>
@@ -30,15 +31,18 @@ static void t_dmx_in(lj_engine *e)
     memset(patch, 0, sizeof patch);
     patch[9].src_kind = LJ_SRC_DMX_IN; patch[9].src_link = 1; patch[9].src_ch = 5; patch[9].in_mode = LJ_IN_ABSOLUTE;   /* 1:10 <- in 1:5 */
     patch[10].src_kind = LJ_SRC_DMX_IN; patch[10].src_link = 1; patch[10].src_ch = 6; patch[10].in_mode = LJ_IN_HTP;     /* 1:11 <- in 1:6 HTP */
+    patch[11] = patch[9]; patch[11].ign_en = 1;                                                                           /* W6: 1:12 <- in 1:5, Ignore DMX In Enable */
     c = cmd(LJ_CMD_GLOBAL_PATCH, 0, 0); c->patch = patch; lj_engine_cmd(e, c);
     memset(in, 0, sizeof in); in[4] = 200; in[5] = 30;
     c = cmd(LJ_CMD_DMX_IN, 1, 0); c->dmx_in = in; lj_engine_cmd(e, c);
     tick(e);
     CHECK(p->dmx_in[4] == 200 && p->dmx_in[5] == 30);
     CHECK(lj_post_s1_patch_src(p, 1, 9, 77) == 77);                   /* Overwrite Enable off: the cue value stands */
+    CHECK(lj_post_s1_patch_src(p, 1, 11, 77) == 200);                 /* W6: an Ignore channel takes DMX-in with the gate off */
     lj_engine_cmd(e, cmd(LJ_CMD_OVERWRITE_ENABLE, 0, 1)); tick(e);
     CHECK(p->overwrite_enable == 1);
     CHECK(lj_post_s1_patch_src(p, 1, 9, 77) == 200);                  /* Absolute */
+    CHECK(lj_post_s1_patch_src(p, 1, 11, 77) == 200);                 /* W6: gate on, Ignore the same */
     CHECK(lj_post_s1_patch_src(p, 1, 10, 77) == 77);                  /* HTP: 77 > 30 */
     in[4] = 1;                                                        /* the UI changes its buffer: nothing moves until the next DMX_IN */
     tick(e); CHECK(p->dmx_in[4] == 200);

@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "engine/lj_engine.h"
 
-int lj_post_s1_patch_src(const lj_post_ctx *c, int link, int ch, int v);      /* output-channel source copies the source's S0 value (PROPOSAL, rig M16); DMX-in modes gated by Overwrite Enable [02 s7.1] */
+int lj_post_s1_patch_src(const lj_post_ctx *c, int link, int ch, int v);      /* output-channel source copies the source's S0 value (PROPOSAL, rig M16); DMX-in modes gated by Overwrite Enable [02 s7.1], except an ign_en channel (W6) */
 int lj_post_s3_masters(const lj_post_ctx *c, int link, int ch, int v);        /* runs second: GM/sub per enum lj_master_mode on intensity-class and ext_gm channels; LJ_GM_RANGE_RELATIVE limit; LJ_SWITCH_UNSCALED [11 G1-G5, ME-25] */
 int lj_post_s2_profile_invert(const lj_post_ctx *c, int link, int ch, int v); /* runs third: 255 - v, or lo + hi - v inside [lo, hi] [11 P11] */
 int lj_post_s4_blackout(const lj_post_ctx *c, int link, int ch, int v);       /* profile blackout values or shutter closed; solo; Blackout when GM at 0; Ignore Blackout [11 P15, P16] rig M17 */

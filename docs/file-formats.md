@@ -259,6 +259,9 @@ are written. `src` none|out|in, `mode` abs|lotp|htp|gt0|lt255. Ranges (the loade
 min <= max; a channel is never patched from itself; no mask over 24 bits. The file is the one the
 user names from the Global Patch dialog's File menu (LJ2's `.GPA` extension; its binary layout is
 undecoded, D5); the live patch is written at show save as `<library>\GlobalPatch.GPA` (PROPOSAL rig).
+W6 adds one optional key at the end of a `ch` line: `ign=1` = "Ignore DMX In Enable" (the channel's DMX-in source applies
+whatever the Overwrite Enable function says). It is written only when set, and an absent key reads as 0 (Use), so a
+v1.1.0 file loads unchanged and saves byte-identical; `ign` outside 0..1 refuses the file.
 
 ### `Presets\fixtureNNN.pre` (`lj_presets.h`, kind `presets`; NNN = fixture index 1..100)
 
