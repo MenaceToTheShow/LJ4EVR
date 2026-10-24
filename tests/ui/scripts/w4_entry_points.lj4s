@@ -39,7 +39,7 @@ click TAddFixForm2.bOk
 click TLinkConfigForm3.eAdr
 type "17"
 key Enter
-assert_text TLinkConfigForm3.LFixtures "7 Fixtures configured"       # fixtures 3-7 from w4_entry_prep.sh
+assert_text TLinkConfigForm3.LFixtures "9 Fixtures configured"       # fixtures 3-9 from w4_entry_prep.sh
 shot docs/screenshots/w4/entry/fixture-config.png
 click TLinkConfigForm3.bSave
 assert_prompt "Clear data for new fixtures ?"
@@ -278,8 +278,18 @@ close movement
 click main.tb_fixture_3
 click colors.M_UserPalette                        # Colors: UserPalette
 assert_caption user_palettes "User Color Palette"
-log "PASS User Color Palette (TUserPaletteForm) <- Colors > UserPalette"
+log "PASS User Color Palette (TPresetForm) <- Colors > UserPalette"
 shot docs/screenshots/w4/entry/user-palette.png
+click user_palettes.bSave                         # User Color Palette: Save (W6 LORD_FIDELITY-15)
+assert_caption TSavePresetForm2 "Save Color Palette Entry"
+log "PASS Save Color Palette Entry (TSavePresetForm2) <- User Color Palette > Save"
+shot docs/screenshots/w4/entry/save-preset.png
+click TSavePresetForm2.AutoClose1                 # Preferences > Auto Close off (PrefsClick)
+click TSavePresetForm2.bSaveNew
+assert_text TSavePresetForm2.ePresetNo "01"       # kept open: the saved entry's number
+click TSavePresetForm2.AutoClose1                 # Auto Close back on
+click TSavePresetForm2.bSaveNew
+assert_text user_palettes.lentries "2 Entries"    # the second save closed the box
 close user_palettes
 click colors.M_Fades                              # Colors: Fades
 assert_caption seq_fades "Set Fade Status"
@@ -290,7 +300,7 @@ close colors
 click main.tb_fixture_1
 click intensity.UserPalette                       # Intensity: UserPalette
 assert_caption user_palettes "User Intensity Palette"
-log "PASS User palette (TUserPaletteForm) <- Intensity > UserPalette"
+log "PASS User palette (TPresetForm) <- Intensity > UserPalette"
 shot docs/screenshots/w4/entry/user-palette-int.png
 close user_palettes
 close intensity

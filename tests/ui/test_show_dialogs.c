@@ -61,10 +61,12 @@ static int fails;
 #define CHECK(c) do { if (!(c)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #c); } } while (0)
 
 static int me16;
+static int nobehave;   /* W3 INT-s7-ACTIONS: "has no behaviour" lines from an Action item's dispatcher */
 static void sink(void *ud, const char *line)
 {
     (void)ud;
     if (strstr(line, "no binding for handler") || strstr(line, "unknown event") || strstr(line, "matches no DFM handler") || strstr(line, "has no behaviour file")) { me16++; printf("ME-16: %s\n", line); }
+    else if (strstr(line, "has no behaviour")) { nobehave++; printf("%s\n", line); }
     if (strstr(line, "SCRIPT FAIL")) printf("%s\n", line);
 }
 static lj_widget *in(enum lj_win id, const char *n) { return lj_win_get(id) ? lj_window_find(lj_win_get(id), n) : NULL; }
@@ -431,6 +433,27 @@ static void test_statics(void)
     CHECK(run_script("q9_page", "click TStatics2PrefsForm.sbEditPage\nassert_prompt \"Get Page Error !\"\nclick confirm.BOk\n"
                                 "click TStatics2PrefsForm.sbDeletePage\nassert_prompt \"Page Error (Idx = -1)\"\nclick confirm.BOk\n") == 0);
     lj_win_close(LJ_WIN_STATICS2_PREFS);
+    {   /* W3 INT-s7-ACTIONS: every Action-linked leaf of TStatics2Form (27) runs a behaviour on a released slot 3 with a saved
+         * current scene; each is fired, the state-greyed Convert to Scene too (no item is greyed for good), and none may reach the
+         * "has no behaviour" fallthrough */
+        lj_menu *m = lj_window_menus(w);
+        int total = 0, unbound = 0, k;
+        seq5()->number = 7;
+        for (k = 0; m && k < m->nrt; k++) {
+            lj_menu_rt *rt = &m->rt[k];
+            int before = nobehave;
+            if (!rt->item->action || rt->item->nchildren) continue;
+            total++;
+            if (!rt->fn) { unbound++; continue; }
+            lj_statics2_popup(3, 10, 10); lj_menu_close(m);
+            m->firing = rt->item; rt->fn(lj_window_root(w), rt->ud); m->firing = NULL;
+            lj_win_close(LJ_WIN_STATIC_SLOT_NAME); lj_win_close(LJ_WIN_STATIC_PROPS);
+            if (nobehave != before) unbound++;
+        }
+        seq5()->number = 0;
+        printf("INT-s7-ACTIONS TStatics2Form: %d .action leaves, %d unbound\n", total, unbound);
+        CHECK(total == 27 && unbound == 0);
+    }
     lj_win_close(LJ_WIN_STATICS2_FORM);
 }
 

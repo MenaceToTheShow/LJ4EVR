@@ -20,6 +20,7 @@
 #include "io/lj_fn.h"
 #include "io/lj_hotkeys.h"
 #include "io/lj_midi.h"
+#include "io/lj_sacn.h"
 #include "model/lj_bgcue.h"
 #include "model/lj_cue.h"
 #include "model/lj_defaultout.h"
@@ -723,14 +724,35 @@ static void lj_app_default_out_apply(void)
     if (!lj_lib() || lj_library_path(lj_lib(), "DefaultOut.dat", path, sizeof path) != 0 || lj_defaultout_save(path, c->show->default_out) != 0) lj_log("app: DefaultOut.dat not saved");
 }
 
+static struct { int pending; char lib[LJ_LIBNAME_CAP]; } lj_restart;
+void lj_app_restart_request(const char *lib)
+{
+    if (lj_restart.pending || !lib) return;
+    lj_str_copy(lj_restart.lib, sizeof lj_restart.lib, lib);
+    lj_restart.pending = 1;
+}
+int lj_app_restart_spawn(const char *self, int (*spawn)(const char *const *argv))
+{
+    char u[LJ_LIBNAME_CAP + 2];
+    const char *argv[3];
+    if (!lj_restart.pending || !self || !spawn) return 0;
+    lj_restart.pending = 0;
+    lj_sacn_close();                                                       /* the old instance's universes terminate before the new one opens them */
+    snprintf(u, sizeof u, "U:%s", lj_restart.lib);                         /* lib < LJ_LIBNAME_CAP: never truncates */
+    argv[0] = self; argv[1] = u; argv[2] = NULL;
+    if (spawn(argv) != 0) { lj_log("app: restart into %s failed; start LJ4EVR again", lj_restart.lib); return -1; }
+    lj_log("app: restarting into user library %s", lj_restart.lib);
+    return 1;
+}
+
 static void lj_app_select_library(int index)
 {
     lj_ctx *c = lj_ctx_get();
     char names[64][LJ_LIBNAME_CAP];
     int n = lj_library_list(c->userdir, names, 64);
     if (index < 0 || index >= n || lj_library_select(c->userdir, names[index]) != 0) { lj_log("app: user library %d not selected", index); return; }
-    lj_log("app: user library %s opens at the next start", names[index]);   /* ponytail: LJ2 restarts itself; here the close prompt follows and the user starts again (relaunch: W4) */
-    lj_desktop_run_action(LJ_ACT_CLOSE, 0);
+    lj_app_restart_request(names[index]);                                   /* "Re-start LightJockey in new user library ? (There will be no prompt for unsaved data)" */
+    lj_desktop_run_action(LJ_ACT_RESTART, 0);
 }
 
 static void lj_app_w2_action(enum lj_desktop_action a, int arg, void *ud)

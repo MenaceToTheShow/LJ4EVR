@@ -41,11 +41,13 @@ static int fails;
 #define CHECK(cond) do { if (!(cond)) { fails++; printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #cond); } } while (0)
 
 static int ops[64], nops;
+static int nobehave;   /* W3 INT-s7-ACTIONS: "has no behaviour" lines from an Action item's dispatcher */
 static int me16;   /* ME-16: lj_window_create complaints about unmatched handler names, either way */
 static void sink(void *ud, const char *line)
 {
     (void)ud;
     if (strstr(line, "no binding for handler") || strstr(line, "matches no DFM handler") || strstr(line, "unknown event") || strstr(line, "has no behaviour file")) { me16++; printf("  ME-16: %s\n", line); }
+    else if (strstr(line, "has no behaviour")) { nobehave++; printf("  %s\n", line); }
 }
 static void on_op(enum lj_desktop_action a, int arg, void *ud) { (void)a; (void)ud; if (nops < 64) ops[nops++] = arg; }
 static int last_op(void) { return nops ? ops[nops - 1] : -1; }
@@ -413,6 +415,27 @@ int lj_test_cuelist_form(int argc, char **argv)
         lj_table_remove(&ctx->show->cuelists, 7);                              /* the show frees current_cl itself */
         ctx->lib = NULL;
         lj_library_delete("test_cuelist_form_tmp", "CLSave");
+    }
+
+    /* W3 INT-s7-ACTIONS: every Action-linked leaf (47 in TCuelist2Form) is greyed (design 8.5 / ME-120 rows) or runs a behaviour:
+     * each enabled one is fired on a selected, stopped line and must not reach the "has no behaviour" fallthrough */
+    {
+        lj_menu *m = lj_window_menus(win);
+        int total = 0, greyed = 0, unbound = 0, k;
+        for (k = 0; m && k < m->nrt; k++) {
+            lj_menu_rt *rt = &m->rt[k];
+            int before = nobehave;
+            if (!rt->item->action || rt->item->nchildren) continue;
+            total++;
+            if (!rt->enabled) { greyed++; continue; }
+            if (!rt->fn) { unbound++; continue; }
+            lj_w_listview_select(lv, 0); lj_cuelist_form_refresh();
+            m->firing = rt->item; rt->fn(lj_window_root(win), rt->ud); m->firing = NULL;
+            if (nobehave != before) unbound++;
+        }
+        lj_win_close(LJ_WIN_TIMECODE_OFFSET); lj_win_close(LJ_WIN_SORT_TIMECODE);
+        printf("  INT-s7-ACTIONS TCuelist2Form: %d .action leaves, %d greyed, %d unbound\n", total, greyed, unbound);
+        CHECK(total == 47 && unbound == 0);
     }
 
     /* ME-16 over every form this file builds: the dialogs open, the window closes them with nothing unmatched */

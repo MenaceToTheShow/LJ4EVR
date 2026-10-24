@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "core/lj_ini.h"
 #include "core/lj_lock.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
@@ -12,6 +13,7 @@
 #include "model/lj_palettes.h"
 #include "model/lj_show.h"
 #include "ui/forms/lj_forms_gen.h"
+#include "ui/lj_menu.h"
 #include "ui/widgets/lj_widgets_basic.h"
 #include "ui/widgets/lj_widgets_lists.h"
 #include "ui/widgets/lj_w_edit.h"
@@ -45,12 +47,14 @@ static const char *lj_up_save_title(enum lj_ctl_kind k)   /* exe 0x1CCE50..0x1CC
 
 static struct {
     lj_window *win, *save;
+    lj_widget_vt name_vt;                                           /* ePresetName with Save on [Enter] */
     enum lj_ctl_kind kind;
     lj_palette_list list;
     char text[256][40]; const char *items[256]; char entries[24];   /* ponytail: the first 256 entries are listed */
-} up = { NULL, NULL, LJ_CTL_COLORS, { NULL, 0, 0 }, { { 0 } }, { NULL }, { 0 } };
+} up = { NULL, NULL, { 0 }, LJ_CTL_COLORS, { NULL, 0, 0 }, { { 0 } }, { NULL }, { 0 } };
 
 lj_window *lj_user_palettes_window(void) { return up.win; }
+lj_window *lj_user_palettes_save_window(void) { return up.save; }
 int lj_user_palettes_count(void) { return up.win ? up.list.n : 0; }
 static lj_widget *find(const char *n) { return lj_window_find(up.win, n); }
 
@@ -152,19 +156,43 @@ int lj_user_palettes_delete(int index)
 static int selected_row(void) { lj_widget *lv = find("lv"); int i = lv ? lj_w_listview_index(lv) : -1; return i < up.list.n ? i : -1; }
 static int filter_now(void) { int f = find("rgFixtures") ? lj_w_radiogroup_index(find("rgFixtures")) : 1; return f < 0 ? 1 : f; }
 static void save_close(void) { if (up.save) { lj_win_hide(up.save); lj_window_destroy(up.save); up.save = NULL; } }
+/* W4 LORD_FIDELITY-15: Preferences > Auto Close / Save on [Enter] (PrefsClick), forms.ini [SAVEPRESET2] AutoClose (1) SaveOnEnter (0):
+ * ours, PROPOSAL rig as [SAVESELECTION] (LJ2 keeps no key we know of) */
+static int save_pref(const char *key) { return lj_ini_geti(lj_ctx_get()->forms_ini, "SAVEPRESET2", key, key[0] == 'A'); }
+static void save_checks(void)
+{
+    lj_menu_set_checked(lj_window_menus(up.save), "AutoClose1", save_pref("AutoClose"));
+    lj_menu_set_checked(lj_window_menus(up.save), "SaveonEnter1", save_pref("SaveOnEnter"));
+}
+static void save_prefs(lj_widget *w, void *ud)
+{
+    const lj_menu_item_desc *it = lj_window_menu_item(up.save);
+    const char *key = it && it->name && !strcmp(it->name, "SaveonEnter1") ? "SaveOnEnter" : "AutoClose";
+    (void)w; (void)ud;
+    lj_ini_seti(lj_ctx_get()->forms_ini, "SAVEPRESET2", key, !save_pref(key));
+    save_checks();
+}
 static void save_click(lj_widget *w, void *ud)
 {
     const char *name = up.save ? lj_w_edit_text(lj_window_find(up.save, "ePresetName")) : NULL;
-    int as_new = up.save && w == lj_window_find(up.save, "bSaveNew");
+    int as_new = up.save && w == lj_window_find(up.save, "bSaveNew"), r;
+    char no[12];
     (void)ud;
     if (!up.save) return;
-    lj_user_palettes_record(as_new ? -1 : selected_row(), name, filter_now());
-    save_close();
+    r = lj_user_palettes_record(as_new ? -1 : selected_row(), name, filter_now());
+    if (save_pref("AutoClose")) { save_close(); return; }
+    snprintf(no, sizeof no, "%02d", r >= 0 ? r + 1 : up.list.n + 1);   /* kept open: the saved entry's number */
+    lj_w_edit_set_text(lj_window_find(up.save, "ePresetNo"), no);
+}
+static int save_name_key(lj_widget *w, const lj_key_ev *k)
+{
+    if (k->type == LJ_EV_KEY_DOWN && k->key == LJ_VK_RETURN && save_pref("SaveOnEnter")) { save_click(lj_window_find(up.save, "bSave"), NULL); return 1; }
+    return lj_w_edit_vt.key(w, k);
 }
 static void save_form_close(lj_widget *w, void *ud) { (void)w; (void)ud; save_close(); }
 static const lj_binding lj_up_save_bindings[] = {
     { "FormClose", save_form_close, NULL }, { "FormCreate", lj_handler_noop, NULL }, { "FormDestroy", lj_handler_noop, NULL }, { "FormKeyDown", lj_handler_noop, NULL },
-    { "FormShow", lj_handler_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", lj_handler_noop, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { NULL, NULL, NULL } };
+    { "FormShow", lj_handler_noop, NULL }, { "bSaveClick", save_click, NULL }, { "PrefsClick", save_prefs, NULL }, { "Help1Click", lj_help_viewer_click, "controls" }, { NULL, NULL, NULL } };
 static void save_dialog(void)
 {
     int i = selected_row();
@@ -176,6 +204,8 @@ static void save_dialog(void)
     snprintf(no, sizeof no, "%02d", i >= 0 ? i + 1 : up.list.n + 1);
     lj_w_edit_set_text(lj_window_find(up.save, "ePresetNo"), no);
     lj_w_edit_set_text(lj_window_find(up.save, "ePresetName"), i >= 0 ? up.list.e[i].name : "");
+    { lj_widget *e = lj_window_find(up.save, "ePresetName"); if (e) { up.name_vt = *e->vt; up.name_vt.key = save_name_key; e->vt = &up.name_vt; } }
+    save_checks();
     lj_win_show(up.save, 0);
 }
 

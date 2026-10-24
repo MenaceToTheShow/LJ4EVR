@@ -11,6 +11,7 @@
 #define LJ_CLR_BTNHIGHLIGHT 0xFFFFFFu   /* clBtnHighlight / clWindow */
 #define LJ_CLR_BTNSHADOW    0x808080u   /* clBtnShadow / clGray */
 #define LJ_CLR_3DDKSHADOW   0x000000u   /* cl3DDkShadow / clWindowText */
+#define LJ_CLR_3DLIGHT      0xDFDFDFu   /* cl3DLight: the caption buttons' inner top-left line, measured from movement2.gif (1:1, note 07 s14) */
 #define LJ_CLR_HIGHLIGHT    0x000080u   /* clHighlight */
 #define LJ_CLR_CAPTION_END  0x1084D0u   /* active caption gradient end */
 #define LJ_CLR_RED          0xFF0000u

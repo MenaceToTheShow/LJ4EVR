@@ -16,6 +16,7 @@ lj_window *lj_user_palettes_open(void);                     /* the last kind use
 lj_window *lj_user_palettes_open_kind(enum lj_ctl_kind kind);   /* NULL for a kind without palettes */
 void       lj_user_palettes_close(void);
 lj_window *lj_user_palettes_window(void);
+lj_window *lj_user_palettes_save_window(void);              /* the open TSavePresetForm2 or NULL (the UI script resolves it by class) */
 void       lj_user_palettes_refresh(void);
 
 int  lj_user_palettes_count(void);                          /* entries of the open kind */

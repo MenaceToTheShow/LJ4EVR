@@ -206,3 +206,10 @@ run in a scratch userdata made by `tools/ref/w5_wire.py prep` with the loopback 
 item's own widget is non-visual. The `hotkey` verb follows the Pass Keypresses rule of the current window (ME-182): with
 the Audio Analyzer or the MediaPlayer current and its flag off, the key is dropped. `tests/ui/scripts/w5_entry_points.lj4s`
 (run headless by `test_uiscript_w3`, a CTest row) asserts every W5 entry point live and the CD / DA chrome greyed (ME-175).
+
+## W6 fidelity track (2026-10-23)
+
+`TSavePresetForm2` (User Palette > Save, no `lj_win` id of its own) resolves as a window name, like `TExportConfigForm`,
+and `shot` captures it (LORD_FIDELITY-15). `assert_pos <Form> x y` is the check of `tests/ui/scripts/w6_podesigned.lj4s`:
+a `poDesigned` form that forms.ini does not know opens at its DFM Left / Top (W2 INT-s9-PODESIGNED). Under a UI script
+the restart re-exec (LORD_FIDELITY-19) is never spawned: the app quits as before.

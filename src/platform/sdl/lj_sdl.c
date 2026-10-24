@@ -544,6 +544,14 @@ int lj_platform_pref_path(char *dst, size_t cap)
 
 void lj_platform_sleep_us(uint64_t us) { SDL_DelayPrecise(us * 1000u); }
 
+int lj_platform_spawn(const char *const *argv)
+{
+    SDL_Process *p = argv && argv[0] ? SDL_CreateProcess(argv, false) : NULL;
+    if (!p) { lj_log("platform: cannot start %s: %s", argv && argv[0] ? argv[0] : "(null)", SDL_GetError()); return -1; }
+    SDL_DestroyProcess(p);                                               /* frees the handle only; the new instance keeps running */
+    return 0;
+}
+
 /* ---- engine thread (design 3.1) ---------------------------------------------- */
 
 static int SDLCALL lj_sdl_engine_main(void *ud)

@@ -31,6 +31,7 @@
 #include "ui/widgets/lj_w_spinedit.h"
 #include "windows/lj_cue_form.h"
 #include "windows/lj_fixture_config.h"
+#include "windows/lj_user_palettes.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
 #include "io/lj_midi.h"
@@ -385,6 +386,7 @@ lj_window *lj_uiscript_resolve_default(const char *form)
     if (strcmp(form, "TUnassignedForm") == 0 || strcmp(form, "unassigned") == 0) return lj_unassigned_window();
     if (strcmp(form, "TConfirmForm") == 0 || strcmp(form, "confirm") == 0) return lj_win_message_window();   /* W2: the "Please Confirm.." / message box (Restore, Re-start prompts) */
     if (strcmp(form, "TExportConfigForm") == 0) return lj_fixture_config_export_window();                    /* ME-92: Fixture Configuration's export box */
+    if (strcmp(form, "TSavePresetForm2") == 0) return lj_user_palettes_save_window();                        /* W4 LORD_FIDELITY-15: User Palette > Save */
     if (k >= 0) return lj_ctl_window_get((enum lj_ctl_kind)k);
     return lj_win_find(form);
 }
@@ -660,6 +662,7 @@ static int lj_us_shot(const char *arg)
     for (id = 0; id < LJ_CTL_COUNT; id++) if ((w = lj_ctl_window_get((enum lj_ctl_kind)id)) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);
     if ((w = lj_unassigned_window()) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);
     if ((w = lj_fixture_config_export_window()) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);   /* ME-92: no lj_win id of its own */
+    if ((w = lj_user_palettes_save_window()) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);      /* W4 LORD_FIDELITY-15: TSavePresetForm2, no lj_win id either */
     if ((w = lj_win_message_window()) != NULL) rc |= lj_us_shot_one(w, stem, ext, &n);   /* the open confirm / message box (assert_prompt's window) */
     if (lj_us_cur() && lj_us.cur != lj_desktop_window() && lj_us.cur != lj_unassigned_window() && lj_us.cur != lj_win_message_window()) {   /* a host-resolved window the lists do not know is still captured once */
         for (id = 0; id < LJ_WIN_COUNT; id++) if (lj_win_get((enum lj_win)id) == lj_us.cur) break;

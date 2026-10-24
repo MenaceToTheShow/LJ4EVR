@@ -100,7 +100,8 @@ static int lj_app_host_open(void *ud, lj_window *w, unsigned flags)
         const lj_form_desc *d = lj_window_desc(w);
         const lj_surface *ms = lj_window_surface(lj_a.main), *ws = lj_window_surface(w);
         x = d ? d->left : 0; y = d ? d->top : 0;
-        if (lj_a.main && lj_platform_window_pos(lj_a.main, &mx, &my) == 0) lj_formsini_center(mx, my, ms->w, ms->h, ws->w, ws->h, &x, &y);
+        if ((!d || d->position != LJ_PO_DESIGNED || (!d->left && !d->top)) && lj_a.main && lj_platform_window_pos(lj_a.main, &mx, &my) == 0)   /* W2 INT-s9-PODESIGNED: poDesigned keeps the DFM Left/Top (a code-built desc without one still centres) */
+            lj_formsini_center(mx, my, ms->w, ms->h, ws->w, ws->h, &x, &y);
     }
     lj_platform_move_window(w, x, y);
     if (!(flags & LJ_WF_HIDDEN)) lj_platform_show_window(w, 1);
@@ -284,7 +285,7 @@ static void lj_app_action(enum lj_desktop_action a, int arg, void *ud)
     case LJ_ACT_SAVE_SEQUENCE:   lj_win_open(LJ_WIN_SAVE_SEQ); break;
     case LJ_ACT_SAVE_CUE:        lj_win_open(LJ_WIN_SAVE_CUE); break;
     case LJ_ACT_CTL_OPEN_ONLY:   lj_ctl_open_only((enum lj_ctl_kind)arg); break;
-    case LJ_ACT_RESTART:         lj_log("app: restart requested (Restore / Select User Library); start LJ4EVR again"); lj_app_quit(); break;   /* ponytail: LJ2 relaunches itself; relaunch is W4 */
+    case LJ_ACT_RESTART:         lj_app_restart_request(lj_a.lib.name); lj_app_quit(); break;   /* LORD_FIDELITY-19: re-exec with U:<library> after the engine stops (lj_app_main's out:) */
     default: break;
     }
 }
@@ -535,6 +536,7 @@ out:
     if (!lj_a.no_save) { lj_app_save_ini(c->forms_ini, forms_path); lj_app_save_ini(c->main_ini, main_path); lj_app_save_ini(c->hardware_ini, hw_path); }
     lj_ini_free(c->forms_ini); lj_ini_free(c->main_ini); lj_ini_free(c->hardware_ini);
     c->forms_ini = c->main_ini = c->hardware_ini = NULL;
+    if (argc > 0 && !lj_a.script_path) lj_app_restart_spawn(argv[0], lj_platform_spawn);   /* LORD_FIDELITY-19: engine joined, sender closed, inis saved; then the new instance (never under a UI script) */
     lj_platform_shutdown();
     lj_net_cleanup();
     return lj_a.rc;

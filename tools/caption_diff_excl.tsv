@@ -125,3 +125,5 @@ TLASERWARNINGFORM	Label1	Caption	F55 runtime fill: one emitting laser is named b
 TABOUTFORM2	RichEdit1	Lines	ME-137 D2: authored credits, not a caption (tools/dfm2c.py ITEMS_EXCLUDED emits the list empty)
 TDMXINFORM	lChIn	Caption	F55 runtime fill: W5 dmxin live monitor appends the incoming channel count (W5-DMXIN-3)
 TDMXINFORM	lFreq	Caption	F55 runtime fill: W5 dmxin live monitor appends the refresh rate in Hz (W5-DMXIN-3)
+TLJMEDIAFORM	LJMediaForm	Caption	F55 runtime fill: LJMediaPlayer.exe's DFM caption 'LJMediaForm' is a design-time name the borderless window never shows; ours is the help's 'LightJockey MediaPlayer' (lj_media_form.c MF_CAPTION; W6 LORD_FIDELITY-12)
+TLJSOUNDAPP	ScrollBar1	Hint	D6 runtime fill: the gain readout is rewritten with the host decimal separator; the DFM's '0,0dB' is the design-time locale (lj_audio_form.c gain_hint; W6 LORD_FIDELITY-12)

@@ -8,7 +8,8 @@
  *   69  MAESTRO Martin / MiniMAC Maestro I & II (MaestroNotes.Rtf): QLC+ Martin-MiniMAC-Maestro.qxf Mode 4 (11 ch); the Martin Maestro manual
  *               was not fetched: values unverified.
  * Captions are the exe literals of TIntensityControl_MiniMac / _MiniMacI, TColorControl_MiniMac, TGoboControl_MiniMacP / _MiniMacM,
- * TBeamControl_MiniMacM, TLampControl_MiniMac, TSpecialSettings_MiniMacP / _W / _M [13 s2.6]. Every value = the low end of its range (F47). */
+ * TBeamControl_MiniMacM, TLampControl_MiniMac, TSpecialSettings_MiniMacP / _W / _M [13 s2.6]. Every value = the low end of its range (F47).;
+ * rotation buttons carry the slow end (lj_profile.h row conventions). */
 #include "fixlib/hand/lj_minimac.h"
 #include "fixlib/hand/lj_martin.h"
 
