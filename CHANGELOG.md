@@ -15,6 +15,15 @@ W7 The fixture library (toward 1.3.0):
   Fixture Configuration under their manufacturer; `Main.Ini [FIXTURES] ShowExtraProfiles=0` gives back the
   LightJockey 2 list of 201 profiles. A mode wider than 32 channels is not offered (LightJockey 2's limit).
 - Profiles are built when first used, so the program stays the same size class and starts as fast as before.
+- **Converted fixtures bind their channels the LightJockey way.** Movement uses the positional pan and tilt, never a
+  continuous-rotation motor; Intensity is the master dimmer, and every other head dimmer follows the Grand Master and
+  blackout; only the first RGB or CMY set drives Colors, and the rest stay on Levels. A fixture with several moving
+  heads in one mode (ADJ Quad Scan LED, Chauvet Intimidator Spot Duo) moves head 1 from Movement and the other heads
+  from Levels faders named `Pan2`, `Tilt2` and so on. One 1.2.0 profile changes: MAC 401 Dual RGB `RGBX All` (id 171),
+  whose two effect-intensity channels now follow the Grand Master.
+- **One unreadable line in Config.dat no longer empties the patch.** A bad channel caption or Grand Master line is
+  skipped and logged. A fixture whose profile this build does not have is kept, shown in the Save warnings as "Not
+  available in LJ4EVR", and saved back unchanged. A file written by a newer LJ4EVR is never overwritten.
 
 ## [1.2.0] - 2026-10-23 - W6 The carry wave
 
