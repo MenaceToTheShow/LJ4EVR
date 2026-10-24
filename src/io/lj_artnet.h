@@ -48,10 +48,10 @@ typedef struct { uint32_t ip; uint16_t port_addr[LJ_ARTNET_NODE_PORTS]; uint8_t 
 typedef struct { uint32_t packets[LJ_LINKS], pps[LJ_LINKS]; uint32_t nodes, polls, replies, discarded, send_errors; int last_err; uint8_t bound; } lj_artnet_stats;   /* per link; bound = the 6454 socket is open */
 
 /* ---- sender (engine thread only, ME-23) ---- */
-int  lj_artnet_open(const lj_sacn_cfg *cfg);                          /* close-old then open-new on a copy; no Art-Net link and artnet_in 0 = closed, returns 0; -1 on a bind failure (logged, stats.bound 0) */
+int  lj_artnet_open(const lj_sacn_cfg *cfg);                          /* close-old then open-new on a copy (the node table and poll clock kept when the NIC is unchanged, LORD_ENGINE-10); no Art-Net link and artnet_in 0 = closed, returns 0; -1 on a bind failure (logged, stats.bound 0) */
 void lj_artnet_set(int link, const uint8_t slots[LJ_LINK_CH]);        /* link 0..LJ_LINKS-1; copies, marks a change; never sends; a link not on Art-Net is ignored */
 void lj_artnet_pump(uint64_t now_us);                                 /* ArtPoll when due; drain received packets (budget); per link at most one ArtDmx per subscriber (change, else keep-alive); expiry */
-void lj_artnet_close(void);                                           /* closes the socket; no-op when closed */
+void lj_artnet_close(void);                                           /* closes the socket and forgets the nodes; no-op when closed */
 void lj_artnet_stats_get(lj_artnet_stats *out);
 int  lj_artnet_nodes(lj_artnet_node *out, int max);                   /* tests: a copy of the subscriber table (engine thread) */
 void lj_artnet_feed(const uint8_t *pkt, size_t n, uint32_t src_ip, uint64_t now_us);   /* one received datagram as the pump handles it (tests, the artnet fuzz row) */

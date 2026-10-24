@@ -47,6 +47,23 @@ assert_enabled THardwareSetupForm2.RGAudio 1
 assert_enabled THardwareSetupForm2.cbAudioDevice 1
 assert_enabled THardwareSetupForm2.rgAudioCD 0
 assert_enabled THardwareSetupForm2.rgDigitalAudio 0
+# W6 net LORD_FIDELITY-11: per link, sACN keeps the universe live and greys the Port-Address; Art-Net the reverse
+assert_enabled THardwareSetupForm2.seArtAddr1 0
+assert_enabled THardwareSetupForm2.seU1 1
+click THardwareSetupForm2.cbProto1
+key Down
+key Enter
+assert_text THardwareSetupForm2.cbProto1 "Art-Net"
+assert_enabled THardwareSetupForm2.seArtAddr1 1
+assert_enabled THardwareSetupForm2.seU1 0
+assert_enabled THardwareSetupForm2.seArtAddr2 0
+assert_enabled THardwareSetupForm2.seU2 1
+click THardwareSetupForm2.cbProto1
+key Up
+key Enter
+assert_text THardwareSetupForm2.cbProto1 "sACN"
+assert_enabled THardwareSetupForm2.seArtAddr1 0
+assert_enabled THardwareSetupForm2.seU1 1
 close hardware_setup
 
 # ---- the DMX-in, remote and player windows open with their inputs live ----

@@ -121,6 +121,21 @@ int lj_socket_join(lj_socket s, uint32_t group, uint32_t nic_ip)
     return 0;
 }
 
+int lj_socket_mcast_out(lj_socket s, uint32_t nic_ip, uint8_t ttl)
+{
+    struct in_addr nic;
+    int rc = 0;
+#ifdef _WIN32
+    DWORD t = ttl;                                         /* Windows takes a DWORD */
+#else
+    unsigned char t = ttl;                                 /* macOS refuses anything but a u_char */
+#endif
+    nic.s_addr = htonl(nic_ip);
+    if (nic_ip && setsockopt(LJ_H(s), IPPROTO_IP, IP_MULTICAST_IF, (const char *)&nic, (lj_socklen)sizeof nic) != 0) { lj_log("socket: IP_MULTICAST_IF failed: %d", lj_socket_error()); rc = -1; }
+    if (setsockopt(LJ_H(s), IPPROTO_IP, IP_MULTICAST_TTL, (const char *)&t, (lj_socklen)sizeof t) != 0) { lj_log("socket: IP_MULTICAST_TTL failed: %d", lj_socket_error()); rc = -1; }
+    return rc;
+}
+
 int lj_socket_recvfrom(lj_socket s, uint8_t *buf, size_t cap, uint32_t *ip, uint16_t *port)
 {
     struct sockaddr_in a;

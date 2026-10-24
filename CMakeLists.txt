@@ -562,3 +562,5 @@ if(LJ_SDL)   # W5 audio: the SDL3 capture glue on SDL's dummy driver (W5-AUD-1, 
   add_test(NAME test_audio_sdl COMMAND lj4evr_audio_sdl_test)
   set_tests_properties(test_audio_sdl PROPERTIES ENVIRONMENT "SDL_AUDIO_DRIVER=dummy")
 endif()
+# W6 net (append-only): WIZARD_STYLES-9, the one strict dotted-IPv4 parser / formatter (tests/io/test_net.c)
+add_test(NAME test_net COMMAND lj4evr_tests test_net)

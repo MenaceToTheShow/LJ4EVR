@@ -24,7 +24,9 @@ opens.
 anyone on that network can drive the show. Pick a network interface only on a network you control.
 
 At most 4 TCP connections are served at a time; a fifth is closed as soon as it arrives. Each connection is read with
-a budget of 1024 bytes per pass of the 10 ms loop, so a flood cannot stall the program.
+a budget of 1024 bytes per pass of the 10 ms loop, so a flood cannot stall the program. A connection that sends
+nothing for 60 seconds is closed and its place freed, so four idle clients cannot lock the remote out (a proposal,
+`LJ_REMOTE_IDLE_US`; a controller that stays connected sends a frame now and then, or reconnects).
 
 ## The protocol
 

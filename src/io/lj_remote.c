@@ -2,7 +2,6 @@
  * UI thread only: the parser is pure, the transports are non-blocking and read with a byte budget per pass, every
  * action runs through lj_fn_run / lj_fn_run_prog. Tests: tests/io/test_remote.c (fuzz_remote, test_remote,
  * test_serial_pty). */
-#define _CRT_SECURE_NO_WARNINGS 1   /* sscanf under /W4 /WX on MSVC (as io/lj_sacn.c) */
 #include <stdio.h>
 #include <string.h>
 #include "io/lj_remote.h"
@@ -21,7 +20,7 @@ enum { LJ_REM_MSGS = 86,          /* frames in one 255-byte chunk, plus one */
 
 static struct {
     lj_socket lsn;
-    struct { lj_socket s; uint8_t on; lj_remote_parser p; } conn[LJ_REMOTE_CONNS];
+    struct { lj_socket s; uint8_t on; lj_remote_parser p; uint64_t last_us; } conn[LJ_REMOTE_CONNS];   /* last_us: accept or the last bytes (LORD_C-10) */
     lj_serial *ser;
     lj_remote_parser sp, ip;      /* serial, inject */
     lj_remote_query_fn query;
@@ -153,14 +152,6 @@ int lj_remote_inject(const uint8_t *bytes, size_t n, uint64_t now_us)
 }
 
 /* ---- settings: Hardware.Ini [REMOTE] (ours, additive) ---- */
-int lj_remote_ip_parse(const char *s, uint32_t *out)
-{
-    unsigned a, b, c, d; char tail;
-    if (!s || !out || sscanf(s, "%3u.%3u.%3u.%3u%c", &a, &b, &c, &d, &tail) != 4 || a > 255 || b > 255 || c > 255 || d > 255) return -1;
-    *out = (a << 24) | (b << 16) | (c << 8) | d;
-    return 0;
-}
-static void lj_rem_ip_fmt(char *dst, size_t cap, uint32_t ip) { if (snprintf(dst, cap, "%u.%u.%u.%u", ip >> 24, (ip >> 16) & 255u, (ip >> 8) & 255u, ip & 255u) < 0) dst[0] = 0; }
 
 static int lj_rem_baud_ok(uint32_t b) { int i; for (i = 0; i < LJ_REMOTE_BAUDS; i++) if (lj_remote_bauds[i] == b) return 1; return 0; }
 
@@ -181,7 +172,7 @@ void lj_remote_cfg_load(lj_ini *ini, lj_remote_cfg *c)
     lj_remote_cfg_default(c);
     if (!ini) return;
     c->tcp_on = (uint8_t)(lj_ini_geti(ini, "REMOTE", "TcpEnabled", 0) != 0);
-    if (lj_remote_ip_parse(lj_ini_gets(ini, "REMOTE", "TcpIp", ""), &ip) == 0) c->tcp_ip = ip;   /* checked again against the NICs at open */
+    if (lj_net_ip_parse(lj_ini_gets(ini, "REMOTE", "TcpIp", ""), &ip) == 0) c->tcp_ip = ip;   /* checked again against the NICs at open */
     v = lj_ini_geti(ini, "REMOTE", "TcpPort", LJ_REMOTE_TCP_PORT);
     if (v >= 1 && v <= 65535) c->tcp_port = (uint16_t)v;
     c->serial_on = (uint8_t)(lj_ini_geti(ini, "REMOTE", "SerialEnabled", 0) != 0);
@@ -195,7 +186,7 @@ void lj_remote_cfg_save(lj_ini *ini, const lj_remote_cfg *c)
 {
     char ip[16];
     if (!ini || !c) return;
-    lj_rem_ip_fmt(ip, sizeof ip, c->tcp_ip);
+    lj_net_ip_fmt(ip, sizeof ip, c->tcp_ip);
     lj_ini_seti(ini, "REMOTE", "TcpEnabled", c->tcp_on != 0);
     lj_ini_sets(ini, "REMOTE", "TcpIp", ip);
     lj_ini_seti(ini, "REMOTE", "TcpPort", c->tcp_port);
@@ -240,7 +231,7 @@ int lj_remote_open(const lj_remote_cfg *c)
     lj_remote_close();
     if (!c) return 0;
     if (c->tcp_on) {
-        lj_rem_ip_fmt(ip, sizeof ip, c->tcp_ip);
+        lj_net_ip_fmt(ip, sizeof ip, c->tcp_ip);
         if (!lj_rem_ip_allowed(c->tcp_ip)) { lj_log("remote: %s is not 127.0.0.1 or a local interface: TCP not listening", ip); rc = -1; }
         else if ((lj_rem.lsn = lj_socket_listen(c->tcp_ip, c->tcp_port, 4 * LJ_REMOTE_CONNS)) == LJ_SOCKET_BAD) rc = -1;   /* backlog past the cap: an extra client is accepted and refused, never dropped at SYN (macOS) */
         else {
@@ -266,13 +257,13 @@ int lj_remote_poll(uint64_t now_us)
         for (n = 0; n < LJ_REM_ACCEPTS && (a = lj_socket_accept(lj_rem.lsn, &peer)) != LJ_SOCKET_BAD; n++) {
             char ip[16];
             for (k = 0; k < LJ_REMOTE_CONNS && lj_rem.conn[k].on; k++) {}
-            lj_rem_ip_fmt(ip, sizeof ip, peer);
+            lj_net_ip_fmt(ip, sizeof ip, peer);
             if (k == LJ_REMOTE_CONNS) {                              /* bounded: the extra one is closed at once */
                 lj_socket_close(a); lj_rem.st.refused++;
                 if (lj_rem.st.refused <= 8 || (lj_rem.st.refused & 255u) == 0) lj_log("remote: TCP connection from %s refused (%d open, %u refused)", ip, LJ_REMOTE_CONNS, (unsigned)lj_rem.st.refused);
                 continue;
             }
-            lj_rem.conn[k].s = a; lj_rem.conn[k].on = 1; lj_remote_parser_init(&lj_rem.conn[k].p); lj_rem.st.conns++;
+            lj_rem.conn[k].s = a; lj_rem.conn[k].on = 1; lj_remote_parser_init(&lj_rem.conn[k].p); lj_rem.conn[k].last_us = now_us; lj_rem.st.conns++;
             lj_log("remote: TCP connection %d from %s", k + 1, ip);
         }
         for (k = 0; k < LJ_REMOTE_CONNS; k++) {
@@ -281,7 +272,12 @@ int lj_remote_poll(uint64_t now_us)
                 n = lj_socket_recv(lj_rem.conn[k].s, buf, (size_t)(budget < (int)sizeof buf ? budget : (int)sizeof buf));
                 if (n < 0) { lj_log("remote: TCP connection %d closed", k + 1); lj_rem_conn_close(k); break; }
                 if (n == 0) break;
+                lj_rem.conn[k].last_us = now_us;
                 done += lj_rem_run(&lj_rem.conn[k].p, buf, (size_t)n, now_us);
+            }
+            if (lj_rem.conn[k].on && now_us - lj_rem.conn[k].last_us >= LJ_REMOTE_IDLE_US) {   /* LORD_C-10: a silent client gives its slot back */
+                lj_log("remote: TCP connection %d closed: silent for %u s", k + 1, (unsigned)(LJ_REMOTE_IDLE_US / 1000000u));
+                lj_rem_conn_close(k);
             }
             if (lj_rem.conn[k].on) lj_rem_run(&lj_rem.conn[k].p, NULL, 0, now_us);   /* the 0.2 s expiry with no new bytes */
         }

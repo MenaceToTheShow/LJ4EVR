@@ -229,7 +229,7 @@ int lj_dmxin_open(const lj_dmxin_cfg *cfg, const uint8_t own_cid[16])
     if (!cfg->enabled || cfg->source != LJ_DMXIN_SACN) return 0;                          /* W5-X-OFF; Art-Net input rides the engine's 6454 socket */
     lj_di.sock = lj_socket_udp(0, LJ_SACN_PORT, LJ_SOCK_REUSE);
     if (lj_di.sock == LJ_SOCKET_BAD) { lj_log("dmx in: cannot bind 0.0.0.0:%u", (unsigned)LJ_SACN_PORT); return -1; }
-    if (snprintf(a, sizeof a, "%u.%u.%u.%u", (unsigned)(cfg->nic_ipv4 >> 24), (unsigned)(cfg->nic_ipv4 >> 16 & 255), (unsigned)(cfg->nic_ipv4 >> 8 & 255), (unsigned)(cfg->nic_ipv4 & 255)) < 0) a[0] = 0;
+    lj_net_ip_fmt(a, sizeof a, cfg->nic_ipv4);
     if (lj_socket_join(lj_di.sock, 0xEFFF0000u | cfg->universe, cfg->nic_ipv4) != 0) lj_log("dmx in: multicast join of universe %u failed; unicast only", (unsigned)cfg->universe);
     lj_log("dmx in: sACN universe %u on 0.0.0.0:%u, joined on %s", (unsigned)cfg->universe, (unsigned)LJ_SACN_PORT, cfg->nic_ipv4 ? a : "the default interface");
     return 0;
@@ -243,15 +243,6 @@ void lj_dmxin_close(void)
 /* ---- configuration ---- */
 void lj_dmxin_cfg_default(lj_dmxin_cfg *cfg) { if (!cfg) return; memset(cfg, 0, sizeof *cfg); cfg->source = LJ_DMXIN_SACN; cfg->universe = 1; cfg->loss = LJ_DMXIN_LOSS_HOLD; }
 
-static int lj_di_ip_parse(const char *s, uint32_t *out)
-{
-    unsigned a, b, c, d;
-    char tail;
-    if (!s || sscanf(s, "%3u.%3u.%3u.%3u%c", &a, &b, &c, &d, &tail) != 4 || a > 255 || b > 255 || c > 255 || d > 255) return -1;
-    *out = (uint32_t)a << 24 | (uint32_t)b << 16 | (uint32_t)c << 8 | d;
-    return 0;
-}
-
 void lj_dmxin_cfg_load(lj_ini *ini, lj_dmxin_cfg *cfg)
 {
     int v;
@@ -261,7 +252,7 @@ void lj_dmxin_cfg_load(lj_ini *ini, lj_dmxin_cfg *cfg)
     cfg->source = (uint8_t)(lj_ini_geti(ini, "DMXIN", "Source", 0) == 1 ? LJ_DMXIN_ARTNET : LJ_DMXIN_SACN);
     v = lj_ini_geti(ini, "DMXIN", "Universe", 1);
     cfg->universe = (uint16_t)(v >= 1 && v <= LJ_SACN_UNIVERSE_MAX ? v : 1);
-    if (lj_di_ip_parse(lj_ini_gets(ini, "DMXIN", "Nic", ""), &cfg->nic_ipv4) != 0) cfg->nic_ipv4 = 0;
+    if (lj_net_ip_parse(lj_ini_gets(ini, "DMXIN", "Nic", ""), &cfg->nic_ipv4) != 0) cfg->nic_ipv4 = 0;
     cfg->loss = (uint8_t)(lj_ini_geti(ini, "DMXIN", "Loss", 0) == 1 ? LJ_DMXIN_LOSS_ZERO : LJ_DMXIN_LOSS_HOLD);
     cfg->functions_off = (uint8_t)(lj_ini_geti(ini, "DMXIN", "FunctionsOff", 0) != 0);
 }
@@ -273,7 +264,7 @@ void lj_dmxin_cfg_save(lj_ini *ini, const lj_dmxin_cfg *cfg)
     lj_ini_seti(ini, "DMXIN", "Enabled", cfg->enabled);
     lj_ini_seti(ini, "DMXIN", "Source", cfg->source);
     lj_ini_seti(ini, "DMXIN", "Universe", cfg->universe);
-    if (snprintf(a, sizeof a, "%u.%u.%u.%u", (unsigned)(cfg->nic_ipv4 >> 24), (unsigned)(cfg->nic_ipv4 >> 16 & 255), (unsigned)(cfg->nic_ipv4 >> 8 & 255), (unsigned)(cfg->nic_ipv4 & 255)) < 0) a[0] = 0;
+    lj_net_ip_fmt(a, sizeof a, cfg->nic_ipv4);
     lj_ini_sets(ini, "DMXIN", "Nic", cfg->nic_ipv4 ? a : "");
     lj_ini_seti(ini, "DMXIN", "Loss", cfg->loss);
     lj_ini_seti(ini, "DMXIN", "FunctionsOff", cfg->functions_off);

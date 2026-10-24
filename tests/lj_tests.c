@@ -140,6 +140,7 @@ int lj_test_serial_pty(int argc, char **argv);    /* W5 remote */
 int lj_test_remote_form(int argc, char **argv);   /* W5 remote */
 int lj_test_ljb(int argc, char **argv);           /* W5 ljb */
 int lj_test_ljb_sample(int argc, char **argv);    /* W5 ljb */
+int lj_test_net(int argc, char **argv);           /* W6 net */
 static const struct { const char *name; int (*fn)(int, char **); } lj_subcommands[] = {
     { "font_corpus", lj_test_font_corpus },
     { "font_cells", lj_test_font_cells },
@@ -275,6 +276,7 @@ static const struct { const char *name; int (*fn)(int, char **); } lj_subcommand
     { "test_remote_form", lj_test_remote_form }, /* W5 remote: TRS232SettingsForm by UI script, [REMOTE] saved + reopened, the windows-layer state query (tests/ui/test_remote_form.c) */
     { "test_ljb", lj_test_ljb },               /* W5 ljb: W5-LJB-1 refusals, W5-LJB-2 hostile names, W5-LJB-3 synthetic import read back, W5-LJB-4 report + Restore window entry, LORD_C-9 (tests/model/test_ljb.c) */
     { "ljb_sample", lj_test_ljb_sample },      /* W5 ljb: W5-LJB-5, the note 18 sample under LJ4EVR_REFERENCE_DIR; SKIP without it (tests/model/test_ljb.c) */
+    { "test_net", lj_test_net },               /* W6 net: WIZARD_STYLES-9 lj_net_ip_parse strict, lj_net_ip_fmt (tests/io/test_net.c) */
 };
 
 int main(int argc, char **argv)

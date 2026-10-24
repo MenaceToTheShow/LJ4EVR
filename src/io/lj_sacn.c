@@ -13,32 +13,16 @@
  * skipped unless cfg.unlock_rate (ME-24; the latest frame wins on the next pump).
  * sendto failures are logged (once per distinct error) and counted, never fatal
  * (08 s6.2: WinError 10051 on a dead NIC). */
-#define _CRT_SECURE_NO_WARNINGS 1   /* sscanf/strcat under /W4 /WX on MSVC (as core/lj_ini.c) */
+#define _CRT_SECURE_NO_WARNINGS 1   /* fopen/strcat under /W4 /WX on MSVC (as core/lj_ini.c) */
 #ifdef _WIN32
 #define _CRT_RAND_S                 /* rand_s: the CRT's CSPRNG (RtlGenRandom), no bcrypt.h needed */
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
-#include <ws2tcpip.h>
-typedef SOCKET lj_sock;
-#define LJ_SOCK_BAD   INVALID_SOCKET
-#define lj_sock_close closesocket
-#define lj_sock_err() WSAGetLastError()
-#else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <errno.h>
-typedef int lj_sock;
-#define LJ_SOCK_BAD   (-1)
-#define lj_sock_close close
-#define lj_sock_err() errno
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "io/lj_sacn.h"
 #include "io/lj_net.h"
+#include "io/lj_socket.h"               /* W6 WIZARD_STYLES-10: the sender socket goes through the seam; no OS header here */
 #include "core/lj_clock.h"
 #include "core/lj_log.h"
 #include "core/lj_str.h"
@@ -49,7 +33,7 @@ typedef struct { uint8_t slots[LJ_LINK_CH]; uint8_t seq, repeats_left; uint64_t 
 
 static struct {
     int open;
-    lj_sock sock;
+    lj_socket sock;
     lj_sacn_cfg cfg;                /* validated copy; cfg.universe_of_link[i] is the universe link i feeds, 0 = unmapped */
     lj_sacn_uni uni[LJ_LINKS];
     uint64_t next_disc_us, window_us;
@@ -175,16 +159,6 @@ void lj_sacn_cfg_default(lj_sacn_cfg *cfg, const char *host)
     lj_sacn_cid_new(cfg->cid);
 }
 
-static int lj_ip_parse(const char *s, uint32_t *out)                /* "a.b.c.d" -> host order; 0 / -1 */
-{
-    unsigned a, b, c, d; char tail;
-    if (!s || sscanf(s, "%3u.%3u.%3u.%3u%c", &a, &b, &c, &d, &tail) != 4 || a > 255 || b > 255 || c > 255 || d > 255) return -1;
-    *out = (a << 24) | (b << 16) | (c << 8) | d;
-    return 0;
-}
-
-static void lj_ip_fmt(char *dst, size_t cap, uint32_t ip) { snprintf(dst, cap, "%u.%u.%u.%u", ip >> 24, (ip >> 16) & 255, (ip >> 8) & 255, ip & 255); }
-
 static int lj_hex_nibble(char c) { return c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1; }
 
 int lj_sacn_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
@@ -195,7 +169,7 @@ int lj_sacn_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
     lj_net_hostname(host, sizeof host);
     lj_sacn_cfg_default(cfg, host);
     if (!ini) return -1;
-    lj_ip_parse(lj_ini_gets(ini, "SACN", "Nic", ""), &cfg->nic_ipv4);
+    lj_net_ip_parse(lj_ini_gets(ini, "SACN", "Nic", ""), &cfg->nic_ipv4);
     lj_str_copy(cfg->name, sizeof cfg->name, lj_ini_gets(ini, "SACN", "Name", cfg->name));
     s = lj_ini_gets(ini, "SACN", "CID", "");
     if (strlen(s) == 32) {
@@ -224,7 +198,7 @@ int lj_sacn_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
         for (p = list; *p && cfg->nunicast[i] < LJ_SACN_UNICAST_MAX; p = q) {
             q = strchr(p, ',');
             if (q) *q++ = 0; else q = p + strlen(p);
-            if (lj_ip_parse(p, &cfg->unicast[i][cfg->nunicast[i]]) == 0) cfg->nunicast[i]++;
+            if (lj_net_ip_parse(p, &cfg->unicast[i][cfg->nunicast[i]]) == 0) cfg->nunicast[i]++;
         }
     }
     s = lj_sacn_cfg_validate(cfg);
@@ -236,7 +210,7 @@ void lj_sacn_cfg_save(lj_ini *ini, const lj_sacn_cfg *cfg)
 {
     char buf[LJ_SACN_UNICAST_MAX * 16], key[16], ip[16];
     int i, k;
-    lj_ip_fmt(buf, sizeof buf, cfg->nic_ipv4);
+    lj_net_ip_fmt(buf, sizeof buf, cfg->nic_ipv4);
     lj_ini_sets(ini, "SACN", "Nic", buf);
     lj_ini_sets(ini, "SACN", "Name", cfg->name);
     for (i = 0; i < 16; i++) snprintf(buf + 2 * i, sizeof buf - 2 * (size_t)i, "%02x", cfg->cid[i]);
@@ -251,7 +225,7 @@ void lj_sacn_cfg_save(lj_ini *ini, const lj_sacn_cfg *cfg)
         snprintf(key, sizeof key, "Unicast%d", i + 1);
         buf[0] = 0;
         for (k = 0; k < cfg->nunicast[i] && k < LJ_SACN_UNICAST_MAX; k++) {
-            lj_ip_fmt(ip, sizeof ip, cfg->unicast[i][k]);
+            lj_net_ip_fmt(ip, sizeof ip, cfg->unicast[i][k]);
             if (k) strcat(buf, ",");
             strcat(buf, ip);                                       /* 8 x 16 fits buf */
         }
@@ -263,15 +237,10 @@ void lj_sacn_cfg_save(lj_ini *ini, const lj_sacn_cfg *cfg)
 
 static void lj_sacn_sendto(const uint8_t *pkt, int len, uint32_t ip_host)
 {
-    struct sockaddr_in to;
-    memset(&to, 0, sizeof to);
-    to.sin_family = AF_INET;
-    to.sin_port = htons(LJ_SACN_PORT);
-    to.sin_addr.s_addr = htonl(ip_host);
-    if (sendto(lj_s.sock, (const char *)pkt, len, 0, (const struct sockaddr *)&to, sizeof to) < 0) {
-        int err = lj_sock_err();
+    if (lj_socket_sendto(lj_s.sock, pkt, (size_t)len, ip_host, LJ_SACN_PORT) != 0) {
+        int err = lj_socket_error();
         lj_s.st.send_errors++;
-        if (err != lj_s.st.last_err) { char d[16]; lj_ip_fmt(d, sizeof d, ip_host); lj_log("sacn: sendto %s failed: %d", d, err); }
+        if (err != lj_s.st.last_err) { char d[16]; lj_net_ip_fmt(d, sizeof d, ip_host); lj_log("sacn: sendto %s failed: %d", d, err); }
         lj_s.st.last_err = err;
     }
 }
@@ -313,8 +282,7 @@ int lj_sacn_open(const lj_sacn_cfg *in)
     lj_sacn_uni old[LJ_LINKS];
     lj_sacn_cfg oldcfg;
     const char *why;
-    struct in_addr nic;
-    int i, was_open = lj_s.open, ttl;
+    int i, was_open = lj_s.open;
     if (!in) return -1;
     cfg = *in;
     why = lj_sacn_cfg_validate(&cfg);
@@ -328,21 +296,15 @@ int lj_sacn_open(const lj_sacn_cfg *in)
     if (was_open) {
         for (i = 0; i < LJ_LINKS; i++)
             if (oldcfg.universe_of_link[i] && lj_sacn_link_of(&cfg, oldcfg.universe_of_link[i]) < 0) lj_sacn_terminate(i);
-        lj_sock_close(lj_s.sock);
+        lj_socket_close(lj_s.sock);
         lj_s.open = 0;
     }
 
-    /* open-new: one UDP socket, NIC by in_addr, TTL, no bind (08 s6.2) */
-    lj_s.sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (lj_s.sock == LJ_SOCK_BAD) { lj_log("sacn: socket failed: %d", lj_sock_err()); memset(&lj_s, 0, sizeof lj_s); lj_s.sock = LJ_SOCK_BAD; return -1; }
-    nic.s_addr = htonl(cfg.nic_ipv4);                              /* 0.0.0.0 = the OS default interface */
-    if (cfg.nic_ipv4 && setsockopt(lj_s.sock, IPPROTO_IP, IP_MULTICAST_IF, (const char *)&nic, sizeof nic) < 0) lj_log("sacn: IP_MULTICAST_IF failed: %d", lj_sock_err());
-    ttl = cfg.ttl;
-#ifdef _WIN32
-    if (setsockopt(lj_s.sock, IPPROTO_IP, IP_MULTICAST_TTL, (const char *)&ttl, sizeof ttl) < 0) lj_log("sacn: IP_MULTICAST_TTL failed: %d", lj_sock_err());
-#else
-    { unsigned char t8 = (unsigned char)ttl; if (setsockopt(lj_s.sock, IPPROTO_IP, IP_MULTICAST_TTL, &t8, sizeof t8) < 0) lj_log("sacn: IP_MULTICAST_TTL failed: %d", lj_sock_err()); }
-#endif
+    /* open-new: one UDP socket on 0.0.0.0 and an ephemeral port (what an unbound sendto picks, 08 s6.2), NIC by
+     * IP_MULTICAST_IF (0.0.0.0 = the OS default interface), TTL; the seam logs its bind line */
+    lj_s.sock = lj_socket_udp(0, 0, 0);
+    if (lj_s.sock == LJ_SOCKET_BAD) { lj_log("sacn: socket failed: %d", lj_socket_error()); memset(&lj_s, 0, sizeof lj_s); lj_s.sock = LJ_SOCKET_BAD; return -1; }
+    lj_socket_mcast_out(lj_s.sock, cfg.nic_ipv4, cfg.ttl);         /* a failed option is logged by the seam; sending still works */
     lj_s.cfg = cfg;
     memset(lj_s.uni, 0, sizeof lj_s.uni);
     for (i = 0; i < LJ_LINKS; i++) {
@@ -405,8 +367,8 @@ void lj_sacn_close(void)
     int i;
     if (!lj_s.open) return;
     for (i = 0; i < LJ_LINKS; i++) if (lj_s.cfg.universe_of_link[i]) lj_sacn_terminate(i);
-    lj_sock_close(lj_s.sock);
-    lj_s.sock = LJ_SOCK_BAD;
+    lj_socket_close(lj_s.sock);
+    lj_s.sock = LJ_SOCKET_BAD;
     lj_s.open = 0;
 }
 

@@ -158,9 +158,14 @@ static void lj_artnet_send(const uint8_t *pkt, size_t n, uint32_t ip)
 
 int lj_artnet_open(const lj_sacn_cfg *cfg)
 {
+    static lj_artnet_node keep[LJ_ARTNET_NODES];                       /* engine thread only (ME-23) */
     lj_nic nic[16];
     const char *why;
-    int i, j, k, need = 0, nn;
+    int i, j, k, need = 0, nn, nkeep = 0;
+    uint64_t keep_poll = 0;
+    if (la.open && cfg && cfg->nic_ipv4 == la.cfg.nic_ipv4) {           /* LORD_ENGINE-10: same NIC, same port 6454: the subscribers stay, the poll clock runs on */
+        nkeep = la.nnodes; memcpy(keep, la.node, (size_t)nkeep * sizeof *keep); keep_poll = la.next_poll_us;
+    }
     lj_artnet_close();
     if (!cfg) return 0;
     la.cfg = *cfg;
@@ -195,6 +200,7 @@ int lj_artnet_open(const lj_sacn_cfg *cfg)
     }
     la.st.bound = 1;
     la.open = 1;
+    memcpy(la.node, keep, (size_t)nkeep * sizeof *keep); la.nnodes = nkeep; la.st.nodes = (uint32_t)nkeep; la.next_poll_us = keep_poll;
     return 0;
 }
 

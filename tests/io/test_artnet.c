@@ -275,6 +275,36 @@ static void art_discovery_and_rate(void)
     lj_artnet_stats_get(&st); ACHECK(st.bound == 0);
 }
 
+/* LORD_ENGINE-10: a re-open with the NIC unchanged keeps the subscribed node, so ArtDmx goes out unicast at once with no
+ * new poll; a re-open on another NIC (or Art-Net off) forgets it */
+static void art_reopen(void)
+{
+    static uint8_t r[LJ_ARTNET_REPLY_LEN], slots[LJ_LINK_CH];
+    lj_sacn_cfg c = art_open_cfg(LJ_IP_LOOPBACK);
+    lj_artnet_stats st;
+    lj_artnet_node nd[2];
+    uint64_t t = 1000000u;
+    if (lj_artnet_open(&c) != 0) { printf("SKIP reopen: cannot bind 127.0.0.1:6454 (another Art-Net program?)\n"); lj_artnet_close(); return; }
+    lj_artnet_pump(t);                                                 /* the first poll; the next is due at t + 2.5 s */
+    art_reply(r, 0, 0, 2, 0);
+    lj_artnet_feed(r, sizeof r, 0x7F000002u, t);
+    ACHECK(lj_artnet_nodes(nd, 2) == 1);
+    c.priority = 50; c.artnet_addr[2] = 4;                             /* an applied Hardware Setup, same NIC */
+    ACHECK(lj_artnet_open(&c) == 0);
+    lj_artnet_stats_get(&st);
+    ACHECK(lj_artnet_nodes(nd, 2) == 1 && st.nodes == 1);
+    memset(slots, 9, sizeof slots);
+    lj_artnet_set(1, slots);
+    lj_artnet_pump(t + 100000u);
+    lj_artnet_stats_get(&st);
+    ACHECK(st.packets[1] == 1 && st.polls == 0 && st.replies == 0);    /* unicast ArtDmx to the kept node, no new poll, no new reply */
+    printf("  reopen: nodes=%u after re-open, %u ArtDmx, %u polls since\n", (unsigned)st.nodes, (unsigned)st.packets[1], (unsigned)st.polls);
+    c.nic_ipv4 = 0x7F000002u;                                          /* another NIC: the table starts empty (the bind may fail where 127.0.0.2 is no alias) */
+    lj_artnet_open(&c);
+    ACHECK(lj_artnet_nodes(nd, 2) == 0);
+    lj_artnet_close();
+}
+
 static void art_bind_fail(void)
 {
     lj_socket blocker = lj_socket_udp(LJ_IP_LOOPBACK, LJ_ARTNET_PORT, 0);
@@ -330,6 +360,7 @@ int lj_test_artnet(int argc, char **argv)
     art_cfg();
     art_ui();
     art_discovery_and_rate();
+    art_reopen();                       /* W6 net: LORD_ENGINE-10 */
     art_bind_fail();
     art_wire();
     lj_warnings_close_all();

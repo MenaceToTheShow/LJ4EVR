@@ -26,6 +26,7 @@
 #include "engine/lj_engine.h"
 #include "gfx/lj_bmp.h"
 #include "io/lj_extapp.h"
+#include "io/lj_net.h"
 #include "io/lj_socket.h"
 #include "model/lj_scene.h"
 #include "model/lj_sequence.h"
@@ -66,8 +67,8 @@ static void grammar(void)
     memset(s33, 'A', 33); s33[33] = 0;
     CHECK(refused(s33) && !refused(s33 + 1));                       /* 33 characters refused, 32 accepted */
     CHECK(refused("caf\xE9") && refused("tab\there") && lj_extapp_validate("ok") == NULL);
-    { uint32_t ip = 0; CHECK(lj_extapp_ip_parse("127.0.0.1", &ip) == 0 && ip == 0x7F000001u);
-      CHECK(lj_extapp_ip_parse("256.1.1.1", &ip) && lj_extapp_ip_parse("1.2.3", &ip) && lj_extapp_ip_parse("1.2.3.4.5", &ip) && lj_extapp_ip_parse("1..2.3", &ip) && lj_extapp_ip_parse("host", &ip) && lj_extapp_ip_parse("0001.2.3.4", &ip)); }
+    { uint32_t ip = 0; CHECK(lj_net_ip_parse("127.0.0.1", &ip) == 0 && ip == 0x7F000001u);
+      CHECK(lj_net_ip_parse("256.1.1.1", &ip) && lj_net_ip_parse("1.2.3", &ip) && lj_net_ip_parse("1.2.3.4.5", &ip) && lj_net_ip_parse("1..2.3", &ip) && lj_net_ip_parse("host", &ip) && lj_net_ip_parse("0001.2.3.4", &ip)); }
     printf("  grammar: TRIG!1 / TRIG!2 -> TRIG, #X7F -> 7F, #256 and 33 characters refused\n");
 }
 

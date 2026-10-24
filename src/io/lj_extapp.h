@@ -53,6 +53,5 @@ enum { LJ_EXTAPP_DEF_MAX = 16384, LJ_EXTAPP_BAUD_DEFAULT = 9600 /* PROPOSAL rig 
 lj_ini *lj_extapp_def_open(const char *path, char *err, size_t cap);              /* size check + lj_ini_load; NULL + reason */
 int  lj_extapp_def_link(lj_ini *def, lj_extapp_link *out, char *err, size_t cap); /* [LJ4EVR] into out's transport fields (fixture, def_file untouched): 0, or -1 with the reason and transport OFF */
 int  lj_extapp_slot_of(const lj_extapp_cfg *c, int fixture);                      /* the link slot of fixture 1..LJ_FIXTURES, -1 */
-int  lj_extapp_ip_parse(const char *s, uint32_t *ip);                             /* strict dotted IPv4 (host order): 0 / -1 */
 
 #endif /* LJ_IO_EXTAPP_H */
