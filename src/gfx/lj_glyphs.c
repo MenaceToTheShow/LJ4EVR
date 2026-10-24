@@ -63,7 +63,8 @@ const lj_surface *lj_srcimg_get(const char *folder, const char *file, int cell_w
     if ((i = cache_find(key)) >= 0) return lj_cache[i].ok ? &lj_cache[i].s : NULL;
     if ((i = cache_add(key)) < 0) return NULL;
     if (lj_loader(folder, file, &raw) != 0 || !raw.px || raw.w < 1 || raw.h < 1) { lj_surface_free(&raw); return NULL; }
-    if (cell_w > 0 && cell_h == raw.h && cell_w < raw.w) {            /* LJ2 strips: normal state is the left cell, the key stays bottom-left */
+    if (cell_w > 0 && (raw.h != cell_h || raw.w < cell_w)) { lj_surface_free(&raw); return NULL; }   /* W4 LORD_C-11: odd-sized art would paint past its cell; our art instead */
+    if (cell_w > 0 && cell_w < raw.w) {                              /* LJ2 strips: normal state is the left cell, the key stays bottom-left */
         if (lj_surface_init(&lj_cache[i].s, cell_w, cell_h) != 0) { lj_surface_free(&raw); return NULL; }
         for (j = 0; j < cell_h; j++) memcpy(lj_cache[i].s.px + (size_t)j * (size_t)cell_w, raw.px + (size_t)j * (size_t)raw.w, (size_t)cell_w * sizeof(uint32_t));
         lj_surface_free(&raw);

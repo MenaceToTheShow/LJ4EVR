@@ -295,7 +295,8 @@ int lj_show_save_config(const lj_show *show, const lj_library *lib)
     lj_library_path(lib, "DefaultOut.dat", path, sizeof path);
     ok = lj_defaultout_save(path, show->default_out) == 0 && ok;
     lj_library_path(lib, "GroupInfo.dat", path, sizeof path);
-    lj_htp_names_load(path, &htp, NULL, 0);                  /* W2: keep the htp lines the HTP Groups window wrote (defaults when absent) */
+    memset(&htp, 0, sizeof htp);                             /* an empty name saves as the default */
+    if (lj_fs_exists(path)) lj_htp_names_load(path, &htp, NULL, 0);   /* W2: keep the htp lines the HTP Groups window wrote; INT-s9-GROUPINFO: a fresh library has no file and logs nothing */
     ok = lj_htp_names_save(path, show->user_group, &htp) == 0 && ok;
     return ok ? 0 : -1;
 }

@@ -4,7 +4,8 @@
  * verbatim in note 03 s6.3 order, the grid row text, a loaded-with-error line painted red and the gray / blue line states,
  * the ops posted through LJ_ACT_CUELIST_OP, the edit panel page per command, the Hotkey Command function picker, and the
  * golden tests/ui/golden/WIN_CUELIST_FORM.bmp (LJ_GOLDEN_UPDATE=1 rewrites it; reviewed in REVIEWED.tsv), and the cue-list
- * toolbar with the Background Cue LED on and the Statics LED off (LORD_FIDELITY-16).
+ * toolbar with the Background Cue LED on and the Statics LED off (LORD_FIDELITY-16), and Save Cuelist dropping a stale
+ * show->cuelists copy of the saved number so the next lookup reads the file (W3 INT-s7-CLSAVE).
  * `test_cuelist_form --shot <dir>` also writes <dir>/cuelist-form.png and <dir>/cuelist-toolbar-leds.png (docs/screenshots/w3). */
 #define _CRT_SECURE_NO_WARNINGS 1   /* fopen under /W4 /WX on MSVC (as test_desktop_w2.c) */
 #include <locale.h>
@@ -20,6 +21,8 @@
 #include "io/lj_actions.h"
 #include "io/lj_hotkeys.h"
 #include "model/lj_cuelist.h"
+#include "model/lj_library.h"
+#include "model/lj_table.h"
 #include "model/lj_show.h"
 #include "ui/lj_menu.h"
 #include "ui/lj_window.h"
@@ -388,6 +391,29 @@ int lj_test_cuelist_form(int argc, char **argv)
     /* forms.ini: View > Edit Panel off persists, the recent list persists */
     CHECK(fire(win, "M_ViewEdit") == 0 && lj_ini_geti(ctx->forms_ini, "CUELIST2", "ViewEditPanel", 1) == 0 && vis(win, "pEdit") == 0);
     CHECK(strcmp(lj_ini_gets(ctx->forms_ini, "CUELIST2", "Cmd1", ""), "set_current_cue") == 0);
+
+    /* W3 INT-s7-CLSAVE: a show->cuelists copy of number 7 is stale once the window saves its list as 7; the save drops it
+     * (lj_cuelist_form.c) and the file holds the window's list. A copy that IS the window's list is kept. */
+    {
+        lj_library lib;
+        lj_cuelist *stale = lj_cuelist_new_rec(), back;
+        char path[LJ_PATH_CAP], err[128];
+        lj_library_delete("test_cuelist_form_tmp", "CLSave");
+        CHECK(lj_library_create("test_cuelist_form_tmp", "CLSave", &lib) == 0);
+        ctx->lib = &lib;
+        stale->number = 7; lj_str_copy(stale->name, sizeof stale->name, "Stale");
+        CHECK(lj_table_put(&ctx->show->cuelists, 7, stale) == 0);
+        CHECK(lj_cuelist_form_save(2, 7) == 0 && cl->number == 7);
+        CHECK(lj_table_get(&ctx->show->cuelists, 7) == NULL);                  /* dropped: the next lookup reads the file */
+        memset(&back, 0, sizeof back);
+        CHECK(lj_library_record_path(&lib, LJ_REC_CL, 7, path, sizeof path) == 0 && lj_cuelist_load(path, &back, err, sizeof err) == 0
+              && strcmp(back.name, "ThunderStrike") == 0 && back.n == cl->n);
+        free(back.lines);
+        CHECK(lj_table_put(&ctx->show->cuelists, 7, cl) == 0 && lj_cuelist_form_save(0, 0) == 0 && lj_table_get(&ctx->show->cuelists, 7) == cl);
+        lj_table_remove(&ctx->show->cuelists, 7);                              /* the show frees current_cl itself */
+        ctx->lib = NULL;
+        lj_library_delete("test_cuelist_form_tmp", "CLSave");
+    }
 
     /* ME-16 over every form this file builds: the dialogs open, the window closes them with nothing unmatched */
     CHECK(lj_win_open(LJ_WIN_SAVE_CUELIST) != NULL && lj_win_open(LJ_WIN_SELECT_CUELIST) != NULL && lj_win_open(LJ_WIN_LOG_TIMECODE) != NULL);

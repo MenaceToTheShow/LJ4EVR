@@ -5,12 +5,14 @@
  * and leaves nothing behind; [NEXT] Bg= high-water after deleting the highest BG cue (ME-14);
  * "copy files"; Select User Library writes Startup.ini and deleting the selected library resets it to
  * Default; Delete Files "Check Used Sequences" marks only the sequences a cue references; lj_show_load reads
- * GlobalPatch.GPA and lj_show_save_config keeps the HTP names.
+ * GlobalPatch.GPA and lj_show_save_config keeps the HTP names; on a fresh library (no GroupInfo.dat) it logs 0 lines
+ * (INT-s9-GROUPINFO, a counting sink).
  * The temp tree is test_model_w2_tmp/ under the cwd. */
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
 #include <string.h>
 #include "core/lj_ini.h"
+#include "core/lj_log.h"
 #include "miniz.h"
 #include "model/lj_library.h"
 #include "model/lj_sequence.h"
@@ -51,9 +53,12 @@ static int lj_bad_zip(const char *zip_path, const char *entry)   /* a backup wit
     return ok ? 0 : -1;
 }
 
+static int log_lines;
+static void count_sink(void *ud, const char *line) { (void)ud; (void)line; log_lines++; }
+
 static void lj_clean(void)
 {
-    static const char *const names[] = { "W2Lib", "W2Lib (2)", "W2Lib (3)", "W2Copy", "Evil", "Evil (2)" };
+    static const char *const names[] = { "W2Lib", "W2Lib (2)", "W2Lib (3)", "W2Copy", "Evil", "Evil (2)", "W2Fresh" };
     size_t i;
     for (i = 0; i < sizeof names / sizeof names[0]; i++) lj_library_delete(UD, names[i]);
 }
@@ -142,6 +147,24 @@ int lj_test_model_w2_library(int argc, char **argv)
     ini = lj_ini_load(a);
     CHECK(ini && lj_ini_geti(ini, "NEXT", "Bg", 0) == 5 && lj_ini_geti(ini, "NEXT", "Seq", 0) == 1 && lj_ini_geti(ini, "NEXT", "Macro", 0) == 1);
     lj_ini_free(ini);
+
+    /* INT-s9-GROUPINFO: lj_show_save_config on a fresh library (no GroupInfo.dat yet) logs nothing and writes the defaults */
+    {
+        lj_show *sh = lj_show_new();
+        lj_library fr;
+        lj_htp_names h;
+        CHECK(lj_library_create(UD, "W2Fresh", &fr) == 0);
+        lj_library_path(&fr, "GroupInfo.dat", a, sizeof a);
+        CHECK(!lj_exists(a));
+        log_lines = 0;
+        lj_log_set_sink(count_sink, NULL);
+        CHECK(lj_show_save_config(sh, &fr) == 0);
+        lj_log_set_sink(NULL, NULL);
+        CHECK(log_lines == 0);
+        CHECK(lj_htp_names_load(a, &h, NULL, 0) == 0 && strcmp(h.name[0], "HTP group 1") == 0);
+        printf("test_model_w2_library: fresh-library save_config logged %d line(s)\n", log_lines);
+        lj_show_free(sh);
+    }
 
     /* the show load reads <library>\GlobalPatch.GPA; a Config.dat save keeps the HTP names in GroupInfo.dat */
     {

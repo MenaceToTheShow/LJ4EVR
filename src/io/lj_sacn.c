@@ -189,10 +189,10 @@ int lj_sacn_cfg_load(lj_ini *ini, lj_sacn_cfg *cfg)
     for (i = 0; i < LJ_LINKS; i++) {
         char *p, *q;
         int v;
-        snprintf(key, sizeof key, "U%d", i + 1);
+        if (snprintf(key, sizeof key, "U%d", i + 1) >= (int)sizeof key) continue;   /* LORD_C-12: gcc -Wformat-truncation */
         v = lj_ini_geti(ini, "SACN", key, i + 1);
         cfg->universe_of_link[i] = (uint16_t)(v < 0 || v > 0xFFFF ? 0xFFFF : v);        /* out of range -> validate unmaps it */
-        snprintf(key, sizeof key, "Unicast%d", i + 1);
+        if (snprintf(key, sizeof key, "Unicast%d", i + 1) >= (int)sizeof key) continue;   /* LORD_C-12: gcc -Wformat-truncation */
         lj_str_copy(list, sizeof list, lj_ini_gets(ini, "SACN", key, ""));
         cfg->nunicast[i] = 0;
         for (p = list; *p && cfg->nunicast[i] < LJ_SACN_UNICAST_MAX; p = q) {
@@ -220,9 +220,9 @@ void lj_sacn_cfg_save(lj_ini *ini, const lj_sacn_cfg *cfg)
     lj_ini_seti(ini, "SACN", "Preview", cfg->preview);
     lj_ini_seti(ini, "SACN", "UnlockRate", cfg->unlock_rate);
     for (i = 0; i < LJ_LINKS; i++) {
-        snprintf(key, sizeof key, "U%d", i + 1);
+        if (snprintf(key, sizeof key, "U%d", i + 1) >= (int)sizeof key) continue;   /* LORD_C-12: gcc -Wformat-truncation */
         lj_ini_seti(ini, "SACN", key, cfg->universe_of_link[i]);
-        snprintf(key, sizeof key, "Unicast%d", i + 1);
+        if (snprintf(key, sizeof key, "Unicast%d", i + 1) >= (int)sizeof key) continue;   /* LORD_C-12: gcc -Wformat-truncation */
         buf[0] = 0;
         for (k = 0; k < cfg->nunicast[i] && k < LJ_SACN_UNICAST_MAX; k++) {
             lj_net_ip_fmt(ip, sizeof ip, cfg->unicast[i][k]);

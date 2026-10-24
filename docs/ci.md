@@ -12,10 +12,10 @@ Three workflows under `.github/workflows/`, design 9.3 and 9.5.
 
 | Job | Runner | Does | Artifact |
 |---|---|---|---|
-| `generate-check` | `ubuntu-latest`, container | `tools/test_layering.py`; every `tools/{qxf2c,fontpack,artpack,gen_vectors}.py --check` that exists (they land with their waves, design 9.2) | - |
+| `generate-check` | `ubuntu-latest`, container | `tools/test_layering.py`; `tools/{qxf2c,fontpack,artpack,gen_vectors,exe_profiles_check}.py --check`; a missing tool fails (W6) | - |
 | `linux-gcc-asan` | same | preset `ci-linux-asan` (gcc, ASan+UBSan, `LJ_SDL=OFF`), `ctest`, `lj4evr_tests dump-frames` | `frames-linux` |
 | `linux-clang` | same | preset `ci-linux-clang`, `ctest` | - |
-| `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, the static-CRT check; then preset `debug-win`: the whole Debug tree, `ctest` (ME-70: `/RTC1` and the ME-16 asserts only live here) and the Debug `--selftest` (no `no binding for handler`, no `unknown event` line, ME-74); `cpack -G NSIS` | `frames-windows`, `installer-windows` |
+| `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, the static-CRT check; then preset `debug-win`: the whole Debug tree, `ctest` (ME-70: `/RTC1` and the ME-16 asserts only live here) and the Debug `--selftest` (no `no binding for handler`, no `unknown event` line, ME-74); `cpack -G NSIS`; then the MSVC ASan `LJ_SDL=OFF` Debug tree and its `ctest` (W6, below) | `frames-windows`, `installer-windows` |
 | `windows-msvc` (ME-157) | same job, after `cpack` | `tools/standard_user_install.ps1`: a fresh local account outside Administrators installs the NSIS installer silently; the step prints its `whoami /groups`, the install under its `%LOCALAPPDATA%\Programs\LJ4EVR`, the uninstall key in its HKCU hive and the `DisplayVersion`, and fails on any miss | - |
 | `macos-clang` | `macos-14` | preset `release-mac`, `ctest`, `--selftest`, `dump-frames`, `cpack -G DragNDrop` | `frames-macos`, `installer-macos` |
 | `determinism` | container, needs the three above | `cmp` the three `frames-*.bin`; one byte differs = red | - |
@@ -144,3 +144,19 @@ a Dockerfile change: merge, let `docker.yml` push, take the new digest, bump
   `UBSAN_OPTIONS=halt_on_error=1` instead, which makes a UBSan report fatal at run time.
 - ME-157: `windows-msvc` installs the NSIS installer as a fresh local account outside Administrators
   (`tools/standard_user_install.ps1`, `Start-Process -Credential -LoadUserProfile -UseNewEnvironment`).
+
+## W6 hardening
+
+- `windows-msvc` runs a fourth tree after the installer: MSVC `/fsanitize=address` (`LJ_SANITIZE=address`), `LJ_SDL=OFF`,
+  Debug, `build-asan-win`, and its whole `ctest` (W5 LORD_C-12 = W4 LORD_C-3, optional half). MSVC ASan caught LORD_C-1
+  where gcc's did not. The fuzz rows run at their CTest count (`LJ_FUZZ_N` 20000); a local long run builds the same tree
+  with `-DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /DLJ_FUZZ_N=200000"`.
+- `generate-check` no longer skips a missing `--check` tool: all five exist, and a missing one fails the step
+  (W4 WIZARD_STYLES-14).
+- `fuzz_ljb` has a second mode (LORD_C-7). The `fuzz_ljb` CTest row runs both: the container bytes mutated (the
+  `fuzz_ljb:` line) and the inflated index mutated, then deflated again (the `fuzz_ljb index:` line, with the count of
+  mutated indexes that still opened, which must be above 0). The libFuzzer side is a second target, `fuzz_ljb_index`
+  (the same `tools/fuzz/fuzz_ljb.c` with `LJ_FUZZ_LJB_INDEX`): its input is a container whose index is stored raw, and
+  it deflates that index before `lj_ljb_open`. `lj4evr_tests fuzz_ljb --seed-index <dir>` writes its seed. The
+  linux-clang step runs it 60 s after the five W5 targets, so the log has an INITED line for `fuzz_ljb` and one for
+  `fuzz_ljb_index`.
