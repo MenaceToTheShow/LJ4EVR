@@ -596,9 +596,10 @@ static int lj_us_key(const lj_us_stmt *st)
     lj_us_vk(st->arg[0], &vk, &s, &c, &a);
     if (st->nargs == 2) lj_us_int(st->arg[1], &n);
     memset(&ev, 0, sizeof ev);
-    while (n-- > 0) {
+    while (n-- > 0 && lj_us_cur()) {
         ev.type = LJ_EV_KEY_DOWN; ev.u.key.type = LJ_EV_KEY_DOWN; ev.u.key.key = vk; ev.u.key.shift = s ? 1u : 0u; ev.u.key.ctrl = c ? 1u : 0u; ev.u.key.alt = a ? 1u : 0u;
         lj_window_event(lj_us.cur, &ev);
+        if (!lj_us_cur()) break;   /* the key closed its window (Save on [Enter] with Auto Close): no key-up to a freed window (ASan, CI run 40061418618) */
         ev.type = LJ_EV_KEY_UP; ev.u.key.type = LJ_EV_KEY_UP;
         lj_window_event(lj_us.cur, &ev);
     }
@@ -612,7 +613,7 @@ static int lj_us_type(const lj_us_stmt *st)
     if (!lj_us_cur()) { lj_us_failf(lj_us.line, "%s", "no window to type into (open or click one first)"); return -1; }
     memset(&ev, 0, sizeof ev);
     ev.type = LJ_EV_CHAR; ev.u.key.type = LJ_EV_CHAR;
-    for (p = (const unsigned char *)st->arg[0]; *p; p++) { ev.u.key.ch = *p; lj_window_event(lj_us.cur, &ev); }
+    for (p = (const unsigned char *)st->arg[0]; *p && lj_us_cur(); p++) { ev.u.key.ch = *p; lj_window_event(lj_us.cur, &ev); }   /* a character may close its window too */
     return 0;
 }
 

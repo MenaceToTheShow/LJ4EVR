@@ -290,3 +290,20 @@ sha1 of each changed file (as-is and CRLF->LF) against the 18,926 `reference/` f
 ME-148 table: user name, work-PC and host names, both LAN prefixes of this PC, its NIC names, the account mails, the
 design-vault root, the user-profile path, plus the old account name) 0 hits in the added lines, the new file and the
 message. No capture was re-shot.
+
+### Must-fix r1: CI round 1 (`d1025e4`, run 40061418618) and the fix
+
+generate-check, linux-clang and macos-clang green; linux-gcc-asan and the windows-msvc ASan step failed on
+`test_uiscript_w3`, determinism skipped. gcc ASan: `ERROR: AddressSanitizer: heap-use-after-free` in
+`lj_window_event` (`src/ui/lj_window.c:657`) from `lj_us_key` (`src/app/lj_uiscript.c:603`), the memory freed by
+`destroy_now` during the same `key` statement. The ME-201 row is the first script that closes a window with a key:
+Return in the Save Palette name field saves, Auto Close destroys TSavePresetForm2 on the key-down, and the script
+driver then sent the key-up to the freed window. Fix (this commit): `lj_us_key` re-validates its window after each
+key-down (and before each repeat), and `lj_us_type` before each character. The local Release / Debug trees do not
+run ASan, so they passed; the local MSVC ASan tree (`build-w6i-fuzz`, LJ_SDL=OFF, Debug, `/fsanitize=address`, the
+CI step's settings) now runs `test_uiscript_w3` Passed, and its whole ctest, kept off logical CPUs 8-11 (section 4):
+`100% tests passed, 0 tests failed out of 156`. After the fix, rebuilt incrementally at 0 warnings:
+
+    build-w6i-rel   ctest 100% tests passed, 0 tests failed out of 158
+    build-w6i-nosdl ctest 100% tests passed, 0 tests failed out of 156
+    build-w6i-dbg   ctest 100% tests passed, 0 tests failed out of 158
