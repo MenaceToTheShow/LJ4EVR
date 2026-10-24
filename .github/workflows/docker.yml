@@ -1,7 +1,7 @@
 name: Docker image
 
 # Builds docker/Dockerfile on a GitHub-hosted runner and pushes it to GHCR as
-# ghcr.io/unbannablegt/lj4evr-ci:<short-sha> and :latest. ci.yml pins it by
+# ghcr.io/menacetotheshow/lj4evr-build:<short-sha> and :latest. ci.yml pins it by
 # digest (docs/ci.md). Never runs on pull_request: push-to-main and manual runs only.
 
 on:
@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE: ghcr.io/unbannablegt/lj4evr-build
+  IMAGE: ghcr.io/menacetotheshow/lj4evr-build
 
 jobs:
   build-push:

@@ -175,4 +175,20 @@ Pre-push, over `git diff v1.1.0..HEAD` (437 added or changed paths) and the mess
   0 in the file names. The three changed captures (`copy-from-TCopyFromForm.png`, `copy-from-TLinkConfigForm3.png`,
   `save-preset-TSavePresetForm2.png`) viewed: our windows only, no path, user, host or address.
 
-CI: section 6 continues below with the run on the pushed `main`.
+### CI round 1 (`b3afd86`, run 40054045006) and the fixes
+
+windows-msvc and macos-clang green; linux-clang, linux-gcc-asan and generate-check failed in "Initialize
+containers" (`Error response from daemon: manifest unknown`, `Docker pull failed with exit code 1`); determinism
+skipped. The GitHub account that owns the repository and the build image was renamed from `UnbannableGT` to
+`MenaceToTheShow` on 2026-10-23 (`gh repo view UnbannableGT/LJ4EVR` answers `MenaceToTheShow/LJ4EVR`, and `git push`
+prints the new location). Repository URLs redirect; GHCR image names do not: `ghcr.io/unbannablegt/lj4evr-build` is
+gone, and the private package now answers under `ghcr.io/menacetotheshow/lj4evr-build`. The same failure would have
+hit any push after the rename. Fixes (`ci.yml`, `docker.yml`, `docker/Dockerfile`, `docs/ci.md`): the four
+`image:` lines and `docker.yml`'s `IMAGE` name the new owner with the unchanged digest
+`sha256:731edd12...c91722` (the image did not move, so LORD_C-12-part records no digest change).
+
+The W6 gates run (`2668de8`, run 40038960636) had already failed windows-msvc once on `test_llf`
+(`FAIL ...test_llf.c:250 strstr(logged, "Lightcorder card memory full - recording stopped") != NULL`), on code equal
+to v1.1.0. The test's 8192-byte log sink drops lines that do not fit, and the 8176-frame run logs about 204
+per-second lines (about 13 KB): locally the sink held 8186 bytes, and the card-full line fitted by a few bytes.
+`8803f37` widens the sink to 32768 bytes; `test_llf` passes in all four local trees.

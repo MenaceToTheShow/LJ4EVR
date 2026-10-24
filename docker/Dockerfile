@@ -1,6 +1,6 @@
 # LJ4EVR CI image (design 9.3, ME-20): the self-hosted Linux runners have no cmake,
 # so every Linux job runs inside this. Built and pushed by .github/workflows/docker.yml
-# to ghcr.io/unbannablegt/lj4evr-build:<short-sha> and :latest.
+# to ghcr.io/menacetotheshow/lj4evr-build:<short-sha> and :latest.
 FROM debian:trixie
 
 RUN apt-get update \
