@@ -1,37 +1,51 @@
 #!/usr/bin/env python3
-"""qxf2c.py - QLC+ fixture definitions -> src/fixlib/lj_profiles_gen.c (design 6.1 item 1,
-verdicts ME-8 and ME-26). Python 3 stdlib only (xml.etree).
+"""qxf2c.py - fixture definitions -> src/fixlib/lj_profiles_gen*.c (design 6.1 item 1, verdicts ME-8 and ME-26;
+W7 sources, compact descriptors and the authoring lint). Python 3 stdlib only (xml.etree).
 
-    python -I tools/qxf2c.py             # write lj_profiles_gen.c and tools/qxf2c_overflow.txt
+    python -I tools/qxf2c.py             # write lj_profiles_gen.c + lj_profiles_gen_<k>.c and tools/qxf2c_overflow.txt
     python -I tools/qxf2c.py --check     # CI: regenerate in memory, exit 1 on drift or a bad map line
     python -I tools/qxf2c.py --selftest  # determinism + the mapping rules over one in-repo QXF and a synthetic one
+    python -I tools/qxf2c.py --lint F.qxf [F.qxf ...]   # one authored file standalone: exit 1 and one line per problem
+    python -I tools/qxf2c.py --lint                     # every fixtures/authored/<group>/*.qxf (CTest qxf2c_lint_authored)
 
-Inputs: tools/qxf_map.tsv (file, mode, id), third_party/qlcplus-fixtures/*.qxf (Apache-2.0,
-commit in third_party/qlcplus-fixtures/SOURCE), src/fixlib/lj_exe_profiles.c (the ids a map
-line may name). One `static lj_profile` per mapped mode; the control-window tables are not
-generated here, lj_layout_derive() builds them at first use (tier 2, design 6.3).
+Inputs: tools/qxf_map.tsv (file, mode, id; tools/qxf_map_sync.py appends to it), src/fixlib/lj_exe_profiles.c (the
+ids a map line may name) and the sources a map file names (docs/fixtures.md "W7"):
+  Martin-MAC500.qxf                         third_party/qlcplus-fixtures/ (QLC+, Apache-2.0, commit in its SOURCE)
+  third_party/ofl-fixtures/martin/x.json    Open Fixture Library (MIT), converted in memory by tools/ofl2qxf.py
+  fixtures/authored/<group>/x.qxf           LJ4EVR-authored from the manufacturer's manual (MIT)
+Output: per mapped mode one compact byte string (the encoding is the comment above lj_qxf_build in
+src/fixlib/lj_profile.c) in a lj_profiles_gen_<k>.c part, one lj_qxf_desc row in lj_profiles_gen.c; lj_fixlib_by_id()
+builds the lj_profile on the heap at first use and lj_layout_derive() its windows (tier 2, design 6.3).
 
-The Group + Preset -> class / dyn / palette rules are the table in docs/fixtures.md; this
-file is their one implementation. Palettes keep the first 20 candidate capabilities per
-wheel (LJ_PAL_ENTRIES); every wheel with more is listed in tools/qxf2c_overflow.txt, which
-generate-check prints.
+The Group + Preset -> class / dyn / palette rules are the table in docs/fixtures.md; this file is their one
+implementation. Palettes keep the first 20 candidate capabilities per wheel (LJ_PAL_ENTRIES); every wheel with more
+is listed in tools/qxf2c_overflow.txt, which generate-check prints.
 """
+import glob
 import hashlib
+import json
 import os
 import re
 import sys
 import xml.etree.ElementTree as ET
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import ofl2qxf  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QXF_DIR = os.path.join(ROOT, "third_party", "qlcplus-fixtures")
+OFL_DIR = os.path.join(ROOT, "third_party", "ofl-fixtures")
+AUTH_DIR = os.path.join(ROOT, "fixtures", "authored")
 MAP = os.path.join(ROOT, "tools", "qxf_map.tsv")
-OUT = os.path.join(ROOT, "src", "fixlib", "lj_profiles_gen.c")
+GEN_DIR = os.path.join(ROOT, "src", "fixlib")
+OUT = os.path.join(GEN_DIR, "lj_profiles_gen.c")
 OVERFLOW = os.path.join(ROOT, "tools", "qxf2c_overflow.txt")
 EXE = os.path.join(ROOT, "src", "fixlib", "lj_exe_profiles.c")
 NS = "{http://www.qlcplus.org/FixtureDefinition}"
 CH = 32            # LJ_PROFILE_CH
 PAL = 20           # LJ_PAL_ENTRIES
 EXTRA = 1000       # first extra id (ME-8)
+PART_MODES = 400   # modes per lj_profiles_gen_<k>.c (MSVC is happy far beyond; keeps each file near 1 MB)
 NAME_CAP = {"tag": 15, "manufacturer": 30, "name": 60, "mode": 30, "dyn": 8, "level": 5}
 
 # Capability presets that make a palette entry (plus untyped ones whose text is not a motion word).
@@ -40,6 +54,39 @@ MOTION_RE = re.compile(r"rotat|\bCW\b|\bCCW\b|shake|random|chase|scroll|spin|str
 RGB_PRESET = {"IntensityRed": 0, "IntensityGreen": 1, "IntensityBlue": 2}
 CMY_PRESET = {"IntensityCyan": 0, "IntensityMagenta": 1, "IntensityYellow": 2}
 HSV_PRESET = {"IntensityHue": 0, "IntensitySaturation": 1, "IntensityValue": 2}
+
+# The W7 groups (docs/fixtures.md): display manufacturer (the name the products carry, OFL's manufacturers.json),
+# OFL directory, and the spellings a catalog / authored directory may use (lower case, letters and digits only).
+GROUPS = [("Martin", "martin", ["martin"]), ("Elation", "elation", ["elation"]),
+          ("Chauvet DJ", "chauvet-dj", ["chauvetdj"]), ("Chauvet Professional", "chauvet-professional", ["chauvetpro", "chauvetprofessional"]),
+          ("Clay Paky", "clay-paky", ["claypaky"]), ("GLP", "glp", ["glp"]), ("Acme", "acme", ["acme"]), ("Ayrton", "ayrton", ["ayrton"]),
+          ("ETC", "etc", ["etc"]), ("Robe", "robe", ["robe"]), ("High End Systems", "high-end-systems", ["hes", "highendsystems", "highend"]),
+          ("Vari-Lite", "vari-lite", ["varilite"]), ("American DJ", "american-dj", ["adj", "americandj"]), ("SGM", "sgm", ["sgm"])]
+# Chauvet's QLC+ files all say "Chauvet": these product lines are Chauvet Professional, the rest Chauvet DJ.
+CHAUVET_PRO_RE = re.compile(r"^(?:Chauvet\s+)?(?:COLORado|Maverick|Ovation|Rogue|Legend|STRIKE|Color\s*STRIKE|onAir|Epix|Nexus|Well|Amhaze|Professional)\b", re.I)
+
+
+def alnum(s):
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def group_of(alias):
+    """a group spelling (directory, catalog stem, manufacturer string) -> display manufacturer, or None."""
+    a = alnum(alias)
+    for display, ofl, aliases in GROUPS:
+        if a == alnum(display) or a == alnum(ofl) or a in aliases:
+            return display
+    return None
+
+
+def manufacturer_of(q, fname):
+    """the display manufacturer of a parsed source file (the tree folder), or None outside the W7 groups."""
+    if fname.startswith("fixtures/authored/"):
+        return group_of(fname.split("/")[2])
+    m = q["manufacturer"]
+    if alnum(m) == "chauvet":
+        return "Chauvet Professional" if CHAUVET_PRO_RE.match(q["model"]) else "Chauvet DJ"
+    return group_of(m)
 
 
 def cp1252(s):
@@ -57,6 +104,8 @@ def cstr(s, cap=None):
             out.append('\\"')
         elif c == 0x5C:
             out.append("\\\\")
+        elif c == 0x3F:
+            out.append("\\077")                              # no '??' trigraph pairs
         elif 0x20 <= c < 0x7F:
             out.append(chr(c))
         else:
@@ -64,8 +113,7 @@ def cstr(s, cap=None):
     return '"' + "".join(out) + '"'
 
 
-def load_qxf(path):
-    root = ET.parse(path).getroot()
+def parse_qxf(root):
     chans = {}
     for ch in root.findall(NS + "Channel"):
         g = ch.find(NS + "Group")
@@ -81,12 +129,76 @@ def load_qxf(path):
     text = lambda tag: (root.findtext(NS + tag) or "").strip()
     author = root.find(NS + "Creator")
     author = (author.findtext(NS + "Author") or "").strip() if author is not None else ""
-    return {"manufacturer": text("Manufacturer"), "model": text("Model"), "author": author, "modes": modes}
+    return {"manufacturer": text("Manufacturer"), "model": text("Model"), "author": author, "modes": modes,
+            "mode_order": [m.get("Name") for m in root.findall(NS + "Mode")]}
+
+
+def load_qxf(path):
+    return parse_qxf(ET.parse(path).getroot())
+
+
+def commit_of(src_file):
+    if os.path.isfile(src_file):
+        m = re.search(r"\b[0-9a-f]{40}\b", open(src_file, encoding="ascii").read())
+        if m:
+            return m.group(0)
+    return "unknown"
+
+
+_ofl_names = None
+
+
+def ofl_manufacturer(d):
+    global _ofl_names
+    if _ofl_names is None:
+        with open(os.path.join(OFL_DIR, "manufacturers.json"), encoding="utf-8") as f:
+            _ofl_names = {k: v["name"] for k, v in json.load(f).items() if isinstance(v, dict) and "name" in v}
+    return _ofl_names.get(d, d)
+
+
+def source_path(fname):
+    """map file column -> path: a bare name is a QLC+ file, anything with '/' is relative to the repo root."""
+    return os.path.join(QXF_DIR, fname) if "/" not in fname else os.path.join(ROOT, *fname.split("/"))
+
+
+def source_kind(fname):
+    return "authored" if fname.startswith("fixtures/authored/") else "ofl" if fname.endswith(".json") else "qlc"
+
+
+def source_label(fname):
+    k = source_kind(fname)
+    if k == "qlc":
+        return "QLC+ " + fname
+    if k == "ofl":
+        return "Open Fixture Library " + fname[len("third_party/ofl-fixtures/"):]
+    return "LJ4EVR " + fname
+
+
+def load_source(fname, problems=None):
+    """-> parsed fixture dict (load_qxf shape) for a map file column; OFL JSON goes through ofl2qxf in memory."""
+    path = source_path(fname)
+    if fname.endswith(".json"):
+        d = fname.split("/")[-2]
+        with open(path, encoding="utf-8") as f:
+            text, probs = ofl2qxf.convert(json.load(f), ofl_manufacturer(d), fname[len("third_party/ofl-fixtures/"):], commit_of(os.path.join(OFL_DIR, "SOURCE")))
+        if problems is not None:
+            problems.extend(probs)
+        return parse_qxf(ET.fromstring(text.encode("utf-8")))
+    return load_qxf(path)
+
+
+def all_sources():
+    """every source file a map line may name, in precedence order (authored, OFL, QLC+), sorted inside each."""
+    rel = lambda p: os.path.relpath(p, ROOT).replace(os.sep, "/")
+    auth = sorted(rel(p) for p in glob.glob(os.path.join(AUTH_DIR, "*", "*.qxf")))
+    ofl = sorted(rel(p) for p in glob.glob(os.path.join(OFL_DIR, "*", "*.json")))
+    qlc = sorted(os.path.basename(p) for p in glob.glob(os.path.join(QXF_DIR, "*.qxf")))
+    return auth + ofl + qlc
 
 
 def read_map():
     rows = []
-    for ln, line in enumerate(open(MAP, encoding="ascii"), 1):
+    for ln, line in enumerate(open(MAP, encoding="utf-8"), 1):
         line = line.rstrip("\n")
         if not line or line.startswith("#"):
             continue
@@ -244,58 +356,59 @@ class Profile:
         if "blackout" not in self.sfunc and "intensity" in self.dyn:
             self.sfunc["blackout"] = (self.dyn["intensity"][0], 0)
 
-    def render(self):
-        o = self.ident
-        asc = lambda s: s.encode("ascii", "replace").decode("ascii")        # comments stay ASCII: cl /utf-8 rejects stray bytes
-        L = ["/* %s mode %s: QLC+ %s, Apache-2.0, modified: converted (author %s) */" % (asc(self.src[0]), asc(self.src[1]), self.src[2], asc(self.src[3] or "unknown")),
-             "static lj_profile lj_qxf_%d = {" % o["id"],
-             "    .id = %d, .tag = %s, .manufacturer = %s, .name = %s, .mode = %s," % (o["id"], cstr(o["tag"], NAME_CAP["tag"]), cstr(o["manufacturer"], NAME_CAP["manufacturer"]), cstr(o["name"], NAME_CAP["name"]), cstr(o["mode"], NAME_CAP["mode"])),
-             "    .footprint = %d," % self.footprint,
-             "    .channel_class = { %s }," % ", ".join(self.cls[:self.footprint])]
-        for key in sorted(self.dyn):
+    # dyn slots in the order of lj_qxf_build's table (src/fixlib/lj_profile.c)
+    DYN_SLOTS = ["shutter", "strobe", "intensity", "color[0]", "color[1]", "color[2]", "color[3]", "cmy[0]", "cmy[1]", "cmy[2]",
+                 "gobo[0]", "gobo[1]", "gobo[2]", "gobo[3]", "iris", "focus", "zoom", "frost", "beam[0]", "beam[1]",
+                 "effects[0]", "effects[1]", "effects[2]", "effects[3]"]
+    SFUNCS = ["blackout", "lamp_on", "lamp_off", "reset"]
+
+    def encode(self):
+        """the byte string lj_qxf_build decodes (format: the comment above it in lj_profile.c)."""
+        b = [self.footprint]
+        for ofs in range(self.footprint):
+            cap = cp1252(self.level_caption[ofs])[:NAME_CAP["level"]]
+            cls = self.cls[ofs]
+            b += [CLASSES.index(cls), self.invisible[ofs] | self.disabled[ofs] << 1, self.default_dmx[ofs], self.pair_lsb[ofs], len(cap)] + list(cap)
+        b.append(len(self.dyn))
+        for key in sorted(self.dyn, key=self.DYN_SLOTS.index):
             ofs, name, lo, hi = self.dyn[key]
-            L.append("    .%s = { 1, %d, %s, %d, %d }," % (key, ofs, cstr(name, NAME_CAP["dyn"]), lo, hi))
-        if "strobe_off" in self.flags:
-            L.append("    .strobe_off = %d," % self.flags["strobe_off"])
-        for key in ("blackout", "lamp_on", "lamp_off", "reset"):
-            if key in self.sfunc:
-                ofs, v = self.sfunc[key]
-                L.append("    .%s = { \"\", 1, { [%d] = 1 }, { [%d] = %d } }," % (key, ofs, ofs, v))
-        if self.pal:
-            P = []
-            for idx in range(6):
-                if idx in self.pal:
-                    ents = ", ".join("{ 1, 0x01, { %d }, 0x%06X, \"\" }" % (dmx, rgb) for dmx, rgb in self.pal[idx])
-                    P.append("{ { %s }, { 0 } }" % ents)
-                else:
-                    P.append("{ { { 0 } }, { 0 } }")
-            L.append("    .palette = { %s }," % ", ".join(P))
+            nm = cp1252(name)[:NAME_CAP["dyn"]]
+            b += [self.DYN_SLOTS.index(key), ofs, lo, hi, len(nm)] + list(nm)
         f = self.flags
-        flagbits = ["use_gm = 1"] + ["%s = %d" % (k, f[k]) for k in ("pt16", "pt8", "pan_ofs", "tilt_ofs", "cmy_on", "rgb_on") if k in f]
-        if "patch" in f:
-            flagbits.append("pt_patch_on = 1, .pt_patch = { %d, %d, %d, %d }" % f["patch"])
-        if "hsv" in f:
-            flagbits.append("hsv = { %d, %d, %d }" % tuple(f["hsv"]))
-        if "pt16" in f or "pt8" in f:
-            flagbits.append("presets = 1, .macros = 1, .follow_spot = 1")
-        L.append("    ." + ", .".join(flagbits) + ",")
-        if any(self.default_dmx):
-            L.append("    .default_dmx = { %s }," % ", ".join(str(v) for v in self.default_dmx[:self.footprint]))
-        L.append("    .level_caption = { %s }," % ", ".join(cstr(s, NAME_CAP["level"]) for s in self.level_caption[:self.footprint]))
-        L.append("    .level_invisible = { %s }, .level_disabled = { %s }," % (", ".join(str(v) for v in self.invisible[:self.footprint]), ", ".join(str(v) for v in self.disabled[:self.footprint])))
-        if any(self.pair_lsb):
-            L.append("    .pair_lsb = { %s }," % ", ".join(str(v) for v in self.pair_lsb[:self.footprint]))
-        L.append("    .notes = %s," % cstr("Converted from QLC+ %s (%s). Tier 2: control windows derived by the Generic Fixture 2 rules." % (self.src[0], self.src[1])))
-        L.append("};")
-        return "\n".join(L)
+        hsv = f.get("hsv", [0, 0, 0])
+        b.append(f.get("pt16", 0) | f.get("pt8", 0) << 1 | f.get("cmy_on", 0) << 2 | f.get("rgb_on", 0) << 3 | ("patch" in f) << 4
+                 | hsv[0] << 5 | hsv[1] << 6 | hsv[2] << 7)
+        b += [f.get("pan_ofs", 0), f.get("tilt_ofs", 0)] + list(f.get("patch", (0, 0, 0, 0)))
+        b += [1, f["strobe_off"]] if "strobe_off" in f else [0, 0]
+        sf = [k for k in self.SFUNCS if k in self.sfunc]
+        b.append(len(sf))
+        for k in sf:
+            b += [self.SFUNCS.index(k)] + list(self.sfunc[k])
+        b.append(len(self.pal))
+        for idx in sorted(self.pal):
+            b += [idx, len(self.pal[idx])]
+            for dmx, rgb in self.pal[idx]:
+                b += [dmx, rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255]
+        assert all(0 <= v <= 255 for v in b), b
+        return b
 
 
-def convert_all(files=None, commit="unknown"):
-    """-> (c text, overflow text, findings). files: optional {name: parsed qxf} for the selftest."""
+CLASSES = ["LJ_CH_NONE", "LJ_CH_INTENSITY", "LJ_CH_SHUTTER", "LJ_CH_STROBE", "LJ_CH_PAN", "LJ_CH_TILT", "LJ_CH_COLOR", "LJ_CH_GOBO",
+           "LJ_CH_BEAM", "LJ_CH_EFFECT", "LJ_CH_LEVEL", "LJ_CH_SPEED", "LJ_CH_LAMP", "LJ_CH_SPECIAL"]    # enum lj_ch_class order
+
+
+def asc(s):
+    return s.encode("ascii", "replace").decode("ascii").replace("*/", "* /")   # comments stay ASCII: cl /utf-8 rejects stray bytes
+
+
+def convert_all(files=None):
+    """-> ({path: c text}, overflow text, findings). files: optional {name: parsed qxf} for the selftest."""
     rows = read_map()
     exe = exe_rows()
-    findings, profiles, extras, seen = [], [], [], set()
+    findings, profiles, seen = [], [], set()
     cache = dict(files or {})
+    commits = {"qlc": commit_of(os.path.join(QXF_DIR, "SOURCE")), "ofl": commit_of(os.path.join(OFL_DIR, "SOURCE")), "authored": "-"}
+    licence = {"qlc": "Apache-2.0", "ofl": "MIT", "authored": "MIT"}
     for fname, mode, pid in rows:
         if pid in seen:
             findings.append("%s %s: id %d mapped twice" % (fname, mode, pid))
@@ -303,10 +416,9 @@ def convert_all(files=None, commit="unknown"):
         if pid < EXTRA and pid not in exe:
             findings.append("%s %s: id %d has no exe row" % (fname, mode, pid))
         if fname not in cache:
-            path = os.path.join(QXF_DIR, fname)
-            if not os.path.isfile(path):
-                findings.append("%s: not in third_party/qlcplus-fixtures" % fname); continue
-            cache[fname] = load_qxf(path)
+            if not os.path.isfile(source_path(fname)):
+                findings.append("%s: no such source file" % fname); continue
+            cache[fname] = load_source(fname)
         q = cache[fname]
         if mode not in q["modes"]:
             findings.append("%s: no mode %r (has %s)" % (fname, mode, ", ".join(sorted(q["modes"])))); continue
@@ -316,49 +428,191 @@ def convert_all(files=None, commit="unknown"):
         if pid < EXTRA:
             tag, man, name, md = exe[pid]
         else:
-            tag, man, name, md = q["model"].upper(), q["manufacturer"], q["model"], mode
-            extras.append((pid, tag, man, name, md))
+            man = manufacturer_of(q, fname) or q["manufacturer"]
+            tag, name, md = q["model"].upper(), q["model"], mode
         ident = {"id": pid, "tag": tag, "manufacturer": man, "name": name, "mode": md}
-        profiles.append(Profile(ident, chans, (fname, mode, commit, q["author"])))
+        k = source_kind(fname)
+        profiles.append(Profile(ident, chans, (fname, mode, commits[k], q["author"], licence[k])))
     profiles.sort(key=lambda p: p.ident["id"])
-    extras.sort()
     h = hashlib.sha256(open(MAP, "rb").read()).hexdigest()[:16]
+    parts, descs, extras = [], [], []
+    for k in range((len(profiles) + PART_MODES - 1) // PART_MODES):
+        L = ["/* lj_profiles_gen_%d.c - generated by tools/qxf2c.py; do not edit. Part %d of the tier-2 profile bytes:" % (k, k),
+             " * one encoded profile per mapped mode (format: the comment above lj_qxf_build in src/fixlib/lj_profile.c),",
+             " * each with its source, licence and \"modified: converted\". */",
+             '#include "fixlib/lj_profiles_gen.h"', "", "const uint8_t lj_qxf_part_%d[] = {" % k]
+        at = 0
+        for p in profiles[k * PART_MODES:(k + 1) * PART_MODES]:
+            o, src = p.ident, p.src
+            L.append("    /* id %d at %d: %s mode %s, %s at %s, %s, modified: converted (author %s) */"
+                     % (o["id"], at, asc(source_label(src[0])), asc(src[1]), source_kind(src[0]), src[2][:12], src[4], asc(src[3] or "unknown")))
+            enc = p.encode()
+            for i in range(0, len(enc), 24):
+                L.append("    " + ", ".join(str(v) for v in enc[i:i + 24]) + ",")
+            descs.append((o, k, at, p.src))
+            at += len(enc)
+        L.append("};")
+        parts.append("\n".join(L) + "\n")
+        if at > 0xFFFFFF:
+            findings.append("part %d is %d bytes" % (k, at))
+    for o, k, at, src in descs:
+        if o["id"] >= EXTRA:
+            extras.append(o)
     out = ["/* lj_profiles_gen.c - generated by tools/qxf2c.py; do not edit.",
-           " * Inputs: tools/qxf_map.tsv (sha256 %s), third_party/qlcplus-fixtures (*.qxf) at QLC+ commit %s" % (h, commit),
-           " * (Apache-2.0, see third_party/qlcplus-fixtures/LICENSE and NOTICE). One static lj_profile per mapped mode, tier 2:",
-           " * identity = the exe row the map names (extras >= 1000 keep the QLC+ names); windows = NULL until lj_layout_derive()",
-           " * runs at the first lj_fixlib_by_id() (6.3). Regenerate: python -I tools/qxf2c.py; verify: --check. */",
+           " * Inputs: tools/qxf_map.tsv (sha256 %s), third_party/qlcplus-fixtures (QLC+ %s, Apache-2.0)," % (h, commits["qlc"]),
+           " * third_party/ofl-fixtures (Open Fixture Library %s, MIT), fixtures/authored (LJ4EVR, MIT); see the" % commits["ofl"],
+           " * LICENSE / NOTICE / SOURCE files there. One lj_qxf_desc per mapped mode, sorted by id, its bytes in the parts",
+           " * lj_profiles_gen_<k>.c; lj_fixlib_by_id() builds the lj_profile on the heap at first use, identity = the exe",
+           " * row the map names (extras >= 1000 keep the source's names under the group manufacturer), windows from",
+           " * lj_layout_derive() (6.3). Regenerate: python -I tools/qxf2c.py; verify: --check. */",
            '#include "fixlib/lj_profiles_gen.h"', ""]
-    out += [p.render() + "\n" for p in profiles]
-    out.append("lj_profile *const lj_qxf_profiles[] = { %s };" % (", ".join("&lj_qxf_%d" % p.ident["id"] for p in profiles) or "NULL"))
-    out.append("const int lj_qxf_count = %d;" % len(profiles))
-    out.append("const lj_exe_row lj_qxf_extra_rows[] = { %s };" % (", ".join("{ %d, %s, %s, %s, %s, \"\", LJ_BIND_QXF }" % (i, cstr(t, 15), cstr(m, 30), cstr(n, 60), cstr(d, 30)) for i, t, m, n, d in extras) or "{ 0, \"\", \"\", \"\", \"\", \"\", LJ_BIND_NONE }"))
+    out += ["extern const uint8_t lj_qxf_part_%d[];" % k for k in range(len(parts))]
+    out.append("const uint8_t *const lj_qxf_parts[] = { %s };" % (", ".join("lj_qxf_part_%d" % k for k in range(len(parts))) or "NULL"))
+    out.append("")
+    out.append("const lj_qxf_desc lj_qxf_descs[] = {")
+    for o, k, at, src in descs:
+        out.append("    { %d, %d, %d, %s, %s, %s, %s, %s, %s }," % (o["id"], k, at, cstr(o["tag"], NAME_CAP["tag"]), cstr(o["manufacturer"], NAME_CAP["manufacturer"]),
+                                                              cstr(o["name"], NAME_CAP["name"]), cstr(o["mode"], NAME_CAP["mode"]), cstr(source_label(src[0])), cstr(src[1])))
+    if not descs:
+        out.append("    { 0, 0, 0, \"\", \"\", \"\", \"\", \"\", \"\" },")
+    out.append("};")
+    out.append("const int lj_qxf_count = %d;" % len(descs))
+    out.append("lj_profile *lj_qxf_built[%d];" % max(1, len(descs)))
+    out.append("")
+    out.append("const lj_exe_row lj_qxf_extra_rows[] = {")
+    for o in extras:
+        out.append("    { %d, %s, %s, %s, %s, \"\", LJ_BIND_QXF }," % (o["id"], cstr(o["tag"], 15), cstr(o["manufacturer"], 30), cstr(o["name"], 60), cstr(o["mode"], 30)))
+    if not extras:
+        out.append("    { 0, \"\", \"\", \"\", \"\", \"\", LJ_BIND_NONE },")
+    out.append("};")
     out.append("const int lj_qxf_extra_count = %d;" % len(extras))
+    files_out = {OUT: "\n".join(out) + "\n"}
+    for k, text in enumerate(parts):
+        files_out[os.path.join(GEN_DIR, "lj_profiles_gen_%d.c" % k)] = text
     ov = ["# qxf2c.py: wheels with more than %d palette candidates, first %d kept (ME-26). Regenerated with lj_profiles_gen.c." % (PAL, PAL)]
     for p in profiles:
         for chname, n in p.overflow:
             ov.append("%s\t%s\t%d\t%s\t%d" % (p.src[0], p.src[1], p.ident["id"], chname, n))
-    return "\n".join(out) + "\n", "\n".join(ov) + "\n", findings
+    return files_out, "\n".join(ov) + "\n", findings
 
 
-def commit_sha():
-    src = os.path.join(QXF_DIR, "SOURCE")
-    if os.path.isfile(src):
-        m = re.search(r"\b[0-9a-f]{40}\b", open(src, encoding="ascii").read())
-        if m:
-            return m.group(0)
-    return "unknown"
+# ---- --lint: one authored file standalone ----
+LINT_GROUPS = {"Intensity", "Colour", "Gobo", "Pan", "Tilt", "Shutter", "Beam", "Prism", "Effect", "Speed", "Maintenance", "Nothing"}
+LINT_CHANNEL_CHILD = {"Group", "Capability", "Colour"}
+LINT_TOP = {"Creator", "Manufacturer", "Model", "Type", "Channel", "Mode", "Physical"}
+
+
+def lint(path):
+    """-> [problem] for one .qxf (an authored file: fixtures/authored/README.md)."""
+    P = []
+    try:
+        raw = open(path, "rb").read()
+        root = ET.fromstring(raw)
+    except (OSError, ET.ParseError) as e:
+        return ["%s: not well-formed XML: %s" % (path, e)]
+    if root.tag != NS + "FixtureDefinition":
+        return ["%s: root element is %s, not FixtureDefinition in the QLC+ namespace" % (path, root.tag)]
+    for el in root:
+        if el.tag.replace(NS, "") not in LINT_TOP:
+            P.append("%s: unknown element <%s>" % (path, el.tag.replace(NS, "")))
+    for tag in ("Manufacturer", "Model"):
+        if not (root.findtext(NS + tag) or "").strip():
+            P.append("%s: <%s> missing or empty" % (path, tag))
+    cr = root.find(NS + "Creator")
+    if cr is None or not (cr.findtext(NS + "Author") or "").strip() or not (cr.findtext(NS + "Name") or "").strip():
+        P.append("%s: <Creator> needs <Name> and <Author> (the manual citation, README)" % path)
+    if not re.search(rb"https?://(?!www\.qlcplus\.org/FixtureDefinition)", raw):
+        P.append("%s: no manual URL (cite the manual's title, revision and URL in <Creator> and a comment)" % path)
+    chans = {}
+    for ch in root.findall(NS + "Channel"):
+        name = ch.get("Name")
+        where = "%s: channel %r" % (path, name)
+        if not name:
+            P.append("%s: a <Channel> without Name" % path); continue
+        if name in chans:
+            P.append("%s: defined twice" % where)
+        g = ch.find(NS + "Group")
+        byte = 0
+        if g is not None:
+            if (g.text or "").strip() not in LINT_GROUPS:
+                P.append("%s: unknown Group %r" % (where, g.text))
+            if g.get("Byte", "0") not in ("0", "1"):
+                P.append("%s: Group Byte %r is not 0 or 1" % (where, g.get("Byte")))
+            byte = 1 if g.get("Byte") == "1" else 0
+        elif not ch.get("Preset"):
+            P.append("%s: neither Group nor Preset" % where)
+        for el in ch:
+            if el.tag.replace(NS, "") not in LINT_CHANNEL_CHILD:
+                P.append("%s: unknown element <%s>" % (where, el.tag.replace(NS, "")))
+        d = ch.get("Default", "0")
+        if not d.isdigit() or int(d) > 255:
+            P.append("%s: Default %r outside 0-255" % (where, d))
+        last = -1
+        for c in ch.findall(NS + "Capability"):
+            mn, mx = c.get("Min", ""), c.get("Max", "")
+            if not (mn.isdigit() and mx.isdigit()):
+                P.append("%s: capability %r Min/Max not integers" % (where, (c.text or "").strip())); continue
+            mn, mx = int(mn), int(mx)
+            if not (0 <= mn <= mx <= 255):
+                P.append("%s: capability %d-%d outside 0-255 or reversed" % (where, mn, mx))
+            if mn <= last:
+                P.append("%s: capability %d-%d overlaps or precedes the one ending at %d" % (where, mn, mx, last))
+            last = max(last, mx)
+            if c.get("Res1") and c.get("Preset") in ("ColorMacro", "ColorDoubleMacro") and not re.match(r"^#[0-9a-fA-F]{6}$", c.get("Res1")):
+                P.append("%s: capability %d-%d Res1 %r is not #rrggbb" % (where, mn, mx, c.get("Res1")))
+        fine = byte == 1 or (ch.get("Preset") or "").endswith("Fine")
+        chans[name] = (g.text.strip() if g is not None and g.text else None, fine, ch.get("Preset") or "")
+    modes = root.findall(NS + "Mode")
+    if not modes:
+        P.append("%s: no <Mode>" % path)
+    seen_modes = set()
+    for m in modes:
+        mname = m.get("Name")
+        where = "%s: mode %r" % (path, mname)
+        if not mname or mname in seen_modes:
+            P.append("%s: missing or duplicate mode name" % where)
+        seen_modes.add(mname)
+        nums, names = [], []
+        for c in m.findall(NS + "Channel"):
+            n = c.get("Number", "")
+            if not n.isdigit():
+                P.append("%s: channel Number %r" % (where, n)); continue
+            nums.append(int(n))
+            ref = (c.text or "").strip()
+            if ref not in chans:
+                P.append("%s: channel %s refers to undefined %r" % (where, n, ref))
+            names.append((int(n), ref))
+        if sorted(nums) != list(range(len(nums))):
+            P.append("%s: channel numbers are not 0..%d, each once" % (where, len(nums) - 1))
+        if len(nums) > CH:
+            print("%s: note: %d channels > %d, not shipped (listed in docs/fixtures/coverage.md)" % (where, len(nums), CH))
+        coarse = set()
+        for _, ref in sorted(names):
+            if ref not in chans:
+                continue
+            g, fine, preset = chans[ref]
+            if fine:
+                want = preset[:-4] if preset.endswith("Fine") else None
+                ok = any((want and chans[r][2] == want) or (not want and chans[r][0] == g and not chans[r][1]) for r in coarse)
+                if not ok:
+                    P.append("%s: 16-bit fine channel %r has no coarse %s channel before it" % (where, ref, want or g))
+            else:
+                coarse.add(ref)
+    return P
 
 
 def selftest():
     mac = load_qxf(os.path.join(QXF_DIR, "Martin-MAC500.qxf"))
-    p = Profile({"id": 12, "tag": "MAC500", "manufacturer": "Martin", "name": "MAC 500", "mode": "Mode 2/4"}, mac["modes"]["DMX4"], ("Martin-MAC500.qxf", "DMX4", "x", "t"))
+    p = Profile({"id": 12, "tag": "MAC500", "manufacturer": "Martin", "name": "MAC 500", "mode": "Mode 2/4"}, mac["modes"]["DMX4"], ("Martin-MAC500.qxf", "DMX4", "x", "t", "Apache-2.0"))
     assert p.footprint == 16 and p.cls[0] == "LJ_CH_SHUTTER" and p.cls[1] == "LJ_CH_INTENSITY" and p.cls[10] == "LJ_CH_PAN" and p.cls[15] == "LJ_CH_SPEED", p.cls
     assert p.dyn["shutter"] == (0, "Shutter", 0, 20) and p.dyn["strobe"][2:] == (50, 72) and p.flags["pt16"] == 1 and "patch" not in p.flags
     assert p.sfunc["lamp_on"] == (0, 228) and p.sfunc["reset"] == (0, 208) and p.sfunc["blackout"] == (0, 0)
     assert len(p.pal[0]) == PAL and p.overflow and p.overflow[0][0] == "Color1"
     assert p.pal[0][0] == (0, 0xFFFFFF) and p.pal[0][1] == (1, 0xFFFFFF)       # ColorDoubleMacro keeps its first colour
+    e = p.encode()
+    assert e[0] == 16 and e[1:6] == [CLASSES.index("LJ_CH_SHUTTER"), 1, 0, 0, 5] and bytes(e[6:11]) == b"Shutt", e[:12]
     synthetic = ('<FixtureDefinition xmlns="http://www.qlcplus.org/FixtureDefinition"><Manufacturer>Test</Manufacturer><Model>Synth</Model>'
+                 '<Creator><Name>LJ4EVR from Synth manual rev A https://example.invalid/synth.pdf</Name><Author>t</Author></Creator>'
                  '<Channel Name="Dim" Preset="IntensityDimmer"/><Channel Name="Pan" Preset="PositionPan"/><Channel Name="Tilt" Preset="PositionTilt"/>'
                  '<Channel Name="PanF" Preset="PositionPanFine"/><Channel Name="TiltF" Preset="PositionTiltFine"/>'
                  '<Channel Name="Wheel"><Group Byte="0">Colour</Group>' + "".join('<Capability Min="%d" Max="%d" Preset="ColorMacro" Res1="#0000%02x">c%d</Capability>' % (i * 10, i * 10 + 9, i, i) for i in range(25)) + '</Channel>'
@@ -369,43 +623,71 @@ def selftest():
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(synthetic)
     q = load_qxf(tmp)
+    lint_ok = lint(tmp)
+    with open(tmp, "w", encoding="utf-8") as f:                 # the lint's problem kinds, one each
+        f.write(synthetic.replace('Min="0" Max="9"', 'Min="0" Max="300"').replace('<Channel Number="3">PanF</Channel>', '<Channel Number="3">Gone</Channel>')
+                .replace("https://example.invalid/synth.pdf", "").replace('<Channel Name="Dim" Preset="IntensityDimmer"/>', '<Channel Name="Dim" Preset="IntensityDimmer"/><Channel Name="F2"><Group Byte="1">Gobo</Group></Channel>')
+                .replace('<Channel Number="7">Nix</Channel>', '<Channel Number="7">Nix</Channel><Channel Number="9">F2</Channel>'))
+    lint_bad = lint(tmp)
     os.remove(tmp)
+    assert lint_ok == [], lint_ok
+    kinds = ["no manual URL", "outside 0-255", "overlaps", "undefined 'Gone'", "not 0..8", "16-bit fine channel 'F2'"]
+    for k in kinds:
+        assert any(k in x for x in lint_bad), (k, lint_bad)
     ident = {"id": 1999, "tag": "SYNTH", "manufacturer": "Test", "name": "Synth", "mode": "M"}
-    a = Profile(ident, q["modes"]["M"], ("s.qxf", "M", "x", "")).render()
-    b = Profile(ident, q["modes"]["M"], ("s.qxf", "M", "x", "")).render()
+    a = Profile(ident, q["modes"]["M"], ("s.qxf", "M", "x", "", "MIT")).encode()
+    b = Profile(ident, q["modes"]["M"], ("s.qxf", "M", "x", "", "MIT")).encode()
     assert a == b, "conversion is not deterministic"
-    s = Profile(ident, q["modes"]["M"], ("s.qxf", "M", "x", ""))
+    s = Profile(ident, q["modes"]["M"], ("s.qxf", "M", "x", "", "MIT"))
     assert s.flags["patch"] == (1, 3, 2, 4) and s.flags["pt16"] == 1, s.flags       # non-adjacent LSBs -> pan/tilt patch
     assert s.dyn["focus"] == (6, "Focus", 255, 0) and s.cls[7] == "LJ_CH_NONE" and s.disabled[7] == 1
     assert len(s.pal[0]) == PAL and s.overflow == [("Wheel", 25)]
-    assert ".pt_patch = { 1, 3, 2, 4 }" in a and ".focus = { 1, 6, \"Focus\", 255, 0 }" in a
-    c1 = convert_all(commit="x")
-    c2 = convert_all(commit="x")
+    assert manufacturer_of({"manufacturer": "Chauvet", "model": "Rogue R2 Wash"}, "x.qxf") == "Chauvet Professional"
+    assert manufacturer_of({"manufacturer": "Chauvet", "model": "Intimidator Spot 355"}, "x.qxf") == "Chauvet DJ"
+    assert manufacturer_of({"manufacturer": "x", "model": "y"}, "fixtures/authored/hes/a.qxf") == "High End Systems" and group_of("ADJ") == "American DJ"
+    c1 = convert_all()
+    c2 = convert_all()
     assert c1[0] == c2[0] and c1[1] == c2[1], "convert_all is not deterministic"
-    print("qxf2c selftest: ok (MAC500 DMX4 footprint 16, Color1 overflow %d, synthetic patch + reversed focus + NoFunction)" % p.overflow[0][1])
+    print("qxf2c selftest: ok (MAC500 DMX4 footprint 16, Color1 overflow %d, synthetic patch + reversed focus + NoFunction, lint %d kinds, Chauvet split)"
+          % (p.overflow[0][1], len(kinds)))
     return 0
 
 
 def main():
     if "--selftest" in sys.argv:
         return selftest()
-    c, ov, findings = convert_all(commit=commit_sha())
+    if "--lint" in sys.argv:
+        files = [a for a in sys.argv[1:] if a != "--lint"] or sorted(glob.glob(os.path.join(AUTH_DIR, "*", "*.qxf")))   # none named: every authored file
+        n = 0
+        for f in files:
+            for prob in lint(f):
+                print(prob)
+                n += 1
+        print("qxf2c --lint: %d file(s), %d problem(s)" % (len(files), n))
+        return 1 if n else 0
+    files, ov, findings = convert_all()
+    stale = [p for p in glob.glob(os.path.join(GEN_DIR, "lj_profiles_gen_*.c")) if p not in files]
     if "--check" in sys.argv:
         for f in findings:
             print(f)
-        for path, text in ((OUT, c), (OVERFLOW, ov)):
-            if not os.path.isfile(path) or open(path, encoding="latin-1").read().replace("\r\n", "\n") != text:
+        for path, text in sorted(files.items()) + [(OVERFLOW, ov)]:
+            if not os.path.isfile(path) or open(path, encoding="utf-8").read().replace("\r\n", "\n") != text:
                 findings.append("%s differs from a regeneration (run python -I tools/qxf2c.py)" % os.path.relpath(path, ROOT))
                 print(findings[-1])
-        print("qxf2c --check: %d finding(s); palette overflow list:" % len(findings))
+        for path in stale:
+            findings.append("%s is not generated any more (delete it)" % os.path.relpath(path, ROOT))
+            print(findings[-1])
+        print("qxf2c --check: %d finding(s), %d map line(s), %d part(s); palette overflow list:" % (len(findings), len(read_map()), len(files) - 1))
         sys.stdout.write(ov)
         return 1 if findings else 0
     if findings:
         for f in findings:
             print(f)
         return 1
-    for path, text in ((OUT, c), (OVERFLOW, ov)):
-        with open(path, "w", encoding="latin-1", newline="\n") as f:
+    for path in stale:
+        os.remove(path)
+    for path, text in sorted(files.items()) + [(OVERFLOW, ov)]:
+        with open(path, "w", encoding="utf-8", newline="\n") as f:          # the .c files are ASCII (octal escapes, asc() comments)
             f.write(text)
         print("wrote %s" % os.path.relpath(path, ROOT))
     return 0

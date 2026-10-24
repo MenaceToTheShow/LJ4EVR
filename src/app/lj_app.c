@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "app/lj_app_seam.h"
+#include "fixlib/lj_profile.h"
 #include "app/lj_app_cuelist_host.h"
 #include "app/lj_app_io.h"
 #include "platform/sdl/lj_sdl_audio.h"
@@ -533,6 +534,7 @@ out:
     lj_engine_destroy(engine);
     lj_app_cuelist_host_stop();                                              /* the editor record and the shape override, now that no engine reads them */
     lj_lock(); lj_show_free(show); c->show = NULL; lj_unlock();
+    lj_fixlib_release();                                                     /* W7: the tier-2 profiles built at first use; no engine, show or window holds one now */
     if (!lj_a.no_save) { lj_app_save_ini(c->forms_ini, forms_path); lj_app_save_ini(c->main_ini, main_path); lj_app_save_ini(c->hardware_ini, hw_path); }
     lj_ini_free(c->forms_ini); lj_ini_free(c->main_ini); lj_ini_free(c->hardware_ini);
     c->forms_ini = c->main_ini = c->hardware_ini = NULL;

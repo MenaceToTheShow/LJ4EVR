@@ -49,3 +49,2020 @@ Martin-MAC-Aura.qxf	Standard	200
 Martin-MAC-Viper-Performance.qxf	Basic	1000
 Martin-MAC-Quantum-Profile.qxf	Basic	1001
 Martin-Rush-MH3.qxf	1	1002
+# W7 tools/qxf_map_sync.py 2026-10-24: 2016 lines, ids 1003-3018 (append-only; precedence authored > OFL > QLC+)
+Acme-Deluge.qxf	3 Channel aaa	1003
+Acme-Dotline180.qxf	14 Channel	1004
+Acme-Dotline180.qxf	32 Channel	1005
+Acme-Dotline360.qxf	14 Channel	1006
+Acme-Dotline360.qxf	9+ Channels (DMX)	1007
+Acme-Ginamp.qxf	13 Channel	1008
+Acme-Ginamp.qxf	18 Channel	1009
+Acme-Ginamp.qxf	6 Channel	1010
+Acme-Oxygen.qxf	17 Channel	1011
+Acme-Pixel-Line-IP.qxf	15 Channel (M2)	1012
+Acme-Pixel-Line-IP.qxf	17 Channel (M6)	1013
+Acme-Pixel-Line-IP.qxf	21 Channel (M3)	1014
+Acme-Pixel-Line-IP.qxf	7 Channel (M1)	1015
+Acme-Super-Dotline.qxf	17 Channel	1016
+Acme-Super-Dotline.qxf	21 Channel	1017
+Acme-Super-Dotline.qxf	27 Channel	1018
+Acme-Super-Dotline.qxf	8+100 Channels (DMX)	1019
+Acme-Super-Dotline.qxf	8+160 Channels (DMX)	1020
+third_party/ofl-fixtures/american-dj/12p-hex-ip.json	13-channel	1021
+third_party/ofl-fixtures/american-dj/12p-hex-ip.json	6-channel	1022
+third_party/ofl-fixtures/american-dj/12p-hex-ip.json	7-channel	1023
+third_party/ofl-fixtures/american-dj/12p-hex-ip.json	8-channel	1024
+American-DJ-12P-Hex.qxf	12 Channel	1025
+American-DJ-12P-Hex.qxf	6 Channel Mode	1026
+American-DJ-12P-Hex.qxf	7 Channel	1027
+American-DJ-12P-Hex.qxf	8 Channel	1028
+American-DJ-18P-Hex.qxf	6 Channel	1029
+American-DJ-18P-Hex.qxf	7 Channel	1030
+American-DJ-18P-Hex.qxf	8 Channel	1031
+third_party/ofl-fixtures/american-dj/18p-hex-ip.json	13-channel	1032
+third_party/ofl-fixtures/american-dj/18p-hex-ip.json	6-channel	1033
+third_party/ofl-fixtures/american-dj/18p-hex-ip.json	7-channel	1034
+third_party/ofl-fixtures/american-dj/18p-hex-ip.json	8-channel	1035
+American-DJ-5P-Hex.qxf	12 Channel	1036
+American-DJ-5P-Hex.qxf	6 Channel	1037
+American-DJ-5P-Hex.qxf	7 Channel	1038
+American-DJ-5P-Hex.qxf	8 Channel	1039
+American-DJ-5PX-Hex.qxf	12 Channel	1040
+American-DJ-5PX-Hex.qxf	6 Channel	1041
+American-DJ-5PX-Hex.qxf	7 Channel	1042
+American-DJ-5PX-Hex.qxf	8 Channel	1043
+American-DJ-64B-LED-PRO.qxf	3 Channel	1044
+American-DJ-64B-LED-PRO.qxf	6 Channel	1045
+American-DJ-64B-LED-PRO.qxf	7 Channel	1046
+third_party/ofl-fixtures/american-dj/7p-hex-ip.json	13-channel	1047
+third_party/ofl-fixtures/american-dj/7p-hex-ip.json	6-channel	1048
+third_party/ofl-fixtures/american-dj/7p-hex-ip.json	7-channel	1049
+third_party/ofl-fixtures/american-dj/7p-hex-ip.json	8-channel	1050
+American-DJ-Accu-Fog-1000.qxf	5 Channel DMX Traits	1051
+American-DJ-Accu-Fog-1000.qxf	7 Channel DMX Traits	1052
+American-DJ-Accu-Roller-250.qxf	8 Channel	1053
+American-DJ-Accu-Spot-250-II.qxf	8 Channel Mode	1054
+American-DJ-Accu-Spot-250-II.qxf	9 Channel Mode	1055
+American-DJ-Accu-Spot-Pro.qxf	14 Channel	1056
+American-DJ-Accu-Spot-Pro.qxf	14 Channel 540 deg	1057
+American-DJ-Accu-UFO.qxf	10-CH Mode	1058
+American-DJ-Asteroid-1200.qxf	Basic	1059
+American-DJ-Asteroid-1200.qxf	Standard	1060
+third_party/ofl-fixtures/american-dj/auto-spot-150.json	Full Color	1061
+third_party/ofl-fixtures/american-dj/auto-spot-150.json	Split Color	1062
+third_party/ofl-fixtures/american-dj/boom-box-fx2.json	19-channel	1063
+third_party/ofl-fixtures/american-dj/boom-box-fx2.json	3-channel	1064
+American-DJ-Chameleon-QBar-Pro.qxf	10-Channel	1065
+American-DJ-Chameleon-QBar-Pro.qxf	12-Channel	1066
+American-DJ-Chameleon-QBar-Pro.qxf	14-Channel	1067
+American-DJ-Chameleon-QBar-Pro.qxf	4-Channel	1068
+American-DJ-Chameleon-QBar-Pro.qxf	5-Channel	1069
+American-DJ-Chameleon-QBar-Pro.qxf	7-Channel	1070
+American-DJ-Chameleon-QBar-Pro.qxf	9-Channel	1071
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	10-channel	1072
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	3-channel	1073
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	4-channel	1074
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	5-channel	1075
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	6-channel	1076
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	7-channel	1077
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	9-channel	1078
+American-DJ-COB-Cannon-Wash-DW.qxf	1 Channel	1079
+American-DJ-COB-Cannon-Wash-DW.qxf	2 Channel	1080
+American-DJ-COB-Cannon-Wash-DW.qxf	3 Channel	1081
+American-DJ-COB-Cannon-Wash-DW.qxf	4 Channel	1082
+American-DJ-COB-Cannon-Wash-DW.qxf	5 Channel	1083
+American-DJ-COB-Cannon-Wash-DW.qxf	6 Channel	1084
+American-DJ-COB-Cannon-Wash-Pearl.qxf	10 Channel	1085
+American-DJ-COB-Cannon-Wash-Pearl.qxf	3 Channel	1086
+American-DJ-COB-Cannon-Wash-Pearl.qxf	4 Channel	1087
+American-DJ-COB-Cannon-Wash-Pearl.qxf	5 Channel	1088
+American-DJ-COB-Cannon-Wash-Pearl.qxf	6 Channel	1089
+American-DJ-COB-Cannon-Wash-Pearl.qxf	7 Channel	1090
+American-DJ-COB-Cannon-Wash-Pearl.qxf	9 Channel	1091
+American-DJ-COB-Cannon-Wash-ST.qxf	10 channel	1092
+American-DJ-COB-Cannon-Wash-ST.qxf	11 channel	1093
+American-DJ-COB-Cannon-Wash-ST.qxf	3 channel	1094
+American-DJ-COB-Cannon-Wash-ST.qxf	4 channel	1095
+American-DJ-COB-Cannon-Wash-ST.qxf	6 channel	1096
+American-DJ-COB-Cannon-Wash-ST.qxf	7 channel	1097
+American-DJ-COB-Cannon-Wash-ST.qxf	8 channel	1098
+American-DJ-COB-Cannon-Wash-ST.qxf	8A channel	1099
+American-DJ-Comscan-LED.qxf	5 Channel	1100
+third_party/ofl-fixtures/american-dj/crazy-pocket-8.json	1-channel	1101
+third_party/ofl-fixtures/american-dj/crazy-pocket-8.json	17-channel	1102
+third_party/ofl-fixtures/american-dj/crazy-pocket-8.json	21-channel	1103
+third_party/ofl-fixtures/american-dj/crazy-pocket-8.json	9-channel	1104
+third_party/ofl-fixtures/american-dj/dekker-led.json	2-channel	1105
+third_party/ofl-fixtures/american-dj/dekker-led.json	8-channel	1106
+American-DJ-DJ-Spot-250.qxf	Normal	1107
+American-DJ-DJ-Spot-300.qxf	normal	1108
+American-DJ-Dotz-Bar-1.4.qxf	12 Channel	1109
+American-DJ-Dotz-Bar-1.4.qxf	16 Channel	1110
+American-DJ-Dotz-Bar-1.4.qxf	3 Channel	1111
+American-DJ-Dotz-Bar-1.4.qxf	6 Channel	1112
+American-DJ-Dotz-Bar-1.4.qxf	8 Channel	1113
+American-DJ-Dotz-Flood.qxf	1-Channel	1114
+American-DJ-Dotz-Flood.qxf	2-channel	1115
+American-DJ-Dotz-Flood.qxf	3-channel	1116
+American-DJ-Dotz-Flood.qxf	4-channel	1117
+American-DJ-Dotz-Flood.qxf	6-channel	1118
+American-DJ-Dotz-Flood.qxf	9A-channel	1119
+American-DJ-Dotz-Flood.qxf	9B-channel	1120
+American-DJ-Dotz-Matrix.qxf	3 Channel	1121
+American-DJ-Dotz-Matrix.qxf	6 Channel	1122
+American-DJ-Dotz-Matrix.qxf	7 Channel	1123
+American-DJ-Dotz-Panel-2.4.qxf	24 Channel	1124
+American-DJ-Dotz-Panel-2.4.qxf	29 Channel	1125
+American-DJ-Dotz-Panel-2.4.qxf	3 Channel	1126
+American-DJ-Dotz-Panel-2.4.qxf	6 Channel	1127
+American-DJ-Dotz-Panel-2.4.qxf	8 Channel 	1128
+third_party/ofl-fixtures/american-dj/dotz-par.json	3-channel	1129
+third_party/ofl-fixtures/american-dj/dotz-par.json	4-channel	1130
+third_party/ofl-fixtures/american-dj/dotz-par.json	5-channel	1131
+third_party/ofl-fixtures/american-dj/dotz-par.json	9-channel	1132
+American-DJ-Dotz-TPar.qxf	12 Channel	1133
+American-DJ-Dotz-TPar.qxf	18 Channel	1134
+American-DJ-Dotz-TPar.qxf	3 Channel	1135
+American-DJ-Dotz-TPar.qxf	5 Channel	1136
+American-DJ-Dotz-TPar.qxf	9 Channel	1137
+American-DJ-Double-Phase.qxf	1-CH Mode	1138
+American-DJ-Double-Phase.qxf	6-CH Mode	1139
+American-DJ-ECO-UV-BAR-DMX.qxf	3 Channel	1140
+American-DJ-Emerald-Scan.qxf	4 Channel	1141
+American-DJ-Encore-Burst-RGBW-IP.qxf	11 Channel	1142
+American-DJ-Encore-Burst-RGBW-IP.qxf	4 Channel	1143
+American-DJ-Encore-Burst-RGBW-IP.qxf	6 Channel	1144
+American-DJ-Encore-Burst-RGBW-IP.qxf	7 Channel	1145
+American-DJ-Encore-Burst-RGBW-IP.qxf	8 Channel	1146
+American-DJ-Encore-FR150z.qxf	1-Channel	1147
+American-DJ-Encore-FR150z.qxf	2-2-Channel	1148
+American-DJ-Encore-FR150z.qxf	2-Channel	1149
+American-DJ-Encore-FR150z.qxf	3-2-Channel	1150
+American-DJ-Encore-FR150z.qxf	3-Channel	1151
+American-DJ-Encore-FR150z.qxf	4-Channel	1152
+American-DJ-Encore-FR50z.qxf	1-Channel	1153
+American-DJ-Encore-FR50z.qxf	2-2-Channel	1154
+American-DJ-Encore-FR50z.qxf	2-Channel	1155
+American-DJ-Encore-FR50z.qxf	3-2-Channel	1156
+American-DJ-Encore-FR50z.qxf	3-Channel	1157
+American-DJ-Encore-FR50z.qxf	4-Channel	1158
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	10-channel	1159
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	12-channel	1160
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	15-channel	1161
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	18-channel	1162
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	6-channel	1163
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	9-channel	1164
+third_party/ofl-fixtures/american-dj/encore-profile-1000-ww.json	1-channel	1165
+third_party/ofl-fixtures/american-dj/encore-profile-1000-ww.json	2-channel	1166
+third_party/ofl-fixtures/american-dj/encore-profile-1000-ww.json	3-channel	1167
+American-DJ-Entour-Faze.qxf	1 Channel	1168
+American-DJ-Entour-Faze.qxf	2 Channel	1169
+American-DJ-Entour-Faze.qxf	4 Channel	1170
+American-DJ-Entour-Venue.qxf	1 Channel	1171
+American-DJ-Entour-Venue.qxf	2 Channel	1172
+American-DJ-Entour-Venue.qxf	4 Channel	1173
+American-DJ-Entourage.qxf	1 Channel	1174
+American-DJ-Entourage.qxf	2 Channel	1175
+American-DJ-Entourage.qxf	4 Channel	1176
+American-DJ-Event-Bar-LED.qxf	12 Channel Mode	1177
+American-DJ-Event-Bar-LED.qxf	14 Channel Mode	1178
+American-DJ-Event-Bar-LED.qxf	25 Channel Mode	1179
+American-DJ-Event-Bar-Pro.qxf	17 channel	1180
+American-DJ-Event-Bar-Pro.qxf	2 channel	1181
+American-DJ-Event-Bar-Pro.qxf	22 channel	1182
+American-DJ-Event-Bar-Pro.qxf	25 channel	1183
+American-DJ-Event-Bar-Q4.qxf	1 Channel	1184
+American-DJ-Event-Bar-Q4.qxf	12 Channel Mode	1185
+American-DJ-Event-Bar-Q4.qxf	14 Channel Mode	1186
+American-DJ-Event-Bar-Q4.qxf	2 Channel (v2.0)	1187
+American-DJ-Event-Bar-Q4.qxf	32 Channel Mode (v2.0)	1188
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	1-channel	1189
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	2-channel	1190
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	3-channel	1191
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	4-channel	1192
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	5-channel	1193
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	6-channel	1194
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	7-channel	1195
+third_party/ofl-fixtures/american-dj/flat-par-qa12.json	8-channel	1196
+American-DJ-Flat-Par-QA12X.qxf	1 Channel	1197
+American-DJ-Flat-Par-QA12X.qxf	2 Channel	1198
+American-DJ-Flat-Par-QA12X.qxf	3 Channel	1199
+American-DJ-Flat-Par-QA12X.qxf	4 Channel	1200
+American-DJ-Flat-Par-QA12X.qxf	5 Channel	1201
+American-DJ-Flat-Par-QA12X.qxf	6 Channel	1202
+American-DJ-Flat-Par-QA12X.qxf	7 Channel	1203
+American-DJ-Flat-Par-QA12X.qxf	8 Channel	1204
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	1-channel	1205
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	2-channel	1206
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	3-channel	1207
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	4-channel	1208
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	5-channel	1209
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	6-channel	1210
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	7-channel	1211
+third_party/ofl-fixtures/american-dj/flat-par-qa12xs.json	8-channel	1212
+American-DJ-Flat-Par-Tri7X.qxf	1 Channel	1213
+American-DJ-Flat-Par-Tri7X.qxf	2 Channel	1214
+American-DJ-Flat-Par-Tri7X.qxf	3 Channel	1215
+American-DJ-Flat-Par-Tri7X.qxf	4 Channel	1216
+American-DJ-Flat-Par-Tri7X.qxf	5 Channel	1217
+American-DJ-Flat-Par-Tri7X.qxf	6 Channel	1218
+American-DJ-Flat-Par-Tri7X.qxf	7 Channel	1219
+American-DJ-Flat-Par-TW12.qxf	2 Channel	1220
+American-DJ-Flat-Par-TW12.qxf	3 Channel	1221
+American-DJ-Flat-Par-TW12.qxf	4 Channel	1222
+American-DJ-Flat-Par-TW12.qxf	5 Channel	1223
+American-DJ-Flat-Par-TW12.qxf	8 Channel	1224
+American-DJ-Flat-Par-TW12.qxf	9 Channel	1225
+American-DJ-Focus-Spot-4Z.qxf	16 Channel	1226
+American-DJ-Focus-Spot-4Z.qxf	18 Channel	1227
+American-DJ-Focus-Spot-4Z.qxf	22 Channel	1228
+American-DJ-Focus-Spot-5Z.qxf	Basic	1229
+American-DJ-Focus-Spot-5Z.qxf	Extended	1230
+American-DJ-Focus-Spot-5Z.qxf	Standard	1231
+American-DJ-Focus-Spot-Three-Z.qxf	18 Channel	1232
+American-DJ-Focus-Spot-Three-Z.qxf	21 Channel	1233
+American-DJ-Focus-Spot-Two.qxf	16 Channel	1234
+American-DJ-Focus-Spot-Two.qxf	18 Channel	1235
+American-DJ-Fog-Fury-3000-WiFly.qxf	3 Channel	1236
+American-DJ-Fog-Fury-Jett.qxf	1 Channel	1237
+American-DJ-Fog-Fury-Jett.qxf	2 Channel	1238
+American-DJ-Fog-Fury-Jett.qxf	3 Channel	1239
+American-DJ-Fog-Fury-Jett.qxf	5 Channel	1240
+American-DJ-Fog-Fury-Jett.qxf	7 Channel	1241
+third_party/ofl-fixtures/american-dj/fog-fury-jett-pro.json	1-channel	1242
+third_party/ofl-fixtures/american-dj/fog-fury-jett-pro.json	2-channel	1243
+third_party/ofl-fixtures/american-dj/fog-fury-jett-pro.json	3-channel	1244
+third_party/ofl-fixtures/american-dj/fog-fury-jett-pro.json	7-channel	1245
+third_party/ofl-fixtures/american-dj/fog-fury-jett-pro.json	9-channel	1246
+American-DJ-Fog-Storm.qxf	Fog Storm 1200HD	1247
+American-DJ-Fog-Storm.qxf	Fog Storm 1700HD	1248
+American-DJ-FREQ-16-Strobe.qxf	1 Channel	1249
+American-DJ-FREQ-16-Strobe.qxf	16 Channel	1250
+American-DJ-FREQ-16-Strobe.qxf	18 Channels	1251
+American-DJ-FREQ-16-Strobe.qxf	2 Channel	1252
+American-DJ-FREQ-5-Strobe.qxf	1 Channel	1253
+American-DJ-FREQ-5-Strobe.qxf	2 Channels	1254
+American-DJ-FREQ-5-Strobe.qxf	5 Channels	1255
+American-DJ-FREQ-5-Strobe.qxf	7 Channels	1256
+American-DJ-FREQ-Matrix-Quad.qxf	18 channel	1257
+American-DJ-FREQ-Matrix-Quad.qxf	2 channel	1258
+American-DJ-FREQ-Matrix-Quad.qxf	5 channel	1259
+American-DJ-Fusion-FX-Bar-1.qxf	5 Channel (Default)	1260
+American-DJ-Fusion-FX-Bar-2.qxf	16 Channel	1261
+American-DJ-Fusion-FX-Bar-5.qxf	Normal	1262
+third_party/ofl-fixtures/american-dj/galaxian-3d.json	5-channel	1263
+American-DJ-Galaxian-Gem-IR.qxf	Normal	1264
+American-DJ-Galaxian-Sky.qxf	DMX Mode	1265
+American-DJ-H2O-DMX-PRO.qxf	3 Channel	1266
+American-DJ-Hyper-Gem-LED.qxf	4 Channel	1267
+American-DJ-Hypnotic-RGB.qxf	DMX	1268
+American-DJ-Ikon-Profile.qxf	Default	1269
+third_party/ofl-fixtures/american-dj/illusion-dotz-4-4.json	Basic 12-channel	1270
+third_party/ofl-fixtures/american-dj/illusion-dotz-4-4.json	Standard 14-channel	1271
+American-DJ-Inno-Color-Beam-LED.qxf	1 channel	1272
+American-DJ-Inno-Color-Beam-LED.qxf	13 Channel	1273
+American-DJ-Inno-Color-Beam-Quad-7.qxf	1 channel mode	1274
+American-DJ-Inno-Color-Beam-Quad-7.qxf	13 Channels mode	1275
+American-DJ-Inno-Color-Beam-Z7.qxf	14 Channels	1276
+third_party/ofl-fixtures/american-dj/inno-pocket-beam-q4.json	10-channel	1277
+third_party/ofl-fixtures/american-dj/inno-pocket-beam-q4.json	11-channel	1278
+third_party/ofl-fixtures/american-dj/inno-pocket-beam-q4.json	13-channel	1279
+third_party/ofl-fixtures/american-dj/inno-pocket-fusion.json	11-channel	1280
+third_party/ofl-fixtures/american-dj/inno-pocket-fusion.json	2-channel	1281
+third_party/ofl-fixtures/american-dj/inno-pocket-fusion.json	6-channel	1282
+third_party/ofl-fixtures/american-dj/inno-pocket-fusion.json	8-channel	1283
+third_party/ofl-fixtures/american-dj/inno-pocket-fusion.json	9-channel	1284
+American-DJ-Inno-Pocket-Roll.qxf	6 Channel Mode	1285
+American-DJ-Inno-Pocket-Scan.qxf	6 Channel Mode	1286
+third_party/ofl-fixtures/american-dj/inno-pocket-spot.json	11-channel	1287
+third_party/ofl-fixtures/american-dj/inno-pocket-spot.json	9-channel	1288
+American-DJ-Inno-Pocket-Spot-Twins.qxf	19 Channel	1289
+American-DJ-Inno-Pocket-Spot-Twins.qxf	23 Channel	1290
+American-DJ-Inno-Pocket-Wash.qxf	11 Channel Mode	1291
+American-DJ-Inno-Pocket-Wash.qxf	19 Channel Mode	1292
+American-DJ-Inno-Pocket-Wash.qxf	21 Channel Mode	1293
+American-DJ-Inno-Pocket-Wash.qxf	9 Channel Mode	1294
+American-DJ-Inno-Pocket-Z4.qxf	16 Channel	1295
+American-DJ-Inno-Pocket-Z4.qxf	19 Channel	1296
+American-DJ-Inno-Pocket-Z4.qxf	22 Channel	1297
+American-DJ-Inno-Scan-LED.qxf	11 Channel Mode	1298
+American-DJ-Inno-Scan-LED.qxf	8 Channel Mode	1299
+American-DJ-Inno-Spot-Elite.qxf	15 channels	1300
+American-DJ-Inno-Spot-LED.qxf	10 channel mode	1301
+third_party/ofl-fixtures/american-dj/inno-spot-pro.json	14-channel	1302
+American-DJ-Jellydome.qxf	Standard	1303
+American-DJ-Jolt-300.qxf	12 Channel	1304
+American-DJ-Jolt-300.qxf	15 Channel	1305
+American-DJ-Jolt-300.qxf	4 Channel	1306
+American-DJ-Jolt-300.qxf	8 Channel	1307
+American-DJ-Jolt-300.qxf	A10 Channel	1308
+American-DJ-Jolt-300.qxf	A18 Channel	1309
+American-DJ-Jolt-300.qxf	B10 Channel	1310
+American-DJ-Jolt-300.qxf	B18 Channel	1311
+American-DJ-LED-Trispot.qxf	3 Channel	1312
+American-DJ-LED-Trispot.qxf	5 Channel	1313
+American-DJ-MB-DMX-II.qxf	Default	1314
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	1-channel	1315
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	2-channel	1316
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	3-channel	1317
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	4-channel	1318
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	5-channel	1319
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	6-channel	1320
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	7-channel	1321
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	1-channel	1322
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	2-channel	1323
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	3-channel	1324
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	4-channel	1325
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	5-channel	1326
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	6-channel	1327
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	7-channel	1328
+American-DJ-Mega-Bar-LED.qxf	11 Channels	1329
+American-DJ-Mega-Bar-LED.qxf	2 Channels	1330
+American-DJ-Mega-Bar-LED.qxf	3 Channel	1331
+American-DJ-Mega-Bar-LED.qxf	4 Channels	1332
+American-DJ-Mega-Bar-LED.qxf	6 Channels	1333
+American-DJ-Mega-Bar-LED.qxf	7 Channels	1334
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	Color macro	1335
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	Fourths	1336
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	Halves	1337
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	Program	1338
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	RGBA	1339
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	RGBA + Strobe/Dimmer	1340
+American-DJ-Mega-Flash-DMX.qxf	DMX	1341
+American-DJ-Mega-Flat-TRI-PAK-Plus.qxf	10 Channel	1342
+American-DJ-Mega-Flat-TRI-PAK-Plus.qxf	4 Channel	1343
+American-DJ-Mega-Flat-TRI-PAK-Plus.qxf	5 Channel	1344
+American-DJ-Mega-Flat-TRI-PAK-Plus.qxf	6 Channel	1345
+American-DJ-Mega-Flat-TRI-PAK-Plus.qxf	9 Channel	1346
+third_party/ofl-fixtures/american-dj/mega-hex-par.json	11-channel	1347
+third_party/ofl-fixtures/american-dj/mega-hex-par.json	12-channel	1348
+third_party/ofl-fixtures/american-dj/mega-hex-par.json	6-channel	1349
+third_party/ofl-fixtures/american-dj/mega-hex-par.json	7-channel	1350
+third_party/ofl-fixtures/american-dj/mega-hex-par.json	8-channel	1351
+American-DJ-Mega-Hex-Par.qxf	9 Channel	1352
+American-DJ-Mega-Panel-LED.qxf	14 Channel	1353
+American-DJ-Mega-Panel-LED.qxf	2 Channel	1354
+American-DJ-Mega-Panel-LED.qxf	26 Channel	1355
+American-DJ-Mega-Panel-LED.qxf	3 Channel	1356
+American-DJ-Mega-Panel-LED.qxf	4 Channel	1357
+American-DJ-Mega-Panel-LED.qxf	5 Channel	1358
+American-DJ-Mega-Panel-LED.qxf	6 Channel	1359
+American-DJ-Mega-Panel-LED.qxf	7 Channel	1360
+American-DJ-Mega-PAR-Profile.qxf	1 Channel	1361
+American-DJ-Mega-PAR-Profile.qxf	2 Channel	1362
+American-DJ-Mega-PAR-Profile.qxf	3 Channel	1363
+American-DJ-Mega-PAR-Profile.qxf	4 Channel	1364
+American-DJ-Mega-PAR-Profile.qxf	5 Channel	1365
+American-DJ-Mega-PAR-Profile.qxf	6 Channel	1366
+American-DJ-Mega-PAR-Profile.qxf	7 Channel	1367
+third_party/ofl-fixtures/american-dj/mega-par-profile-plus.json	10-channel	1368
+third_party/ofl-fixtures/american-dj/mega-par-profile-plus.json	4-channel	1369
+third_party/ofl-fixtures/american-dj/mega-par-profile-plus.json	5-channel	1370
+third_party/ofl-fixtures/american-dj/mega-par-profile-plus.json	6-channel	1371
+third_party/ofl-fixtures/american-dj/mega-par-profile-plus.json	9-channel	1372
+American-DJ-Mega-QA-Par38.qxf	1 Channel	1373
+American-DJ-Mega-QA-Par38.qxf	2 Channel	1374
+American-DJ-Mega-QA-Par38.qxf	3 Channel	1375
+American-DJ-Mega-QA-Par38.qxf	4 Channel	1376
+American-DJ-Mega-QA-Par38.qxf	5 Channel	1377
+American-DJ-Mega-QA-Par38.qxf	6 Channel	1378
+American-DJ-Mega-QA-Par38.qxf	7 Channel	1379
+American-DJ-Mega-QA-Par38.qxf	8 Channel	1380
+American-DJ-Mega-Tri-Bar.qxf	12 Channel Mode	1381
+American-DJ-Mega-Tri-Bar.qxf	2 Channel Mode	1382
+American-DJ-Mega-Tri-Bar.qxf	3 Channel Mode	1383
+American-DJ-Mega-Tri-Bar.qxf	4 Channel Mode	1384
+American-DJ-Mega-Tri-Bar.qxf	6 Channel Mode	1385
+American-DJ-Mega-Tri-Bar.qxf	7 Channel Mode	1386
+American-DJ-Mega-Tri-Par.qxf	1 Channel	1387
+American-DJ-Mega-Tri-Par.qxf	2 Channels	1388
+American-DJ-Mega-Tri-Par.qxf	3 Channels	1389
+American-DJ-Mega-Tri-Par.qxf	4 Channels	1390
+American-DJ-Mega-Tri-Par.qxf	5 Channels	1391
+American-DJ-Mega-Tri-Par.qxf	6 Channels	1392
+American-DJ-Mega-Tri-Par.qxf	7 Channels	1393
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	1-channel	1394
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	2-channel	1395
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	3-channel	1396
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	4-channel	1397
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	5-channel	1398
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	6-channel	1399
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	7-channel	1400
+third_party/ofl-fixtures/american-dj/mega-tripar-profile-plus.json	10 channel	1401
+third_party/ofl-fixtures/american-dj/mega-tripar-profile-plus.json	4 channel	1402
+third_party/ofl-fixtures/american-dj/mega-tripar-profile-plus.json	5 channel	1403
+third_party/ofl-fixtures/american-dj/mega-tripar-profile-plus.json	6 channel	1404
+third_party/ofl-fixtures/american-dj/mega-tripar-profile-plus.json	9 channel	1405
+American-DJ-Micro-Wash-RGBW.qxf	1 Channel	1406
+American-DJ-Micro-Wash-RGBW.qxf	2 Channel	1407
+American-DJ-Micro-Wash-RGBW.qxf	4 Channel	1408
+American-DJ-Micro-Wash-RGBW.qxf	5 Channel	1409
+American-DJ-Micro-Wash-RGBW.qxf	7 Channel	1410
+American-DJ-Micro-Wash-RGBW.qxf	8 Channel	1411
+American-DJ-Mini-Dekker.qxf	9 Channel	1412
+third_party/ofl-fixtures/american-dj/mod-hex100.json	11-channel	1413
+third_party/ofl-fixtures/american-dj/mod-hex100.json	12-channel	1414
+third_party/ofl-fixtures/american-dj/mod-hex100.json	6-channel	1415
+third_party/ofl-fixtures/american-dj/mod-hex100.json	7-channel	1416
+third_party/ofl-fixtures/american-dj/mod-hex100.json	8-channel	1417
+American-DJ-Monster-Fun.qxf	1 channel	1418
+American-DJ-Nucleus-LED.qxf	18 Channel Mode	1419
+American-DJ-Nucleus-LED.qxf	22 Channel Mode	1420
+American-DJ-Nucleus-LED.qxf	4 Channel Mode	1421
+American-DJ-Nucleus-PRO.qxf	18 Channel Mode	1422
+American-DJ-Nucleus-PRO.qxf	22 Channel Mode	1423
+American-DJ-Nucleus-PRO.qxf	4 Channel Mode	1424
+American-DJ-On-X.qxf	11 Channel	1425
+American-DJ-On-X.qxf	12 Channel	1426
+American-DJ-On-X.qxf	16 Channel	1427
+American-DJ-On-X.qxf	2 Channel	1428
+American-DJ-On-X.qxf	9 Channel	1429
+American-DJ-P64-LED-Plus.qxf	Full	1430
+American-DJ-P64-LED-Plus.qxf	Simple	1431
+American-DJ-Par-38-Pro.qxf	3 Channel [Default] (RGB)	1432
+American-DJ-Par-38-Pro.qxf	6 Channel	1433
+American-DJ-Par-38-Pro.qxf	7 Channel	1434
+American-DJ-Par-Z4.qxf	4 Channel	1435
+American-DJ-Par-Z4.qxf	6 Channel	1436
+American-DJ-Par-Z4.qxf	8 Channel	1437
+American-DJ-Par-Z4.qxf	9 Channel	1438
+American-DJ-Pearl-LED-WH.qxf	Normal	1439
+American-DJ-Pinspot-LED-Quad-DMX.qxf	6 Channel	1440
+third_party/ofl-fixtures/american-dj/pocket-pro.json	11-channel	1441
+third_party/ofl-fixtures/american-dj/pocket-pro.json	13-channel	1442
+American-DJ-Profile-Panel-RGB.qxf	2 Channel	1443
+American-DJ-Profile-Panel-RGB.qxf	24 Channel	1444
+American-DJ-Profile-Panel-RGB.qxf	27 Channel	1445
+American-DJ-Profile-Panel-RGB.qxf	3 Channel	1446
+American-DJ-Profile-Panel-RGB.qxf	4 Channel	1447
+American-DJ-Profile-Panel-RGB.qxf	6 Channel	1448
+American-DJ-Profile-Panel-RGB.qxf	7 Channel	1449
+American-DJ-ProPAR-56RGB.qxf	ParPRO 56RGB	1450
+American-DJ-Punch-LED-Pro.qxf	3 Channel	1451
+American-DJ-Punch-LED-Pro.qxf	6 Channel	1452
+American-DJ-Punch-LED-Pro.qxf	7 Channel	1453
+American-DJ-QA5-IP.qxf	10 Channel	1454
+American-DJ-QA5-IP.qxf	11 Channel	1455
+American-DJ-QA5-IP.qxf	4 Channel	1456
+American-DJ-QA5-IP.qxf	5 Channel	1457
+American-DJ-QA5-IP.qxf	6 Channel	1458
+American-DJ-Quad-Gem-DMX.qxf	Extended	1459
+American-DJ-Quad-Gem-DMX.qxf	Extended Chase	1460
+American-DJ-Quad-Gem-DMX.qxf	Extended Pattern	1461
+American-DJ-Quad-Gem-DMX.qxf	Standard	1462
+American-DJ-Quad-Gem-DMX.qxf	Standard Chase	1463
+American-DJ-Quad-Gem-DMX.qxf	Standard Pattern	1464
+American-DJ-Quad-Phase.qxf	4-CH Mode	1465
+third_party/ofl-fixtures/american-dj/quad-phase-hp.json	4-channel	1466
+American-DJ-Quad-Scan-LED.qxf	1 Channel mode	1467
+American-DJ-Quad-Scan-LED.qxf	28 Channels mode	1468
+American-DJ-Quad-Scan-LED.qxf	5 Channels mode	1469
+American-DJ-Revo-3.qxf	Pattern	1470
+American-DJ-Revo-3.qxf	Standard	1471
+American-DJ-Revo-4.qxf	4-CH	1472
+third_party/ofl-fixtures/american-dj/revo-4-ir.json	4 channel	1473
+third_party/ofl-fixtures/american-dj/revo-burst.json	10-channel	1474
+third_party/ofl-fixtures/american-dj/revo-burst.json	4-channel	1475
+third_party/ofl-fixtures/american-dj/revo-sweep.json	28-channel	1476
+third_party/ofl-fixtures/american-dj/revo-sweep.json	3-channel	1477
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	8-channel	1478
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	HSI	1479
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	HSI Dimmer Curve	1480
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	HSI Programs	1481
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBW	1482
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBW fine	1483
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBW Programs	1484
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBW Programs fine	1485
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBWD	1486
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBWD fine	1487
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBWD fine Strobe	1488
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBWD Strobe	1489
+American-DJ-SP1500-MKII.qxf	Default	1490
+American-DJ-Spherion-Tri-LED.qxf	1 Ch. [Default]	1491
+American-DJ-Spherion-Tri-LED.qxf	3 Ch	1492
+American-DJ-Starball-LED-DMX.qxf	Standard	1493
+American-DJ-Starburst.qxf	DMX Values & Traits	1494
+third_party/ofl-fixtures/american-dj/starburst.json	12-channel	1495
+American-DJ-Stinger.qxf	10 channels	1496
+third_party/ofl-fixtures/american-dj/stinger-ii.json	2-channel	1497
+third_party/ofl-fixtures/american-dj/stinger-ii.json	9-channel	1498
+third_party/ofl-fixtures/american-dj/stinger-spot.json	11-channel	1499
+third_party/ofl-fixtures/american-dj/stinger-spot.json	9-channel	1500
+American-DJ-Sweeper-Beam-LED.qxf	1 Channel Mode	1501
+American-DJ-Sweeper-Beam-LED.qxf	11 Channel Mode	1502
+American-DJ-Sweeper-Beam-LED.qxf	15 Channel Mode	1503
+American-DJ-Sweeper-Beam-LED.qxf	6 Channel Mode	1504
+American-DJ-Sweeper-Beam-Quad-LED.qxf	1 Channel	1505
+American-DJ-Sweeper-Beam-Quad-LED.qxf	6 Channel	1506
+American-DJ-Tri-Phase.qxf	4 Channel	1507
+American-DJ-TRI64-Profile.qxf	3 Channel	1508
+American-DJ-TRI64-Profile.qxf	6 Channel	1509
+American-DJ-TRI64-Profile.qxf	7 Channel	1510
+American-DJ-Tribar-Spot2.qxf	11 Channel DMX Mode	1511
+American-DJ-Tribar-Spot2.qxf	20 Channel DMX Mode	1512
+American-DJ-Tribar-Spot2.qxf	3 Channel DMX Mode	1513
+American-DJ-Tribar-Spot2.qxf	5 Channel DMX Mode	1514
+American-DJ-Tribar-Spot2.qxf	6 Channel DMX Mode	1515
+American-DJ-Tribar-Spot2.qxf	8 Channek DMX Mode 2	1516
+American-DJ-Tribar-Spot2.qxf	8 Channel DMX Mode	1517
+American-DJ-UB-12H.qxf	10 Channel	1518
+American-DJ-UB-12H.qxf	12 Channel	1519
+American-DJ-UB-12H.qxf	6 Channel	1520
+American-DJ-UB-6H.qxf	10 channel	1521
+American-DJ-UB-6H.qxf	12 channel	1522
+American-DJ-UB-6H.qxf	18 channel	1523
+American-DJ-UB-6H.qxf	6 channel	1524
+American-DJ-Ultra-Bar-12.qxf	11 Channels mode	1525
+American-DJ-Ultra-Bar-12.qxf	18 Channels mode	1526
+American-DJ-Ultra-Bar-12.qxf	20 Channels mode	1527
+American-DJ-Ultra-Bar-12.qxf	3 Channels mode	1528
+American-DJ-Ultra-Bar-12.qxf	5 Channels mode	1529
+American-DJ-Ultra-Bar-12.qxf	6 Channels mode	1530
+American-DJ-Ultra-Bar-12.qxf	7 Channels mode	1531
+American-DJ-Ultra-Bar-12.qxf	8 Channels mode	1532
+American-DJ-Ultra-Bar-12.qxf	9 Channels mode	1533
+American-DJ-Ultra-Bar-6.qxf	11 Channels mode	1534
+American-DJ-Ultra-Bar-6.qxf	3 Channels mode	1535
+American-DJ-Ultra-Bar-6.qxf	5 Channels mode	1536
+American-DJ-Ultra-Bar-6.qxf	6 Channels mode	1537
+American-DJ-Ultra-Bar-6.qxf	7 Channels mode	1538
+American-DJ-Ultra-Bar-6.qxf	8 Channels mode	1539
+American-DJ-Ultra-Bar-6.qxf	9 Channels mode	1540
+American-DJ-Ultra-Bar-9.qxf	11 Channels mode	1541
+American-DJ-Ultra-Bar-9.qxf	3 Channels mode	1542
+American-DJ-Ultra-Bar-9.qxf	5 Channels mode	1543
+American-DJ-Ultra-Bar-9.qxf	6 Channels mode	1544
+American-DJ-Ultra-Bar-9.qxf	7 Channels mode	1545
+American-DJ-Ultra-Bar-9.qxf	8 Channels mode	1546
+American-DJ-Ultra-Bar-9.qxf	9 Channels mode	1547
+third_party/ofl-fixtures/american-dj/ultra-hex-bar-12.json	12-channel	1548
+third_party/ofl-fixtures/american-dj/ultra-hex-bar-12.json	6-channel	1549
+third_party/ofl-fixtures/american-dj/ultra-hex-bar-12.json	7-channel	1550
+third_party/ofl-fixtures/american-dj/ultra-hex-bar-12.json	8-channel	1551
+American-DJ-Ultra-Hex-Par3.qxf	11 channel mode	1552
+American-DJ-Ultra-Hex-Par3.qxf	12 channel mode	1553
+American-DJ-Ultra-Hex-Par3.qxf	6 channel mode	1554
+American-DJ-Ultra-Hex-Par3.qxf	7 channel mode	1555
+American-DJ-Ultra-Hex-Par3.qxf	8 channel mode	1556
+American-DJ-UV-COB-Cannon.qxf	1 Channel	1557
+American-DJ-UV-COB-Cannon.qxf	2 Channel	1558
+American-DJ-UV-COB-Cannon.qxf	3 Channel	1559
+third_party/ofl-fixtures/american-dj/uv-eco-bar.json	3-channel	1560
+American-DJ-UV-LED-Bar-20.qxf	1 Channel	1561
+American-DJ-UV-LED-Bar-20.qxf	2 Channel	1562
+American-DJ-UV-LED-Bar-20.qxf	3 Channel	1563
+American-DJ-UVLed-Bar-16.qxf	3 Channels	1564
+American-DJ-VBar.qxf	1 Channel Mode	1565
+American-DJ-VBar.qxf	2 Channel Mode	1566
+American-DJ-VBar.qxf	3 Channel Mode	1567
+American-DJ-VBar.qxf	4 Channel Mode	1568
+American-DJ-VBar.qxf	5 Channel Mode	1569
+American-DJ-VBar.qxf	6 Channel Mode	1570
+American-DJ-VBar.qxf	7 Channel Mode	1571
+American-DJ-VBar.qxf	8 Channel Mode	1572
+third_party/ofl-fixtures/american-dj/vbar-pak.json	1-channel	1573
+third_party/ofl-fixtures/american-dj/vbar-pak.json	2-channel	1574
+third_party/ofl-fixtures/american-dj/vbar-pak.json	3-channel	1575
+third_party/ofl-fixtures/american-dj/vbar-pak.json	4-channel	1576
+third_party/ofl-fixtures/american-dj/vbar-pak.json	5-channel	1577
+third_party/ofl-fixtures/american-dj/vbar-pak.json	6-channel	1578
+third_party/ofl-fixtures/american-dj/vbar-pak.json	7-channel	1579
+third_party/ofl-fixtures/american-dj/vbar-pak.json	8-channel	1580
+American-DJ-Vizi-Beam-5R.qxf	10 Channel	1581
+American-DJ-Vizi-Beam-5R.qxf	12 Channel	1582
+American-DJ-Vizi-Beam-5RX.qxf	15 Channel	1583
+American-DJ-Vizi-Beam-5RX.qxf	19 Channel	1584
+American-DJ-Vizi-Beam-RXONE.qxf	15-Channel	1585
+American-DJ-Vizi-Beam-RXONE.qxf	17-Channel	1586
+American-DJ-Vizi-BSW-300.qxf	17 Channel	1587
+American-DJ-Vizi-BSW-300.qxf	20 Channel	1588
+American-DJ-Vizi-Hex-Wash7.qxf	19 Channel	1589
+American-DJ-Vizi-Hex-Wash7.qxf	21 Channel	1590
+American-DJ-Vizi-Hex-Wash7.qxf	27 Channel	1591
+American-DJ-Vizi-LED-Spot.qxf	Extended	1592
+American-DJ-Vizi-LED-Spot.qxf	Extended (630 degree Pan)	1593
+American-DJ-Vizi-LED-Spot.qxf	Standard	1594
+American-DJ-Vizi-LED-Spot.qxf	Standard (630 degree Pan)	1595
+third_party/ofl-fixtures/american-dj/vizi-q-wash7.json	17-channel Basic	1596
+third_party/ofl-fixtures/american-dj/vizi-q-wash7.json	19-channel Standard	1597
+third_party/ofl-fixtures/american-dj/vizi-q-wash7.json	23-channel Extended	1598
+American-DJ-Vizi-Roller-Beam-2R.qxf	Advanced	1599
+American-DJ-Vizi-Roller-Beam-2R.qxf	Basic	1600
+American-DJ-Vizi-Roller-Beam-2R.qxf	Standard	1601
+third_party/ofl-fixtures/american-dj/vizi-spot-led-pro.json	12-channel	1602
+third_party/ofl-fixtures/american-dj/vizi-spot-led-pro.json	14-channel	1603
+American-DJ-Vizi-Wash-LED-108.qxf	MODE1	1604
+American-DJ-VPar.qxf	2 Channel	1605
+American-DJ-VPar.qxf	3 Channel	1606
+American-DJ-VPar.qxf	4 Channel	1607
+American-DJ-VPar.qxf	5 Channel	1608
+American-DJ-VPar.qxf	6 Channel	1609
+American-DJ-VPar.qxf	7 Channel	1610
+American-DJ-Warlock.qxf	8 Channel	1611
+American-DJ-WiFly-Bar-QA5.qxf	22 Channel	1612
+American-DJ-WiFly-Bar-QA5.qxf	4 Channel	1613
+American-DJ-WiFly-Bar-QA5.qxf	6 Channel	1614
+American-DJ-WiFly-Bar-QA5.qxf	7 Channel	1615
+American-DJ-WiFly-Bar-QA5.qxf	8 Channel	1616
+American-DJ-WiFly-Bar-QA5.qxf	9 Channel	1617
+American-DJ-WiFLY-Chameleon.qxf	11 Channel	1618
+American-DJ-WiFLY-Chameleon.qxf	18 Channel	1619
+American-DJ-WiFLY-Chameleon.qxf	20 Channel	1620
+American-DJ-WiFLY-Chameleon.qxf	6 Channel	1621
+American-DJ-WiFLY-Chameleon.qxf	7 Channel	1622
+American-DJ-WiFLY-Chameleon.qxf	9 Channel	1623
+American-DJ-WiFly-EXR-Dotz-Par.qxf	3 Channel	1624
+American-DJ-WiFly-EXR-Dotz-Par.qxf	4 Channel	1625
+American-DJ-WiFly-EXR-Dotz-Par.qxf	5(d) Channel	1626
+American-DJ-WiFly-EXR-Dotz-Par.qxf	5(s) Channel	1627
+American-DJ-WiFly-EXR-Dotz-Par.qxf	9 Channel	1628
+American-DJ-WiFly-EXR-HEX5-IP.qxf	11 Channel	1629
+American-DJ-WiFly-EXR-HEX5-IP.qxf	12 Channel	1630
+American-DJ-WiFly-EXR-HEX5-IP.qxf	6 Channel	1631
+American-DJ-WiFly-EXR-HEX5-IP.qxf	7 Channel	1632
+American-DJ-WiFly-EXR-HEX5-IP.qxf	8 Channel	1633
+American-DJ-WiFly-PAR-QA5.qxf	1 channel	1634
+American-DJ-WiFly-PAR-QA5.qxf	2 channel	1635
+American-DJ-WiFly-PAR-QA5.qxf	3 channel	1636
+American-DJ-WiFly-PAR-QA5.qxf	4 channel	1637
+American-DJ-WiFly-PAR-QA5.qxf	5 channel	1638
+American-DJ-WiFly-PAR-QA5.qxf	6 channel	1639
+American-DJ-WiFly-PAR-QA5.qxf	7 channel	1640
+American-DJ-WiFly-PAR-QA5.qxf	8 channel	1641
+American-DJ-X-Scan-LED-Plus.qxf	8 Channel	1642
+third_party/ofl-fixtures/american-dj/xs-400.json	16-channel	1643
+third_party/ofl-fixtures/american-dj/xs-400.json	18-channel	1644
+American-DJ-XS-600.qxf	25 Channel	1645
+American-DJ-XS-600.qxf	31 Channel	1646
+Ayrton-Arcaline-100-RGB.qxf	Mode 1	1647
+Ayrton-Arcaline-100-RGB.qxf	Mode 2	1648
+Ayrton-Arcaline-100-RGB.qxf	Mode 3	1649
+Ayrton-Arcaline-100-RGB.qxf	Mode 4	1650
+Ayrton-Arcaline-100-RGB.qxf	Mode 5	1651
+Ayrton-Arcaline-100-RGB.qxf	Mode 6	1652
+third_party/ofl-fixtures/ayrton/magicblade-fx.json	Basic	1653
+third_party/ofl-fixtures/ayrton/magicblade-fx.json	Standard	1654
+Ayrton-MagicBlade-R.qxf	Ba (18ch)	1655
+Ayrton-MagicBlade-R.qxf	St (20ch)	1656
+Ayrton-MagicPanel-602.qxf	18ch	1657
+Ayrton-MagicPanel-602.qxf	20ch	1658
+Ayrton-MiniPanel-FX.qxf	Basic 19 Channel	1659
+Ayrton-MiniPanel-FX.qxf	Standard 22 Channel	1660
+Ayrton-Mistral.qxf	Basic	1661
+Ayrton-Mistral.qxf	Standard	1662
+Ayrton-NandoBeam-S3.qxf	Basic	1663
+Ayrton-NandoBeam-S3.qxf	Extended	1664
+Ayrton-NandoBeam-S3.qxf	Standard	1665
+Chauvet-200b.qxf	All	1666
+Chauvet-4Bar.qxf	15 Channels Mode	1667
+Chauvet-4Bar.qxf	3 Channels Mode	1668
+Chauvet-4Bar-Hex-ILS.qxf	27 Channel	1669
+Chauvet-4Bar-Hex-ILS.qxf	6 Channel	1670
+Chauvet-4Bar-Hex-ILS.qxf	8 Channel	1671
+Chauvet-4Bar-Tri.qxf	Main 	1672
+Chauvet-4Play.qxf	Mode 1	1673
+Chauvet-6-Spot.qxf	Standard	1674
+Chauvet-Abyss-USB.qxf	3-Channel	1675
+Chauvet-Circus.qxf	Mode 1	1676
+Chauvet-Circus-2.qxf	Mode 1	1677
+third_party/ofl-fixtures/chauvet-dj/colorband-pix.json	12-channel	1678
+third_party/ofl-fixtures/chauvet-dj/colorband-pix.json	18-channel	1679
+third_party/ofl-fixtures/chauvet-dj/colorband-pix.json	3-channel	1680
+third_party/ofl-fixtures/chauvet-dj/colorband-pix.json	4-channel	1681
+third_party/ofl-fixtures/chauvet-dj/colorband-pix.json	6-channel	1682
+third_party/ofl-fixtures/chauvet-dj/colorband-pix.json	7-channel	1683
+third_party/ofl-fixtures/chauvet-dj/colorband-pix.json	9-channel	1684
+third_party/ofl-fixtures/chauvet-dj/colorband-pix-ip.json	12-channel	1685
+third_party/ofl-fixtures/chauvet-dj/colorband-pix-ip.json	18-channel	1686
+third_party/ofl-fixtures/chauvet-dj/colorband-pix-ip.json	3-channel	1687
+third_party/ofl-fixtures/chauvet-dj/colorband-pix-ip.json	4-channel	1688
+third_party/ofl-fixtures/chauvet-dj/colorband-pix-ip.json	6-channel	1689
+third_party/ofl-fixtures/chauvet-dj/colorband-pix-ip.json	7-channel	1690
+third_party/ofl-fixtures/chauvet-dj/colorband-pix-ip.json	9-channel	1691
+Chauvet-ColorBand-Pix-M.qxf	10 Channel	1692
+Chauvet-ColorBand-Pix-M.qxf	11 Channel	1693
+Chauvet-ColorBand-Pix-M.qxf	14 Channel	1694
+Chauvet-ColorBand-Pix-M.qxf	20 Channel	1695
+Chauvet-ColorBand-Pix-M.qxf	5 Channel	1696
+Chauvet-ColorBand-Pix-M.qxf	6 Channel	1697
+Chauvet-ColorBand-Pix-M.qxf	8 Channel	1698
+Chauvet-ColorBand-Pix-M-USB.qxf	10 Channel	1699
+Chauvet-ColorBand-Pix-M-USB.qxf	17 Channel	1700
+Chauvet-ColorBand-Pix-M-USB.qxf	32 Channel	1701
+Chauvet-ColorBand-Pix-M-USB.qxf	5 Channel	1702
+Chauvet-ColorBand-Pix-M-USB.qxf	6 Channel	1703
+Chauvet-ColorBand-Pix-M-USB.qxf	8 Channel	1704
+Chauvet-COLORband-Q3BT.qxf	16 Channel	1705
+Chauvet-COLORband-Q3BT.qxf	4 Channel	1706
+Chauvet-COLORband-Q3BT.qxf	6 Channel	1707
+Chauvet-COLORband-T3-BT.qxf	13 Channel	1708
+Chauvet-COLORband-T3-BT.qxf	3 Channel	1709
+Chauvet-COLORband-T3-BT.qxf	5 Channel	1710
+Chauvet-COLORband-T3-USB.qxf	14 Channel	1711
+Chauvet-COLORband-T3-USB.qxf	3 Channel	1712
+Chauvet-COLORband-T3-USB.qxf	6 Channel	1713
+Chauvet-COLORband-T3-USB.qxf	8 Channel	1714
+Chauvet-COLORband-T3-USB.qxf	9 Channel	1715
+Chauvet-COLORbar-SMD.qxf	24 Channel	1716
+Chauvet-COLORbar-SMD.qxf	3 Channel	1717
+Chauvet-COLORbar-SMD.qxf	7 Channel	1718
+Chauvet-COLORdash-Accent-Quad.qxf	10 Channel	1719
+Chauvet-COLORdash-Accent-Quad.qxf	4 Channel	1720
+Chauvet-COLORdash-Accent-Quad.qxf	6 Channel	1721
+Chauvet-COLORdash-Accent-RGBW.qxf	ARC 1	1722
+Chauvet-COLORdash-Accent-RGBW.qxf	ARC 2	1723
+Chauvet-COLORdash-Accent-RGBW.qxf	STAGE 1	1724
+Chauvet-COLORdash-Batten.qxf	ARC 1	1725
+Chauvet-COLORdash-Batten.qxf	ARC 1 + D	1726
+Chauvet-COLORdash-Batten.qxf	BLOCK	1727
+Chauvet-COLORdash-Batten.qxf	STAGE 1	1728
+Chauvet-COLORdash-Par-Hex-12.qxf	12 Channel	1729
+Chauvet-COLORdash-Par-Hex-12.qxf	13 Channel	1730
+Chauvet-COLORdash-Par-Hex-12.qxf	6 Channel	1731
+Chauvet-COLORdash-Par-Hex-12.qxf	8 Channel	1732
+Chauvet-COLORdash-Par-Hex-12.qxf	HSI	1733
+Chauvet-COLORdash-Par-Hex-12.qxf	HSV	1734
+Chauvet-COLORdash-Par-Hex-7.qxf	12 Channel	1735
+Chauvet-COLORdash-Par-Hex-7.qxf	13 Channel	1736
+Chauvet-COLORdash-Par-Hex-7.qxf	6 Channel	1737
+Chauvet-COLORdash-Par-Hex-7.qxf	8 Channel	1738
+Chauvet-COLORdash-Par-Hex-7.qxf	HSI	1739
+Chauvet-COLORdash-Par-Hex-7.qxf	HSV	1740
+Chauvet-COLORdash-Par-Quad-18.qxf	10 Channel	1741
+Chauvet-COLORdash-Par-Quad-18.qxf	4 Channel	1742
+Chauvet-COLORdash-Par-Quad-18.qxf	6 Channel	1743
+Chauvet-COLORdash-Par-Quad-7.qxf	10-channel	1744
+Chauvet-COLORdash-Par-Quad-7.qxf	4-channel	1745
+Chauvet-COLORdash-Par-Quad-7.qxf	6-channel	1746
+Chauvet-COLORpalette.qxf	15 Ch	1747
+Chauvet-COLORpalette.qxf	27 Ch	1748
+Chauvet-COLORpalette.qxf	6 Ch	1749
+Chauvet-COLORpalette.qxf	9 Ch	1750
+Chauvet-Colorpalette-II.qxf	15 Channel	1751
+Chauvet-Colorpalette-II.qxf	27 Channel	1752
+Chauvet-Colorpalette-II.qxf	6 Channel	1753
+Chauvet-Colorpalette-II.qxf	9 Channel	1754
+Chauvet-COLORrail-IRC2.qxf	14 Channel	1755
+Chauvet-COLORrail-IRC2.qxf	2 Channel	1756
+Chauvet-COLORrail-IRC2.qxf	26 Channel	1757
+Chauvet-COLORrail-IRC2.qxf	3 Channel	1758
+Chauvet-COLORrail-IRC2.qxf	4 Channel	1759
+Chauvet-COLORrail-IRC2.qxf	7 Channel	1760
+Chauvet-ColorStrip-Mini.qxf	Default	1761
+Chauvet-COLORstrip-Mini-FX.qxf	4 Channel	1762
+Chauvet-COLORstrip-Mini-FX.qxf	7 Channel	1763
+Chauvet-COLORtube-3.0-EQ-Controller.qxf	6 Channel	1764
+Chauvet-CORE-3x3.qxf	27-Channel	1765
+Chauvet-CORE-3x3.qxf	3-Channel	1766
+Chauvet-CORE-3x3.qxf	31-Channel	1767
+Chauvet-CORE-3x3.qxf	5-Channel	1768
+Chauvet-CORE-3x3.qxf	9-Channel	1769
+Chauvet-COREpar-40-USB.qxf	3-Channel	1770
+Chauvet-COREpar-40-USB.qxf	8-Channel	1771
+Chauvet-COREpar-80.qxf	3-CH	1772
+Chauvet-COREpar-80.qxf	8-CH	1773
+Chauvet-COREpar-80-USB.qxf	3-Channel	1774
+Chauvet-COREpar-80-USB.qxf	8-Channel	1775
+third_party/ofl-fixtures/chauvet-dj/corepar-uv-usb.json	1-channel	1776
+third_party/ofl-fixtures/chauvet-dj/corepar-uv-usb.json	5-channel	1777
+Chauvet-Cubix-2.0.qxf	7 channels	1778
+Chauvet-Derby-X.qxf	Standard	1779
+Chauvet-DMF-10.qxf	Default	1780
+Chauvet-DMX-Mega-Strobe-III.qxf	Standard	1781
+third_party/ofl-fixtures/chauvet-dj/dmx-4.json	1-channel	1782
+third_party/ofl-fixtures/chauvet-dj/dmx-4.json	2-channel	1783
+third_party/ofl-fixtures/chauvet-dj/dmx-4.json	4-channel	1784
+Chauvet-Double-Derby-X.qxf	Standard	1785
+Chauvet-Eclipse-RGB.qxf	12 Ch	1786
+third_party/ofl-fixtures/chauvet-dj/eve-p-100-ww.json	1-channel	1787
+third_party/ofl-fixtures/chauvet-dj/eve-p-100-ww.json	2-channel	1788
+third_party/ofl-fixtures/chauvet-dj/eve-p-100-ww.json	4-channel	1789
+third_party/ofl-fixtures/chauvet-dj/eve-p-130-rgb.json	3-channel RGB	1790
+third_party/ofl-fixtures/chauvet-dj/eve-p-130-rgb.json	4-channel DRGB	1791
+third_party/ofl-fixtures/chauvet-dj/eve-p-130-rgb.json	9-channel	1792
+Chauvet-EVE-P-160-RGBW.qxf	11 Channel	1793
+Chauvet-EVE-P-160-RGBW.qxf	4 Channel	1794
+Chauvet-EVE-P-160-RGBW.qxf	6 Channel	1795
+Chauvet-EZLink-Par-Q6-BT.qxf	4 Channel	1796
+Chauvet-EZLink-Par-Q6-BT.qxf	8 Channel	1797
+Chauvet-EZPAR-64-RGBA.qxf	4 Channel	1798
+Chauvet-EZPAR-64-RGBA.qxf	8 Channel	1799
+Chauvet-Followspot-120ST.qxf	3 Channel	1800
+Chauvet-Followspot-400G.qxf	DMX	1801
+third_party/ofl-fixtures/chauvet-dj/freedom-h1.json	12-channel	1802
+third_party/ofl-fixtures/chauvet-dj/freedom-h1.json	6-channel	1803
+third_party/ofl-fixtures/chauvet-dj/freedom-h1.json	8-channel	1804
+Chauvet-Freedom-Par-Hex-4.qxf	12 Channel	1805
+Chauvet-Freedom-Par-Hex-4.qxf	6 Channel	1806
+Chauvet-Freedom-Par-Hex-4.qxf	8 Channel	1807
+Chauvet-Freedom-Stick.qxf	3 Channel	1808
+Chauvet-Freedom-Stick.qxf	8 Channel	1809
+Chauvet-FXpar9.qxf	2 Channel	1810
+Chauvet-FXpar9.qxf	22 Channel	1811
+Chauvet-FXpar9.qxf	6 Channel	1812
+Chauvet-FXpar9.qxf	9 Channel	1813
+Chauvet-FXpar3.qxf	3 Channel	1814
+Chauvet-FXpar3.qxf	9 Channel	1815
+Chauvet-Geyser-P6.qxf	10 Channel	1816
+third_party/ofl-fixtures/chauvet-dj/geyser-rgb.json	8-channel	1817
+third_party/ofl-fixtures/chauvet-dj/gigbar-2.json	11-channel	1818
+third_party/ofl-fixtures/chauvet-dj/gigbar-2.json	23-channel	1819
+third_party/ofl-fixtures/chauvet-dj/gigbar-2.json	3-channel	1820
+Chauvet-GigBAR-Flex.qxf	20 Channel	1821
+Chauvet-GigBar-IRC.qxf	20 Channels	1822
+Chauvet-GigBar-IRC.qxf	3 Channels	1823
+Chauvet-GigBar-IRC.qxf	9 Channels	1824
+Chauvet-GigBAR-Move.qxf	17-channel	1825
+Chauvet-GigBAR-Move.qxf	3-channel	1826
+Chauvet-Gobo-Zoom-LED-2.0.qxf	DMX 2-Channel	1827
+Chauvet-Gobozap.qxf	11 Channel	1828
+Chauvet-Gobozap.qxf	2 Channel	1829
+Chauvet-Gobozap.qxf	7 Channel	1830
+Chauvet-Gyser-RGB.qxf	8 Channel	1831
+Chauvet-Hemisphere-5.1.qxf	5 Channel	1832
+Chauvet-Hive.qxf	20 Channel Mode	1833
+Chauvet-Hive.qxf	3 Channel Mode	1834
+third_party/ofl-fixtures/chauvet-dj/hurricane-1600.json	1-channel	1835
+Chauvet-Hurricane-1800-Flex.qxf	DMX Mode	1836
+third_party/ofl-fixtures/chauvet-dj/hurricane-haze-1dx.json	1 Channel	1837
+Chauvet-Hurricane-Haze-2.qxf	Generic	1838
+third_party/ofl-fixtures/chauvet-dj/hurricane-haze-2d.json	2ch	1839
+Chauvet-Intimidator-Barrel-300.qxf	11 Channel	1840
+Chauvet-Intimidator-Barrel-300.qxf	8 Channel	1841
+Chauvet-Intimidator-Barrel-305-IRC.qxf	11-Channel	1842
+Chauvet-Intimidator-Barrel-305-IRC.qxf	7-Channel	1843
+Chauvet-Intimidator-Beam-140SR-V2.qxf	14 Channel	1844
+Chauvet-Intimidator-Beam-140SR-V2.qxf	8 Channel	1845
+Chauvet-Intimidator-Beam-LED-350.qxf	Advanced	1846
+Chauvet-Intimidator-Beam-LED-350.qxf	Basic	1847
+Chauvet-Intimidator-Beam-Q60.qxf	12 Channel	1848
+Chauvet-Intimidator-Beam-Q60.qxf	16 Channel	1849
+Chauvet-Intimidator-Hybrid-140SR.qxf	13 Channel	1850
+Chauvet-Intimidator-Hybrid-140SR.qxf	19 Channel	1851
+Chauvet-Intimidator-Scan-305-IRC.qxf	11-Channel	1852
+Chauvet-Intimidator-Scan-305-IRC.qxf	7-Channel	1853
+Chauvet-Intimidator-Scan-360.qxf	12 Channel	1854
+Chauvet-Intimidator-Scan-360.qxf	8 Channel	1855
+Chauvet-Intimidator-Scan-LED-100.qxf	6 Channel	1856
+Chauvet-Intimidator-Scan-LED-200.qxf	5-Channel	1857
+Chauvet-Intimidator-Scan-LED-200.qxf	8-Channel	1858
+Chauvet-Intimidator-Scan-LED-300.qxf	DMX 11-channel	1859
+Chauvet-Intimidator-Scan-LED-300.qxf	DMX 8-Channel	1860
+Chauvet-Intimidator-Spot-100-IRC.qxf	11 Channel	1861
+Chauvet-Intimidator-Spot-100-IRC.qxf	6 Channel	1862
+third_party/ofl-fixtures/chauvet-dj/intimidator-spot-110.json	12-channel	1863
+third_party/ofl-fixtures/chauvet-dj/intimidator-spot-110.json	6-channel	1864
+Chauvet-Intimidator-Spot-155.qxf	Advanced	1865
+Chauvet-Intimidator-Spot-155.qxf	Basic	1866
+third_party/ofl-fixtures/chauvet-dj/intimidator-spot-160.json	11-channel	1867
+third_party/ofl-fixtures/chauvet-dj/intimidator-spot-160.json	5-channel	1868
+Chauvet-Intimidator-Spot-250.qxf	Advanced	1869
+Chauvet-Intimidator-Spot-250.qxf	Basic	1870
+Chauvet-Intimidator-Spot-255-IRC.qxf	13 Channel	1871
+Chauvet-Intimidator-Spot-255-IRC.qxf	8 Channel	1872
+third_party/ofl-fixtures/chauvet-dj/intimidator-spot-260.json	14-channel	1873
+third_party/ofl-fixtures/chauvet-dj/intimidator-spot-260.json	8-channel	1874
+Chauvet-Intimidator-Spot-355-IRC.qxf	14 Channel	1875
+Chauvet-Intimidator-Spot-355-IRC.qxf	8 Channel	1876
+Chauvet-Intimidator-Spot-355Z-IRC.qxf	15 channel	1877
+Chauvet-Intimidator-Spot-355Z-IRC.qxf	9 channel	1878
+Chauvet-Intimidator-Spot-375Z-IRC.qxf	15 channel	1879
+Chauvet-Intimidator-Spot-375Z-IRC.qxf	9 channel	1880
+Chauvet-Intimidator-Spot-400-IRC.qxf	Advanced	1881
+Chauvet-Intimidator-Spot-400-IRC.qxf	Basic	1882
+Chauvet-Intimidator-Spot-475ZX.qxf	10 Channel	1883
+Chauvet-Intimidator-Spot-475ZX.qxf	16 Channel	1884
+Chauvet-Intimidator-Spot-Duo.qxf	10 Channels mode	1885
+Chauvet-Intimidator-Spot-Duo.qxf	20 Channels mode	1886
+Chauvet-Intimidator-Spot-Duo-155.qxf	10 Channel	1887
+Chauvet-Intimidator-Spot-Duo-155.qxf	17 Channel	1888
+Chauvet-Intimidator-Spot-Duo-155.qxf	20 Channel	1889
+Chauvet-Intimidator-Spot-LED-150.qxf	11 Channel	1890
+Chauvet-Intimidator-Spot-LED-150.qxf	6 Channel	1891
+Chauvet-Intimidator-Spot-LED-250.qxf	Advanced	1892
+Chauvet-Intimidator-Spot-LED-250.qxf	Basic	1893
+Chauvet-Intimidator-Spot-LED-260.qxf	Advanced	1894
+Chauvet-Intimidator-Spot-LED-260.qxf	Basic	1895
+Chauvet-Intimidator-Spot-LED-350.qxf	Advanced	1896
+Chauvet-Intimidator-Spot-LED-350.qxf	Basic	1897
+Chauvet-Intimidator-Trio.qxf	15 Channel	1898
+Chauvet-Intimidator-Trio.qxf	30 Channel	1899
+Chauvet-Intimidator-Wash-Zoom-350-IRC.qxf	14-Ch	1900
+Chauvet-Intimidator-Wash-Zoom-350-IRC.qxf	29-Ch	1901
+Chauvet-Intimidator-Wash-Zoom-450-IRC.qxf	14 Channel	1902
+Chauvet-Intimidator-Wash-Zoom-450-IRC.qxf	29 Channel	1903
+Chauvet-Intimidator-Wave-360-IRC.qxf	17 ch.	1904
+Chauvet-Kinta-FX.qxf	2 Channel	1905
+Chauvet-Kinta-FX.qxf	9 Channel	1906
+Chauvet-Kinta-HP.qxf	12 Channel	1907
+Chauvet-Kinta-HP.qxf	3 Channel	1908
+third_party/ofl-fixtures/chauvet-dj/kinta-x.json	2-channel	1909
+third_party/ofl-fixtures/chauvet-dj/led-par-64-tri-b.json	3-channel	1910
+third_party/ofl-fixtures/chauvet-dj/led-par-64-tri-b.json	7-channel	1911
+Chauvet-LED-PAR-64-Tri-C.qxf	3 Channels	1912
+Chauvet-LED-PAR-64-Tri-C.qxf	7 Channels	1913
+Chauvet-LED-PAR-64-36B.qxf	3 Channel	1914
+Chauvet-LED-PAR-64-36B.qxf	7 Channel	1915
+Chauvet-LED-Shadow.qxf	Default	1916
+Chauvet-LED-Splash-86b.qxf	3-Ch	1917
+Chauvet-LED-Splash-86b.qxf	7-Ch	1918
+Chauvet-LED-Techno-Strobe-RGB.qxf	6 channel	1919
+Chauvet-LEDrain64.qxf	Default	1920
+Chauvet-LEDSplash-Jr.qxf	All	1921
+Chauvet-Mayhem.qxf	7 Channel	1922
+third_party/ofl-fixtures/chauvet-dj/megastrobe-fx12.json	2-channel	1923
+third_party/ofl-fixtures/chauvet-dj/megastrobe-fx12.json	5-channel	1924
+third_party/ofl-fixtures/chauvet-dj/megastrobe-fx12.json	8-channel	1925
+Chauvet-MiN-Spot-RGBW.qxf	14 Channel	1926
+Chauvet-MiN-Spot-RGBW.qxf	6 Channel	1927
+Chauvet-MiN-Wash.qxf	13 Channel	1928
+Chauvet-MiN-Wash.qxf	5 Channel	1929
+Chauvet-Mini-Kinta.qxf	3-Channel	1930
+Chauvet-Mini-Kinta-IRC.qxf	4-Channel	1931
+Chauvet-MiniSphere-3.qxf	DMX	1932
+third_party/ofl-fixtures/chauvet-dj/motiondrape-led.json	8-channel	1933
+Chauvet-Omega-I-DMX-155.qxf	Default	1934
+Chauvet-Q-Beam-260-LED.qxf	Advanced	1935
+Chauvet-Q-Beam-260-LED.qxf	Basic	1936
+Chauvet-Q-Spot-250.qxf	Standard	1937
+Chauvet-Q-Spot-260-LED.qxf	Advanced	1938
+Chauvet-Q-Spot-260-LED.qxf	Basic	1939
+Chauvet-Q-Spot-560-LED.qxf	Advanced	1940
+Chauvet-Q-Spot-560-LED.qxf	Basic	1941
+Chauvet-Q-Wash-560Z-LED.qxf	Advanced (15 channel)	1942
+Chauvet-Q-Wash-560Z-LED.qxf	Basic (12 channel)	1943
+Chauvet-RotoSphere-LED.qxf	4 Channel	1944
+Chauvet-Rotosphere-Q3.qxf	19 channel	1945
+Chauvet-Rotosphere-Q3.qxf	3 channel	1946
+Chauvet-Rotosphere-Q3.qxf	9 channel	1947
+Chauvet-Scorpion-Bar-RG.qxf	10 Channel	1948
+Chauvet-Scorpion-Bar-RG.qxf	2 Channel	1949
+Chauvet-Scorpion-Dual.qxf	10-Channel	1950
+Chauvet-Scorpion-Dual-RGB.qxf	10-Channel	1951
+Chauvet-Scorpion-Storm-FX-RGB.qxf	7 Channel (Ch. 1 = 000-050)	1952
+Chauvet-Scorpion-Storm-FX-RGB.qxf	7 Channel (Ch. 1 = 051-200)	1953
+Chauvet-Scorpion-Storm-RGBY.qxf	DMX	1954
+Chauvet-Scorpion-Storm-RGX.qxf	4 Channel	1955
+Chauvet-Shocker-90-IRC-QRG.qxf	2 Channel mode	1956
+Chauvet-Shocker-90-IRC-QRG.qxf	5 Channel mode	1957
+Chauvet-Shocker-90-IRC-QRG.qxf	8 Channel mode	1958
+Chauvet-Slim-Par-Pro-VW.qxf	2-Channel	1959
+Chauvet-Slim-Par-Pro-VW.qxf	3-Channel	1960
+Chauvet-Slim-Par-Pro-VW.qxf	7-Channel	1961
+Chauvet-SlimBANK-TRI-18.qxf	13-Channel	1962
+Chauvet-SlimBANK-TRI-18.qxf	3-Channel	1963
+Chauvet-SlimBANK-TRI-18.qxf	5-Channel	1964
+Chauvet-SlimBANK-TRI-18.qxf	9-Channel	1965
+Chauvet-SlimPAR-38.qxf	3 channel	1966
+Chauvet-SlimPAR-38.qxf	7 channel	1967
+Chauvet-SlimPAR-56.qxf	3-Ch	1968
+Chauvet-SlimPAR-56.qxf	7-Ch	1969
+third_party/ofl-fixtures/chauvet-dj/slim-par-64.json	3-channel	1970
+third_party/ofl-fixtures/chauvet-dj/slim-par-64.json	7-channel	1971
+third_party/ofl-fixtures/chauvet-dj/slim-par-64-rgba.json	4-channel	1972
+third_party/ofl-fixtures/chauvet-dj/slim-par-64-rgba.json	8-channel	1973
+Chauvet-SlimPAR-HEX-3.qxf	12-Channel	1974
+Chauvet-SlimPAR-HEX-3.qxf	6-Channel	1975
+Chauvet-SlimPAR-HEX-3.qxf	8-Channel	1976
+Chauvet-SlimPar-Hex-6.qxf	12 Channel	1977
+Chauvet-SlimPar-Hex-6.qxf	6 Channel	1978
+Chauvet-SlimPar-Hex-6.qxf	8 Channel	1979
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-h-usb.json	12-channel	1980
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-h-usb.json	6-channel	1981
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-h-usb.json	7-channel	1982
+Chauvet-SlimPAR-Pro-Pix.qxf	12 Channel	1983
+Chauvet-SlimPAR-Pro-Pix.qxf	26 Channel	1984
+Chauvet-SlimPAR-Pro-Q-USB.qxf	10 Channel	1985
+Chauvet-SlimPAR-Pro-Q-USB.qxf	4 Channel	1986
+Chauvet-SlimPAR-Pro-Q-USB.qxf	5 Channel	1987
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-qz12.json	11-channel	1988
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-qz12.json	5-channel	1989
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-qz12.json	6-channel	1990
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-rgba.json	10-channel	1991
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-rgba.json	4-channel	1992
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-rgba.json	5-channel	1993
+Chauvet-SlimPar-Pro-Tri.qxf	3-Channel	1994
+Chauvet-SlimPar-Pro-Tri.qxf	4-Channel	1995
+Chauvet-SlimPar-Pro-Tri.qxf	9-Channel	1996
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-w.json	3-channel	1997
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-w.json	4-channel	1998
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-w.json	9-channel	1999
+Chauvet-SlimPAR-Pro-W-USB.qxf	3 Channel	2000
+Chauvet-SlimPAR-Pro-W-USB.qxf	4 Channel	2001
+Chauvet-SlimPAR-Pro-W-USB.qxf	9 Channel	2002
+third_party/ofl-fixtures/chauvet-dj/slimpar-q12-bt.json	4-channel	2003
+third_party/ofl-fixtures/chauvet-dj/slimpar-q12-bt.json	8-channel	2004
+Chauvet-SlimPAR-Q12-USB.qxf	4 Channel	2005
+Chauvet-SlimPAR-Q12-USB.qxf	9 Channel	2006
+Chauvet-SlimPAR-Q12ILS.qxf	4 Channel	2007
+Chauvet-SlimPAR-Q12ILS.qxf	9 Channel	2008
+Chauvet-SlimPAR-Q6-USB.qxf	4 Channel	2009
+Chauvet-SlimPAR-Q6-USB.qxf	9 Channel	2010
+Chauvet-SlimPAR-QUAD-12-IRC.qxf	4-Channel	2011
+Chauvet-SlimPAR-QUAD-12-IRC.qxf	8-Channel	2012
+Chauvet-SlimPAR-QUV12-USB.qxf	4 Channel	2013
+Chauvet-SlimPAR-QUV12-USB.qxf	9 Channel	2014
+third_party/ofl-fixtures/chauvet-dj/slimpar-t12-bt.json	3-channel	2015
+third_party/ofl-fixtures/chauvet-dj/slimpar-t12-bt.json	7-channel	2016
+third_party/ofl-fixtures/chauvet-dj/slimpar-t12-usb.json	3-channel	2017
+third_party/ofl-fixtures/chauvet-dj/slimpar-t12-usb.json	8-channel	2018
+Chauvet-SlimPAR-T6-USB.qxf	3 Channel	2019
+Chauvet-SlimPAR-T6-USB.qxf	8 Channel	2020
+Chauvet-SlimPAR-TRI-12-IRC.qxf	3-CH	2021
+Chauvet-SlimPAR-TRI-12-IRC.qxf	7-CH	2022
+Chauvet-SlimPar-Tri-7-IRC.qxf	3 Channel	2023
+Chauvet-SlimPar-Tri-7-IRC.qxf	7 Channel	2024
+Chauvet-SlimSTRIP-UV-18-IRC.qxf	3 channel	2025
+Chauvet-Swarm-4-FX.qxf	12 Channel	2026
+Chauvet-Swarm-4-FX.qxf	2 Channel	2027
+Chauvet-Swarm-5-FX.qxf	Standard Mode	2028
+Chauvet-Swarm-Wash-FX.qxf	18 Channel	2029
+Chauvet-Swarm-Wash-FX.qxf	2 Channel	2030
+Chauvet-Techno-Strobe-168.qxf	2-Channel Mode	2031
+Chauvet-Trident.qxf	3 Channel	2032
+Chauvet-Vue-1.1.qxf	Default	2033
+Chauvet-Vue-3.1.qxf	DMX Mode	2034
+Chauvet-Vue-6.1.qxf	6 Channel Mode	2035
+Chauvet-Wash-FX-Hex.qxf	11 Channel	2036
+Chauvet-Wash-FX-Hex.qxf	3 Channel	2037
+Chauvet-Wash-FX-Hex.qxf	6 Channel	2038
+Chauvet-Wash-FX2.qxf	28 Channel	2039
+Chauvet-Wash-FX2.qxf	3 Channel	2040
+Chauvet-Wash-FX2.qxf	8 Channel	2041
+third_party/ofl-fixtures/chauvet-dj/washfx.json	23ch	2042
+third_party/ofl-fixtures/chauvet-dj/washfx.json	7ch	2043
+Chauvet-Wedge-Tri.qxf	DMX 3 Channels	2044
+Chauvet-Wedge-Tri.qxf	DMX 7 Channels	2045
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	AR1.D	2046
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	AR2.D	2047
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	AR2.S	2048
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	AR2.Z	2049
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	ARC.1	2050
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	ARC.2	2051
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	C1Q	2052
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	FULL	2053
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	HSV	2054
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	STD.Y	2055
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	TOUR	2056
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	TR16	2057
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	HSIC	2058
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	SSP	2059
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	Std. Y	2060
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	TOUR	2061
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	TR16	2062
+Chauvet-COLORado-1-Tour.qxf	ARC1	2063
+Chauvet-COLORado-1-Tour.qxf	ARC1 + D	2064
+Chauvet-COLORado-1-Tour.qxf	ARC2	2065
+Chauvet-COLORado-1-Tour.qxf	ARC2 + D	2066
+Chauvet-COLORado-1-Tour.qxf	ARC2 + S	2067
+Chauvet-COLORado-1-Tour.qxf	Tour [Default]	2068
+Chauvet-COLORado-2-Quad-Zoom.qxf	AR1.D	2069
+Chauvet-COLORado-2-Quad-Zoom.qxf	AR2.D	2070
+Chauvet-COLORado-2-Quad-Zoom.qxf	AR2.S	2071
+Chauvet-COLORado-2-Quad-Zoom.qxf	AR2.Z	2072
+Chauvet-COLORado-2-Quad-Zoom.qxf	ARC.1	2073
+Chauvet-COLORado-2-Quad-Zoom.qxf	ARC.2	2074
+Chauvet-COLORado-2-Quad-Zoom.qxf	HSV	2075
+Chauvet-COLORado-2-Quad-Zoom.qxf	STD.Y	2076
+Chauvet-COLORado-2-Quad-Zoom.qxf	TOUR	2077
+Chauvet-COLORado-2-Quad-Zoom.qxf	TR 16	2078
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	HSIC	2079
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	SSP	2080
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	Std. Y	2081
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	TOUR	2082
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	TR16	2083
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	HSIC	2084
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	SSP	2085
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	Std. Y	2086
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	TOUR	2087
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	TR16	2088
+Chauvet-COLORado-3P.qxf	ARC 1	2089
+Chauvet-COLORado-3P.qxf	ARC 1 + D	2090
+Chauvet-COLORado-3P.qxf	Pixel	2091
+Chauvet-COLORado-3P.qxf	Stage 1 (DMX mode 1)	2092
+Chauvet-COLORado-3P.qxf	Stage 2 (DMX mode 1)	2093
+Chauvet-COLORado-Batten-72-Tour.qxf	ARC1	2094
+Chauvet-COLORado-Batten-72-Tour.qxf	ARC1+D	2095
+Chauvet-COLORado-Batten-72-Tour.qxf	ARC2	2096
+Chauvet-COLORado-Batten-72-Tour.qxf	ARC2+D	2097
+Chauvet-COLORado-Batten-72-Tour.qxf	ARC2+S	2098
+Chauvet-COLORado-Batten-72-Tour.qxf	BLOCK1	2099
+Chauvet-COLORado-Batten-72-Tour.qxf	BLOCK2	2100
+Chauvet-COLORado-Batten-72-Tour.qxf	HSV	2101
+Chauvet-COLORado-Batten-72-Tour.qxf	TOUR	2102
+Chauvet-COLORado-Batten-72-Tour.qxf	TR16	2103
+Chauvet-COLORado-Batten-72x.qxf	1 HSIC	2104
+Chauvet-COLORado-Batten-72x.qxf	1 RGB	2105
+Chauvet-COLORado-Batten-72x.qxf	1 RGB EXT	2106
+Chauvet-COLORado-Batten-72x.qxf	1 RGBA	2107
+Chauvet-COLORado-Batten-72x.qxf	1 RGBA EXT	2108
+Chauvet-COLORado-Batten-72x.qxf	1 RGBAW	2109
+Chauvet-COLORado-Batten-72x.qxf	1 RGBAW EXT	2110
+Chauvet-COLORado-Batten-72x.qxf	1 RGBAW FIN	2111
+Chauvet-COLORado-Batten-72x.qxf	1 RGBAW FUL	2112
+Chauvet-COLORado-Batten-72x.qxf	3 HSIC	2113
+Chauvet-COLORado-Batten-72x.qxf	3 RGB	2114
+Chauvet-COLORado-Batten-72x.qxf	3 RGB EXT	2115
+Chauvet-COLORado-Batten-72x.qxf	3 RGBA	2116
+Chauvet-COLORado-Batten-72x.qxf	3 RGBA EXT	2117
+Chauvet-COLORado-Batten-72x.qxf	3 RGBAW	2118
+Chauvet-COLORado-Batten-72x.qxf	3 RGBAW EXT	2119
+Chauvet-COLORado-Batten-72x.qxf	3 RGBAW FIN	2120
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	HSIC	2121
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	SSP	2122
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	Std. Y	2123
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	TOUR	2124
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	TR16	2125
+third_party/ofl-fixtures/chauvet-professional/colordash-batten-quad-6.json	10-channel	2126
+third_party/ofl-fixtures/chauvet-professional/colordash-batten-quad-6.json	24-channel	2127
+third_party/ofl-fixtures/chauvet-professional/colordash-batten-quad-6.json	28-channel	2128
+third_party/ofl-fixtures/chauvet-professional/colordash-batten-quad-6.json	4-channel	2129
+third_party/ofl-fixtures/chauvet-professional/colordash-batten-quad-6.json	6-channel	2130
+third_party/ofl-fixtures/chauvet-professional/colordash-s-par-1.json	11-channel	2131
+third_party/ofl-fixtures/chauvet-professional/colordash-s-par-1.json	4-channel	2132
+third_party/ofl-fixtures/chauvet-professional/colordash-s-par-1.json	6-channel	2133
+Chauvet-Legend-230SR-Beam.qxf	Mode 1	2134
+Chauvet-Legend-230SR-Beam.qxf	Mode 2	2135
+Chauvet-Legend-330SR-Spot.qxf	21 channel	2136
+Chauvet-Legend-330SR-Spot.qxf	27 channel	2137
+Chauvet-Legend-412Z.qxf	15-channel	2138
+Chauvet-Legend-412Z.qxf	27-channel	2139
+Chauvet-Legend-412Z.qxf	31-channel	2140
+Chauvet-onAir-Panel-1-IP.qxf	1 Channel	2141
+Chauvet-onAir-Panel-1-IP.qxf	10 Channel	2142
+Chauvet-onAir-Panel-1-IP.qxf	11 Channel	2143
+Chauvet-onAir-Panel-1-IP.qxf	15 Channel 1	2144
+Chauvet-onAir-Panel-1-IP.qxf	15 Channel 2	2145
+Chauvet-onAir-Panel-1-IP.qxf	16 Channel	2146
+Chauvet-onAir-Panel-1-IP.qxf	3 Channel	2147
+Chauvet-onAir-Panel-1-IP.qxf	4 Channel	2148
+Chauvet-onAir-Panel-1-IP.qxf	5 Channel	2149
+Chauvet-onAir-Panel-1-IP.qxf	6 Channel	2150
+Chauvet-onAir-Panel-1-IP.qxf	8 Channel 1	2151
+Chauvet-onAir-Panel-1-IP.qxf	8 Channel 2	2152
+Chauvet-Ovation-CYC-1-FC.qxf	1 Channel	2153
+Chauvet-Ovation-CYC-1-FC.qxf	10 Channel	2154
+Chauvet-Ovation-CYC-1-FC.qxf	12 Channel	2155
+Chauvet-Ovation-CYC-1-FC.qxf	13 Channel	2156
+Chauvet-Ovation-CYC-1-FC.qxf	16 Channel	2157
+Chauvet-Ovation-CYC-1-FC.qxf	3 Channel	2158
+Chauvet-Ovation-CYC-1-FC.qxf	5 Channel	2159
+Chauvet-Ovation-CYC-1-FC.qxf	7 Channel	2160
+Chauvet-Ovation-CYC-1-FC.qxf	HSV	2161
+Chauvet-Ovation-E-910FC.qxf	10 Channel	2162
+Chauvet-Ovation-E-910FC.qxf	12 Channel	2163
+Chauvet-Ovation-E-910FC.qxf	13 Channel	2164
+Chauvet-Ovation-E-910FC.qxf	15 Channel	2165
+Chauvet-Ovation-E-910FC.qxf	5 Channel	2166
+Chauvet-Ovation-E-910FC.qxf	7 Channel	2167
+Chauvet-Ovation-E-910FC.qxf	HSV	2168
+Chauvet-Ovation-F-415FC.qxf	1 Channel	2169
+Chauvet-Ovation-F-415FC.qxf	11 Channel	2170
+Chauvet-Ovation-F-415FC.qxf	13 Channel	2171
+Chauvet-Ovation-F-415FC.qxf	14 Channel	2172
+Chauvet-Ovation-F-415FC.qxf	18 Channel	2173
+Chauvet-Ovation-F-415FC.qxf	3 Channel	2174
+Chauvet-Ovation-F-415FC.qxf	5 Channel	2175
+Chauvet-Ovation-F-415FC.qxf	7 Channel	2176
+Chauvet-Ovation-F-915FC.qxf	11Ch	2177
+Chauvet-Ovation-F-915FC.qxf	13Ch	2178
+Chauvet-Ovation-F-915FC.qxf	14Ch	2179
+Chauvet-Ovation-F-915FC.qxf	17Ch	2180
+Chauvet-Ovation-F-915FC.qxf	18ch	2181
+Chauvet-Ovation-F-915FC.qxf	1Ch	2182
+Chauvet-Ovation-F-915FC.qxf	3Ch	2183
+Chauvet-Ovation-F-915FC.qxf	5Ch	2184
+Chauvet-Ovation-F-915FC.qxf	7Ch	2185
+Chauvet-Ovation-F-915FC.qxf	HSV	2186
+third_party/ofl-fixtures/chauvet-professional/ovation-f-915vw.json	13-channel	2187
+third_party/ofl-fixtures/chauvet-professional/ovation-f-915vw.json	16-channel	2188
+third_party/ofl-fixtures/chauvet-professional/ovation-f-915vw.json	18-channel	2189
+third_party/ofl-fixtures/chauvet-professional/ovation-f-915vw.json	4-channel	2190
+third_party/ofl-fixtures/chauvet-professional/ovation-f-915vw.json	6-channel	2191
+third_party/ofl-fixtures/chauvet-professional/ovation-f-915vw.json	7-channel	2192
+third_party/ofl-fixtures/chauvet-professional/ovation-f-915vw.json	9-channel	2193
+Chauvet-Ovation-FD-165WW.qxf	Dos	2194
+Chauvet-Ovation-FD-165WW.qxf	Std.P	2195
+Chauvet-Ovation-FD-165WW.qxf	Uno	2196
+Chauvet-Ovation-H-105WW.qxf	1 Channel	2197
+Chauvet-Ovation-H-105WW.qxf	2 Channel	2198
+Chauvet-Ovation-H-105WW.qxf	4 Channel	2199
+Chauvet-Ovation-H-605FC.qxf	1 Channel	2200
+Chauvet-Ovation-H-605FC.qxf	10 Channel	2201
+Chauvet-Ovation-H-605FC.qxf	12 Channel	2202
+Chauvet-Ovation-H-605FC.qxf	13 Channel	2203
+Chauvet-Ovation-H-605FC.qxf	15 Channel	2204
+Chauvet-Ovation-H-605FC.qxf	3 Channel	2205
+Chauvet-Ovation-H-605FC.qxf	5 Channel	2206
+Chauvet-Ovation-H-605FC.qxf	7 Channel	2207
+Chauvet-Ovation-H-605FC.qxf	HSV	2208
+Chauvet-Ovation-P-56FC.qxf	1 Channel	2209
+Chauvet-Ovation-P-56FC.qxf	10 Channel	2210
+Chauvet-Ovation-P-56FC.qxf	12 Channel	2211
+Chauvet-Ovation-P-56FC.qxf	13 Channel	2212
+Chauvet-Ovation-P-56FC.qxf	16 Channel	2213
+Chauvet-Ovation-P-56FC.qxf	3 Channel	2214
+Chauvet-Ovation-P-56FC.qxf	5 Channel	2215
+Chauvet-Ovation-P-56FC.qxf	7 Channel	2216
+Chauvet-Ovation-P-56FC.qxf	HSV	2217
+Chauvet-Rogue-R1-FX-B.qxf	Advance Movement	2218
+Chauvet-Rogue-R1-FX-B.qxf	Basic	2219
+Chauvet-Rogue-R1-FX-B.qxf	Basic Movement	2220
+Chauvet-Rogue-R1-FX-B.qxf	RGB	2221
+Chauvet-Rogue-R1-FX-B.qxf	RGBW	2222
+Chauvet-Rogue-R1-FX-B.qxf	Standard	2223
+Chauvet-Rogue-R1-FX-B.qxf	Standard Movement	2224
+Chauvet-Rogue-R1-Spot.qxf	16 Channel	2225
+Chauvet-Rogue-R1-Spot.qxf	19 Channel	2226
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	14-channel	2227
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	15-channel	2228
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	19-channel	2229
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	21-channel	2230
+Chauvet-Rogue-R2-Spot.qxf	18 Channel	2231
+Chauvet-Rogue-R2-Spot.qxf	21 Channel	2232
+third_party/ofl-fixtures/chauvet-professional/rogue-r2-wash.json	15-channel	2233
+third_party/ofl-fixtures/chauvet-professional/rogue-r2-wash.json	17-channel	2234
+third_party/ofl-fixtures/chauvet-professional/rogue-r2-wash.json	22-channel	2235
+Chauvet-Rogue-RH1-Hybrid.qxf	20 Channel	2236
+Chauvet-Rogue-RH1-Hybrid.qxf	25 Channel	2237
+third_party/ofl-fixtures/chauvet-professional/vesuvio-rgba.json	9-channel	2238
+third_party/ofl-fixtures/clay-paky/a-leda-b-eye-k10.json	Standard	2239
+Clay-Paky-A.leda-B-EYE-K10-EASY.qxf	Standard	2240
+third_party/ofl-fixtures/clay-paky/a-leda-b-eye-k20.json	Standard	2241
+Clay-Paky-A.LEDA-Wash-K10.qxf	Shapes	2242
+Clay-Paky-A.LEDA-Wash-K10.qxf	Standard	2243
+Clay-Paky-A.LEDA-Wash-K20.qxf	Shapes	2244
+Clay-Paky-A.LEDA-Wash-K20.qxf	Standard	2245
+Clay-Paky-A.LEDA-Wash-K5.qxf	Shapes	2246
+Clay-Paky-A.LEDA-Wash-K5.qxf	Standard	2247
+Clay-Paky-Alpha-Beam-1500.qxf	Standard	2248
+Clay-Paky-Alpha-Beam-1500.qxf	Vector	2249
+Clay-Paky-Alpha-Beam-300.qxf	Option Stnd 1 - LinC Off, FulC Off, Rain On	2250
+Clay-Paky-Alpha-Beam-300.qxf	Option Stnd 2 - LinC Off, FulC On, Rain On	2251
+Clay-Paky-Alpha-Beam-300.qxf	Option Stnd 3 - LinC On, Rain On	2252
+Clay-Paky-Alpha-Beam-300.qxf	Option Stnd 4 - LinC Off, FulC Off, Rain Off	2253
+Clay-Paky-Alpha-Beam-300.qxf	Option Stnd 5 - LinC Off, FulC On, Rain Off	2254
+Clay-Paky-Alpha-Beam-300.qxf	Option Stnd 6 - LinC On, Rain Off	2255
+Clay-Paky-Alpha-Beam-300.qxf	Option Vect	2256
+Clay-Paky-Alpha-Spot-575-HPE.qxf	Option 16b	2257
+Clay-Paky-Alpha-Spot-575-HPE.qxf	Option Extn	2258
+Clay-Paky-Alpha-Spot-575-HPE.qxf	Option Stnd	2259
+third_party/ofl-fixtures/clay-paky/alpha-spot-qwo-800.json	Standard 32-channel	2260
+Clay-Paky-Alpha-Wash-700.qxf	Standard - CMY	2261
+Clay-Paky-Alpha-Wash-700.qxf	Standard - RGB	2262
+Clay-Paky-Alpha-Wash-700.qxf	Vector - CMY	2263
+Clay-Paky-Alpha-Wash-700.qxf	Vector - RGB	2264
+Clay-Paky-Arolla-Spot-MP.qxf	Standard	2265
+Clay-Paky-Atlas.qxf	Default	2266
+Clay-Paky-CP-Color-400.qxf	4 DMX, CMY	2267
+Clay-Paky-CP-Color-400.qxf	4 DMX, RGB	2268
+Clay-Paky-CP-Color-400.qxf	5 DMX, CMY	2269
+Clay-Paky-CP-Color-400.qxf	5 DMX, RGB	2270
+Clay-Paky-Glow-Up.qxf	Glow Up C	2271
+Clay-Paky-Glow-Up.qxf	Glow Up TW	2272
+Clay-Paky-Glow-Up.qxf	Glow Up W	2273
+Clay-Paky-Hepikos.qxf	Standard	2274
+Clay-Paky-Hepikos.qxf	Vector	2275
+Clay-Paky-HY-B-EYE-K15.qxf	Standard	2276
+Clay-Paky-HY-B-EYE-K25.qxf	Standard	2277
+Clay-Paky-Midi-B.qxf	Basic RGBW	2278
+Clay-Paky-Midi-B.qxf	Basic RGBW 16bit	2279
+Clay-Paky-Midi-B.qxf	Extended RGBW	2280
+Clay-Paky-Mini-Scan-150.qxf	Normal	2281
+Clay-Paky-Mini-Scan-300.qxf	Normal	2282
+Clay-Paky-Mini-Scan-HPE.qxf	Default	2283
+Clay-Paky-Mini-B.qxf	Basic RGBW	2284
+Clay-Paky-Mini-B.qxf	Basic RGBW 16bit	2285
+Clay-Paky-Mini-B.qxf	Extended RGBW	2286
+Clay-Paky-Mini-B.qxf	Extended RGBW 16bit	2287
+Clay-Paky-Mini-B-Spot.qxf	Default	2288
+Clay-Paky-Mythos.qxf	Standard	2289
+Clay-Paky-Pin-Scan.qxf	Standard	2290
+third_party/ofl-fixtures/clay-paky/sharpy.json	Standard	2291
+third_party/ofl-fixtures/clay-paky/sharpy.json	Vector	2292
+Clay-Paky-Sharpy-Plus.qxf	Standard	2293
+Clay-Paky-Show-Batten-100.qxf	Standard	2294
+third_party/ofl-fixtures/clay-paky/show-batten-100.json	Basic Engine	2295
+third_party/ofl-fixtures/clay-paky/spheriscan.json	Standard	2296
+Clay-Paky-Stage-Color-300-AE.qxf	 Option Extn	2297
+Clay-Paky-Stage-Color-300-AE.qxf	Option 16 b	2298
+Clay-Paky-Stage-Color-300-AE.qxf	Option Stnd	2299
+Clay-Paky-Stage-Zoom-1200.qxf	Default	2300
+Clay-Paky-Stormy.qxf	Standard	2301
+Clay-Paky-Stormy.qxf	Xenon	2302
+Clay-Paky-Stormy-CC.qxf	Independent	2303
+Clay-Paky-Stormy-CC.qxf	Standard	2304
+Clay-Paky-SuperSharpy.qxf	Standard	2305
+Clay-Paky-SuperSharpy.qxf	Vector	2306
+Clay-Paky-Tambora-Batten.qxf	Advanced	2307
+Clay-Paky-Tambora-Batten.qxf	Shape RGBW	2308
+Clay-Paky-Tambora-Batten.qxf	Standard RGBW	2309
+Clay-Paky-Tambora-Batten.qxf	Standard RGBW 16bit	2310
+Clay-Paky-Tambora-Flash.qxf	Pixels RGB	2311
+Clay-Paky-Tambora-Flash.qxf	Pixels RGBW	2312
+Clay-Paky-Tambora-Flash.qxf	Pixels Strobe	2313
+Clay-Paky-Tambora-Flash.qxf	Standard RGBW	2314
+Clay-Paky-Tambora-Flash.qxf	Standard RGBW 16bit	2315
+Clay-Paky-Tambora-Linear-100.qxf	Shape RGBW	2316
+Clay-Paky-Tambora-Linear-100.qxf	Standard	2317
+Clay-Paky-Tambora-Linear-100.qxf	Standard RGBW 16bit	2318
+Clay-Paky-Tambora-Linear-100.qxf	Strobe Engine	2319
+Clay-Paky-Tiger-Scan-HMI-1200.qxf	6 Channel	2320
+Clay-Paky-Tiger-Scan-HMI-575.qxf	6 Channel	2321
+Clay-Paky-Tornado.qxf	Standard	2322
+Clay-Paky-Volero-Wave.qxf	Pixel RGB	2323
+Clay-Paky-Volero-Wave.qxf	Pixel RGBW	2324
+Clay-Paky-Volero-Wave.qxf	Shape	2325
+Clay-Paky-Volero-Wave.qxf	Standard	2326
+Clay-Paky-Xtylos.qxf	Standard	2327
+third_party/ofl-fixtures/elation/acl-360-roller.json	Basic	2328
+third_party/ofl-fixtures/elation/acl-360-roller.json	Standard	2329
+Elation-Color-Spot-150.qxf	Mode 1	2330
+Elation-Cuepix-Batten.qxf	3 CH	2331
+Elation-Cuepix-Batten.qxf	30 CH	2332
+Elation-Cuepix-Batten.qxf	4 CH	2333
+Elation-Cuepix-Batten.qxf	6 CH	2334
+Elation-Cuepix-Batten.qxf	6H CH	2335
+Elation-Cuepix-Batten.qxf	9 CH	2336
+third_party/ofl-fixtures/elation/cuepix-blinder-ww2.json	1-channel	2337
+third_party/ofl-fixtures/elation/cuepix-blinder-ww2.json	2-channel	2338
+third_party/ofl-fixtures/elation/cuepix-blinder-ww2.json	3-channel	2339
+third_party/ofl-fixtures/elation/cuepix-blinder-ww2.json	4-channel	2340
+third_party/ofl-fixtures/elation/cuepix-blinder-ww4.json	1-channel	2341
+third_party/ofl-fixtures/elation/cuepix-blinder-ww4.json	2-channel	2342
+third_party/ofl-fixtures/elation/cuepix-blinder-ww4.json	4-channel	2343
+third_party/ofl-fixtures/elation/cuepix-blinder-ww4.json	5-channel	2344
+third_party/ofl-fixtures/elation/cuepix-blinder-ww4.json	7-channel	2345
+third_party/ofl-fixtures/elation/cuepix-blinder-ww4.json	9-channel	2346
+third_party/ofl-fixtures/elation/design-led-par-zoom.json	8-channel	2347
+Elation-DW-Fresnel.qxf	2 Channel	2348
+Elation-DW-Fresnel.qxf	3 Channel	2349
+Elation-DW-Fresnel.qxf	8 Channel	2350
+Elation-E-Spot-III.qxf	Basic	2351
+Elation-E-Spot-III.qxf	Extended	2352
+Elation-E-Spot-III.qxf	Standard	2353
+Elation-ELED-B48.qxf	12 Channel	2354
+Elation-ELED-B48.qxf	7 Channel	2355
+Elation-EVC-MH.qxf	12-CH	2356
+Elation-Fuze-PAR-Z175.qxf	10Ch-RGBW	2357
+Elation-Fuze-PAR-Z175.qxf	11Ch-16bit	2358
+Elation-Fuze-PAR-Z175.qxf	11Ch-HSI	2359
+Elation-Fuze-PAR-Z175.qxf	13Ch-sRGBWI	2360
+Elation-Fuze-PAR-Z175.qxf	14Ch-RGBW	2361
+Elation-Fuze-PAR-Z175.qxf	4Ch-RGBW	2362
+Elation-Fuze-PAR-Z175.qxf	5Ch-HSI	2363
+Elation-Fuze-PAR-Z175.qxf	6Ch-HSI	2364
+Elation-Fuze-PAR-Z175.qxf	7Ch-RGBW	2365
+Elation-Fuze-PAR-Z175.qxf	8Ch-RGBW	2366
+Elation-Fuze-PAR-Z175.qxf	8Ch-sRGBWI	2367
+Elation-Fuze-PAR-Z175.qxf	9Ch-RGBW	2368
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	10-channel 16Bit	2369
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	10-channel HSI	2370
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	12-channel sRGBI	2371
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	13-channel RGBW	2372
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	4-channel HSI	2373
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	4-channel RGBW	2374
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	5-channel HSI	2375
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	6-channel RGBW	2376
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	7-channel RGBW	2377
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	7-channel sRGBWI	2378
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	8-channel RGBW	2379
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	9-channel RGBW	2380
+Elation-Fuze-Wash-Z350.qxf	15 RGBW	2381
+Elation-Fuze-Wash-Z350.qxf	16 HSI	2382
+Elation-Fuze-Wash-Z350.qxf	17 RGBI	2383
+Elation-Fuze-Wash-Z350.qxf	19 RGBW	2384
+Elation-KL-PAR-FC.qxf	CMY 9 CH	2385
+Elation-KL-PAR-FC.qxf	CMY Extended 14 CH	2386
+Elation-KL-PAR-FC.qxf	Dimmer 1CH	2387
+Elation-KL-PAR-FC.qxf	Dimmer Colour 6CH	2388
+Elation-KL-PAR-FC.qxf	Extended 18 CH	2389
+Elation-KL-PAR-FC.qxf	Standard 11 CH	2390
+Elation-OPTI-TRI-30.qxf	1 Channel	2391
+Elation-OPTI-TRI-30.qxf	2 Channel	2392
+Elation-OPTI-TRI-30.qxf	3 Channel	2393
+Elation-OPTI-TRI-30.qxf	4 Channel	2394
+Elation-OPTI-TRI-30.qxf	6 Channel	2395
+Elation-OPTI-TRI-30.qxf	7 Channel	2396
+Elation-Paladin.qxf	Basic	2397
+Elation-Paladin.qxf	Standard	2398
+Elation-Platinum-Beam-5R.qxf	Basic	2399
+Elation-Platinum-Beam-5R.qxf	Extended	2400
+Elation-Platinum-Beam-5R.qxf	Standard	2401
+third_party/ofl-fixtures/elation/platinum-hfx.json	Basic	2402
+third_party/ofl-fixtures/elation/platinum-hfx.json	Extended	2403
+third_party/ofl-fixtures/elation/platinum-hfx.json	Standard	2404
+third_party/ofl-fixtures/elation/platinum-seven.json	Basic	2405
+third_party/ofl-fixtures/elation/platinum-seven.json	Standard	2406
+third_party/ofl-fixtures/elation/platinum-spot-15r-pro.json	Basic	2407
+third_party/ofl-fixtures/elation/platinum-spot-15r-pro.json	Standard	2408
+Elation-Platinum-Spot-5R.qxf	Basic	2409
+Elation-Platinum-Spot-5R.qxf	Extended	2410
+Elation-Platinum-Spot-5R.qxf	Standard	2411
+Elation-Platinum-Spot-III.qxf	Basic	2412
+Elation-Platinum-Spot-III.qxf	Extended	2413
+Elation-Platinum-Spot-III.qxf	Standard	2414
+Elation-Proteus-Beam.qxf	Basic	2415
+Elation-Proteus-Beam.qxf	Extend	2416
+Elation-Proteus-Beam.qxf	Stand	2417
+third_party/ofl-fixtures/elation/proteus-hybrid.json	Basic	2418
+third_party/ofl-fixtures/elation/proteus-hybrid.json	Standard	2419
+Elation-Rayzor-Q7.qxf	Basic	2420
+Elation-Rayzor-Q7.qxf	Extended	2421
+Elation-Rayzor-Q7.qxf	Standard	2422
+Elation-SIX-PAR-Z19-IP.qxf	10 Channel	2423
+Elation-SIX-PAR-Z19-IP.qxf	14 Channel	2424
+Elation-SIX-PAR-Z19-IP.qxf	7 Channel	2425
+Elation-SIX-PAR-Z19-IP.qxf	9 Channel	2426
+third_party/ofl-fixtures/elation/sixbar-1000.json	11-channel	2427
+third_party/ofl-fixtures/elation/sixbar-1000.json	13-channel	2428
+third_party/ofl-fixtures/elation/sixbar-1000.json	6-channel	2429
+third_party/ofl-fixtures/elation/sixbar-1000.json	7-channel	2430
+third_party/ofl-fixtures/elation/sixpar-100.json	12-channel	2431
+third_party/ofl-fixtures/elation/sixpar-100.json	6-channel	2432
+third_party/ofl-fixtures/elation/sixpar-100.json	7-channel	2433
+third_party/ofl-fixtures/elation/sixpar-100.json	8-channel	2434
+third_party/ofl-fixtures/elation/sixpar-100-ip.json	12-channel	2435
+third_party/ofl-fixtures/elation/sixpar-100-ip.json	6-channel	2436
+third_party/ofl-fixtures/elation/sixpar-100-ip.json	7-channel	2437
+third_party/ofl-fixtures/elation/sixpar-100-ip.json	8-channel	2438
+third_party/ofl-fixtures/elation/sixpar-200.json	12-channel	2439
+third_party/ofl-fixtures/elation/sixpar-200.json	6-channel	2440
+third_party/ofl-fixtures/elation/sixpar-200.json	7-channel	2441
+third_party/ofl-fixtures/elation/sixpar-200.json	8-channel	2442
+third_party/ofl-fixtures/elation/sixpar-200-ip.json	12-channel	2443
+third_party/ofl-fixtures/elation/sixpar-200-ip.json	6-channel	2444
+third_party/ofl-fixtures/elation/sixpar-200-ip.json	7-channel	2445
+third_party/ofl-fixtures/elation/sixpar-200-ip.json	8-channel	2446
+third_party/ofl-fixtures/elation/sixpar-200-wmg.json	12-channel	2447
+third_party/ofl-fixtures/elation/sixpar-200-wmg.json	6-channel	2448
+third_party/ofl-fixtures/elation/sixpar-200-wmg.json	7-channel	2449
+third_party/ofl-fixtures/elation/sixpar-200-wmg.json	8-channel	2450
+third_party/ofl-fixtures/elation/sixpar-300.json	12-channel	2451
+third_party/ofl-fixtures/elation/sixpar-300.json	6-channel	2452
+third_party/ofl-fixtures/elation/sixpar-300.json	7-channel	2453
+third_party/ofl-fixtures/elation/sixpar-300.json	8-channel	2454
+third_party/ofl-fixtures/elation/sixpar-300-ip.json	12-channel	2455
+third_party/ofl-fixtures/elation/sixpar-300-ip.json	6-channel	2456
+third_party/ofl-fixtures/elation/sixpar-300-ip.json	7-channel	2457
+third_party/ofl-fixtures/elation/sixpar-300-ip.json	8-channel	2458
+third_party/ofl-fixtures/elation/sixpar-300-wmg.json	12-channel	2459
+third_party/ofl-fixtures/elation/sixpar-300-wmg.json	6-channel	2460
+third_party/ofl-fixtures/elation/sixpar-300-wmg.json	7-channel	2461
+third_party/ofl-fixtures/elation/sixpar-300-wmg.json	8-channel	2462
+Elation-Sniper-2R.qxf	Mode 14 chanels	2463
+Elation-Sniper-2R.qxf	Mode 16 chanels	2464
+Elation-Sniper-2R.qxf	Mode 18 chanels	2465
+Elation-Sniper-2R.qxf	Mode 20 chanels	2466
+Elation-TVL-CYC-RGBW.qxf	10 Channel	2467
+Elation-TVL-CYC-RGBW.qxf	14 Channel	2468
+Elation-TVL-CYC-RGBW.qxf	4 Channel	2469
+Elation-TVL-CYC-RGBW.qxf	6 Channel	2470
+Elation-TVL-CYC-RGBW.qxf	7 Channel	2471
+Elation-TVL-CYC-RGBW.qxf	8 Channel	2472
+third_party/ofl-fixtures/elation/uni-bar.json	Dimmer	2473
+Elation-Vision-250.qxf	Mode 1	2474
+third_party/ofl-fixtures/elation/zw19.json	14-channel	2475
+third_party/ofl-fixtures/elation/zw19.json	22-channel	2476
+ETC-ColorSource-Fresnel-V.qxf	1 Channel	2477
+ETC-ColorSource-Fresnel-V.qxf	6 Channel	2478
+ETC-ColorSource-Fresnel-V.qxf	Direct	2479
+ETC-ColorSource-Fresnel-V.qxf	Direct 16-bit	2480
+ETC-ColorSource-Fresnel-V.qxf	RGB	2481
+ETC-ColorSource-Fresnel-V.qxf	Standard	2482
+ETC-ColorSource-Fresnel-V.qxf	Standard 16-bit	2483
+ETC-ColorSource-Fresnel-V.qxf	Studio	2484
+ETC-ColorSource-Fresnel-V.qxf	Studio 16-bit	2485
+ETC-ColorSource-Fresnel-V-MAX.qxf	1 Channel	2486
+ETC-ColorSource-Fresnel-V-MAX.qxf	6 Channel	2487
+ETC-ColorSource-Fresnel-V-MAX.qxf	Direct	2488
+ETC-ColorSource-Fresnel-V-MAX.qxf	Direct 16-bit	2489
+ETC-ColorSource-Fresnel-V-MAX.qxf	RGB	2490
+ETC-ColorSource-Fresnel-V-MAX.qxf	Standard	2491
+ETC-ColorSource-Fresnel-V-MAX.qxf	Standard 16-bit	2492
+ETC-ColorSource-Fresnel-V-MAX.qxf	Studio	2493
+ETC-ColorSource-Fresnel-V-MAX.qxf	Studio 16-bit	2494
+third_party/ofl-fixtures/etc/colorsource-par.json	1 Channel	2495
+third_party/ofl-fixtures/etc/colorsource-par.json	5 Channel (Default)	2496
+third_party/ofl-fixtures/etc/colorsource-par.json	Direct	2497
+third_party/ofl-fixtures/etc/colorsource-par.json	RGB	2498
+third_party/ofl-fixtures/etc/colorsource-par-deep-blue.json	1 Channel	2499
+third_party/ofl-fixtures/etc/colorsource-par-deep-blue.json	5 Channel (Default)	2500
+third_party/ofl-fixtures/etc/colorsource-par-deep-blue.json	Direct	2501
+third_party/ofl-fixtures/etc/colorsource-par-deep-blue.json	RGB	2502
+third_party/ofl-fixtures/etc/colorsource-spot.json	1 Channel	2503
+third_party/ofl-fixtures/etc/colorsource-spot.json	5 Channel (Default)	2504
+third_party/ofl-fixtures/etc/colorsource-spot.json	Direct	2505
+third_party/ofl-fixtures/etc/colorsource-spot.json	RGB	2506
+third_party/ofl-fixtures/etc/colorsource-spot-deep-blue.json	1 Channel	2507
+third_party/ofl-fixtures/etc/colorsource-spot-deep-blue.json	5 Channel (Default)	2508
+third_party/ofl-fixtures/etc/colorsource-spot-deep-blue.json	Direct	2509
+third_party/ofl-fixtures/etc/colorsource-spot-deep-blue.json	RGB	2510
+ETC-Desire-D22-Lustr+.qxf	Direct	2511
+ETC-Desire-D22-Lustr+.qxf	HSI	2512
+ETC-Desire-D22-Lustr+.qxf	HSIC	2513
+ETC-Desire-D22-Lustr+.qxf	RGB	2514
+ETC-Desire-D22-Lustr+.qxf	Studio	2515
+ETC-Desire-D40-Vivid.qxf	Mode 1 Direct	2516
+ETC-Desire-D40-Vivid.qxf	Mode 2 Stage	2517
+ETC-Desire-D40-Vivid.qxf	Mode 3 XT Arch	2518
+ETC-Desire-D40-Vivid.qxf	Mode 4 RGB	2519
+ETC-Desire-D40-Vivid.qxf	Mode 5 Studio	2520
+third_party/ofl-fixtures/etc/fos4PD16.json	3 Ch RGB	2521
+third_party/ofl-fixtures/etc/fos4PD16.json	Direct	2522
+third_party/ofl-fixtures/etc/fos4PD16.json	Expanded	2523
+third_party/ofl-fixtures/etc/fos4PD16.json	Intensity	2524
+third_party/ofl-fixtures/etc/fos4PD16.json	Studio	2525
+third_party/ofl-fixtures/etc/fos4PD24.json	3 Ch RGB	2526
+third_party/ofl-fixtures/etc/fos4PD24.json	Direct	2527
+third_party/ofl-fixtures/etc/fos4PD24.json	Expanded	2528
+third_party/ofl-fixtures/etc/fos4PD24.json	Intensity	2529
+third_party/ofl-fixtures/etc/fos4PD24.json	Studio	2530
+third_party/ofl-fixtures/etc/fos4PD8.json	3 Ch RGB	2531
+third_party/ofl-fixtures/etc/fos4PD8.json	Direct	2532
+third_party/ofl-fixtures/etc/fos4PD8.json	Expanded	2533
+third_party/ofl-fixtures/etc/fos4PD8.json	Intensity	2534
+third_party/ofl-fixtures/etc/fos4PD8.json	Studio	2535
+third_party/ofl-fixtures/etc/fos4PL16.json	3 Ch RGB	2536
+third_party/ofl-fixtures/etc/fos4PL16.json	Direct	2537
+third_party/ofl-fixtures/etc/fos4PL16.json	Expanded	2538
+third_party/ofl-fixtures/etc/fos4PL16.json	Intensity	2539
+third_party/ofl-fixtures/etc/fos4PL16.json	Studio	2540
+third_party/ofl-fixtures/etc/fos4PL24.json	3 Ch RGB	2541
+third_party/ofl-fixtures/etc/fos4PL24.json	Direct	2542
+third_party/ofl-fixtures/etc/fos4PL24.json	Expanded	2543
+third_party/ofl-fixtures/etc/fos4PL24.json	Intensity	2544
+third_party/ofl-fixtures/etc/fos4PL24.json	Studio	2545
+third_party/ofl-fixtures/etc/fos4PL8.json	3 Ch RGB	2546
+third_party/ofl-fixtures/etc/fos4PL8.json	Direct	2547
+third_party/ofl-fixtures/etc/fos4PL8.json	Expanded	2548
+third_party/ofl-fixtures/etc/fos4PL8.json	Intensity	2549
+third_party/ofl-fixtures/etc/fos4PL8.json	Studio	2550
+third_party/ofl-fixtures/etc/source-4wrd-color-ii.json	6-channel	2551
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	Direct	2552
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	HSI	2553
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	HSI Plus 7	2554
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	HSIC	2555
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	HSIC Plus 7	2556
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	RGB	2557
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	RGB Plus 7	2558
+third_party/ofl-fixtures/etc/source-four-led-series-2-daylight-hd.json	Studio	2559
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	Direct	2560
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	HSI	2561
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	HSI Plus 7	2562
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	HSIC	2563
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	HSIC Plus 7	2564
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	RGB	2565
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	RGB Plus 7	2566
+third_party/ofl-fixtures/etc/source-four-led-series-2-lustr.json	Studio	2567
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	Direct	2568
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	HSI	2569
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	HSI Plus 7	2570
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	HSIC	2571
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	HSIC Plus 7	2572
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	RGB	2573
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	RGB Plus 7	2574
+third_party/ofl-fixtures/etc/source-four-led-series-2-tungsten-hd.json	Studio	2575
+third_party/ofl-fixtures/etc/source-four-led-series-3-daylight-hdr.json	3 Ch RGB	2576
+third_party/ofl-fixtures/etc/source-four-led-series-3-daylight-hdr.json	Direct	2577
+third_party/ofl-fixtures/etc/source-four-led-series-3-daylight-hdr.json	Expanded	2578
+third_party/ofl-fixtures/etc/source-four-led-series-3-daylight-hdr.json	Intensity	2579
+third_party/ofl-fixtures/etc/source-four-led-series-3-daylight-hdr.json	Studio	2580
+third_party/ofl-fixtures/etc/source-four-led-series-3-lustr-x8.json	3 Ch RGB	2581
+third_party/ofl-fixtures/etc/source-four-led-series-3-lustr-x8.json	Direct	2582
+third_party/ofl-fixtures/etc/source-four-led-series-3-lustr-x8.json	Expanded	2583
+third_party/ofl-fixtures/etc/source-four-led-series-3-lustr-x8.json	Intensity	2584
+third_party/ofl-fixtures/etc/source-four-led-series-3-lustr-x8.json	Studio	2585
+third_party/ofl-fixtures/glp/force-120.json	Extended	2586
+third_party/ofl-fixtures/glp/force-120.json	Extended Legacy	2587
+third_party/ofl-fixtures/glp/force-120.json	Normal	2588
+third_party/ofl-fixtures/glp/force-120.json	Normal Legacy	2589
+GLP-Impression.qxf	Compressed	2590
+GLP-Impression.qxf	Extended	2591
+GLP-Impression.qxf	Normal	2592
+third_party/ofl-fixtures/glp/impression-fr1.json	Normal	2593
+GLP-Impression-FR1-TM.qxf	8 Channel	2594
+third_party/ofl-fixtures/glp/impression-laser.json	Normal	2595
+third_party/ofl-fixtures/glp/impression-spot-one.json	Compress 20-channel	2596
+third_party/ofl-fixtures/glp/impression-spot-one.json	Extended 31-channel	2597
+third_party/ofl-fixtures/glp/impression-spot-one.json	Normal 24-channel	2598
+GLP-ImpressionWA.qxf	Compressed	2599
+GLP-ImpressionWA.qxf	Extended	2600
+GLP-ImpressionWA.qxf	Normal	2601
+GLP-Impression-X4.qxf	Compress	2602
+GLP-Impression-X4.qxf	Extended	2603
+GLP-Impression-X4.qxf	Normal	2604
+third_party/ofl-fixtures/glp/impression-x4-bar-10.json	Compressed	2605
+third_party/ofl-fixtures/glp/impression-x4-bar-10.json	Dual Pixel	2606
+third_party/ofl-fixtures/glp/impression-x4-bar-10.json	Dual Pixel High Resolution	2607
+GLP-Impression-X4-S.qxf	Compress	2608
+GLP-Impression-X4-S.qxf	High-Resolution (Extended)	2609
+GLP-Impression-X4-S.qxf	Normal	2610
+GLP-Impression-X5.qxf	M1 Basic	2611
+GLP-ImpressionXL.qxf	Compressed	2612
+GLP-ImpressionXL.qxf	Extended	2613
+GLP-ImpressionXL.qxf	Normal	2614
+third_party/ofl-fixtures/glp/jdc1.json	1Pix Pro 17-channel	2615
+third_party/ofl-fixtures/glp/jdc1.json	Compressed Pro 14-channel	2616
+third_party/ofl-fixtures/glp/jdc1.json	Easy 11-channel	2617
+third_party/ofl-fixtures/glp/jdc1.json	Normal 23-channel	2618
+GLP-Junior-Scan-1.qxf	Mode 1	2619
+GLP-Junior-Scan-2.qxf	Mode 1	2620
+third_party/ofl-fixtures/glp/knv-arc.json	RGBW 16-bit	2621
+third_party/ofl-fixtures/glp/knv-arc.json	White strobe with FX, RGB with FX	2622
+third_party/ofl-fixtures/glp/knv-cube.json	RGBW 16-bit	2623
+third_party/ofl-fixtures/glp/knv-cube.json	White strobe with FX, RGB with FX	2624
+GLP-Matrix-Eye-2.qxf	All Full (RGB)	2625
+GLP-Matrix-Eye-2.qxf	All Full (RGBAL)	2626
+GLP-Matrix-Eye-2.qxf	Individual Full (RGB)	2627
+GLP-Matrix-Eye-2.qxf	Individual Full (RGBAL)	2628
+GLP-Matrix-Eye-2.qxf	Individual Generic	2629
+GLP-Matrix-Eye-2.qxf	Pixelmap RGB	2630
+GLP-Matrix-Eye-4.qxf	All Full (RGB)	2631
+GLP-Matrix-Eye-4.qxf	All Full (RGBAL)	2632
+GLP-Matrix-Eye-4.qxf	Individual Generic	2633
+GLP-Matrix-Eye-4.qxf	Pixelmap RGB	2634
+GLP-PocketScan.qxf	Mode 1	2635
+GLP-Volkslicht.qxf	Normal	2636
+GLP-YPOC250.qxf	Mode 1	2637
+GLP-YPOC250Pro.qxf	Mode 1	2638
+GLP-YPOC575.qxf	Mode 1	2639
+GLP-YPOC575-PRO.qxf	Default	2640
+GLP-YPOC700CMY.qxf	Mode 1	2641
+GLP-YPOCBasic250.qxf	Mode 1	2642
+GLP-YPOCBasicColor.qxf	Mode 1	2643
+GLP-YPOCColor.qxf	Mode1	2644
+GLP-YPOCColor575.qxf	Mode1	2645
+High-End-Systems-Studio-Beam.qxf	Flat Protocol	2646
+High-End-Systems-Studio-Beam.qxf	Standard Protocol	2647
+High-End-Systems-Studio-Command-1200.qxf	16-Bit Mode	2648
+High-End-Systems-Technobeam.qxf	Technobeam 18 channel indexed mode	2649
+High-End-Systems-Trackspot.qxf	High Resolution Mode	2650
+Martin-Acrobat.qxf	1-Channel	2651
+third_party/ofl-fixtures/martin/atomic-3000.json	1-channel	2652
+third_party/ofl-fixtures/martin/atomic-3000.json	3-channel	2653
+Martin-Atomic-3000.qxf	Mode 1 with Colour	2654
+Martin-Atomic-3000.qxf	Mode 2 with Colour and Fan	2655
+Martin-Atomic-3000.qxf	Mode 3 with Colour and Fan	2656
+Martin-Atomic-3000-LED.qxf	3-Channel	2657
+Martin-Atomic-3000-LED.qxf	4-Channel	2658
+Martin-Atomic-3000-LED.qxf	Extended	2659
+Martin-CX-10-Extreme.qxf	Standard	2660
+Martin-Destroyer.qxf	Single	2661
+Martin-EFX-500.qxf	Extended	2662
+Martin-EFX-500.qxf	Normal	2663
+Martin-EFX-600.qxf	Extended	2664
+Martin-EFX-600.qxf	Normal	2665
+Martin-EFX-700.qxf	Extended	2666
+Martin-EFX-700.qxf	Normal	2667
+Martin-EFX-800.qxf	Extended	2668
+Martin-EFX-800.qxf	Normal	2669
+Martin-Ego-X6.qxf	6 Channel	2670
+Martin-Ego-X6.qxf	7 Channel	2671
+Martin-ELP-PAR.qxf	Basic	2672
+Martin-ELP-PAR.qxf	Compact	2673
+Martin-ELP-CL-Profile.qxf	1 Channel	2674
+Martin-ELP-CL-Profile.qxf	10 Channel	2675
+Martin-ELP-CL-Profile.qxf	17 Channel	2676
+Martin-ERA-150-Wash.qxf	18 Channel	2677
+Martin-ERA-300-Profile.qxf	21 Channel	2678
+Martin-ERA-400-Performance.qxf	EXT 32 channel	2679
+Martin-ERA-400-Performance.qxf	Std. 30 channel	2680
+Martin-Jem-Compact-Hazer-Pro.qxf	3 Channel	2681
+Martin-JEM-K1-Hazer.qxf	Mode 1	2682
+Martin-JEM-ZR44.qxf	Mode 1	2683
+Martin-MAC-2000-Performance-II.qxf	28 Channel - 8 Bit	2684
+Martin-MAC-2000-Performance-II.qxf	31 Channel - 16 Bit	2685
+Martin-MAC-2000-Profile-II.qxf	20 Channel - 8 Bit	2686
+Martin-MAC-2000-Profile-II.qxf	24 Channel - 16 Bit	2687
+Martin-MAC-2000-Wash.qxf	8-bit with Color Wheel 2	2688
+Martin-MAC-2000-Wash.qxf	8-bit with Dimmer Wheel	2689
+third_party/ofl-fixtures/martin/mac-250-beam.json	16-Bit Extendend	2690
+third_party/ofl-fixtures/martin/mac-250-krypton.json	16-Bit Extended	2691
+third_party/ofl-fixtures/martin/mac-250-wash.json	16-Bit Extendend	2692
+Martin-MAC-301-Wash.qxf	Compressed 16bit	2693
+Martin-MAC-301-Wash.qxf	Compressed 8bit	2694
+Martin-MAC-301-Wash.qxf	Standard 16bit	2695
+Martin-Mac-350-Entour.qxf	8 Bit	2696
+Martin-MAC-401-Dual-CT.qxf	HSV 1	2697
+Martin-MAC-401-Dual-CT.qxf	HSV 2H	2698
+Martin-MAC-401-Dual-CT.qxf	HSV 2V	2699
+Martin-MAC-401-Dual-CT.qxf	HSV All	2700
+Martin-MAC-401-Dual-CT.qxf	HSVX 2H	2701
+Martin-MAC-401-Dual-CT.qxf	HSVX 2V	2702
+Martin-MAC-401-Dual-CT.qxf	HSVX All	2703
+Martin-MAC-401-Dual-RGB.qxf	HSV 1	2704
+Martin-MAC-401-Dual-RGB.qxf	HSV 2H	2705
+Martin-MAC-401-Dual-RGB.qxf	HSV 2V	2706
+Martin-MAC-401-Dual-RGB.qxf	HSV All	2707
+Martin-MAC-401-Dual-RGB.qxf	HSVX 2H	2708
+Martin-MAC-401-Dual-RGB.qxf	HSVX 2V	2709
+Martin-MAC-401-Dual-RGB.qxf	HSVX All	2710
+Martin-MAC-401-Dual-RGB.qxf	RGB 2H	2711
+Martin-MAC-401-Dual-RGB.qxf	RGB 2V	2712
+Martin-MAC-401-Dual-RGB.qxf	RGBX 2H	2713
+Martin-MAC-401-Dual-RGB.qxf	RGBX 2V	2714
+third_party/ofl-fixtures/martin/mac-600.json	DMX1 (10-channel)	2715
+third_party/ofl-fixtures/martin/mac-600.json	DMX2 (12-channel)	2716
+third_party/ofl-fixtures/martin/mac-600.json	DMX3 (12-channel)	2717
+Martin-MAC600E.qxf	Mode 1	2718
+Martin-MAC600E.qxf	Mode 2	2719
+Martin-MAC600E.qxf	Mode 3	2720
+Martin-MAC600-NT.qxf	Mode 1	2721
+Martin-MAC600-NT.qxf	Mode 2	2722
+Martin-MAC600-NT.qxf	Mode 3	2723
+Martin-MAC-700-Profile.qxf	16-bit Extended Mode	2724
+third_party/ofl-fixtures/martin/mac-700-wash.json	Extended 23-channel	2725
+third_party/ofl-fixtures/martin/mac-aura.json	Extended	2726
+third_party/ofl-fixtures/martin/mac-aura.json	Standard	2727
+Martin-MAC-Aura_XIP.qxf	Compact	2728
+Martin-MAC-Aura_XIP.qxf	Compact Direct	2729
+third_party/ofl-fixtures/martin/mac-axiom-hybrid.json	Standard	2730
+Martin-MAC-Quantum-Profile.qxf	Extended	2731
+third_party/ofl-fixtures/martin/mac-viper-airfx.json	Basic	2732
+Martin-Viper-AirFX.qxf	Extended	2733
+third_party/ofl-fixtures/martin/mac-viper-performance.json	Basic 16-bit	2734
+third_party/ofl-fixtures/martin/mac-viper-wash.json	Basic	2735
+third_party/ofl-fixtures/martin/mac-viper-wash.json	Extended	2736
+Martin-MAC250-Entour.qxf	16 Ex (16 Bit Extended)	2737
+Martin-MAC250plus.qxf	Mode 1	2738
+Martin-MAC250plus.qxf	Mode 2	2739
+Martin-MAC250plus.qxf	Mode 3	2740
+Martin-MAC300.qxf	Mode 1	2741
+Martin-MAC300.qxf	Mode 2	2742
+Martin-MAC300.qxf	Mode 3	2743
+Martin-MAC500.qxf	DMX1	2744
+Martin-MAC500.qxf	DMX2	2745
+Martin-MAC500.qxf	DMX3	2746
+third_party/ofl-fixtures/martin/magnum-2500-hz.json	Standard	2747
+third_party/ofl-fixtures/martin/mania-scx500.json	6-channel	2748
+third_party/ofl-fixtures/martin/mania-scx500.json	8-channel	2749
+Martin-MH2-Wash.qxf	12 Channel	2750
+Martin-MiniMAC-Maestro.qxf	Mode 1	2751
+Martin-MiniMAC-Maestro.qxf	Mode 2	2752
+Martin-MiniMAC-Maestro.qxf	Mode 3	2753
+Martin-MiniMAC-Profile.qxf	Mode 1	2754
+Martin-MiniMAC-Profile.qxf	Mode 2	2755
+Martin-MiniMAC-Profile.qxf	Mode 3	2756
+Martin-MiniMAC-Wash.qxf	Mode 1	2757
+Martin-MiniMAC-Wash.qxf	Mode 2	2758
+Martin-MiniMAC-Wash.qxf	Mode 3	2759
+third_party/ofl-fixtures/martin/mx-10-extreme.json	13-channel	2760
+Martin-Punisher.qxf	Single	2761
+Martin-Roboscan-218.qxf	Mode 1	2762
+Martin-Roboscan-518.qxf	Mode 1	2763
+Martin-Roboscan-Pro-918.qxf	DMX1	2764
+Martin-Roboscan-Pro-918.qxf	DMX2	2765
+Martin-Roboscan-Pro-918.qxf	DMX3	2766
+third_party/ofl-fixtures/martin/rush-mh-2-wash.json	Standard	2767
+third_party/ofl-fixtures/martin/rush-mh-3-beam.json	standard	2768
+third_party/ofl-fixtures/martin/rush-mh-5-profile.json	16-channel	2769
+third_party/ofl-fixtures/martin/rush-mh-7-hybrid.json	21-channel	2770
+Martin-Rush-MH1-Profile.qxf	Standard 16bit	2771
+Martin-Rush-MH6-Wash.qxf	Standard	2772
+Martin-RUSH-Par-1-RGBW.qxf	4-Channel	2773
+Martin-RUSH-Par-1-RGBW.qxf	5-Channel	2774
+Martin-RUSH-Par-1-RGBW.qxf	7-Channel	2775
+third_party/ofl-fixtures/martin/rush-par-2-rgbw-zoom.json	5-channel	2776
+third_party/ofl-fixtures/martin/rush-par-2-rgbw-zoom.json	9-channel	2777
+third_party/ofl-fixtures/martin/rush-scanner-1-led.json	16-channel	2778
+Martin-SCX-500.qxf	Mode 1	2779
+Martin-SCX-500.qxf	Mode 2	2780
+Martin-SCX-600.qxf	Extended	2781
+Martin-SCX-600.qxf	Normal	2782
+Martin-SCX-700.qxf	Extended	2783
+Martin-SCX-700.qxf	Normal	2784
+Martin-SCX-800.qxf	Extended	2785
+Martin-SCX-800.qxf	Normal	2786
+Martin-smartMAC.qxf	8-bit	2787
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSI All	2788
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSI Halves	2789
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSI Individual	2790
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSI Thirds	2791
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSIC All	2792
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSIC Halves	2793
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSIC Individual	2794
+third_party/ofl-fixtures/martin/stagebar-54l.json	HSIC Thirds	2795
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGB All	2796
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGB Halves	2797
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGB Individual	2798
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGB Thirds	2799
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGBAW All	2800
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGBAW Halves	2801
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGBAW Individual	2802
+third_party/ofl-fixtures/martin/stagebar-54l.json	RGBAW Thirds	2803
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSI All	2804
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSI Halves	2805
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSI Individual	2806
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSI Thirds	2807
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSIC All	2808
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSIC Halves	2809
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSIC Individual	2810
+third_party/ofl-fixtures/martin/stagebar-54s.json	HSIC Thirds	2811
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGB All	2812
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGB Halves	2813
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGB Individual	2814
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGB Thirds	2815
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGBAW All	2816
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGBAW Halves	2817
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGBAW Individual	2818
+third_party/ofl-fixtures/martin/stagebar-54s.json	RGBAW Thirds	2819
+Martin-Thrill-Mini-Profile.qxf	Default	2820
+Martin-24-7-Hazer.qxf	Main	2821
+Robe-ClubScan-150CT.qxf	8bit	2822
+Robe-ClubScan-250CT.qxf	8bit	2823
+Robe-ClubSpot-150CT.qxf	16bit	2824
+Robe-ClubSpot-150CT.qxf	8bit	2825
+Robe-ClubSpot-150CT.qxf	8bit Tracking	2826
+Robe-ClubSpot-160CT.qxf	16bit	2827
+Robe-ClubSpot-160CT.qxf	8bit	2828
+Robe-ClubSpot-160CT.qxf	8bit Tracking	2829
+Robe-ClubSpot-250CT.qxf	16 Bit	2830
+Robe-ClubSpot-250CT.qxf	8 Bit	2831
+Robe-ClubSpot-300-CT.qxf	8 Bit	2832
+Robe-ClubSpot-300-CT.qxf	Mode 1	2833
+Robe-ClubSpot-300-CT.qxf	Mode 2	2834
+Robe-ClubSpot-500-CT.qxf	Mode 1 (16bit)	2835
+Robe-ClubSpot-500-CT.qxf	Mode 2 (16bit)	2836
+Robe-ClubSpot-500-CT.qxf	Mode 3 (8bit)	2837
+Robe-ClubWash-250CT.qxf	16bit	2838
+Robe-ClubWash-250CT.qxf	8bit	2839
+Robe-ClubWash-300CT.qxf	16bit	2840
+Robe-ClubWash-300CT.qxf	8bit	2841
+Robe-ClubWash-500-CT.qxf	Mode 1 (16bit)	2842
+Robe-ClubWash-500-CT.qxf	Mode 2 (16bit)	2843
+Robe-ClubWash-500-CT.qxf	Mode 3 (8bit)	2844
+Robe-ClubWash-600-CT.qxf	8 Bit	2845
+Robe-ClubWash-600-CT.qxf	Mode 1	2846
+Robe-ClubWash-600-CT.qxf	Mode 2	2847
+Robe-ColorMix-240-AT.qxf	Mode 1	2848
+Robe-ColorMix-240-AT.qxf	Mode 2	2849
+Robe-ColorSpot-170-AT.qxf	Mode 1 (16bit)	2850
+Robe-ColorSpot-170-AT.qxf	Mode 2 (16bit)	2851
+Robe-ColorSpot-170-AT.qxf	Mode 3 (8bit)	2852
+Robe-ColorSpot-170-AT.qxf	Mode 4 (16bit)	2853
+Robe-ColorSpot-250-AT.qxf	14 Channel	2854
+Robe-ColorSpot-250-AT.qxf	16 Channel	2855
+Robe-ColorSpot-250-AT.qxf	18 Channel	2856
+Robe-ColorSpot-250-AT.qxf	20 Channel	2857
+Robe-ColorSpot-250-XT.qxf	Mode 1	2858
+Robe-ColorSpot-250-XT.qxf	Mode 2	2859
+Robe-ColorSpot-250-XT.qxf	Mode 3	2860
+third_party/ofl-fixtures/robe/colorspot-2500e-at.json	24-channel 1	2861
+third_party/ofl-fixtures/robe/colorspot-2500e-at.json	24-channel 2	2862
+third_party/ofl-fixtures/robe/colorspot-2500e-at.json	32-channel	2863
+Robe-ColorSpot-575-AT.qxf	1 - 27-Channel	2864
+Robe-ColorSpot-575-AT.qxf	2 - 19-Channel	2865
+Robe-ColorSpot-575-AT.qxf	3 - 29-Channel	2866
+Robe-ColorSpot-575-AT.qxf	4 - 21-Channel	2867
+Robe-ColorSpot-700E-AT.qxf	Mode 2	2868
+Robe-ColorSpot-700E-AT.qxf	Mode 4	2869
+Robe-ColorSpot-700E-AT.qxf	Mode 5	2870
+Robe-ColorSpot-700E-AT.qxf	Mode 6	2871
+Robe-ColorWash-1200E-AT.qxf	17-Channel	2872
+Robe-ColorWash-1200E-AT.qxf	21-Channel	2873
+Robe-ColorWash-1200E-AT.qxf	23-Channel	2874
+Robe-ColorWash-1200E-AT.qxf	24-Channel	2875
+Robe-ColorWash-1200E-AT.qxf	30-Channel	2876
+Robe-Colorwash-250-AT.qxf	Mode 1	2877
+Robe-Colorwash-250-AT.qxf	Mode 2	2878
+Robe-Colorwash-250-AT.qxf	Mode 3	2879
+Robe-Colorwash-250-AT.qxf	Mode 4	2880
+Robe-DJ-Scan-150-XT.qxf	Default	2881
+third_party/ofl-fixtures/robe/dj-scan-250-xt.json	6-channel	2882
+Robe-Fog-1500-FT.qxf	1 Channel	2883
+Robe-LED-Blinder-196LT.qxf	12 Channels	2884
+Robe-LED-Blinder-196LT.qxf	15 Channel	2885
+Robe-LED-Blinder-196LT.qxf	3 Channel	2886
+Robe-LED-Blinder-196LT.qxf	6 Channel	2887
+Robe-LEDBeam-350.qxf	Cpulse (LED frequency)	2888
+Robe-LEDBeam-350.qxf	Reduced 8-bit	2889
+Robe-LEDBeam-350.qxf	Standard 16-bit	2890
+Robe-LEDBeam-350-RGBA.qxf	Cpulse (LED frequency)	2891
+Robe-LEDBeam-350-RGBA.qxf	Reduced 8-bit	2892
+Robe-LEDBeam-350-RGBA.qxf	Standard 16-bit	2893
+Robe-Pointe.qxf	16 channel	2894
+Robe-Pointe.qxf	30 channel	2895
+Robe-Pointe.qxf	Main	2896
+Robe-Robin-100-LEDBeam.qxf	Mode 2 - CMY	2897
+Robe-Robin-100-LEDBeam.qxf	Mode 2 - RGBW	2898
+Robe-Robin-100-LEDBeam.qxf	Mode 3 - CMY	2899
+Robe-Robin-100-LEDBeam.qxf	Mode 3 - RGBW	2900
+Robe-Robin-100-LEDBeam.qxf	Mode 4	2901
+Robe-Robin-150-LEDBeam.qxf	Reduced 8-Bit	2902
+Robe-Robin-150-LEDBeam.qxf	Standard 16-Bit	2903
+Robe-Robin-300E-Beam.qxf	1 - 24-Channel	2904
+Robe-Robin-300E-Beam.qxf	2 - 19-Channel	2905
+Robe-Robin-300E-Beam.qxf	3 - 17-Channel	2906
+third_party/ofl-fixtures/robe/robin-300e-wash.json	1st	2907
+third_party/ofl-fixtures/robe/robin-300e-wash.json	2nd	2908
+third_party/ofl-fixtures/robe/robin-300e-wash.json	3rd	2909
+Robe-Robin-600-LED-Wash.qxf	Mode 2	2910
+Robe-Robin-600-LED-Wash.qxf	Mode 3	2911
+Robe-Robin-600-LED-Wash.qxf	Mode 4	2912
+Robe-Robin-600E-Beam.qxf	Mode 1	2913
+Robe-Robin-600E-Beam.qxf	Mode 2	2914
+Robe-Robin-600E-Beam.qxf	Mode 3	2915
+third_party/ofl-fixtures/robe/robin-600e-spot.json	23-channel	2916
+third_party/ofl-fixtures/robe/robin-600e-spot.json	25-channel	2917
+third_party/ofl-fixtures/robe/robin-600e-spot.json	32-channel	2918
+Robe-Robin-600E-Spot.qxf	Mode 1	2919
+Robe-Robin-600E-Spot.qxf	Mode 2	2920
+Robe-Robin-600E-Spot.qxf	Mode 3	2921
+Robe-Robin-600E-Wash.qxf	Mode 1	2922
+Robe-Robin-600E-Wash.qxf	Mode 2	2923
+Robe-Robin-600E-Wash.qxf	Mode 3	2924
+Robe-Robin-800-LEDWash.qxf	11 Channel	2925
+Robe-Robin-800-LEDWash.qxf	16 Channel	2926
+Robe-Robin-800-LEDWash.qxf	22 Channel	2927
+Robe-Robin-DLX-Spot.qxf	23-channel	2928
+Robe-Robin-DLX-Spot.qxf	25-channel	2929
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 16bit CMY Color	2930
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 16bit RGBW Color	2931
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 8bit CMY Color	2932
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 8bit RGBW Color	2933
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Virtual Color Wheel	2934
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	1 – Standard 16bit CMY	2935
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	1 – Standard 16bit RGBW	2936
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	2 – Reduced 8bit CMY	2937
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	2 – Reduced 8bit RGBW	2938
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	2nd	2939
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	3rd	2940
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	4th	2941
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	6th	2942
+Robe-Robin-MiniMe.qxf	24-channel	2943
+third_party/ofl-fixtures/robe/robin-parfect-150.json	Reduced 8bit	2944
+third_party/ofl-fixtures/robe/robin-parfect-150.json	Standard 16bit	2945
+Robe-Robin-Spikie.qxf	Reduced 8-bit (CMY)	2946
+Robe-Robin-Spikie.qxf	Reduced 8-bit (RGB)	2947
+Robe-Robin-Spikie.qxf	Standard 16-bit (CMY)	2948
+Robe-Robin-Spikie.qxf	Standard 16-bit (RGB)	2949
+Robe-Robin-Tetra-1.qxf	1-Wash	2950
+third_party/ofl-fixtures/robe/robin-viva-cmy.json	Reduced 8 bit	2951
+third_party/ofl-fixtures/robe/robin-viva-cmy.json	Standard 16 bit	2952
+Robe-Scan-575-XT.qxf	8 bits	2953
+Robe-Scan-575-XT.qxf	Mode 1	2954
+Robe-Scan-575-XT.qxf	Mode 2	2955
+Robe-Spiider.qxf	(2) Basic [CMY]	2956
+Robe-Spiider.qxf	(2) Basic [RGBW]	2957
+Robe-Spiider.qxf	(5) Wash [CMY]	2958
+Robe-Spiider.qxf	(5) Wash [RGBW]	2959
+third_party/ofl-fixtures/robe/spot-160-xt.json	1st	2960
+third_party/ofl-fixtures/robe/spot-160-xt.json	2nd	2961
+third_party/ofl-fixtures/robe/spot-160-xt.json	3rd	2962
+third_party/ofl-fixtures/robe/spot-160-xt.json	4th	2963
+Robe-Spot-160-XT.qxf	8-channel, 16-Bit	2964
+Robe-Spot-575-XT.qxf	8-Bit (14 Channel)	2965
+Robe-Spot-575-XT.qxf	Mode 1 (16 Channel)	2966
+Robe-Spot-575-XT.qxf	Mode 2 (16 Channel)	2967
+Robe-Wash-575-XT.qxf	8 Bits	2968
+Robe-Wash-575-XT.qxf	Mode 1	2969
+Robe-Wash-575-XT.qxf	Mode 2	2970
+SGM-Colorlab-250.qxf	Mode 1	2971
+SGM-G-Profile.qxf	Standard (31 Channels)	2972
+SGM-Giotto-Spot-250.qxf	Mode 1	2973
+SGM-Giotto-Spot-400.qxf	Mode 1	2974
+SGM-Giotto-Wash-400.qxf	Mode 1	2975
+SGM-Idea-Beam-300.qxf	Base v1.0	2976
+SGM-Idea-Beam-300.qxf	Base v1.1	2977
+SGM-Idea-Beam-300.qxf	Extended v1.0	2978
+SGM-Idea-Beam-300.qxf	Extended v1.1	2979
+SGM-Idea-Beam-300.qxf	Standard v1.0	2980
+SGM-Idea-Beam-300.qxf	Standard v1.1	2981
+SGM-Idea-Led-Bar-100.qxf	15 channels	2982
+SGM-Idea-Led-Bar-100.qxf	3 channels	2983
+SGM-Idea-Led-Bar-100.qxf	4 channels	2984
+SGM-Idea-Led-Bar-100.qxf	6 channels	2985
+SGM-Idea-Spot-250.qxf	12 channels (8bit)	2986
+SGM-Idea-Spot-250.qxf	14 channels (16bit)	2987
+SGM-Idea-Spot-575.qxf	14 Channels	2988
+SGM-Idea-Spot-575.qxf	16 Channels	2989
+SGM-Idea-Spot-700.qxf	Base v1.0	2990
+SGM-Idea-Spot-700.qxf	Base v1.1	2991
+SGM-Idea-Spot-700.qxf	Standard v1.0	2992
+SGM-Idea-Spot-700.qxf	Standard v1.1	2993
+SGM-Newton-1200.qxf	Default	2994
+third_party/ofl-fixtures/sgm/p-5.json	10-channel (CTC)	2995
+third_party/ofl-fixtures/sgm/p-5.json	10-channel (RAW) 16bit	2996
+third_party/ofl-fixtures/sgm/p-5.json	3-channel (Full Color Calibrated)	2997
+third_party/ofl-fixtures/sgm/p-5.json	4-channel (RAW)	2998
+third_party/ofl-fixtures/sgm/p-5.json	6-channel (CTC)	2999
+third_party/ofl-fixtures/sgm/p-5.json	6-channel (RAW)	3000
+third_party/ofl-fixtures/sgm/p-5.json	8-channel (RAW) 16bit	3001
+third_party/ofl-fixtures/sgm/p-5.json	9-channel (RAW) 16bit	3002
+SGM-Victory-250.qxf	Standard	3003
+SGM-Victory-II-250.qxf	Mode 1	3004
+SGM-Victory-II-250.qxf	Mode 2	3005
+SGM-Victory-II-Pro150.qxf	Mode 1	3006
+Vari-Lite-VL2202-Spot.qxf	Enhanced 16bit	3007
+Vari-Lite-VL2202-Spot.qxf	Enhanced 8bit	3008
+Vari-Lite-VL2202-Spot.qxf	Standard 16bit	3009
+Vari-Lite-VL2202-Spot.qxf	Standard 8bit	3010
+Vari-Lite-VL2402-Wash.qxf	Enhanced 16bit	3011
+Vari-Lite-VL2402-Wash.qxf	Enhanced 8bit	3012
+Vari-Lite-VL2402-Wash.qxf	Standard 16bit	3013
+Vari-Lite-VL2402-Wash.qxf	Standard 8bit	3014
+Vari-Lite-VL2500-Wash.qxf	Normal Mode	3015
+Vari-Lite-VL3000-Spot.qxf	Standard	3016
+Vari-Lite-VL3000-Wash.qxf	Standard	3017
+Vari-Lite-VL3500-Spot.qxf	16 bit Enhanced	3018

@@ -48,7 +48,7 @@ def hand_ids():
 def map_ids():
     ids = set()
     if os.path.isfile(MAP):
-        for line in open(MAP, encoding="ascii"):
+        for line in open(MAP, encoding="utf-8"):
             line = line.rstrip("\n")
             if not line or line.startswith("#"):
                 continue

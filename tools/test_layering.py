@@ -89,6 +89,7 @@ PAIR_EXEMPT = {   # .c files with no same-stem header, and why
     "io/lj_audio_gen.c": "generated (gen_vectors.py --audio); declared by io/lj_audio.h (W5 audio)",
     "io/lj_vtr_gen.c": "generated; declared by io/lj_dmxin.h (W5 dmxin)",
 }
+PAIR_EXEMPT_RE = re.compile(r"^fixlib/lj_profiles_gen_\d+\.c$")   # W7: generated parts (tools/qxf2c.py), declared by fixlib/lj_profiles_gen.h
 ID = re.compile(r"[A-Za-z_]\w*")
 ID_OK = re.compile(r"^(lj_|LJ_)")
 KEYWORDS = {"void", "int", "char", "unsigned", "signed", "short", "long", "const", "static", "extern", "struct", "enum",
@@ -320,7 +321,7 @@ def main():
             code = strip_code(text)                           # for the word greps
             nocomment = strip_code(text, strings=False)       # for #include lines (the file name is a string literal)
             # 8. ME-44 pairing and header identifiers
-            if fn.endswith(".c") and rel not in PAIR_EXEMPT and not os.path.exists(path[:-2] + ".h"):
+            if fn.endswith(".c") and rel not in PAIR_EXEMPT and not PAIR_EXEMPT_RE.match(rel) and not os.path.exists(path[:-2] + ".h"):
                 stem = fn[:-2]
                 if not (rel.startswith("ui/widgets/lj_w_") and re.search(r"\b%s\w*" % stem, group_text)):
                     findings.append("%s: no %s.h and no blessed group header declares it (ME-44)" % (rel, stem))

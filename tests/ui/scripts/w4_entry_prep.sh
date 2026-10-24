@@ -2,7 +2,8 @@
 # w4_entry_prep.sh <userdir> - the two scratch libraries of the W4 entry-point walkthrough (docs/w4-integration.md,
 # Acceptance item 2). <userdir> is the installation folder's User directory (%APPDATA%\LJ4EVR\LJ4EVR\User on Windows).
 # Back up %APPDATA%\LJ4EVR first and delete W4Entry / W4Update afterwards. Everything written here is our own text.
-#   W4Entry: Main.Ini [DEBUG] DebugWindow=1 (View > De&bugWindow shown), Fingers.Ini [SETUP] Mode=1 (Virtual Fingers opens
+#   W4Entry: Main.Ini [DEBUG] DebugWindow=1 (View > De&bugWindow shown), [FIXTURES] ShowExtraProfiles=0 (W7: the
+#            Fixture Configuration key path counts rows of the LJ2 tree), Fingers.Ini [SETUP] Mode=1 (Virtual Fingers opens
 #            without its activation prompt), and fixtures 3-7 already patched and placed: RGB Pack x4 (78), User Definable
 #            Generic Scanner 1 (43), Color Scroller 1 (42), Generic Fixture 2 (46), Mac 250 Laser (118), so the icon popup
 #            reaches every profile editor and the laser pair; W6 (LORD_FIDELITY-14): fixtures 8-9 are two more 1-channel
@@ -14,7 +15,7 @@ U=${1:?usage: w4_entry_prep.sh <userdir>}
 E="$U/W4Entry"
 mkdir -p "$E" "$U/W4Aux"   # W4Aux: a spare library row for User Libraries Rename / Backup (sorted after Default, before W4Captions)
 mkdir -p "$U/Default"      # ME-200: our own empty folder; the walkthrough's library list expects the Default row on a fresh userdata
-printf '[DEBUG]\r\nDebugWindow=1\r\n' > "$E/Main.Ini"
+printf '[DEBUG]\r\nDebugWindow=1\r\n[FIXTURES]\r\nShowExtraProfiles=0\r\n' > "$E/Main.Ini"   # W7: the key path below walks the LJ2-exact 201-row tree
 printf '[SETUP]\r\nMode=1\r\n' > "$E/Fingers.Ini"
 {
   printf 'LJ4 config 1\r\n'

@@ -37,3 +37,660 @@ Martin-MAC-Aura.qxf	Standard	200	Beam color wheel effect	37
 Martin-MAC-Viper-Performance.qxf	Basic	1000	Color Wheel	25
 Martin-MAC-Quantum-Profile.qxf	Basic	1001	Color wheel	24
 Martin-Rush-MH3.qxf	1	1002	Color	31
+Acme-Ginamp.qxf	13 Channel	1008	Color macro	34
+Acme-Ginamp.qxf	18 Channel	1009	Color macro	34
+Acme-Oxygen.qxf	17 Channel	1011	CTO	57
+Acme-Oxygen.qxf	17 Channel	1011	Color macro	39
+Acme-Pixel-Line-IP.qxf	15 Channel (M2)	1012	Color Macro	33
+Acme-Pixel-Line-IP.qxf	21 Channel (M3)	1014	Color Macro	33
+Acme-Super-Dotline.qxf	27 Channel	1018	Main CCT	57
+Acme-Super-Dotline.qxf	27 Channel	1018	Main Color	32
+Acme-Super-Dotline.qxf	27 Channel	1018	Main Macro	25
+Acme-Super-Dotline.qxf	27 Channel	1018	LINE_W Macro	25
+third_party/ofl-fixtures/american-dj/12p-hex-ip.json	13-channel	1021	Color Presets	65
+American-DJ-12P-Hex.qxf	12 Channel	1025	Color Macro	64
+third_party/ofl-fixtures/american-dj/18p-hex-ip.json	13-channel	1032	Color Presets	65
+American-DJ-5P-Hex.qxf	12 Channel	1036	Color Macro	64
+third_party/ofl-fixtures/american-dj/7p-hex-ip.json	13-channel	1047	Color Presets	65
+American-DJ-Accu-UFO.qxf	10-CH Mode	1058	LED Effects	25
+American-DJ-Asteroid-1200.qxf	Basic	1059	Color Macros	65
+American-DJ-Asteroid-1200.qxf	Standard	1060	Color Macros	65
+American-DJ-Chameleon-QBar-Pro.qxf	10-Channel	1065	Color Macros	65
+American-DJ-Chameleon-QBar-Pro.qxf	10-Channel	1065	Programs	23
+American-DJ-Chameleon-QBar-Pro.qxf	7-Channel	1070	Color Macros	65
+American-DJ-Chameleon-QBar-Pro.qxf	9-Channel	1071	Color Macros	65
+American-DJ-Chameleon-QBar-Pro.qxf	9-Channel	1071	Programs	23
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	10-channel	1072	Program Selection	65
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	3-channel	1073	Color Macros	65
+third_party/ofl-fixtures/american-dj/cob-cannon-wash.json	9-channel	1078	Program Selection	65
+American-DJ-COB-Cannon-Wash-Pearl.qxf	3 Channel	1086	Color Macros	65
+American-DJ-Dotz-Bar-1.4.qxf	16 Channel	1110	Color Macros and Programs	30
+American-DJ-Dotz-Bar-1.4.qxf	8 Channel	1113	Color Macros and Programs	30
+American-DJ-Dotz-Flood.qxf	1-Channel	1114	Color Macros	33
+American-DJ-Dotz-Flood.qxf	2-channel	1115	Color Macros	33
+American-DJ-Dotz-Flood.qxf	9B-channel	1120	Color Macros	33
+American-DJ-Dotz-Matrix.qxf	7 Channel	1123	Colour Macros & Programs	31
+American-DJ-Dotz-Panel-2.4.qxf	29 Channel	1125	Color Macros And Programs	31
+American-DJ-Dotz-Panel-2.4.qxf	8 Channel 	1128	Color Macros And Programs	31
+third_party/ofl-fixtures/american-dj/dotz-par.json	9-channel	1132	Color Macros	33
+American-DJ-Dotz-TPar.qxf	18 Channel	1134	Color Macros & Program	30
+American-DJ-Dotz-TPar.qxf	9 Channel	1137	Color Macros & Program	30
+American-DJ-Encore-Burst-RGBW-IP.qxf	11 Channel	1142	Color Macro	34
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	12-channel	1160	Color Macros	65
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	15-channel	1161	Color Macros	65
+third_party/ofl-fixtures/american-dj/encore-lp12z-ip.json	18-channel	1162	Color Macros	65
+American-DJ-Flat-Par-Tri7X.qxf	1 Channel	1213	Color Macros	32
+American-DJ-Flat-Par-Tri7X.qxf	2 Channel	1214	Color Macros	32
+American-DJ-Flat-Par-Tri7X.qxf	5 Channel	1217	Color Macros	32
+American-DJ-Flat-Par-Tri7X.qxf	6 Channel	1218	Color Macros	32
+American-DJ-Flat-Par-Tri7X.qxf	7 Channel	1219	Color Macros	32
+American-DJ-Flat-Par-TW12.qxf	2 Channel	1220	Color Macros	34
+American-DJ-Flat-Par-TW12.qxf	8 Channel	1224	Color Macros	34
+American-DJ-Flat-Par-TW12.qxf	9 Channel	1225	Color Macros	34
+American-DJ-Fog-Fury-Jett.qxf	2 Channel	1238	Colour Macros	65
+American-DJ-Fog-Fury-Jett.qxf	3 Channel	1239	Colour Macros	65
+third_party/ofl-fixtures/american-dj/fog-fury-jett-pro.json	2-channel	1243	Color Macros	30
+third_party/ofl-fixtures/american-dj/fog-fury-jett-pro.json	3-channel	1244	Color Macros	30
+third_party/ofl-fixtures/american-dj/illusion-dotz-4-4.json	Basic 12-channel	1270	Auto Programs	26
+third_party/ofl-fixtures/american-dj/illusion-dotz-4-4.json	Standard 14-channel	1271	Auto Programs	26
+American-DJ-Jolt-300.qxf	8 Channel	1307	Color macro	65
+American-DJ-Jolt-300.qxf	A10 Channel	1308	Color macro	65
+American-DJ-Jolt-300.qxf	A10 Channel	1308	Auto Programs	35
+American-DJ-Jolt-300.qxf	A18 Channel	1309	Color macro	65
+American-DJ-Jolt-300.qxf	A18 Channel	1309	Auto Programs	35
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	1-channel	1315	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	2-channel	1316	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	5-channel	1319	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	6-channel	1320	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb.json	7-channel	1321	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	1-channel	1322	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	2-channel	1323	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	5-channel	1326	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	6-channel	1327	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-50rgb-rc.json	7-channel	1328	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	Color macro	1335	Color Macros	48
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	Program	1338	Color Macros	48
+third_party/ofl-fixtures/american-dj/mega-bar-rgba.json	Program	1338	Programs	25
+American-DJ-Mega-Flat-TRI-PAK-Plus.qxf	10 Channel	1342	Color Macros	65
+American-DJ-Mega-Flat-TRI-PAK-Plus.qxf	9 Channel	1346	Color Macros	65
+third_party/ofl-fixtures/american-dj/mega-hex-par.json	11-channel	1347	Color Macros / Programs	64
+third_party/ofl-fixtures/american-dj/mega-hex-par.json	12-channel	1348	Color Macros / Programs	64
+American-DJ-Mega-Panel-LED.qxf	2 Channel	1354	Macros/Programs	22
+American-DJ-Mega-Panel-LED.qxf	5 Channel	1358	Color Macros	33
+American-DJ-Mega-Panel-LED.qxf	6 Channel	1359	Macros/Programs	22
+American-DJ-Mega-Panel-LED.qxf	7 Channel	1360	Macros/Programs	22
+American-DJ-Mega-PAR-Profile.qxf	1 Channel	1361	Color Macros	33
+American-DJ-Mega-PAR-Profile.qxf	2 Channel	1362	Color Macros	33
+American-DJ-Mega-PAR-Profile.qxf	5 Channel	1365	Color Macros	33
+American-DJ-Mega-PAR-Profile.qxf	6 Channel	1366	Color Macros	33
+American-DJ-Mega-PAR-Profile.qxf	7 Channel	1367	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-par-profile-plus.json	10-channel	1368	Program Selection	65
+third_party/ofl-fixtures/american-dj/mega-par-profile-plus.json	9-channel	1372	Program Selection	65
+American-DJ-Mega-Tri-Bar.qxf	12 Channel Mode	1381	Macros/Programs	22
+American-DJ-Mega-Tri-Bar.qxf	2 Channel Mode	1382	Macros/Programs	22
+American-DJ-Mega-Tri-Bar.qxf	6 Channel Mode	1385	Color Macros	33
+American-DJ-Mega-Tri-Bar.qxf	7 Channel Mode	1386	Macros/Programs	22
+American-DJ-Mega-Tri-Par.qxf	1 Channel	1387	Color Macros	33
+American-DJ-Mega-Tri-Par.qxf	2 Channels	1388	Color Macros	33
+American-DJ-Mega-Tri-Par.qxf	5 Channels	1391	Color Macros	33
+American-DJ-Mega-Tri-Par.qxf	6 Channels	1392	Color Macros	33
+American-DJ-Mega-Tri-Par.qxf	7 Channels	1393	Color Macros	33
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	1-channel	1394	Color macros	33
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	2-channel	1395	Color macros	33
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	5-channel	1398	Color macros	33
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	6-channel	1399	Color macros	33
+third_party/ofl-fixtures/american-dj/mega-tripar-profile.json	7-channel	1400	Color macros	33
+third_party/ofl-fixtures/american-dj/mega-tripar-profile-plus.json	10 channel	1401	Program Selection	65
+third_party/ofl-fixtures/american-dj/mega-tripar-profile-plus.json	9 channel	1405	Program Selection	65
+American-DJ-Micro-Wash-RGBW.qxf	1 Channel	1406	Color Macros	32
+American-DJ-Micro-Wash-RGBW.qxf	2 Channel	1407	Color Macros	32
+American-DJ-Micro-Wash-RGBW.qxf	7 Channel	1410	Color Macros	32
+American-DJ-Micro-Wash-RGBW.qxf	8 Channel	1411	Color Macros	32
+third_party/ofl-fixtures/american-dj/mod-hex100.json	11-channel	1413	Color Macros / Programs	64
+third_party/ofl-fixtures/american-dj/mod-hex100.json	12-channel	1414	Color Macros / Programs	64
+American-DJ-Nucleus-LED.qxf	18 Channel Mode	1419	Color Macros LED 1	33
+American-DJ-Nucleus-LED.qxf	18 Channel Mode	1419	Color Macros LED 2	33
+American-DJ-Nucleus-LED.qxf	22 Channel Mode	1420	Color Macros LED 1	33
+American-DJ-Nucleus-LED.qxf	22 Channel Mode	1420	Color Macros LED 2	33
+American-DJ-Nucleus-PRO.qxf	18 Channel Mode	1422	Color Macros LED 1	33
+American-DJ-Nucleus-PRO.qxf	18 Channel Mode	1422	Color Macros LED 2	33
+American-DJ-Nucleus-PRO.qxf	22 Channel Mode	1423	Color Macros LED 1	33
+American-DJ-Nucleus-PRO.qxf	22 Channel Mode	1423	Color Macros LED 2	33
+American-DJ-Profile-Panel-RGB.qxf	2 Channel	1443	Color Macros	33
+American-DJ-Profile-Panel-RGB.qxf	6 Channel	1448	Color Macros	33
+American-DJ-Profile-Panel-RGB.qxf	7 Channel	1449	Color Macros	33
+American-DJ-QA5-IP.qxf	10 Channel	1454	Color macros / Programs / Color macro mode	65
+American-DJ-QA5-IP.qxf	11 Channel	1455	Color macros / Programs / Color macro mode	65
+American-DJ-Quad-Gem-DMX.qxf	Extended Pattern	1461	Pattern Lens 1	26
+American-DJ-Quad-Gem-DMX.qxf	Extended Pattern	1461	Pattern Lens 2	26
+American-DJ-Quad-Gem-DMX.qxf	Standard Pattern	1464	Pattern	26
+American-DJ-Quad-Scan-LED.qxf	5 Channels mode	1469	Static Color Sequence	32
+American-DJ-Revo-3.qxf	Pattern	1470	Pattern	26
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	HSI Programs	1481	Color Macros	65
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBW Programs	1484	Color Macros	65
+third_party/ofl-fixtures/american-dj/saber-spot-rgbw.json	RGBW Programs fine	1485	Color Macros	65
+American-DJ-Tribar-Spot2.qxf	6 Channel DMX Mode	1515	Color macros	33
+American-DJ-Tribar-Spot2.qxf	8 Channel DMX Mode	1517	Color macros	33
+American-DJ-Tribar-Spot2.qxf	8 Channel DMX Mode	1517	Programs	25
+American-DJ-UB-12H.qxf	10 Channel	1518	Color macros	64
+American-DJ-UB-12H.qxf	12 Channel	1519	Color macros	64
+American-DJ-UB-12H.qxf	12 Channel	1519	Programs	25
+American-DJ-UB-6H.qxf	12 channel	1522	Programs	25
+American-DJ-Ultra-Bar-12.qxf	6 Channels mode	1530	Color macros	35
+American-DJ-Ultra-Bar-12.qxf	8 Channels mode	1532	Color macros	35
+American-DJ-Ultra-Bar-12.qxf	8 Channels mode	1532	Programs 2	25
+American-DJ-Ultra-Bar-6.qxf	6 Channels mode	1537	Color macros	35
+American-DJ-Ultra-Bar-6.qxf	8 Channels mode	1539	Color macros	35
+American-DJ-Ultra-Bar-6.qxf	8 Channels mode	1539	Programs 2	25
+American-DJ-Ultra-Bar-9.qxf	6 Channels mode	1544	Color macros	35
+American-DJ-Ultra-Bar-9.qxf	8 Channels mode	1546	Color macros	35
+American-DJ-Ultra-Bar-9.qxf	8 Channels mode	1546	Programs 2	25
+third_party/ofl-fixtures/american-dj/ultra-hex-bar-12.json	12-channel	1548	Color Macros	64
+third_party/ofl-fixtures/american-dj/ultra-hex-bar-12.json	12-channel	1548	Programs	22
+American-DJ-Vizi-Beam-5RX.qxf	15 Channel	1583	Color Wheel	31
+American-DJ-Vizi-Beam-5RX.qxf	15 Channel	1583	Gobos	36
+American-DJ-Vizi-Beam-5RX.qxf	19 Channel	1584	Color Wheel	31
+American-DJ-Vizi-Beam-5RX.qxf	19 Channel	1584	Gobos	36
+American-DJ-Vizi-Beam-RXONE.qxf	15-Channel	1585	Colour Wheel	33
+American-DJ-Vizi-Beam-RXONE.qxf	17-Channel	1586	Colour Wheel	33
+American-DJ-Vizi-BSW-300.qxf	17 Channel	1587	Color Wheel 1	27
+American-DJ-Vizi-BSW-300.qxf	17 Channel	1587	Color Wheel 2	25
+American-DJ-Vizi-BSW-300.qxf	20 Channel	1588	Color Wheel 1	27
+American-DJ-Vizi-BSW-300.qxf	20 Channel	1588	Color Wheel 2	25
+American-DJ-Vizi-Hex-Wash7.qxf	19 Channel	1589	Color Macros	65
+American-DJ-Vizi-Hex-Wash7.qxf	21 Channel	1590	Color Macros	65
+American-DJ-Vizi-Hex-Wash7.qxf	27 Channel	1591	Color Macros	65
+third_party/ofl-fixtures/american-dj/vizi-q-wash7.json	17-channel Basic	1596	Color Macros	65
+third_party/ofl-fixtures/american-dj/vizi-q-wash7.json	19-channel Standard	1597	Color Macros	65
+third_party/ofl-fixtures/american-dj/vizi-q-wash7.json	23-channel Extended	1598	Color Macros	65
+American-DJ-WiFLY-Chameleon.qxf	11 Channel	1618	Color Macro	64
+American-DJ-WiFLY-Chameleon.qxf	11 Channel	1618	Programs	24
+American-DJ-WiFLY-Chameleon.qxf	9 Channel	1623	Color Macro	64
+American-DJ-WiFly-EXR-Dotz-Par.qxf	9 Channel	1628	Color Macros	33
+American-DJ-WiFly-EXR-HEX5-IP.qxf	11 Channel	1629	Color Macros/Programs/Auto Run	64
+American-DJ-WiFly-EXR-HEX5-IP.qxf	12 Channel	1630	Color Macros/Programs/Auto Run	64
+third_party/ofl-fixtures/ayrton/magicblade-fx.json	Basic	1653	Color Presets	41
+third_party/ofl-fixtures/ayrton/magicblade-fx.json	Standard	1654	Color Presets	41
+Ayrton-MagicBlade-R.qxf	Ba (18ch)	1655	Color Presets	41
+Ayrton-MagicBlade-R.qxf	St (20ch)	1656	Color Presets	41
+Ayrton-MagicPanel-602.qxf	18ch	1657	Color Presets	41
+Ayrton-MagicPanel-602.qxf	20ch	1658	Color Presets	41
+Ayrton-MiniPanel-FX.qxf	Basic 19 Channel	1659	Color Presets	26
+Ayrton-MiniPanel-FX.qxf	Standard 22 Channel	1660	Color Presets	26
+Ayrton-NandoBeam-S3.qxf	Basic	1663	Color Presets	41
+Ayrton-NandoBeam-S3.qxf	Extended	1664	Color Presets	41
+Ayrton-NandoBeam-S3.qxf	Standard	1665	Color Presets	41
+Chauvet-4Play.qxf	Mode 1	1673	Operating Mode 1	37
+Chauvet-4Play.qxf	Mode 1	1673	Operating Mode 2	37
+Chauvet-Circus.qxf	Mode 1	1676	Program Mode	44
+Chauvet-Circus-2.qxf	Mode 1	1677	Program Mode	39
+Chauvet-COLORdash-Accent-Quad.qxf	10 Channel	1719	Color Macro + White Balance	21
+Chauvet-COLORdash-Accent-RGBW.qxf	STAGE 1	1724	Program Selection	33
+Chauvet-COLORdash-Par-Hex-12.qxf	12 Channel	1729	Color Macro + White Balance	21
+Chauvet-COLORdash-Par-Hex-7.qxf	12 Channel	1735	Color Macro + White Balance	21
+Chauvet-COLORdash-Par-Quad-18.qxf	10 Channel	1741	Color Macro + White Balance	21
+Chauvet-COLORdash-Par-Quad-7.qxf	10-channel	1744	Color macro + White balance	21
+Chauvet-COLORrail-IRC2.qxf	2 Channel	1756	Color Macro	30
+Chauvet-COLORrail-IRC2.qxf	7 Channel	1760	Color Macro	30
+Chauvet-COLORstrip-Mini-FX.qxf	7 Channel	1763	Color	25
+Chauvet-CORE-3x3.qxf	9-Channel	1769	Custom Color and Color Temperature	21
+third_party/ofl-fixtures/chauvet-dj/freedom-h1.json	12-channel	1802	Color Macros	21
+Chauvet-Freedom-Par-Hex-4.qxf	12 Channel	1805	Color Macro	21
+Chauvet-Freedom-Stick.qxf	8 Channel	1809	Color Macros	21
+Chauvet-Freedom-Stick.qxf	8 Channel	1809	Auto Programs	30
+Chauvet-Gobozap.qxf	11 Channel	1828	Colour Wheel 1	28
+Chauvet-Gobozap.qxf	11 Channel	1828	Colour Wheel 2	28
+Chauvet-Gobozap.qxf	7 Channel	1830	Colour Wheel 1	28
+Chauvet-Hemisphere-5.1.qxf	5 Channel	1832	Auto Programs	22
+Chauvet-Intimidator-Beam-140SR-V2.qxf	14 Channel	1844	Color Wheel	32
+Chauvet-Intimidator-Beam-140SR-V2.qxf	14 Channel	1844	Gobo Wheel	38
+Chauvet-Intimidator-Beam-140SR-V2.qxf	8 Channel	1845	Color Wheel	32
+Chauvet-Intimidator-Beam-140SR-V2.qxf	8 Channel	1845	Gobo Wheel	38
+Chauvet-Intimidator-Spot-250.qxf	Advanced	1869	Effect	26
+Chauvet-Intimidator-Spot-250.qxf	Basic	1870	Effect	26
+Chauvet-Intimidator-Trio.qxf	30 Channel	1899	Colors	41
+Chauvet-Intimidator-Wash-Zoom-350-IRC.qxf	29-Ch	1901	Colors	40
+Chauvet-Intimidator-Wash-Zoom-450-IRC.qxf	29 Channel	1903	Color macro	41
+Chauvet-Intimidator-Wave-360-IRC.qxf	17 ch.	1904	Built-In Auto Tilt	27
+Chauvet-Intimidator-Wave-360-IRC.qxf	17 ch.	1904	Colors	22
+Chauvet-Intimidator-Wave-360-IRC.qxf	17 ch.	1904	Heads On/Off	32
+Chauvet-LEDrain64.qxf	Default	1920	Macro Colors (By LED Levels)	32
+Chauvet-Q-Spot-560-LED.qxf	Advanced	1940	Prism effects	23
+Chauvet-Q-Spot-560-LED.qxf	Basic	1941	Prism effects	23
+Chauvet-Q-Wash-560Z-LED.qxf	Advanced (15 channel)	1942	Power/Colour Macro	22
+Chauvet-Q-Wash-560Z-LED.qxf	Basic (12 channel)	1943	Power/Colour Macro	22
+Chauvet-Rotosphere-Q3.qxf	19 channel	1945	Color Macros and Auto Programs	29
+Chauvet-Rotosphere-Q3.qxf	3 channel	1946	Color Macros and Auto Programs	29
+Chauvet-Rotosphere-Q3.qxf	9 channel	1947	Color Macros and Auto Programs	29
+Chauvet-Scorpion-Dual.qxf	10-Channel	1950	Pattern Selection	32
+Chauvet-Scorpion-Dual-RGB.qxf	10-Channel	1951	Pattern	31
+Chauvet-Scorpion-Storm-FX-RGB.qxf	7 Channel (Ch. 1 = 000-050)	1952	Color (Ch. 1 = 000-050)	24
+Chauvet-SlimBANK-TRI-18.qxf	9-Channel	1965	Custom Color and Color Temperature	21
+Chauvet-SlimPAR-Pro-Pix.qxf	12 Channel	1983	Pixel auto/sound programs	21
+Chauvet-SlimPAR-Pro-Pix.qxf	12 Channel	1983	Ring auto/sound programs	21
+Chauvet-SlimPAR-Pro-Pix.qxf	26 Channel	1984	Pixel auto/sound programs	21
+Chauvet-SlimPAR-Pro-Pix.qxf	26 Channel	1984	Ring auto/sound programs	21
+third_party/ofl-fixtures/chauvet-dj/slimpar-pro-rgba.json	10-channel	1991	Color Macros	21
+Chauvet-SlimPar-Pro-Tri.qxf	9-Channel	1996	Color Macro	21
+Chauvet-Swarm-4-FX.qxf	2 Channel	2027	Program	21
+Chauvet-Swarm-5-FX.qxf	Standard Mode	2028	LED Operation	34
+Chauvet-Vue-3.1.qxf	DMX Mode	2034	Cluster 1	23
+Chauvet-Vue-3.1.qxf	DMX Mode	2034	Cluster 2	23
+Chauvet-Vue-6.1.qxf	6 Channel Mode	2035	Pod 1	35
+Chauvet-Vue-6.1.qxf	6 Channel Mode	2035	Pod 2	35
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	C1Q	2052	Color Macro + White Balance	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	C1Q	2052	Programs	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	FULL	2053	Color Macro + White Balance	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	FULL	2053	Programs	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	STD.Y	2055	Color Macro + White Balance	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	STD.Y	2055	Programs	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	TOUR	2056	Color Macro + White Balance	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	TOUR	2056	Programs	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	TR16	2057	Color Macro + White Balance	21
+Chauvet-COLORado-1-Quad-Zoom-Tour.qxf	TR16	2057	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	Std. Y	2060	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	Std. Y	2060	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	TOUR	2061	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	TOUR	2061	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	TR16	2062	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-1-solo.json	TR16	2062	Programs	21
+Chauvet-COLORado-1-Tour.qxf	Tour [Default]	2068	Color Macros	21
+Chauvet-COLORado-1-Tour.qxf	Tour [Default]	2068	Auto Programs	22
+Chauvet-COLORado-2-Quad-Zoom.qxf	STD.Y	2076	Color Macro + White Balance	21
+Chauvet-COLORado-2-Quad-Zoom.qxf	STD.Y	2076	Programs	21
+Chauvet-COLORado-2-Quad-Zoom.qxf	TOUR	2077	Color Macro + White Balance	21
+Chauvet-COLORado-2-Quad-Zoom.qxf	TOUR	2077	Programs	21
+Chauvet-COLORado-2-Quad-Zoom.qxf	TR 16	2078	Color Macro + White Balance	21
+Chauvet-COLORado-2-Quad-Zoom.qxf	TR 16	2078	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	Std. Y	2081	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	Std. Y	2081	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	TOUR	2082	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	TOUR	2082	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	TR16	2083	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-2-solo.json	TR16	2083	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	Std. Y	2086	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	Std. Y	2086	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	TOUR	2087	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	TOUR	2087	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	TR16	2088	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-3-solo.json	TR16	2088	Programs	21
+Chauvet-COLORado-Batten-72-Tour.qxf	TOUR	2102	Auto + Custom Programs	21
+Chauvet-COLORado-Batten-72-Tour.qxf	TR16	2103	Auto + Custom Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	Std. Y	2123	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	Std. Y	2123	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	TOUR	2124	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	TOUR	2124	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	TR16	2125	Color Macros	22
+third_party/ofl-fixtures/chauvet-professional/colorado-m-solo.json	TR16	2125	Programs	21
+third_party/ofl-fixtures/chauvet-professional/colordash-batten-quad-6.json	10-channel	2126	Color Macros + White Balance	21
+third_party/ofl-fixtures/chauvet-professional/colordash-s-par-1.json	11-channel	2131	Color Macro + White Balance	21
+Chauvet-Ovation-CYC-1-FC.qxf	10 Channel	2154	Virtual Color Wheel	33
+Chauvet-Ovation-CYC-1-FC.qxf	12 Channel	2155	Virtual Color Wheel	33
+Chauvet-Ovation-CYC-1-FC.qxf	16 Channel	2157	Virtual Color Wheel	33
+Chauvet-Ovation-CYC-1-FC.qxf	3 Channel	2158	Virtual Color Wheel	33
+Chauvet-Ovation-E-910FC.qxf	12 Channel	2163	Virtual Color Wheel	33
+Chauvet-Ovation-E-910FC.qxf	15 Channel	2165	Virtual Color Wheel	33
+Chauvet-Ovation-F-415FC.qxf	11 Channel	2170	Virtual Color Wheel	33
+Chauvet-Ovation-F-415FC.qxf	14 Channel	2172	Virtual Color Wheel	33
+Chauvet-Ovation-F-415FC.qxf	18 Channel	2173	Virtual Color Wheel	33
+Chauvet-Ovation-F-415FC.qxf	3 Channel	2174	Virtual Color Wheel	33
+Chauvet-Ovation-F-915FC.qxf	11Ch	2177	Virtual color wheel	33
+Chauvet-Ovation-F-915FC.qxf	14Ch	2179	Virtual color wheel	33
+Chauvet-Ovation-F-915FC.qxf	17Ch	2180	Virtual color wheel	33
+Chauvet-Ovation-F-915FC.qxf	18ch	2181	Virtual color wheel	33
+Chauvet-Ovation-F-915FC.qxf	3Ch	2183	Virtual color wheel	33
+Chauvet-Ovation-H-605FC.qxf	10 Channel	2201	Virtual Color Wheel	33
+Chauvet-Ovation-H-605FC.qxf	12 Channel	2202	Virtual Color Wheel	33
+Chauvet-Ovation-H-605FC.qxf	15 Channel	2204	Virtual Color Wheel	33
+Chauvet-Ovation-H-605FC.qxf	3 Channel	2205	Virtual Color Wheel	33
+Chauvet-Ovation-P-56FC.qxf	10 Channel	2210	Virtual Color Wheel	33
+Chauvet-Ovation-P-56FC.qxf	12 Channel	2211	Virtual Color Wheel	33
+Chauvet-Ovation-P-56FC.qxf	16 Channel	2213	Virtual Color Wheel	33
+Chauvet-Ovation-P-56FC.qxf	3 Channel	2214	Virtual Color Wheel	33
+Chauvet-Rogue-R1-FX-B.qxf	Basic	2219	Color Macro	21
+Chauvet-Rogue-R1-FX-B.qxf	Basic	2219	LED Macro/Auto Program	25
+Chauvet-Rogue-R1-FX-B.qxf	Standard	2223	Color Macro	21
+Chauvet-Rogue-R1-FX-B.qxf	Standard	2223	LED Macro/Auto Program	25
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	14-channel	2227	Color Presets	41
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	15-channel	2228	Color Presets	41
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	19-channel	2229	Color Presets	41
+third_party/ofl-fixtures/chauvet-professional/rogue-r1-wash.json	21-channel	2230	Color Presets	41
+third_party/ofl-fixtures/chauvet-professional/rogue-r2-wash.json	15-channel	2233	Color	41
+third_party/ofl-fixtures/chauvet-professional/rogue-r2-wash.json	17-channel	2234	Color	41
+third_party/ofl-fixtures/chauvet-professional/rogue-r2-wash.json	22-channel	2235	Color	41
+third_party/ofl-fixtures/chauvet-professional/vesuvio-rgba.json	9-channel	2238	Color Macros	124
+third_party/ofl-fixtures/clay-paky/a-leda-b-eye-k10.json	Standard	2239	Color Presets	66
+Clay-Paky-A.leda-B-EYE-K10-EASY.qxf	Standard	2240	Macro Color	65
+third_party/ofl-fixtures/clay-paky/a-leda-b-eye-k20.json	Standard	2241	Color Presets	66
+Clay-Paky-A.LEDA-Wash-K10.qxf	Shapes	2242	CTO	57
+Clay-Paky-A.LEDA-Wash-K10.qxf	Shapes	2242	Macro colour	63
+Clay-Paky-A.LEDA-Wash-K10.qxf	Standard	2243	CTO	57
+Clay-Paky-A.LEDA-Wash-K10.qxf	Standard	2243	Macro colour	63
+Clay-Paky-A.LEDA-Wash-K20.qxf	Shapes	2244	CTO	57
+Clay-Paky-A.LEDA-Wash-K20.qxf	Shapes	2244	Macro colour	63
+Clay-Paky-A.LEDA-Wash-K20.qxf	Standard	2245	CTO	57
+Clay-Paky-A.LEDA-Wash-K20.qxf	Standard	2245	Macro colour	63
+Clay-Paky-A.LEDA-Wash-K5.qxf	Shapes	2246	CTO	57
+Clay-Paky-A.LEDA-Wash-K5.qxf	Shapes	2246	Macro colour	63
+Clay-Paky-A.LEDA-Wash-K5.qxf	Standard	2247	CTO	57
+Clay-Paky-A.LEDA-Wash-K5.qxf	Standard	2247	Macro colour	63
+third_party/ofl-fixtures/clay-paky/alpha-spot-qwo-800.json	Standard 32-channel	2260	Color Macros	76
+Clay-Paky-Glow-Up.qxf	Glow Up C	2271	Macro Color	56
+Clay-Paky-HY-B-EYE-K15.qxf	Standard	2276	Macro Color	65
+Clay-Paky-HY-B-EYE-K15.qxf	Standard	2276	Function	29
+Clay-Paky-HY-B-EYE-K25.qxf	Standard	2277	Macro Color	65
+Clay-Paky-HY-B-EYE-K25.qxf	Standard	2277	Function	29
+Clay-Paky-Midi-B.qxf	Basic RGBW	2278	Color macro	65
+Clay-Paky-Midi-B.qxf	Basic RGBW 16bit	2279	Color macro	65
+Clay-Paky-Midi-B.qxf	Extended RGBW	2280	Color macro	65
+Clay-Paky-Mini-B.qxf	Basic RGBW	2284	Macro Color	65
+Clay-Paky-Mini-B.qxf	Basic RGBW 16bit	2285	Macro Color	65
+Clay-Paky-Mini-B.qxf	Extended RGBW	2286	Macro Color	65
+Clay-Paky-Mini-B.qxf	Extended RGBW 16bit	2287	Macro Color	65
+Clay-Paky-Show-Batten-100.qxf	Standard	2294	Macro Color	66
+third_party/ofl-fixtures/clay-paky/show-batten-100.json	Basic Engine	2295	Color Macro	66
+Clay-Paky-Tambora-Batten.qxf	Advanced	2307	Function	41
+Clay-Paky-Tambora-Batten.qxf	Shape RGBW	2308	Function	41
+Clay-Paky-Tambora-Batten.qxf	Standard RGBW	2309	Function	41
+Clay-Paky-Tambora-Batten.qxf	Standard RGBW 16bit	2310	Function	41
+Clay-Paky-Tambora-Flash.qxf	Standard RGBW	2314	Layer 1 Function	32
+Clay-Paky-Tambora-Flash.qxf	Standard RGBW 16bit	2315	Layer 1 Function	32
+Clay-Paky-Tambora-Linear-100.qxf	Shape RGBW	2316	Function	36
+Clay-Paky-Tambora-Linear-100.qxf	Standard	2317	Function	36
+Clay-Paky-Tambora-Linear-100.qxf	Standard RGBW 16bit	2318	Function	36
+Clay-Paky-Volero-Wave.qxf	Shape	2325	Color macro	65
+Clay-Paky-Volero-Wave.qxf	Standard	2326	Color macro	65
+Clay-Paky-Xtylos.qxf	Standard	2327	Show Setup	27
+third_party/ofl-fixtures/elation/acl-360-roller.json	Basic	2328	Color Macros	65
+third_party/ofl-fixtures/elation/acl-360-roller.json	Standard	2329	Color Macros	65
+Elation-Cuepix-Batten.qxf	9 CH	2336	Color Macros	33
+third_party/ofl-fixtures/elation/design-led-par-zoom.json	8-channel	2347	Color Macros	33
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	10-channel HSI	2370	Color Presets	65
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	12-channel sRGBI	2371	Color Presets	65
+third_party/ofl-fixtures/elation/fuze-par-z60ip.json	13-channel RGBW	2372	Color Presets	65
+third_party/ofl-fixtures/elation/platinum-seven.json	Basic	2405	Color Presets	34
+third_party/ofl-fixtures/elation/platinum-seven.json	Standard	2406	Color Presets	34
+third_party/ofl-fixtures/elation/proteus-hybrid.json	Basic	2418	CMY Macros	29
+third_party/ofl-fixtures/elation/proteus-hybrid.json	Standard	2419	CMY Macros	29
+third_party/ofl-fixtures/elation/sixbar-1000.json	13-channel	2428	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-100.json	12-channel	2431	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-100-ip.json	12-channel	2435	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-200.json	12-channel	2439	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-200-ip.json	12-channel	2443	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-200-wmg.json	12-channel	2447	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-300.json	12-channel	2451	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-300-ip.json	12-channel	2455	Color Macros	64
+third_party/ofl-fixtures/elation/sixpar-300-wmg.json	12-channel	2459	Color Macros	64
+Elation-Sniper-2R.qxf	Mode 14 chanels	2463	Colors	31
+Elation-Sniper-2R.qxf	Mode 16 chanels	2464	Colors	31
+Elation-Sniper-2R.qxf	Mode 18 chanels	2465	Colors	31
+Elation-Sniper-2R.qxf	Mode 20 chanels	2466	Colors	31
+third_party/ofl-fixtures/elation/zw19.json	14-channel	2475	Color Macros	65
+third_party/ofl-fixtures/elation/zw19.json	22-channel	2476	Color Macros	65
+third_party/ofl-fixtures/glp/impression-laser.json	Normal	2595	File	48
+third_party/ofl-fixtures/glp/impression-spot-one.json	Normal 24-channel	2598	Movement	29
+GLP-Impression-X4.qxf	Normal	2604	Movement macros	112
+GLP-Impression-X4-S.qxf	Normal	2610	Movement	113
+GLP-Impression-X5.qxf	M1 Basic	2611	Color Wheel	66
+GLP-Junior-Scan-1.qxf	Mode 1	2619	Color	36
+GLP-Junior-Scan-1.qxf	Mode 1	2619	Gobo	21
+GLP-Junior-Scan-2.qxf	Mode 1	2620	Color	36
+GLP-Junior-Scan-2.qxf	Mode 1	2620	Gobo	21
+third_party/ofl-fixtures/glp/knv-arc.json	White strobe with FX, RGB with FX	2622	White LEDs FX Selection	39
+third_party/ofl-fixtures/glp/knv-cube.json	White strobe with FX, RGB with FX	2624	White LEDs FX Selection	39
+GLP-PocketScan.qxf	Mode 1	2635	Colors	35
+GLP-Volkslicht.qxf	Normal	2636	Movement	113
+GLP-YPOC250.qxf	Mode 1	2637	Colour	50
+GLP-YPOC250Pro.qxf	Mode 1	2638	Colour	50
+GLP-YPOC575.qxf	Mode 1	2639	Colour	50
+GLP-YPOC575-PRO.qxf	Default	2640	Colour	50
+GLP-YPOC700CMY.qxf	Mode 1	2641	Color 1	38
+GLP-YPOCBasic250.qxf	Mode 1	2642	Colour	50
+GLP-YPOCBasic250.qxf	Mode 1	2642	Gobo	21
+GLP-YPOCBasicColor.qxf	Mode 1	2643	Colour	26
+GLP-YPOCColor.qxf	Mode1	2644	Colour	28
+GLP-YPOCColor575.qxf	Mode1	2645	Colour	26
+High-End-Systems-Technobeam.qxf	Technobeam 18 channel indexed mode	2649	Color Wheel Position	27
+High-End-Systems-Trackspot.qxf	High Resolution Mode	2650	Color Wheel	21
+Martin-Atomic-3000-LED.qxf	Extended	2659	FX Select	67
+Martin-Atomic-3000-LED.qxf	Extended	2659	Aura color presets (‘color wheel’ effect)	37
+Martin-CX-10-Extreme.qxf	Standard	2660	Color	41
+Martin-CX-10-Extreme.qxf	Standard	2660	Effects	39
+Martin-ELP-PAR.qxf	Basic	2672	Color wheel effects	50
+Martin-ELP-CL-Profile.qxf	10 Channel	2675	Color Scene	27
+Martin-ELP-CL-Profile.qxf	17 Channel	2676	Color Scene	27
+Martin-ERA-150-Wash.qxf	18 Channel	2677	Color Presets	50
+Martin-Mac-350-Entour.qxf	8 Bit	2696	Color	30
+Martin-Mac-350-Entour.qxf	8 Bit	2696	Gobo	26
+Martin-MAC-401-Dual-RGB.qxf	HSV 1	2704	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	HSV 2H	2705	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	HSV 2V	2706	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	HSV All	2707	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	HSVX 2H	2708	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	HSVX 2V	2709	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	HSVX All	2710	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	RGB 2H	2711	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	RGB 2V	2712	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	RGBX 2H	2713	Colour Wheel Effect	39
+Martin-MAC-401-Dual-RGB.qxf	RGBX 2V	2714	Colour Wheel Effect	39
+Martin-MAC-700-Profile.qxf	16-bit Extended Mode	2724	Color Wheel	27
+third_party/ofl-fixtures/martin/mac-700-wash.json	Extended 23-channel	2725	Color Wheel	22
+third_party/ofl-fixtures/martin/mac-aura.json	Extended	2726	Beam color wheel effect	37
+third_party/ofl-fixtures/martin/mac-aura.json	Extended	2726	FX1 select	27
+third_party/ofl-fixtures/martin/mac-aura.json	Extended	2726	FX2 select	27
+third_party/ofl-fixtures/martin/mac-aura.json	Extended	2726	Aura color wheel effect	37
+third_party/ofl-fixtures/martin/mac-aura.json	Standard	2727	Beam color wheel effect	37
+third_party/ofl-fixtures/martin/mac-axiom-hybrid.json	Standard	2730	Color Wheel	35
+Martin-MAC-Quantum-Profile.qxf	Extended	2731	Color wheel	24
+Martin-MAC-Quantum-Profile.qxf	Extended	2731	FX1 selection	92
+Martin-Viper-AirFX.qxf	Extended	2733	Color wheel	27
+Martin-MAC250-Entour.qxf	16 Ex (16 Bit Extended)	2737	Color	41
+Martin-MAC250plus.qxf	Mode 1	2738	Color	26
+Martin-MAC250plus.qxf	Mode 2	2739	Color	26
+Martin-MAC250plus.qxf	Mode 3	2740	Color	26
+Martin-MAC300.qxf	Mode 1	2741	Colour	21
+Martin-MAC300.qxf	Mode 2	2742	Colour	21
+Martin-MAC300.qxf	Mode 3	2743	Colour	21
+Martin-MAC500.qxf	DMX1	2744	Color1	27
+Martin-MAC500.qxf	DMX1	2744	Color2	29
+Martin-MAC500.qxf	DMX2	2745	Color1	27
+Martin-MAC500.qxf	DMX2	2745	Color2	29
+Martin-MAC500.qxf	DMX3	2746	Color1	27
+Martin-MAC500.qxf	DMX3	2746	Color2	29
+third_party/ofl-fixtures/martin/mania-scx500.json	6-channel	2748	Color Wheel	34
+third_party/ofl-fixtures/martin/mania-scx500.json	8-channel	2749	Color Wheel	34
+Martin-MH2-Wash.qxf	12 Channel	2750	Color Wheel Effect	37
+Martin-MiniMAC-Profile.qxf	Mode 1	2754	Color	26
+Martin-MiniMAC-Profile.qxf	Mode 2	2755	Color	26
+Martin-MiniMAC-Profile.qxf	Mode 3	2756	Color	26
+Martin-MiniMAC-Wash.qxf	Mode 1	2757	Color	26
+Martin-MiniMAC-Wash.qxf	Mode 2	2758	Color	26
+Martin-MiniMAC-Wash.qxf	Mode 3	2759	Color	26
+third_party/ofl-fixtures/martin/mx-10-extreme.json	13-channel	2760	Color Wheel	26
+Martin-Roboscan-218.qxf	Mode 1	2762	Colour	35
+Martin-Roboscan-218.qxf	Mode 1	2762	Gobo	35
+Martin-Roboscan-518.qxf	Mode 1	2763	Color	35
+Martin-Roboscan-Pro-918.qxf	DMX1	2764	Color 1	22
+Martin-Roboscan-Pro-918.qxf	DMX1	2764	Color 2	31
+Martin-Roboscan-Pro-918.qxf	DMX2	2765	Color 1	22
+Martin-Roboscan-Pro-918.qxf	DMX2	2765	Color 2	31
+Martin-Roboscan-Pro-918.qxf	DMX3	2766	Color 1	22
+Martin-Roboscan-Pro-918.qxf	DMX3	2766	Color 2	31
+third_party/ofl-fixtures/martin/rush-mh-2-wash.json	Standard	2767	Color Wheel Effect	39
+third_party/ofl-fixtures/martin/rush-mh-3-beam.json	standard	2768	Color Wheel	30
+third_party/ofl-fixtures/martin/rush-mh-3-beam.json	standard	2768	Prism Effects	30
+third_party/ofl-fixtures/martin/rush-mh-7-hybrid.json	21-channel	2770	Color Wheel	31
+third_party/ofl-fixtures/martin/rush-mh-7-hybrid.json	21-channel	2770	Fixed Gobo Wheel	28
+Martin-RUSH-Par-1-RGBW.qxf	7-Channel	2775	Colour Presets	32
+third_party/ofl-fixtures/martin/rush-par-2-rgbw-zoom.json	9-channel	2777	Color Presets	40
+Martin-SCX-500.qxf	Mode 1	2779	Colour	34
+Martin-SCX-500.qxf	Mode 2	2780	Colour	34
+Martin-SCX-600.qxf	Extended	2781	Colour	23
+Martin-SCX-600.qxf	Normal	2782	Colour	23
+Martin-SCX-700.qxf	Extended	2783	Colour	23
+Martin-SCX-700.qxf	Normal	2784	Colour	23
+Martin-smartMAC.qxf	8-bit	2787	Color Wheel	34
+Martin-Thrill-Mini-Profile.qxf	Default	2820	Color Wheel Effect	28
+Martin-Thrill-Mini-Profile.qxf	Default	2820	Gobo Wheel	28
+Robe-ClubScan-150CT.qxf	8bit	2822	Gobo	47
+Robe-ClubScan-250CT.qxf	8bit	2823	Gobo	32
+Robe-ClubSpot-150CT.qxf	16bit	2824	Colour	24
+Robe-ClubSpot-150CT.qxf	16bit	2824	Gobo	23
+Robe-ClubSpot-150CT.qxf	8bit	2825	Colour	24
+Robe-ClubSpot-150CT.qxf	8bit	2825	Gobo	23
+Robe-ClubSpot-150CT.qxf	8bit Tracking	2826	Colour	24
+Robe-ClubSpot-150CT.qxf	8bit Tracking	2826	Gobo	23
+Robe-ClubSpot-160CT.qxf	16bit	2827	Colour	24
+Robe-ClubSpot-160CT.qxf	8bit	2828	Colour	24
+Robe-ClubSpot-160CT.qxf	8bit Tracking	2829	Colour	24
+Robe-ClubSpot-500-CT.qxf	Mode 1 (16bit)	2835	Colours	22
+Robe-ClubSpot-500-CT.qxf	Mode 2 (16bit)	2836	Colours	22
+Robe-ClubSpot-500-CT.qxf	Mode 3 (8bit)	2837	Colours	22
+Robe-ColorSpot-170-AT.qxf	Mode 1 (16bit)	2850	Colours	24
+Robe-ColorSpot-170-AT.qxf	Mode 2 (16bit)	2851	Colours	24
+Robe-ColorSpot-170-AT.qxf	Mode 3 (8bit)	2852	Colours	24
+Robe-ColorSpot-170-AT.qxf	Mode 4 (16bit)	2853	Colours	24
+Robe-ColorSpot-250-AT.qxf	14 Channel	2854	Colour Wheel	33
+Robe-ColorSpot-250-AT.qxf	16 Channel	2855	Colour Wheel	33
+Robe-ColorSpot-250-AT.qxf	18 Channel	2856	Colour Wheel	33
+Robe-ColorSpot-250-AT.qxf	20 Channel	2857	Colour Wheel	33
+third_party/ofl-fixtures/robe/colorspot-2500e-at.json	32-channel	2863	Color Macros	64
+Robe-ColorSpot-575-AT.qxf	1 - 27-Channel	2864	Colour Wheel 1	22
+Robe-ColorSpot-575-AT.qxf	1 - 27-Channel	2864	Colour Wheel 2	29
+Robe-ColorSpot-575-AT.qxf	1 - 27-Channel	2864	Static Gobo Wheel	23
+Robe-ColorSpot-575-AT.qxf	2 - 19-Channel	2865	Colour Wheel 1	22
+Robe-ColorSpot-575-AT.qxf	2 - 19-Channel	2865	Colour Wheel 2	29
+Robe-ColorSpot-575-AT.qxf	2 - 19-Channel	2865	Static Gobo Wheel	23
+Robe-ColorSpot-575-AT.qxf	3 - 29-Channel	2866	Colour Wheel 1	22
+Robe-ColorSpot-575-AT.qxf	3 - 29-Channel	2866	Colour Wheel 2	29
+Robe-ColorSpot-575-AT.qxf	3 - 29-Channel	2866	Static Gobo Wheel	23
+Robe-ColorSpot-575-AT.qxf	4 - 21-Channel	2867	Colour Wheel 1	22
+Robe-ColorSpot-575-AT.qxf	4 - 21-Channel	2867	Colour Wheel 2	29
+Robe-ColorSpot-575-AT.qxf	4 - 21-Channel	2867	Static Gobo Wheel	23
+Robe-ColorSpot-700E-AT.qxf	Mode 2	2868	Colour Wheel	24
+Robe-ColorSpot-700E-AT.qxf	Mode 2	2868	Static Gobos	31
+Robe-ColorSpot-700E-AT.qxf	Mode 4	2869	Colour Wheel	24
+Robe-ColorSpot-700E-AT.qxf	Mode 4	2869	Static Gobos	31
+Robe-ColorSpot-700E-AT.qxf	Mode 5	2870	Colour Wheel	24
+Robe-ColorSpot-700E-AT.qxf	Mode 6	2871	Colour Wheel	24
+Robe-ColorSpot-700E-AT.qxf	Mode 6	2871	Static Gobos	31
+Robe-ColorWash-1200E-AT.qxf	17-Channel	2872	Colour Wheel 1	23
+Robe-ColorWash-1200E-AT.qxf	17-Channel	2872	Colour Wheel 2	23
+Robe-ColorWash-1200E-AT.qxf	21-Channel	2873	Colour Wheel 1	23
+Robe-ColorWash-1200E-AT.qxf	23-Channel	2874	Colour Wheel 1	23
+Robe-ColorWash-1200E-AT.qxf	23-Channel	2874	Colour Wheel 2	23
+Robe-ColorWash-1200E-AT.qxf	24-Channel	2875	Colour Wheel 1	23
+Robe-ColorWash-1200E-AT.qxf	24-Channel	2875	Colour Wheel 2	23
+Robe-ColorWash-1200E-AT.qxf	30-Channel	2876	Colour Wheel 1	23
+Robe-ColorWash-1200E-AT.qxf	30-Channel	2876	Colour Wheel 2	23
+Robe-Colorwash-250-AT.qxf	Mode 1	2877	Color Wheel	21
+Robe-Colorwash-250-AT.qxf	Mode 2	2878	Color Wheel	21
+Robe-Colorwash-250-AT.qxf	Mode 3	2879	Color Wheel	21
+Robe-Colorwash-250-AT.qxf	Mode 4	2880	Color Wheel	21
+Robe-LEDBeam-350.qxf	Cpulse (LED frequency)	2888	Virtual Colour Wheel	70
+Robe-LEDBeam-350.qxf	Reduced 8-bit	2889	Virtual Colour Wheel	70
+Robe-LEDBeam-350.qxf	Standard 16-bit	2890	Virtual Colour Wheel	70
+Robe-LEDBeam-350-RGBA.qxf	Cpulse (LED frequency)	2891	Virtual Colour Wheel	70
+Robe-LEDBeam-350-RGBA.qxf	Reduced 8-bit	2892	Virtual Colour Wheel	70
+Robe-LEDBeam-350-RGBA.qxf	Standard 16-bit	2893	Virtual Colour Wheel	70
+Robe-Pointe.qxf	16 channel	2894	Colour wheel	45
+Robe-Pointe.qxf	16 channel	2894	Rotating Gobo wheel	39
+Robe-Pointe.qxf	30 channel	2895	Colour wheel	45
+Robe-Pointe.qxf	30 channel	2895	Rotating Gobo wheel	39
+Robe-Pointe.qxf	Main	2896	Colour wheel	45
+Robe-Pointe.qxf	Main	2896	Rotating Gobo wheel	39
+Robe-Robin-100-LEDBeam.qxf	Mode 2 - CMY	2897	Virtual Colour Wheel	29
+Robe-Robin-100-LEDBeam.qxf	Mode 2 - RGBW	2898	Virtual Colour Wheel	29
+Robe-Robin-100-LEDBeam.qxf	Mode 3 - CMY	2899	Virtual Colour Wheel	29
+Robe-Robin-100-LEDBeam.qxf	Mode 3 - RGBW	2900	Virtual Colour Wheel	29
+Robe-Robin-100-LEDBeam.qxf	Mode 4	2901	Virtual Colour Wheel	29
+Robe-Robin-150-LEDBeam.qxf	Reduced 8-Bit	2902	Virtual Colour Wheel	70
+Robe-Robin-150-LEDBeam.qxf	Standard 16-Bit	2903	Virtual Colour Wheel	70
+Robe-Robin-300E-Beam.qxf	1 - 24-Channel	2904	Colour Wheel	26
+Robe-Robin-300E-Beam.qxf	1 - 24-Channel	2904	CMY Colour Macros	31
+Robe-Robin-300E-Beam.qxf	1 - 24-Channel	2904	Static Gobo Wheel	27
+Robe-Robin-300E-Beam.qxf	2 - 19-Channel	2905	Colour Wheel	26
+Robe-Robin-300E-Beam.qxf	2 - 19-Channel	2905	CMY Colour Macros	31
+Robe-Robin-300E-Beam.qxf	2 - 19-Channel	2905	Static Gobo Wheel	27
+Robe-Robin-300E-Beam.qxf	3 - 17-Channel	2906	Colour Wheel	26
+Robe-Robin-300E-Beam.qxf	3 - 17-Channel	2906	CMY Colour Macros	31
+Robe-Robin-300E-Beam.qxf	3 - 17-Channel	2906	Static Gobo Wheel	27
+Robe-Robin-600-LED-Wash.qxf	Mode 2	2910	Colours	24
+Robe-Robin-600-LED-Wash.qxf	Mode 3	2911	Colours	24
+Robe-Robin-600-LED-Wash.qxf	Mode 4	2912	Colours	24
+Robe-Robin-600E-Beam.qxf	Mode 1	2913	Colour Wheel	28
+Robe-Robin-600E-Beam.qxf	Mode 1	2913	Static Gobos	28
+Robe-Robin-600E-Beam.qxf	Mode 2	2914	Colour Wheel	28
+Robe-Robin-600E-Beam.qxf	Mode 2	2914	Static Gobos	28
+Robe-Robin-600E-Beam.qxf	Mode 3	2915	Colour Wheel	28
+Robe-Robin-600E-Beam.qxf	Mode 3	2915	Static Gobos	28
+third_party/ofl-fixtures/robe/robin-600e-spot.json	23-channel	2916	Static Gobo Wheel	21
+third_party/ofl-fixtures/robe/robin-600e-spot.json	25-channel	2917	Static Gobo Wheel	21
+third_party/ofl-fixtures/robe/robin-600e-spot.json	32-channel	2918	Static Gobo Wheel	21
+Robe-Robin-600E-Spot.qxf	Mode 1	2919	Colour Wheel	28
+Robe-Robin-600E-Spot.qxf	Mode 1	2919	Static Gobos	34
+Robe-Robin-600E-Spot.qxf	Mode 2	2920	Colour Wheel	28
+Robe-Robin-600E-Spot.qxf	Mode 2	2920	Static Gobos	34
+Robe-Robin-600E-Spot.qxf	Mode 3	2921	Colour Wheel	28
+Robe-Robin-600E-Spot.qxf	Mode 3	2921	Static Gobos	34
+Robe-Robin-600E-Wash.qxf	Mode 1	2922	Colour Wheel	26
+Robe-Robin-600E-Wash.qxf	Mode 2	2923	Colour Wheel	26
+Robe-Robin-600E-Wash.qxf	Mode 3	2924	Colour Wheel	26
+Robe-Robin-800-LEDWash.qxf	11 Channel	2925	Virtual Colour Wheel	28
+Robe-Robin-800-LEDWash.qxf	16 Channel	2926	Virtual Colour Wheel	28
+Robe-Robin-800-LEDWash.qxf	22 Channel	2927	Virtual Colour Wheel	28
+Robe-Robin-DLX-Spot.qxf	23-channel	2928	Virtual Colour Wheel	23
+Robe-Robin-DLX-Spot.qxf	23-channel	2928	Static Gobo Wheel	31
+Robe-Robin-DLX-Spot.qxf	25-channel	2929	Virtual Colour Wheel	23
+Robe-Robin-DLX-Spot.qxf	25-channel	2929	Static Gobo Wheel	31
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 16bit CMY Color	2930	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 16bit RGBW Color	2931	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 8bit CMY Color	2932	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Single 8bit RGBW Color	2933	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledbeam-100.json	Virtual Color Wheel	2934	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	1 – Standard 16bit CMY	2935	Virtual Color Wheel	70
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	1 – Standard 16bit RGBW	2936	Virtual Color Wheel	70
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	2 – Reduced 8bit CMY	2937	Virtual Color Wheel	70
+third_party/ofl-fixtures/robe/robin-ledbeam-150.json	2 – Reduced 8bit RGBW	2938	Virtual Color Wheel	70
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	2nd	2939	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	3rd	2940	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	4th	2941	Virtual Color Wheel	29
+third_party/ofl-fixtures/robe/robin-ledwash-600.json	6th	2942	Virtual Color Wheel	29
+Robe-Robin-MiniMe.qxf	24-channel	2943	Colour Effect Wheel	113
+third_party/ofl-fixtures/robe/robin-parfect-150.json	Reduced 8bit	2944	Virtual Color wheel	70
+third_party/ofl-fixtures/robe/robin-parfect-150.json	Standard 16bit	2945	Virtual Color wheel	70
+Robe-Robin-Spikie.qxf	Reduced 8-bit (CMY)	2946	Virtual colour wheel	68
+Robe-Robin-Spikie.qxf	Reduced 8-bit (RGB)	2947	Virtual colour wheel	68
+Robe-Robin-Spikie.qxf	Standard 16-bit (CMY)	2948	Virtual colour wheel	68
+Robe-Robin-Spikie.qxf	Standard 16-bit (RGB)	2949	Virtual colour wheel	68
+Robe-Robin-Tetra-1.qxf	1-Wash	2950	Background - Virtual colour wheel	68
+third_party/ofl-fixtures/robe/robin-viva-cmy.json	Reduced 8 bit	2951	Color Macros	68
+third_party/ofl-fixtures/robe/robin-viva-cmy.json	Standard 16 bit	2952	Color Macros	68
+Robe-Scan-575-XT.qxf	8 bits	2953	Colours	27
+Robe-Scan-575-XT.qxf	Mode 1	2954	Colours	27
+Robe-Scan-575-XT.qxf	Mode 2	2955	Colours	27
+Robe-Spiider.qxf	(2) Basic [CMY]	2956	Virtual color wheel	70
+Robe-Spiider.qxf	(2) Basic [RGBW]	2957	Virtual color wheel	70
+Robe-Spiider.qxf	(5) Wash [CMY]	2958	Virtual color wheel	70
+Robe-Spiider.qxf	(5) Wash [CMY]	2958	Background active zone	30
+Robe-Spiider.qxf	(5) Wash [RGBW]	2959	Virtual color wheel	70
+Robe-Spiider.qxf	(5) Wash [RGBW]	2959	Background active zone	30
+Robe-Spot-160-XT.qxf	8-channel, 16-Bit	2964	Colours	25
+Robe-Spot-575-XT.qxf	8-Bit (14 Channel)	2965	Colours 1/Colour Macro Function (Channel 8 Set)	22
+Robe-Spot-575-XT.qxf	Mode 1 (16 Channel)	2966	Colours 1/Colour Macro Function (Channel 8 Set)	22
+Robe-Spot-575-XT.qxf	Mode 2 (16 Channel)	2967	Colours 1/Colour Macro Function (Channel 8 Set)	22
+SGM-G-Profile.qxf	Standard (31 Channels)	2972	CTC	22
+SGM-Giotto-Wash-400.qxf	Mode 1	2975	Color	24
+Vari-Lite-VL2202-Spot.qxf	Enhanced 16bit	3007	Fixed Gobo	24
+Vari-Lite-VL2202-Spot.qxf	Enhanced 16bit	3007	Color	24
+Vari-Lite-VL2202-Spot.qxf	Enhanced 8bit	3008	Fixed Gobo	24
+Vari-Lite-VL2202-Spot.qxf	Enhanced 8bit	3008	Color	24
+Vari-Lite-VL2202-Spot.qxf	Standard 16bit	3009	Fixed Gobo	24
+Vari-Lite-VL2202-Spot.qxf	Standard 16bit	3009	Color	24
+Vari-Lite-VL2202-Spot.qxf	Standard 8bit	3010	Fixed Gobo	24
+Vari-Lite-VL2202-Spot.qxf	Standard 8bit	3010	Color	24
+Vari-Lite-VL2402-Wash.qxf	Enhanced 16bit	3011	Color Wheel	24
+Vari-Lite-VL2402-Wash.qxf	Enhanced 8bit	3012	Color Wheel	24
+Vari-Lite-VL2402-Wash.qxf	Standard 16bit	3013	Color Wheel	24
+Vari-Lite-VL2402-Wash.qxf	Standard 8bit	3014	Color Wheel	24
+Vari-Lite-VL3500-Spot.qxf	16 bit Enhanced	3018	Color Wheel	30

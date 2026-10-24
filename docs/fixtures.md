@@ -19,9 +19,12 @@ type code, so `profile_id` in a saved show never depends on generation order. Ro
                                                     # every W1 tier-1 id has a hand file; diff vs regeneration when reference/ exists
 
 API (`fixlib/lj_profile.h`): `lj_fixlib_by_id(id)` returns the hand profile, else the
-QLC+ profile (windows derived at first use), else NULL; `lj_fixlib_count()` = 201 + the
-extras; `lj_fixlib_row(i)` = the exe rows for i < 201, then the extra rows;
-`lj_profile_window(p, kind)` = the control window table or NULL (toolbar button disabled).
+tier-2 profile (built on the heap, windows derived at first use: W7), else NULL;
+`lj_fixlib_count()` = 201 + the extras; `lj_fixlib_row(i)` = the exe rows for i < 201, then
+the extra rows; `lj_fixlib_row_by_id(id)` the row of an id (W7); `lj_fixlib_qxf(i)` the i-th
+tier-2 conversion even where a hand file wins its id (W7, tests); `lj_fixlib_release()` frees
+the built tier-2 profiles (W7, app exit); `lj_profile_window(p, kind)` = the control window
+table or NULL (toolbar button disabled).
 
 ### Fixture Configuration tree order
 
@@ -29,8 +32,9 @@ The tree is those rows grouped `manufacturer > name > mode` exactly as LJ2 shows
 (13 s2.7-2.8, CHM thefixtureinfotab.htm): manufacturers alphabetically (Clay Paky,
 Generic, Jem, Martin, Other, User Definable as in IMG fixtureconfiguration.jpg), a name
 with one mode is a leaf, a name with several modes is a folder of mode leaves (`MAC 500 >
-Mode 2/4`, `SCRL, Mode 2/4`). Extras (ids >= 1000) appear under their own manufacturer
-only with `[FIXTURES] ShowExtraProfiles=1` in `Main.Ini` (PROPOSAL; LJ2 had none).
+Mode 2/4`, `SCRL, Mode 2/4`). Extras (ids >= 1000) appear under their own manufacturer,
+sorted by name then mode; W7 made that the default (`[FIXTURES] ShowExtraProfiles` defaults
+to 1, a recorded deviation in `docs/fidelity.md`; `0` gives the LJ2-exact 201-row tree).
 User `.GS2` profiles list under `User Definable` from `UserFixtureDef\` (W3).
 
 ## Tier 1: hand files (`src/fixlib/hand/`)
@@ -73,7 +77,7 @@ Rules the hand files follow:
 
 ## Tier 2: QLC+ conversions (`tools/qxf2c.py`)
 
-`third_party/qlcplus-fixtures/` holds the 73 `Martin-*.qxf` of the QLC+ repository at
+`third_party/qlcplus-fixtures/` holds the QLC+ fixture files (73 `Martin-*.qxf` until W7, 614 files since) at
 the commit recorded in `SOURCE` (Apache-2.0, `LICENSE` + `NOTICE` beside them). They are
 read offline only. `tools/qxf_map.tsv` (hand-maintained, `file<TAB>mode<TAB>id`) says
 which modes become profiles and which exe row each binds to; an id >= 1000 is an extra.
@@ -85,7 +89,8 @@ with more than 32 channels (`LJ_PROFILE_CH`) cannot be mapped.
     python -I tools/qxf2c.py --check     # CI generate-check: drift, bad map lines (unknown id, duplicate id, missing file/mode, > 32 ch); prints the overflow list
     python -I tools/qxf2c.py --selftest  # determinism, the MAC500 DMX4 facts, a synthetic QXF (non-adjacent pan/tilt LSBs, reversed focus, NoFunction)
 
-Output: one `static lj_profile lj_qxf_<id>` per mapped mode with a provenance comment
+Output (W1-W6; since W7 a compact byte string per mode, built on the heap at first use: see "W7" below):
+one `static lj_profile lj_qxf_<id>` per mapped mode with a provenance comment
 (file, mode, QLC+ commit, Apache-2.0, `modified: converted`, author), identity = the exe
 row's triple, CP1252 strings as octal escapes, deterministic order (by id). The windows
 are not generated: `lj_layout_derive()` builds them at first use (below).
@@ -297,3 +302,103 @@ Code: `src/fixlib/lj_gs2.c` (prototypes `fixlib/lj_gs2.h`, W1 ones in `fixlib/lj
   `LJ_Profiles.zip` (scratch copy, deleted after), including the truncated `Robe_ColorSpot700EAT_Mode3-1.Udo`, which
   both refuse with `footer CRC mismatch`. Fuzz: `-DLJ_FUZZ=ON` (clang) builds `fuzz_gs2` / `fuzz_udf`
   (`tools/fuzz/`, LORD_C-17); `fuzz_gs2` also aborts on any accepted input that does not write back byte-exact.
+
+## W7: the fixture library (sources, compact profiles, map sync, coverage, authoring lint)
+
+What landed, the numbers and the budgets are in `docs/w7-fixtures.md`; the rules are here.
+
+### Sources and precedence
+
+| Rank | Source | Where | Licence | Read by |
+|---|---|---|---|---|
+| 0 | hand files (tier 1) | `src/fixlib/hand/*.c` | MIT | the compiler; wins by exe id |
+| 1 | LJ4EVR-authored | `fixtures/authored/<group>/*.qxf` (rules: `fixtures/authored/README.md`) | MIT | `qxf2c.py` |
+| 2 | Open Fixture Library | `third_party/ofl-fixtures/<dir>/*.json` (commit in its `SOURCE`) | MIT | `ofl2qxf.py` in memory, then `qxf2c.py` |
+| 3 | QLC+ | `third_party/qlcplus-fixtures/*.qxf` (commit in its `SOURCE`) | Apache-2.0 | `qxf2c.py` |
+
+A `qxf_map.tsv` file column without `/` is a QLC+ file (every W1 line); anything with `/` is a path from the
+repository root (`third_party/ofl-fixtures/martin/mac-aura.json`, `fixtures/authored/robe/x.qxf`). Precedence and
+dedup work per (group, model, footprint) in `tools/qxf_map_sync.py`: model = the source's model name in lower case,
+letters and digits only, the group's name dropped from its front; a mode is skipped when a source of the same or
+higher rank (another file, an existing map line, a hand profile of the exe table at its `check_profiles.py`
+footprint) owns that key. Two modes of one file never block each other. Ceiling (ponytail): the key is the channel
+count, so two different modes of one model with the same count in two sources keep only the higher source's; an
+authored file added later for a mode an older QLC+ line already maps gets its own id beside it (saved shows keep the
+old one).
+
+### Groups and the manufacturer the tree shows
+
+| Group | QLC+ dir | OFL dir | catalog / authored dir | Manufacturer shown |
+|---|---|---|---|---|
+| Martin | Martin | martin | martin | Martin |
+| Elation | Elation | elation | elation | Elation |
+| Chauvet DJ | Chauvet (the DJ lines) | chauvet-dj | chauvet-dj | Chauvet DJ |
+| Chauvet Professional | Chauvet (Rogue, Maverick, Ovation, COLORado, STRIKE, Legend, onAir, Epix, Nexus, Well, Amhaze, "Professional") | chauvet-professional | chauvet-pro | Chauvet Professional |
+| Clay Paky | Clay_Paky | clay-paky | clay-paky | Clay Paky |
+| GLP | GLP | glp | glp | GLP |
+| Acme | Acme | (none at the pinned commit) | acme | Acme |
+| Ayrton | Ayrton | ayrton | ayrton | Ayrton |
+| ETC | ETC | etc | etc | ETC |
+| Robe | Robe | robe | robe | Robe |
+| High End Systems | High_End_Systems | (none) | hes | High End Systems |
+| Vari-Lite | Vari-Lite | (none) | vari-lite | Vari-Lite |
+| ADJ | American_DJ | american-dj | adj | American DJ |
+| SGM | SGM | sgm | sgm | SGM |
+
+Rule: an extra shows under the name its products carry as the Open Fixture Library's `manufacturers.json` spells
+it (QLC+ agrees for every group but Chauvet). QLC+'s single "Chauvet" directory is split by product line
+(`CHAUVET_PRO_RE` in `qxf2c.py`, matched on the model). ADJ keeps "American DJ", the string on every QLC+ and OFL
+file. An exe row (ids 0-200) keeps the exe's own manufacturer verbatim.
+
+### OFL JSON to QXF (`tools/ofl2qxf.py`)
+
+The channel type is OFL's own rule (`lib/model/CoarseChannel.js` `channelTypeConstraints`, first match), the QLC+
+group OFL's exporter's (`plugins/qlcplus_4.12.2/export.js` `getChannelType`). Presets, chosen for the qxf2c table
+above: `Single Color` -> `Intensity<Colour>` (Warm / Cold White -> `IntensityWhite`); `Intensity` with an
+`Intensity` capability -> `IntensityMasterDimmer`, `Generic` only -> no group (a Levels fader, never the dimmer);
+`Pan` / `Tilt` with a positional capability -> `PositionPan` / `PositionTilt`, continuous rotation only -> `Effect`;
+focus / zoom / iris direction from `distance*` / `angle*` / `openPercent*` (no preset when the JSON does not say);
+fine aliases -> `Byte="1"` channels (`...Fine` presets); a 24-bit second fine -> a `Maintenance` channel, as the
+exporter does. Capabilities: shutter open / closed -> `ShutterOpen` / `ShutterClose`; strobe, pulse and ramp
+effects -> `Strobe*` / `Pulse*` / `RampUp*` / `RampDown*` (`FastToSlow` when the speeds say so); colour presets and
+colour-wheel slots -> `ColorMacro` (`Res1` = the slot's first colour, Open = `#ffffff`), a split slot ->
+`ColorDoubleMacro`; gobo slots -> `GoboMacro`; prism -> `PrismEffectOn`; `Maintenance` comments "Reset",
+"Lamp on", "Lamp off" -> `ResetAll` / `LampOn` / `LampOff` (nothing else is guessed). Ranges in 16 or 24 bit drop
+their low bytes (OFL's `scaleDmxValue`) and a later range is clipped so none overlap. A switching channel takes the
+channel its trigger's default selects (`SwitchingChannel.defaultChannelKey`; a `null` target is a no-function
+channel); matrix inserts expand per pixel (`Mode._getMatrixChannelKeysFromInsertBlock`). A mode with a channel
+that does not resolve is skipped and reported.
+
+### Compact profiles
+
+`qxf2c.py` no longer writes one mutable 13,432-byte `lj_profile` per mode. Each mapped mode is one byte string in
+a `lj_profiles_gen_<k>.c` part (400 modes per part) and one 56-byte `lj_qxf_desc` (id, part, offset, identity,
+source) in `lj_profiles_gen.c`, sorted by id. `lj_fixlib_by_id()` bisects the descriptors, builds the `lj_profile`
+on the heap at the first lookup (`lj_qxf_build`; the encoding is its comment in `lj_profile.c`), derives its
+windows and keeps it in `lj_qxf_built[]`; `lj_fixlib_release()` frees them at exit. Profiles are built on the UI
+thread only: the engine reads what `lj_engine_bind` resolved, and that runs under `lj_lock` on the UI thread
+(rule 10). The 45 W1-W6 tier-2 profiles decode byte-identical to the old static tables (every struct byte but the
+pointers, and the notes text).
+
+### Tools
+
+    python -I tools/qxf_map_sync.py            # append map lines for every unmapped mode <= 32 ch (next free ids, sorted)
+    python -I tools/qxf_map_sync.py --check    # CI (generate-check) + CTest qxf_map_sync_check: nothing left to append
+    python -I tools/qxf2c.py                   # regenerate lj_profiles_gen*.c + qxf2c_overflow.txt
+    python -I tools/qxf2c.py --lint [F.qxf..]  # an authored file standalone (no file named: every fixtures/authored file)
+    python -I tools/fixture_coverage.py        # docs/fixtures/coverage.md from docs/fixtures/catalog/*.tsv + the map
+
+`--lint` checks: well-formed XML in the QLC+ namespace, the element subset, `<Manufacturer>` and `<Model>`, a
+`<Creator>` with `<Name>` and `<Author>`, a manual URL, unique channel names, known groups, `Byte` 0 or 1,
+`Default` and every capability inside 0-255, ascending non-overlapping capabilities, `#rrggbb` colours, every
+mode's channel numbers 0..n-1 once with every reference defined, every fine channel after a coarse one of its
+group (or its `...Fine` preset's base). A mode wider than 32 channels is a note, not a problem.
+
+| Check | What it proves |
+|---|---|
+| `qxf2c_selftest` | the MAC500 DMX4 facts and their encoded bytes, the synthetic QXF, six lint problem kinds, the Chauvet split, determinism |
+| `ofl2qxf_selftest`, `qxf_map_sync_selftest`, `fixture_coverage_selftest` | the conversion rules, precedence and dedup, the report counts |
+| `qxf_map_sync_check`, `qxf2c.py --check` (generate-check) | the map is synced and the generated files are current |
+| `qxf2c_lint_authored` | every authored file passes the lint |
+| `test_fixlib_profiles` | id 12's conversion decodes to the MAC500 DMX4 facts; every tier-2 profile builds, resolves by id and passes the table checks; ids sorted; every extra row resolves; release and rebuild |
+| `test_config_dialogs` `test_extras_tree`, `test_windows_c` | the tree with and without the extras (`docs/fidelity.md`) |

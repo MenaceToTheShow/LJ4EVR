@@ -18,9 +18,9 @@
  *   every dyn with min > max -> reverse = 1, lo/hi ordered (LORD_FIXTURES-10; DesignSpot focus Near=255 Far=0)
  *   consecutive rows on one channel share one LJ_W_FADEBTN whose rows = the span (CHM offsnapfade.htm "linked fade buttons")
  *
- * Storage: rows, buttons and the window array are malloc'ed once per profile and never
- * freed (the profile lives as long as the process; a .GS2 profile reloaded by W3 gets a
- * fresh derive). A failed malloc is lj_fatal, as everywhere outside engine/. */
+ * Storage: rows, buttons and the window array are malloc'ed once per profile and freed by
+ * lj_layout_free (lj_gs2_free for a .GS2 profile, lj_fixlib_release for the tier-2 ones at
+ * exit). A failed malloc is lj_fatal, as everywhere outside engine/. */
 #include "fixlib/lj_layout.h"
 #include "fixlib/hand/lj_hand.h"
 #include <stdlib.h>
@@ -254,4 +254,18 @@ int lj_layout_derive(lj_profile *p)
     p->windows = w;
     p->nwindows = nw;
     return 0;
+}
+
+void lj_layout_free(lj_profile *p)
+{
+    int i, j;
+    if (!p) return;
+    for (i = 0; p->windows && i < p->nwindows; i++) {
+        const lj_ctl_window *w = &p->windows[i];
+        for (j = 0; j < w->nrows; j++) free((void *)w->rows[j].buttons);
+        for (j = 0; j < w->nspecials; j++) free((void *)w->specials[j].buttons);
+        free((void *)w->rows); free((void *)w->specials);
+    }
+    free((void *)p->windows);
+    p->windows = NULL; p->nwindows = 0;
 }

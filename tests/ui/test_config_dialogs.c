@@ -39,6 +39,9 @@
 #include "windows/lj_profile_editor_form.h"
 #include "windows/lj_warnings.h"
 #include "windows/lj_windows.h"
+#include "desktop/lj_fixture_icons.h"        /* W7: icon stems of the extras */
+#include "fixlib/lj_profiles_gen.h"
+#include "gfx/lj_glyphs.h"
 
 #ifndef LJ_SOURCE_DIR
 #define LJ_SOURCE_DIR "."
@@ -467,6 +470,96 @@ static void test_rgb_palette(void)
     lj_win_close(LJ_WIN_RGB_PALETTE);
 }
 
+/* ---- W7: every extra profile visible under its manufacturer ([FIXTURES] ShowExtraProfiles defaults to 1) ---- */
+static int ci_low(int c) { return c >= 'A' && c <= 'Z' ? c + 32 : c; }
+static int ci_cmp(const char *a, const char *b)            /* the tree's own rule (stricmp_ascii in lj_fixture_config.c) */
+{
+    while (*a && ci_low((unsigned char)*a) == ci_low((unsigned char)*b)) { a++; b++; }
+    return ci_low((unsigned char)*a) - ci_low((unsigned char)*b);
+}
+static void tv_key(lj_widget *w, int vk) { lj_key_ev k; memset(&k, 0, sizeof k); k.type = LJ_EV_KEY_DOWN; k.key = vk; if (w->vt->key) w->vt->key(w, &k); }
+static void test_extras_tree(void)
+{
+    static const char *const groups[] = { "Acme", "American DJ", "Ayrton", "Chauvet DJ", "Chauvet Professional", "Clay Paky", "Elation", "ETC", "GLP",
+                                          "High End Systems", "Martin", "Robe", "SGM", "Vari-Lite" };
+    lj_window *fc;
+    lj_widget *tv;
+    const lj_exe_row *prev_row = NULL;
+    int i, n, bad = 0, unsorted = 0, nostem = 0, f = -1, id = -1;
+    uint64_t t0, us;
+    int g;
+    lj_win_close(LJ_WIN_FIXTURE_CONFIG);
+    lj_ini_seti(lj_ctx_get()->main_ini, "FIXTURES", "ShowExtraProfiles", 1);
+    t0 = lj_clock_us();
+    fc = lj_win_open(LJ_WIN_FIXTURE_CONFIG);
+    tv = fc ? lj_window_find(fc, "tvAvailable") : NULL;
+    CHECK(fc && tv);
+    if (!fc || !tv) return;
+    n = lj_fixture_config_tree_count();
+    for (i = 0; i < n; i++) if (lj_w_treeview_level(tv, i) < 2) lj_w_treeview_expand(tv, i, 1);   /* everything visible */
+    lj_window_invalidate_all(fc);
+    lj_window_paint(fc);
+    us = lj_clock_us() - t0;
+    printf("  W7 tree: %d items, %d leaves (%d extras), open + expand all + paint %u us\n", n, lj_fixture_config_tree_leaves(), lj_qxf_extra_count, (unsigned)us);
+    CHECK(us < 200000u);                                       /* budget: < 200 ms with everything visible (docs/w7-fixtures.md) */
+    CHECK(lj_fixture_config_tree_leaves() == 201 + lj_qxf_extra_count && lj_w_treeview_visible_count(tv) == n);
+    for (g = 0; g < LJ_COUNT_OF(groups); g++) {                 /* every W7 group has its folder */
+        for (i = 0; i < n && !(lj_w_treeview_level(tv, i) == 0 && strcmp(lj_fixture_config_tree_item(i), groups[g]) == 0); i++) { }
+        if (i >= n) { bad++; printf("FAIL W7 tree: no %s folder\n", groups[g]); }
+    }
+    CHECK(bad == 0);
+    for (i = 0; i < n; i++) {                                  /* sorted: manufacturer, then name, then (extras) mode, as the leaves come */
+        const lj_exe_row *r = lj_fixture_config_tree_id(i) >= 0 ? lj_fixlib_row_by_id(lj_fixture_config_tree_id(i)) : NULL;
+        int c;
+        if (!r) continue;
+        if (prev_row) {
+            c = ci_cmp(prev_row->manufacturer[0] ? prev_row->manufacturer : "Other", r->manufacturer[0] ? r->manufacturer : "Other");
+            if (c == 0) c = ci_cmp(prev_row->name, r->name);
+            if (c == 0 && prev_row->id >= 1000 && r->id >= 1000) c = ci_cmp(prev_row->mode, r->mode);
+            if (c > 0) unsorted++;
+        }
+        prev_row = r;
+    }
+    CHECK(unsorted == 0);
+    if (unsorted) printf("FAIL W7 tree: %d rows out of order\n", unsorted);
+    for (i = 0; i < lj_qxf_extra_count; i++) {                 /* icon stem rules: every extra gets one of our silhouettes */
+        const lj_profile *p = lj_fixlib_by_id(lj_qxf_extra_rows[i].id);
+        const char *stem = p ? lj_fixture_icon_stem(p->name, p) : NULL;
+        if (!stem || !lj_glyph_get(stem)) nostem++;
+    }
+    CHECK(nostem == 0);
+    /* scrolling: End selects the last row and reveals it, Home the first */
+    ((lj_w_treeview *)tv)->index = 0;
+    tv_key(tv, LJ_VK_END);
+    CHECK(((lj_w_treeview *)tv)->index == lj_w_treeview_visible_item(tv, n - 1) && ((lj_w_treeview *)tv)->sb.pos > 0);
+    tv_key(tv, LJ_VK_HOME);
+    CHECK(((lj_w_treeview *)tv)->index == 0 && ((lj_w_treeview *)tv)->sb.pos == 0);
+    /* Add Fixture flow with a Chauvet DJ extra, then Fixture Info names it */
+    for (i = 0; i < lj_qxf_extra_count && id < 0; i++) if (strcmp(lj_qxf_extra_rows[i].manufacturer, "Chauvet DJ") == 0) id = lj_qxf_extra_rows[i].id;
+    CHECK(id >= 1000 && lj_fixture_config_tree_select(id) == 0);
+    click(lj_window_find(fc, "bAdd"));
+    CHECK(opened(LJ_WIN_ADD_FIXTURES) && strstr(lj_w_caption(in(LJ_WIN_ADD_FIXTURES, "lFixtureName")), lj_fixlib_row_by_id(id)->name) != NULL);
+    click(in(LJ_WIN_ADD_FIXTURES, "bOk"));
+    for (i = 0; i < LJ_FIXTURES; i++) if (sh->fixture[i].profile_id == id) { f = i; break; }
+    CHECK(!opened(LJ_WIN_ADD_FIXTURES) && f >= 0);
+    if (f >= 0) {
+        char want[128];
+        const lj_profile *p = lj_fixlib_by_id((uint16_t)id);
+        snprintf(want, sizeof want, "Chauvet DJ %s", p ? p->name : "?");
+        lj_desktop_run_action(LJ_ACT_FIXTURE_INFO, f);
+        CHECK(opened(LJ_WIN_FIXTURE_INFO) && strncmp(lj_w_caption(in(LJ_WIN_FIXTURE_INFO, "LFixtureType")), want, strlen(want)) == 0);
+        lj_win_close(LJ_WIN_FIXTURE_INFO);
+        memset(&sh->fixture[f], 0, sizeof sh->fixture[f]);
+        lj_fixture_config_refresh();
+    }
+    /* the collapsed default view: manufacturer folders only */
+    lj_win_close(LJ_WIN_FIXTURE_CONFIG);
+    fc = lj_win_open(LJ_WIN_FIXTURE_CONFIG);
+    golden_win(fc, "W7_FIXTURE_CONFIG_EXTRAS");
+    lj_win_close(LJ_WIN_FIXTURE_CONFIG);
+    lj_ini_seti(lj_ctx_get()->main_ini, "FIXTURES", "ShowExtraProfiles", 0);
+}
+
 int lj_test_config_dialogs(int argc, char **argv);
 int lj_test_config_dialogs(int argc, char **argv)
 {
@@ -474,7 +567,7 @@ int lj_test_config_dialogs(int argc, char **argv)
     lj_library lib;
     lj_show *keep = ctx->show;
     lj_library *keep_lib = ctx->lib;
-    lj_ini *keep_forms = ctx->forms_ini;
+    lj_ini *keep_forms = ctx->forms_ini, *keep_main;
     int a, id;
     (void)argc; (void)argv;
     lj_log_set_sink(sink, NULL);
@@ -484,6 +577,9 @@ int lj_test_config_dialogs(int argc, char **argv)
     ctx->lib = &lib;
     ctx->show = sh = lj_show_new();
     ctx->forms_ini = lj_ini_new();
+    keep_main = ctx->main_ini;
+    ctx->main_ini = lj_ini_new();
+    lj_ini_seti(ctx->main_ini, "FIXTURES", "ShowExtraProfiles", 0);   /* the W4C goldens are the LJ2-exact 201-row tree; test_extras_tree shows the rest (W7) */
     lj_uiscript_set_host(NULL);
     test_fixture_config();
     test_copy_clear();
@@ -491,6 +587,7 @@ int lj_test_config_dialogs(int argc, char **argv)
     test_profile_pickers();
     test_import_export();
     test_rgb_palette();
+    test_extras_tree();
     lj_win_close(LJ_WIN_FIXTURE_CONFIG);
     if (lj_win_message_window()) msg_answer(1);
     for (id = LJ_WIN_ADD_FIXTURES; id <= LJ_WIN_RGB_PALETTE; id++) CHECK(!opened((enum lj_win)id));
@@ -499,6 +596,8 @@ int lj_test_config_dialogs(int argc, char **argv)
     lj_gs2_free(&legacy);
     lj_show_free(ctx->show);
     lj_ini_free(ctx->forms_ini);
+    lj_ini_free(ctx->main_ini);
+    ctx->main_ini = keep_main;
     ctx->show = keep; ctx->lib = keep_lib; ctx->forms_ini = keep_forms;
     for (a = 0; a < LJ_ACT_COUNT; a++) lj_desktop_bind_action((enum lj_desktop_action)a, NULL, NULL);
     lj_log_set_sink(NULL, NULL);

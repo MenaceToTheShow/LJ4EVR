@@ -408,16 +408,8 @@ done:
  * built-ins have gs2_raw NULL and static tables, so they are never touched. */
 void lj_gs2_free(lj_profile *p)
 {
-    int i, j;
     if (!p || !p->gs2_raw) return;
-    for (i = 0; p->windows && i < p->nwindows; i++) {
-        const lj_ctl_window *w = &p->windows[i];
-        for (j = 0; j < w->nrows; j++) free((void *)w->rows[j].buttons);
-        for (j = 0; j < w->nspecials; j++) free((void *)w->specials[j].buttons);
-        free((void *)w->rows); free((void *)w->specials);
-    }
-    free((void *)p->windows);
-    p->windows = NULL; p->nwindows = 0;
+    lj_layout_free(p);
     free((void *)p->gs2_raw);
     p->gs2_raw = NULL;
 }

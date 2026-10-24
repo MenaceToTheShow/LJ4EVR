@@ -5,6 +5,17 @@ single source of the number.
 
 ## [Unreleased]
 
+W7 The fixture library (toward 1.3.0):
+
+- **Fixture icons fit their tile.** A Fixed Size desktop tile shrinks the fixture picture into the space under its
+  caption; before, the picture covered the "(n) Name" bar and ran past the bottom of the tile (Joey: "the mac500
+  icon is outside of the cell"). Image Size tiles are unchanged.
+- **About 2,000 more fixture modes** from QLC+ and the Open Fixture Library for Martin, Elation, Chauvet DJ, Chauvet
+  Professional, Clay Paky, GLP, Acme, Ayrton, ETC, Robe, High End Systems, Vari-Lite, American DJ and SGM. They show in
+  Fixture Configuration under their manufacturer; `Main.Ini [FIXTURES] ShowExtraProfiles=0` gives back the
+  LightJockey 2 list of 201 profiles. A mode wider than 32 channels is not offered (LightJockey 2's limit).
+- Profiles are built when first used, so the program stays the same size class and starts as fast as before.
+
 ## [1.2.0] - 2026-10-23 - W6 The carry wave
 
 1.2.0 lands the rows the 1.1.0 review carried forward. What changes for you:

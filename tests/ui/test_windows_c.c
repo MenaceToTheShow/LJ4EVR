@@ -37,6 +37,7 @@
 #include "windows/lj_htp_groups.h"
 #include "windows/lj_intensity_groups.h"
 #include "windows/lj_position_presets.h"
+#include "fixlib/lj_profiles_gen.h"       /* W7: lj_qxf_extra_count */
 #include "windows/lj_snapshot.h"
 #include "windows/lj_user_palettes.h"
 
@@ -140,8 +141,24 @@ static void test_fixture_config(void)
     else {
         int leaf = lj_fixture_config_tree_find("Martin", "MAC 500", "Mode 2/4");
         int dim = lj_fixture_config_tree_find("Generic", "DMX Dimmer", " 1 Channel");
-        CHECK(lj_fixture_config_tree_leaves() == 201);                                 /* the exe rows; extras (ids >= 1000) hidden by default (design 6.1) */
-        for (i = 0; i < lj_fixture_config_tree_count(); i++) CHECK(lj_fixture_config_tree_id(i) <= 200);
+        lj_ini *keep_main = ctx->main_ini, *ini = keep_main ? keep_main : lj_ini_new();
+        int bad = 0;
+        CHECK(lj_fixture_config_tree_leaves() == 201 + lj_qxf_extra_count);           /* W7: the extras (ids >= 1000) shown by default (docs/fidelity.md deviation) */
+        CHECK(lj_fixture_config_tree_count() < 16384 - 1024);                          /* LJ_FC_TREE_MAX headroom */
+        ctx->main_ini = ini;
+        lj_ini_seti(ini, "FIXTURES", "ShowExtraProfiles", 0);                          /* the LJ2-exact 201-row tree */
+        lj_fixture_config_close();
+        w = lj_fixture_config_open();
+        CHECK(lj_fixture_config_tree_leaves() == 201);
+        for (i = 0; i < lj_fixture_config_tree_count(); i++) if (lj_fixture_config_tree_id(i) > 200) bad++;
+        CHECK(bad == 0);
+        lj_ini_seti(ini, "FIXTURES", "ShowExtraProfiles", 1);
+        lj_fixture_config_close();
+        if (!keep_main) lj_ini_free(ini);
+        ctx->main_ini = keep_main;
+        w = lj_fixture_config_open();
+        leaf = lj_fixture_config_tree_find("Martin", "MAC 500", "Mode 2/4");
+        dim = lj_fixture_config_tree_find("Generic", "DMX Dimmer", " 1 Channel");
         CHECK(leaf >= 0 && lj_fixture_config_tree_id(leaf) == 12);
         CHECK(leaf >= 0 && strcmp(lj_fixture_config_tree_item(leaf), "\t\tMode 2/4") == 0);
         CHECK(dim >= 0 && lj_fixture_config_tree_id(dim) == 19);

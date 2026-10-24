@@ -146,7 +146,7 @@ typedef struct {
     int index, row_h, indent;
     lj_w_sbar sb;
     unsigned show_root:1, show_lines:1, show_buttons:1;
-    uint8_t expanded[256];     /* ponytail: bitset, 2048 nodes max */
+    uint8_t expanded[2048];    /* ponytail: bitset, 16384 nodes max (W7: the Fixture Configuration tree with every extra) */
 } lj_w_treeview;
 lj_widget *lj_w_treeview_create(lj_widget *parent, const lj_ctl_desc *d);
 void lj_w_treeview_set_items(lj_widget *w, const char *const *items, int n);

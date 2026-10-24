@@ -314,7 +314,7 @@ separator.
 | `Main.Ini` | `[MOVEMENT]` | `Res8Bit=255 Res16Bit=32` | controls |
 | `Main.Ini` | `[STATICS]` | `Use Fadetime LevelAutoEnable LevelAutoDisable DefaultLevel` | windows |
 | `Main.Ini` | `[GLOBALINTENSITY]` | `Fadetime Show Pct` | windows |
-| `Main.Ini` | `[FIXTURES]` | `ShowExtraProfiles` (ours, 6.1) | windows |
+| `Main.Ini` | `[FIXTURES]` | `ShowExtraProfiles` (ours, 6.1; default 1 since W7, 0 = the LJ2-exact 201-row tree) | windows |
 | `forms.ini` | `[CUE]` | `Left Top Width Height C0..C8 ViewAdvanced DisableChaseFade` | windows |
 | `forms.ini` | `[CUELIST2]` | `Width Height ViewEditPanel ViewEditCommand` | windows |
 | `forms.ini` | `[ACUESELECT]` | `GWidth GWC0..2` | windows |

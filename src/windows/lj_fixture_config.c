@@ -25,7 +25,7 @@
 #include "windows/lj_warnings.h"
 #include "windows/lj_help_viewer.h"   /* W4 acceptance: Help items open the bundled viewer (design 13 item 12) */
 
-#define LJ_FC_TREE_MAX  640                 /* 201 leaves + at most 201 name folders + manufacturers */
+#define LJ_FC_TREE_MAX  16384               /* W7: 201 exe leaves + the extras + their name folders + manufacturers (test_windows_c asserts the headroom) */
 #define LJ_FC_TEXT      112                 /* tabs + manufacturer 31 / name 61 + ", " + mode 31 */
 #define LJ_FC_NOTE_LINES 64
 
@@ -57,7 +57,7 @@ int  lj_fixture_config_tree_available(int i) { int id = lj_fixture_config_tree_i
 
 static lj_show *show(void) { return lj_ctx_get()->show; }
 static lj_widget *find(const char *name) { return lj_window_find(fc.win, name); }
-static const lj_exe_row *row_by_id(int id) { int i, n = lj_fixlib_count(); for (i = 0; i < n; i++) { const lj_exe_row *r = lj_fixlib_row(i); if (r && r->id == id) return r; } return NULL; }
+static const lj_exe_row *row_by_id(int id) { return lj_fixlib_row_by_id(id); }
 static int footprint_of(const lj_fixture *f) { const lj_profile *p = lj_fixlib_by_id(f->profile_id); return p && p->footprint ? p->footprint : 1; }
 static int used(const lj_fixture *f) { return f->link != 0 || f->profile_id != 0 || f->kind == LJ_FX_GS2; }
 
@@ -70,7 +70,8 @@ static int row_cmp(const void *pa, const void *pb)
     const lj_exe_row *a = lj_fixlib_row(*(const int *)pa), *b = lj_fixlib_row(*(const int *)pb);
     int c = stricmp_ascii(manu_of(a), manu_of(b));
     if (c == 0) c = stricmp_ascii(a->name, b->name);
-    return c ? c : (int)a->id - (int)b->id;                      /* modes keep the exe order */
+    if (c == 0 && a->id >= 1000 && b->id >= 1000) c = stricmp_ascii(a->mode ? a->mode : "", b->mode ? b->mode : "");   /* W7: extras by mode name */
+    return c ? c : (int)a->id - (int)b->id;                      /* exe modes keep the exe order */
 }
 static int tree_push(int level, const char *text, int id)
 {
@@ -86,11 +87,11 @@ static void tree_build(void)
 {
     static int order[LJ_FC_TREE_MAX];
     lj_ini *ini = lj_ctx_get()->main_ini;
-    int total = lj_fixlib_count(), n = 0, i, j, extras = lj_ini_geti(ini, "FIXTURES", "ShowExtraProfiles", 0);
+    int total = lj_fixlib_count(), n = 0, i, j, extras = lj_ini_geti(ini, "FIXTURES", "ShowExtraProfiles", 1);
     char leaf[LJ_FC_TEXT];
     fc.tree_n = 0; fc.tree_leaves = 0;
     if (total > LJ_FC_TREE_MAX) total = LJ_FC_TREE_MAX;
-    for (i = 0; i < total; i++) { const lj_exe_row *r = lj_fixlib_row(i); if (r && (r->id <= 200 || extras)) order[n++] = i; }   /* design 6.1: extra ids >= 1000 hidden unless Main.Ini [FIXTURES] ShowExtraProfiles=1 */
+    for (i = 0; i < total; i++) { const lj_exe_row *r = lj_fixlib_row(i); if (r && (r->id <= 200 || extras)) order[n++] = i; }   /* design 6.1, W7 deviation (docs/fidelity.md): extra ids >= 1000 shown unless Main.Ini [FIXTURES] ShowExtraProfiles=0 (the LJ2-exact 201 rows) */
     qsort(order, (size_t)n, sizeof order[0], row_cmp);
     for (i = 0; i < n; ) {
         const lj_exe_row *r = lj_fixlib_row(order[i]);

@@ -348,11 +348,11 @@ static void fp_find(lj_widget *w, void *ud)
     int i, n = lj_fixture_config_tree_count();
     (void)w; (void)ud;
     rows_reset();
-    for (i = 0; i < n; i++) {                                  /* the tree's leaves in tree order: by manufacturer, case-insensitive [02 s2.3] */
-        int id = lj_fixture_config_tree_id(i), k;
-        const lj_exe_row *r = NULL;
+    for (i = 0; i < n && cd.nrows < CD_ROWS; i++) {            /* the tree's leaves in tree order: by manufacturer, case-insensitive [02 s2.3]; the first CD_ROWS hits */
+        int id = lj_fixture_config_tree_id(i);
+        const lj_exe_row *r;
         if (id < 0) continue;
-        for (k = 0; k < lj_fixlib_count() && !r; k++) if (lj_fixlib_row(k) && lj_fixlib_row(k)->id == id) r = lj_fixlib_row(k);
+        r = lj_fixlib_row_by_id(id);
         if (!r || !(icontains(r->manufacturer ? r->manufacturer : "", q ? q : "") || icontains(r->name, q ? q : ""))) continue;
         row_add(id, "%s\t%s %s%s%s", r->manufacturer && r->manufacturer[0] ? r->manufacturer : "Other", r->manufacturer ? r->manufacturer : "", r->name, r->mode && r->mode[0] ? ", " : "", r->mode ? r->mode : "");   /* findprofiledialog.gif: "Acme | Acme MH-640B The Rover" */
     }

@@ -45,7 +45,7 @@ static int has_next_sibling(const lj_w_treeview *t, int i)
     return 0;
 }
 
-/* ponytail: O(n) walk per lookup, fine for profile trees of a few hundred nodes; cache the visible list if it shows */
+/* ponytail: O(n) walk per lookup, fine for the 7000-node profile tree (paint = one walk per visible row); cache the visible list if it shows */
 static int walk(const lj_w_treeview *t, int want_row)
 {
     int i, row = 0, hide = -1;
@@ -62,10 +62,17 @@ static int walk(const lj_w_treeview *t, int want_row)
 int lj_w_treeview_visible_count(const lj_widget *w) { return walk((const lj_w_treeview *)w, -1); }
 int lj_w_treeview_visible_item(const lj_widget *w, int row) { return row < 0 ? -1 : walk((const lj_w_treeview *)w, row); }
 
-static int row_of_item(const lj_w_treeview *t, int item)
+static int row_of_item(const lj_w_treeview *t, int item)   /* one walk (W7: was a walk per row, O(n^2) on a 7000-node tree) */
 {
-    int r, n = walk(t, -1);
-    for (r = 0; r < n; r++) if (walk(t, r) == item) return r;
+    int i, row = 0, hide = -1;
+    for (i = 0; i < t->n; i++) {
+        int l = level_of(t->items[i]);
+        if (hide >= 0 && l > hide) continue;
+        hide = -1;
+        if (i == item) return row;
+        row++;
+        if (has_children(t, i) && !lj_w_treeview_expanded(&t->base, i)) hide = l;
+    }
     return -1;
 }
 

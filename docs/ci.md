@@ -12,7 +12,7 @@ Three workflows under `.github/workflows/`, design 9.3 and 9.5.
 
 | Job | Runner | Does | Artifact |
 |---|---|---|---|
-| `generate-check` | `ubuntu-latest`, container | `tools/test_layering.py`; `tools/{qxf2c,fontpack,artpack,gen_vectors,exe_profiles_check}.py --check`; a missing tool fails (W6) | - |
+| `generate-check` | `ubuntu-latest`, container | `tools/test_layering.py`; `tools/{qxf2c,fontpack,artpack,gen_vectors,exe_profiles_check,qxf_map_sync}.py --check`; a missing tool fails (W6; `qxf_map_sync` W7) | - |
 | `linux-gcc-asan` | same | preset `ci-linux-asan` (gcc, ASan+UBSan, `LJ_SDL=OFF`), `ctest`, `lj4evr_tests dump-frames` | `frames-linux` |
 | `linux-clang` | same | preset `ci-linux-clang`, `ctest` | - |
 | `windows-msvc` | `windows-latest` | preset `release-win`, `ctest`, `lj4evr --selftest`, `dump-frames`, the static-CRT check; then preset `debug-win`: the whole Debug tree, `ctest` (ME-70: `/RTC1` and the ME-16 asserts only live here) and the Debug `--selftest` (no `no binding for handler`, no `unknown event` line, ME-74); `cpack -G NSIS`; then the MSVC ASan `LJ_SDL=OFF` Debug tree and its `ctest` (W6, below) | `frames-windows`, `installer-windows` |

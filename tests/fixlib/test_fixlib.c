@@ -78,8 +78,16 @@ int lj_test_fixlib_profiles(int argc, char **argv)
     CHECK(p && p->footprint == 16 && strcmp(p->name, "MAC 500") == 0 && strcmp(p->mode, "Mode 2/4") == 0);
     CHECK(p && p->channel_class[1] == LJ_CH_INTENSITY && p->intensity.offset == 1 && p->color[0].offset == 2);
     q = NULL;
-    for (i = 0; i < lj_qxf_count; i++) if (lj_qxf_profiles[i]->id == 12) q = lj_qxf_profiles[i];
+    for (i = 0; i < lj_qxf_count; i++) if (lj_qxf_descs[i].id == 12) q = lj_fixlib_qxf(i);
     CHECK(q != NULL && q != p);                                              /* the conversion exists, so the precedence is real */
+    /* W7: the compact descriptor decodes to the MAC500 DMX4 facts qxf2c --selftest asserts on the Python side */
+    CHECK(q && q->footprint == 16 && q->channel_class[0] == LJ_CH_SHUTTER && q->channel_class[1] == LJ_CH_INTENSITY && q->channel_class[15] == LJ_CH_SPEED);
+    CHECK(q && q->shutter.enabled && q->shutter.offset == 0 && q->shutter.min == 0 && q->shutter.max == 20 && strcmp(q->shutter.name, "Shutter") == 0);
+    CHECK(q && q->strobe.min == 50 && q->strobe.max == 72 && q->pt16 && q->pan_ofs == 10 && q->presets && q->use_gm);
+    CHECK(q && q->lamp_on.enabled && q->lamp_on.defined[0] && q->lamp_on.value[0] == 228 && q->reset.value[0] == 208);
+    CHECK(q && q->palette[0].e[19].used && !q->palette[0].e[0].v[0] && q->palette[0].e[0].rgb == 0xFFFFFFu && q->palette[0].e[1].v[0] == 1);
+    CHECK(q && strcmp(q->notes, "Converted from QLC+ Martin-MAC500.qxf (DMX4). Tier 2: control windows derived by the Generic Fixture 2 rules.") == 0);
+    CHECK(lj_fixlib_qxf(-1) == NULL && lj_fixlib_qxf(lj_qxf_count) == NULL);
     for (i = 0; p && i < LJ_CTL_COUNT; i++) {
         int has = lj_profile_window(p, (enum lj_ctl_kind)i) != NULL;
         int want = i != LJ_CTL_LEVELS && i != LJ_CTL_GENERIC && i != LJ_CTL_RGBPACK;   /* 8 windows: no Levels grid [15/01 s3] */
@@ -114,7 +122,12 @@ int lj_test_fixlib_profiles(int argc, char **argv)
     CHECK(p && p->windows && p->nwindows > 0 && lj_profile_window(p, LJ_CTL_INTENSITY) && lj_profile_window(p, LJ_CTL_MOVEMENT) && lj_profile_window(p, LJ_CTL_COLORS));
     CHECK(p && p == lj_fixlib_by_id(156) && p->windows != lj_fixlib_by_id(54)->windows);   /* derived once; 54 is a hand table now */
     CHECK(lj_fixlib_by_id(1000) && lj_fixlib_by_id(1000)->footprint == 32);
-    for (i = 0; i < lj_qxf_count; i++) { q = lj_fixlib_by_id(lj_qxf_profiles[i]->id); if (q) check_tables(q); }
+    for (i = 0; i < lj_qxf_count; i++) { q = lj_fixlib_by_id(lj_qxf_descs[i].id); CHECK(q != NULL); if (q) check_tables(q); }
+    for (i = 0; i < lj_qxf_count; i++) { q = lj_fixlib_qxf(i); CHECK(q && q->id == lj_qxf_descs[i].id && q->footprint >= 1 && q->footprint <= LJ_PROFILE_CH); if (q) check_tables(q); }
+    for (i = 1; i < lj_qxf_count; i++) CHECK(lj_qxf_descs[i - 1].id < lj_qxf_descs[i].id);   /* lj_fixlib_by_id bisects */
+    for (i = 0; i < lj_qxf_extra_count; i++) CHECK(lj_fixlib_by_id(lj_qxf_extra_rows[i].id) != NULL && lj_qxf_extra_rows[i].binding == LJ_BIND_QXF);
+    lj_fixlib_release();                                                     /* W7: built again on the next use */
+    CHECK(lj_qxf_built[0] == NULL && lj_fixlib_by_id(156) && lj_fixlib_by_id(156)->windows);
 
     /* lj_layout_derive on a synthetic .GS2-shaped profile */
     memset(&synth, 0, sizeof synth);

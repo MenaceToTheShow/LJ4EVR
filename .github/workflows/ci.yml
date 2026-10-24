@@ -38,7 +38,7 @@ jobs:
       - name: Generated files are current
         # every --check tool exists since W2; a missing one fails the step (W4 WIZARD_STYLES-14)
         run: |
-          for t in qxf2c fontpack artpack gen_vectors exe_profiles_check; do
+          for t in qxf2c fontpack artpack gen_vectors exe_profiles_check qxf_map_sync; do
             echo "== $t"; python3 -I "tools/$t.py" --check || exit 1
           done
 

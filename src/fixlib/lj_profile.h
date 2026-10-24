@@ -93,7 +93,11 @@ typedef struct { uint16_t id; const char *tag, *manufacturer, *name, *mode, *not
 const lj_profile *lj_fixlib_by_id(uint16_t profile_id);                       /* exe row id 0-200, extras >= 1000; NULL = greyed row */
 int               lj_fixlib_count(void);                                      /* 201 (+ extras when present; extras sort after id 200) */
 const lj_exe_row *lj_fixlib_row(int i);                                       /* the exe triples verbatim: the Fixture Configuration tree; NULL out of range */
+const lj_exe_row *lj_fixlib_row_by_id(int id);                                /* W7: the row of an id (exe 0-200 or an extra), NULL when none; O(log n) */
 const lj_ctl_window *lj_profile_window(const lj_profile *p, enum lj_ctl_kind kind);   /* NULL = toolbar button disabled [F9] */
+const lj_profile *lj_fixlib_qxf(int i);                                       /* W7: the i-th tier-2 conversion (0..lj_qxf_count-1, id order), built on first use, even where a hand file wins its id; NULL out of range */
+void              lj_fixlib_release(void);                                    /* W7: frees every tier-2 profile built so far (app exit); pointers handed out before are invalid after */
+void              lj_layout_free(lj_profile *p);                              /* W7: frees the windows lj_layout_derive allocated (windows = NULL, nwindows = 0) */
 int               lj_layout_derive(lj_profile *p);                            /* .GS2 / QLC+-derived profiles: builds windows/nwindows by the Generic Fixture 2 rules (6.3) and sets states_allowed (ME-27); 0 / -1 */
 int  lj_gs2_parse(const uint8_t rec[LJ_GS2_REC_SIZE], lj_profile *out, char *err, size_t cap);   /* W3 (W1 stub: -1). The 17 unlisted bytes at offset 0x266C travel in gs2_raw only (W0-gs2-266C): nothing interprets them */
 int  lj_gs2_write(const lj_profile *in, uint8_t rec[LJ_GS2_REC_SIZE]);                           /* copy in->gs2_raw, then overwrite the struct-owned fields: serialize(parse(x)) of 16-gs2_ref.py. W1 stub: -1 */
