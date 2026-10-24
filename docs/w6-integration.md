@@ -408,3 +408,9 @@ release step.
 
 ME-207 ticked by this record. Open after the tag: ME-208 (design.md v1.2.0 paragraph, orchestrator) and the verdict's
 section 5 carries (the reference rig, the Mac hand run, the OemCode, ME-209, ME-210, ME-211).
+
+### ME-208 (design.md, orchestrator)
+
+Applied 2026-10-24 by the orchestrator as design owner in the design vault (not in this repository): `design.md`
+section 1 gains the "What v1.2.0 is not" paragraph matching the README, section 10 gains "W6 Carried rows" with its
+shipped line, and section 13 gains the W6 revision line. `grep -c v1.2.0 design.md` = 3. ME-208 ticked; W6 is closed.
